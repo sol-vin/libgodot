@@ -156,8 +156,8 @@ module Godot
       if @@mb_add_device.null?
         @@mb_add_device = Bridge.get_method_bind("UPNP", "add_device", 986715920_i64)
       end
-      val_0 = device
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = device ? device.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_add_device, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -169,8 +169,8 @@ module Godot
       end
       val_0 = index
       arg_0 = pointerof(val_0).as(Void*)
-      val_1 = device
-      arg_1 = pointerof(val_1).as(Void*)
+      arg_ptr_1 = device ? device.pointer : Pointer(Void).null
+      arg_1 = pointerof(arg_ptr_1).as(Void*)
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_set_device, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -1412,8 +1412,8 @@ module Godot
       if @@mb_set_stream.null?
         @@mb_set_stream = Bridge.get_method_bind("VideoStreamPlayer", "set_stream", 2317102564_i64)
       end
-      val_0 = stream
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = stream ? stream.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_stream, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -2208,8 +2208,8 @@ module Godot
       end
       val_0 = get_type
       arg_0 = pointerof(val_0).as(Void*)
-      val_1 = node
-      arg_1 = pointerof(val_1).as(Void*)
+      arg_ptr_1 = node ? node.pointer : Pointer(Void).null
+      arg_1 = pointerof(arg_ptr_1).as(Void*)
       val_2 = position
       arg_2 = pointerof(val_2).as(Void*)
       val_3 = id
@@ -2767,8 +2767,8 @@ module Godot
       if @@mb_add_node.null?
         @@mb_add_node = Bridge.get_method_bind("VisualShaderGroup", "add_node", 3625527446_i64)
       end
-      val_0 = node
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = node ? node.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       val_1 = position
       arg_1 = pointerof(val_1).as(Void*)
       val_2 = id
@@ -3823,8 +3823,8 @@ module Godot
       if @@mb_set_cube_map.null?
         @@mb_set_cube_map = Bridge.get_method_bind("VisualShaderNodeCubemap", "set_cube_map", 1278366092_i64)
       end
-      val_0 = value
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = value ? value.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_cube_map, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -4016,8 +4016,8 @@ module Godot
       if @@mb_set_texture.null?
         @@mb_set_texture = Bridge.get_method_bind("VisualShaderNodeCurveTexture", "set_texture", 181872837_i64)
       end
-      val_0 = texture
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = texture ? texture.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_texture, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -4043,8 +4043,8 @@ module Godot
       if @@mb_set_texture.null?
         @@mb_set_texture = Bridge.get_method_bind("VisualShaderNodeCurveXYZTexture", "set_texture", 8031783_i64)
       end
-      val_0 = texture
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = texture ? texture.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_texture, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -4793,8 +4793,8 @@ module Godot
       if @@mb_set_group.null?
         @@mb_set_group = Bridge.get_method_bind("VisualShaderNodeGroup", "set_group", 3093265740_i64)
       end
-      val_0 = group
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = group ? group.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_group, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -5393,8 +5393,8 @@ module Godot
       if @@mb_set_mesh.null?
         @@mb_set_mesh = Bridge.get_method_bind("VisualShaderNodeParticleMeshEmitter", "set_mesh", 194775623_i64)
       end
-      val_0 = mesh
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = mesh ? mesh.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_mesh, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -5836,8 +5836,8 @@ module Godot
       if @@mb_set_texture.null?
         @@mb_set_texture = Bridge.get_method_bind("VisualShaderNodeTexture", "set_texture", 4051416890_i64)
       end
-      val_0 = value
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = value ? value.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_texture, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -5882,8 +5882,8 @@ module Godot
       if @@mb_set_texture_array.null?
         @@mb_set_texture_array = Bridge.get_method_bind("VisualShaderNodeTexture2DArray", "set_texture_array", 1278366092_i64)
       end
-      val_0 = value
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = value ? value.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_texture_array, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -5925,8 +5925,8 @@ module Godot
       if @@mb_set_texture.null?
         @@mb_set_texture = Bridge.get_method_bind("VisualShaderNodeTexture3D", "set_texture", 1188404210_i64)
       end
-      val_0 = value
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = value ? value.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_texture, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -6809,8 +6809,8 @@ module Godot
       if @@mb_set_probe_data.null?
         @@mb_set_probe_data = Bridge.get_method_bind("VoxelGI", "set_probe_data", 1637849675_i64)
       end
-      val_0 = data
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = data ? data.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_probe_data, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -6866,8 +6866,8 @@ module Godot
       if @@mb_set_camera_attributes.null?
         @@mb_set_camera_attributes = Bridge.get_method_bind("VoxelGI", "set_camera_attributes", 2817810567_i64)
       end
-      val_0 = camera_attributes
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = camera_attributes ? camera_attributes.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_camera_attributes, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -7366,8 +7366,8 @@ module Godot
       if @@mb_add_peer.null?
         @@mb_add_peer = Bridge.get_method_bind("WebRTCMultiplayerPeer", "add_peer", 4078953270_i64)
       end
-      val_0 = peer
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = peer ? peer.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       val_1 = peer_id
       arg_1 = pointerof(val_1).as(Void*)
       val_2 = unreliable_lifetime
@@ -7665,8 +7665,8 @@ module Godot
       end
       val_0 = url
       arg_0 = pointerof(val_0).as(Void*)
-      val_1 = tls_client_options
-      arg_1 = pointerof(val_1).as(Void*)
+      arg_ptr_1 = tls_client_options ? tls_client_options.pointer : Pointer(Void).null
+      arg_1 = pointerof(arg_ptr_1).as(Void*)
       args = [arg_0, arg_1]
       ret = 0_i64
       Bridge.ptrcall(@@mb_create_client, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
@@ -7682,8 +7682,8 @@ module Godot
       arg_0 = pointerof(val_0).as(Void*)
       val_1 = bind_address
       arg_1 = pointerof(val_1).as(Void*)
-      val_2 = tls_server_options
-      arg_2 = pointerof(val_2).as(Void*)
+      arg_ptr_2 = tls_server_options ? tls_server_options.pointer : Pointer(Void).null
+      arg_2 = pointerof(arg_ptr_2).as(Void*)
       args = [arg_0, arg_1, arg_2]
       ret = 0_i64
       Bridge.ptrcall(@@mb_create_server, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
@@ -7898,8 +7898,8 @@ module Godot
       end
       val_0 = url
       arg_0 = pointerof(val_0).as(Void*)
-      val_1 = tls_client_options
-      arg_1 = pointerof(val_1).as(Void*)
+      arg_ptr_1 = tls_client_options ? tls_client_options.pointer : Pointer(Void).null
+      arg_1 = pointerof(arg_ptr_1).as(Void*)
       args = [arg_0, arg_1]
       ret = 0_i64
       Bridge.ptrcall(@@mb_connect_to_url, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
@@ -7912,8 +7912,8 @@ module Godot
       if @@mb_accept_stream.null?
         @@mb_accept_stream = Bridge.get_method_bind("WebSocketPeer", "accept_stream", 255125695_i64)
       end
-      val_0 = stream
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = stream ? stream.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       ret = 0_i64
       Bridge.ptrcall(@@mb_accept_stream, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
@@ -8732,8 +8732,8 @@ module Godot
       if @@mb_set_environment.null?
         @@mb_set_environment = Bridge.get_method_bind("World3D", "set_environment", 4143518816_i64)
       end
-      val_0 = env
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = env ? env.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_environment, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -8751,8 +8751,8 @@ module Godot
       if @@mb_set_fallback_environment.null?
         @@mb_set_fallback_environment = Bridge.get_method_bind("World3D", "set_fallback_environment", 4143518816_i64)
       end
-      val_0 = env
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = env ? env.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_fallback_environment, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -8770,8 +8770,8 @@ module Godot
       if @@mb_set_camera_attributes.null?
         @@mb_set_camera_attributes = Bridge.get_method_bind("World3D", "set_camera_attributes", 2817810567_i64)
       end
-      val_0 = attributes
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = attributes ? attributes.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_camera_attributes, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -8882,8 +8882,8 @@ module Godot
       if @@mb_set_environment.null?
         @@mb_set_environment = Bridge.get_method_bind("WorldEnvironment", "set_environment", 4143518816_i64)
       end
-      val_0 = env
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = env ? env.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_environment, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -8901,8 +8901,8 @@ module Godot
       if @@mb_set_camera_attributes.null?
         @@mb_set_camera_attributes = Bridge.get_method_bind("WorldEnvironment", "set_camera_attributes", 2817810567_i64)
       end
-      val_0 = camera_attributes
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = camera_attributes ? camera_attributes.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_camera_attributes, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -8920,8 +8920,8 @@ module Godot
       if @@mb_set_compositor.null?
         @@mb_set_compositor = Bridge.get_method_bind("WorldEnvironment", "set_compositor", 1586754307_i64)
       end
-      val_0 = compositor
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = compositor ? compositor.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_compositor, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -10657,8 +10657,8 @@ module Godot
       if @@mb_add_interface.null?
         @@mb_add_interface = Bridge.get_method_bind("XRServer", "add_interface", 1898711491_i64)
       end
-      val_0 = interface
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = interface ? interface.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_add_interface, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -10678,8 +10678,8 @@ module Godot
       if @@mb_remove_interface.null?
         @@mb_remove_interface = Bridge.get_method_bind("XRServer", "remove_interface", 1898711491_i64)
       end
-      val_0 = interface
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = interface ? interface.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_remove_interface, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -10725,8 +10725,8 @@ module Godot
       if @@mb_add_tracker.null?
         @@mb_add_tracker = Bridge.get_method_bind("XRServer", "add_tracker", 684804553_i64)
       end
-      val_0 = tracker
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = tracker ? tracker.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_add_tracker, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -10736,8 +10736,8 @@ module Godot
       if @@mb_remove_tracker.null?
         @@mb_remove_tracker = Bridge.get_method_bind("XRServer", "remove_tracker", 684804553_i64)
       end
-      val_0 = tracker
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = tracker ? tracker.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_remove_tracker, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -10781,8 +10781,8 @@ module Godot
       if @@mb_set_primary_interface.null?
         @@mb_set_primary_interface = Bridge.get_method_bind("XRServer", "set_primary_interface", 1898711491_i64)
       end
-      val_0 = interface
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = interface ? interface.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_primary_interface, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end

@@ -1,6 +1,15 @@
-# Runs the Crystal LibGodot Test Suite using the root godot.exe
-$ErrorActionPreference = "Stop"
+# =============================================================================
+# Runs the Crystal LibGodot Test Suite (Automated CI & Interactive UI)
+# =============================================================================
+param(
+    [switch]$Interactive,
+    [switch]$UI,
+    [switch]$SkipSpecs,
+    [switch]$SkipToolTests,
+    [switch]$SkipRuntimeTests
+)
 
+$ErrorActionPreference = "Stop"
 $Root = $PSScriptRoot
 $GodotExe = Join-Path $Root "godot.exe"
 $TestPath = Join-Path $Root "test"
@@ -10,10 +19,13 @@ if (-not (Test-Path $GodotExe)) {
     exit 1
 }
 
-Write-Host "==========================================" -ForegroundColor Cyan
-Write-Host "  Launching Crystal LibGodot Test Runner  " -ForegroundColor Cyan
-Write-Host "==========================================" -ForegroundColor Cyan
-Write-Host "Engine:  $GodotExe"
-Write-Host "Project: $TestPath"
-
-& $GodotExe --path $TestPath @args | Out-Host
+if ($Interactive -or $UI) {
+    Write-Host "==========================================" -ForegroundColor Cyan
+    Write-Host "  Launching Crystal LibGodot Interactive  " -ForegroundColor Cyan
+    Write-Host "==========================================" -ForegroundColor Cyan
+    & $GodotExe --path $TestPath @args | Out-Host
+    exit $LASTEXITCODE
+} else {
+    & powershell -ExecutionPolicy Bypass -File (Join-Path $Root "scripts/run_tests.ps1") @PSBoundParameters.Values
+    exit $LASTEXITCODE
+}

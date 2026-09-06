@@ -297,8 +297,8 @@ module Godot
       if @@mb_set_rgb_image.null?
         @@mb_set_rgb_image = Bridge.get_method_bind("CameraFeed", "set_rgb_image", 532598488_i64)
       end
-      val_0 = rgb_image
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = rgb_image ? rgb_image.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_rgb_image, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -308,8 +308,8 @@ module Godot
       if @@mb_set_ycbcr_image.null?
         @@mb_set_ycbcr_image = Bridge.get_method_bind("CameraFeed", "set_ycbcr_image", 532598488_i64)
       end
-      val_0 = ycbcr_image
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = ycbcr_image ? ycbcr_image.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_ycbcr_image, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -319,10 +319,10 @@ module Godot
       if @@mb_set_ycbcr_images.null?
         @@mb_set_ycbcr_images = Bridge.get_method_bind("CameraFeed", "set_ycbcr_images", 1986484629_i64)
       end
-      val_0 = y_image
-      arg_0 = pointerof(val_0).as(Void*)
-      val_1 = cbcr_image
-      arg_1 = pointerof(val_1).as(Void*)
+      arg_ptr_0 = y_image ? y_image.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
+      arg_ptr_1 = cbcr_image ? cbcr_image.pointer : Pointer(Void).null
+      arg_1 = pointerof(arg_ptr_1).as(Void*)
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_set_ycbcr_images, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -463,8 +463,8 @@ module Godot
       if @@mb_add_feed.null?
         @@mb_add_feed = Bridge.get_method_bind("CameraServer", "add_feed", 3204782488_i64)
       end
-      val_0 = feed
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = feed ? feed.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_add_feed, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -474,8 +474,8 @@ module Godot
       if @@mb_remove_feed.null?
         @@mb_remove_feed = Bridge.get_method_bind("CameraServer", "remove_feed", 3204782488_i64)
       end
-      val_0 = feed
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = feed ? feed.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_remove_feed, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -1023,8 +1023,8 @@ module Godot
       if @@mb_set_diffuse_texture.null?
         @@mb_set_diffuse_texture = Bridge.get_method_bind("CanvasTexture", "set_diffuse_texture", 4051416890_i64)
       end
-      val_0 = texture
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = texture ? texture.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_diffuse_texture, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -1042,8 +1042,8 @@ module Godot
       if @@mb_set_normal_texture.null?
         @@mb_set_normal_texture = Bridge.get_method_bind("CanvasTexture", "set_normal_texture", 4051416890_i64)
       end
-      val_0 = texture
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = texture ? texture.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_normal_texture, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -1061,8 +1061,8 @@ module Godot
       if @@mb_set_specular_texture.null?
         @@mb_set_specular_texture = Bridge.get_method_bind("CanvasTexture", "set_specular_texture", 4051416890_i64)
       end
-      val_0 = texture
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = texture ? texture.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_specular_texture, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -1270,8 +1270,8 @@ module Godot
       end
       val_0 = local_xform
       arg_0 = pointerof(val_0).as(Void*)
-      val_1 = with_shape
-      arg_1 = pointerof(val_1).as(Void*)
+      arg_ptr_1 = with_shape ? with_shape.pointer : Pointer(Void).null
+      arg_1 = pointerof(arg_ptr_1).as(Void*)
       val_2 = shape_xform
       arg_2 = pointerof(val_2).as(Void*)
       args = [arg_0, arg_1, arg_2]
@@ -1290,8 +1290,8 @@ module Godot
       arg_0 = pointerof(val_0).as(Void*)
       val_1 = local_motion
       arg_1 = pointerof(val_1).as(Void*)
-      val_2 = with_shape
-      arg_2 = pointerof(val_2).as(Void*)
+      arg_ptr_2 = with_shape ? with_shape.pointer : Pointer(Void).null
+      arg_2 = pointerof(arg_ptr_2).as(Void*)
       val_3 = shape_xform
       arg_3 = pointerof(val_3).as(Void*)
       val_4 = shape_motion
@@ -1312,8 +1312,8 @@ module Godot
       end
       val_0 = local_xform
       arg_0 = pointerof(val_0).as(Void*)
-      val_1 = with_shape
-      arg_1 = pointerof(val_1).as(Void*)
+      arg_ptr_1 = with_shape ? with_shape.pointer : Pointer(Void).null
+      arg_1 = pointerof(arg_ptr_1).as(Void*)
       val_2 = shape_xform
       arg_2 = pointerof(val_2).as(Void*)
       args = [arg_0, arg_1, arg_2]
@@ -1334,8 +1334,8 @@ module Godot
       arg_0 = pointerof(val_0).as(Void*)
       val_1 = local_motion
       arg_1 = pointerof(val_1).as(Void*)
-      val_2 = with_shape
-      arg_2 = pointerof(val_2).as(Void*)
+      arg_ptr_2 = with_shape ? with_shape.pointer : Pointer(Void).null
+      arg_2 = pointerof(arg_ptr_2).as(Void*)
       val_3 = shape_xform
       arg_3 = pointerof(val_3).as(Void*)
       val_4 = shape_motion
@@ -3144,21 +3144,6 @@ module Godot
       ret_ptr = Pointer(Void).null
       Bridge.ptrcall(@@mb_class_get_method_list, @pointer, args.to_unsafe.as(Void**), pointerof(ret_ptr).as(Void*))
       Godot::Array.new(ret_ptr)
-    end
-    @@mb_class_call_static : Void* = Pointer(Void).null
-    # Calls a static method on a class.
-    def class_call_static(godot_class : String, method : String) : Void*
-      if @@mb_class_call_static.null?
-        @@mb_class_call_static = Bridge.get_method_bind("ClassDB", "class_call_static", 3344196419_i64)
-      end
-      val_0 = godot_class
-      arg_0 = pointerof(val_0).as(Void*)
-      val_1 = method
-      arg_1 = pointerof(val_1).as(Void*)
-      args = [arg_0, arg_1]
-      ret_ptr = Pointer(Void).null
-      Bridge.ptrcall(@@mb_class_call_static, @pointer, args.to_unsafe.as(Void**), pointerof(ret_ptr).as(Void*))
-      ret_ptr
     end
     @@mb_class_get_integer_constant_list : Void* = Pointer(Void).null
     # Returns an array with the names all the integer constants of `class` or its ancestry.
@@ -5938,8 +5923,8 @@ module Godot
       arg_0 = pointerof(val_0).as(Void*)
       val_1 = gutter
       arg_1 = pointerof(val_1).as(Void*)
-      val_2 = icon
-      arg_2 = pointerof(val_2).as(Void*)
+      arg_ptr_2 = icon ? icon.pointer : Pointer(Void).null
+      arg_2 = pointerof(arg_ptr_2).as(Void*)
       args = [arg_0, arg_1, arg_2]
       Bridge.ptrcall(@@mb_set_line_gutter_icon, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -6049,8 +6034,8 @@ module Godot
       if @@mb_set_syntax_highlighter.null?
         @@mb_set_syntax_highlighter = Bridge.get_method_bind("TextEdit", "set_syntax_highlighter", 2765644541_i64)
       end
-      val_0 = syntax_highlighter
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = syntax_highlighter ? syntax_highlighter.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_syntax_highlighter, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -8213,8 +8198,8 @@ module Godot
       if @@mb_set_shape.null?
         @@mb_set_shape = Bridge.get_method_bind("CollisionShape2D", "set_shape", 771364740_i64)
       end
-      val_0 = shape
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = shape ? shape.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_shape, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -8347,8 +8332,8 @@ module Godot
       if @@mb_set_shape.null?
         @@mb_set_shape = Bridge.get_method_bind("CollisionShape3D", "set_shape", 1549710052_i64)
       end
-      val_0 = shape
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = shape ? shape.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_shape, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -10928,8 +10913,8 @@ module Godot
       if @@mb_generate_self_signed_certificate.null?
         @@mb_generate_self_signed_certificate = Bridge.get_method_bind("Crypto", "generate_self_signed_certificate", 492266173_i64)
       end
-      val_0 = key
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = key ? key.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       val_1 = issuer_name
       arg_1 = pointerof(val_1).as(Void*)
       val_2 = not_before
@@ -10951,8 +10936,8 @@ module Godot
       arg_0 = pointerof(val_0).as(Void*)
       val_1 = hash
       arg_1 = pointerof(val_1).as(Void*)
-      val_2 = key
-      arg_2 = pointerof(val_2).as(Void*)
+      arg_ptr_2 = key ? key.pointer : Pointer(Void).null
+      arg_2 = pointerof(arg_ptr_2).as(Void*)
       args = [arg_0, arg_1, arg_2]
       ret_ptr = Pointer(Void).null
       Bridge.ptrcall(@@mb_sign, @pointer, args.to_unsafe.as(Void**), pointerof(ret_ptr).as(Void*))
@@ -10970,8 +10955,8 @@ module Godot
       arg_1 = pointerof(val_1).as(Void*)
       val_2 = signature
       arg_2 = pointerof(val_2).as(Void*)
-      val_3 = key
-      arg_3 = pointerof(val_3).as(Void*)
+      arg_ptr_3 = key ? key.pointer : Pointer(Void).null
+      arg_3 = pointerof(arg_ptr_3).as(Void*)
       args = [arg_0, arg_1, arg_2, arg_3]
       ret = 0_u8
       Bridge.ptrcall(@@mb_verify, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
@@ -10984,8 +10969,8 @@ module Godot
       if @@mb_encrypt.null?
         @@mb_encrypt = Bridge.get_method_bind("Crypto", "encrypt", 2361793670_i64)
       end
-      val_0 = key
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = key ? key.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       val_1 = plaintext
       arg_1 = pointerof(val_1).as(Void*)
       args = [arg_0, arg_1]
@@ -11000,8 +10985,8 @@ module Godot
       if @@mb_decrypt.null?
         @@mb_decrypt = Bridge.get_method_bind("Crypto", "decrypt", 2361793670_i64)
       end
-      val_0 = key
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = key ? key.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       val_1 = ciphertext
       arg_1 = pointerof(val_1).as(Void*)
       args = [arg_0, arg_1]
@@ -11186,8 +11171,8 @@ module Godot
       if @@mb_update_layer.null?
         @@mb_update_layer = Bridge.get_method_bind("ImageTextureLayered", "update_layer", 3331733361_i64)
       end
-      val_0 = image
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = image ? image.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       val_1 = layer
       arg_1 = pointerof(val_1).as(Void*)
       args = [arg_0, arg_1]
@@ -12389,8 +12374,8 @@ module Godot
       if @@mb_set_curve.null?
         @@mb_set_curve = Bridge.get_method_bind("CurveTexture", "set_curve", 270443179_i64)
       end
-      val_0 = curve
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = curve ? curve.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_curve, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -12446,8 +12431,8 @@ module Godot
       if @@mb_set_curve_x.null?
         @@mb_set_curve_x = Bridge.get_method_bind("CurveXYZTexture", "set_curve_x", 270443179_i64)
       end
-      val_0 = curve
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = curve ? curve.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_curve_x, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -12465,8 +12450,8 @@ module Godot
       if @@mb_set_curve_y.null?
         @@mb_set_curve_y = Bridge.get_method_bind("CurveXYZTexture", "set_curve_y", 270443179_i64)
       end
-      val_0 = curve
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = curve ? curve.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_curve_y, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -12484,8 +12469,8 @@ module Godot
       if @@mb_set_curve_z.null?
         @@mb_set_curve_z = Bridge.get_method_bind("CurveXYZTexture", "set_curve_z", 270443179_i64)
       end
-      val_0 = curve
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = curve ? curve.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_curve_z, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -13010,8 +12995,8 @@ module Godot
       if @@mb_setup.null?
         @@mb_setup = Bridge.get_method_bind("DTLSServer", "setup", 1262296096_i64)
       end
-      val_0 = server_options
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = server_options ? server_options.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       ret = 0_i64
       Bridge.ptrcall(@@mb_setup, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
@@ -13024,8 +13009,8 @@ module Godot
       if @@mb_take_connection.null?
         @@mb_take_connection = Bridge.get_method_bind("DTLSServer", "take_connection", 3946580474_i64)
       end
-      val_0 = udp_peer
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = udp_peer ? udp_peer.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       ret_ptr = Pointer(Void).null
       Bridge.ptrcall(@@mb_take_connection, @pointer, args.to_unsafe.as(Void**), pointerof(ret_ptr).as(Void*))
@@ -13273,8 +13258,8 @@ module Godot
       end
       val_0 = get_type
       arg_0 = pointerof(val_0).as(Void*)
-      val_1 = texture
-      arg_1 = pointerof(val_1).as(Void*)
+      arg_ptr_1 = texture ? texture.pointer : Pointer(Void).null
+      arg_1 = pointerof(arg_ptr_1).as(Void*)
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_set_texture, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -15014,8 +14999,8 @@ module Godot
       end
       val_0 = menu_root
       arg_0 = pointerof(val_0).as(Void*)
-      val_1 = icon
-      arg_1 = pointerof(val_1).as(Void*)
+      arg_ptr_1 = icon ? icon.pointer : Pointer(Void).null
+      arg_1 = pointerof(arg_ptr_1).as(Void*)
       val_2 = label
       arg_2 = pointerof(val_2).as(Void*)
       val_3 = callback
@@ -15054,8 +15039,8 @@ module Godot
       end
       val_0 = menu_root
       arg_0 = pointerof(val_0).as(Void*)
-      val_1 = icon
-      arg_1 = pointerof(val_1).as(Void*)
+      arg_ptr_1 = icon ? icon.pointer : Pointer(Void).null
+      arg_1 = pointerof(arg_ptr_1).as(Void*)
       val_2 = label
       arg_2 = pointerof(val_2).as(Void*)
       val_3 = callback
@@ -15134,8 +15119,8 @@ module Godot
       end
       val_0 = menu_root
       arg_0 = pointerof(val_0).as(Void*)
-      val_1 = icon
-      arg_1 = pointerof(val_1).as(Void*)
+      arg_ptr_1 = icon ? icon.pointer : Pointer(Void).null
+      arg_1 = pointerof(arg_ptr_1).as(Void*)
       val_2 = label
       arg_2 = pointerof(val_2).as(Void*)
       val_3 = callback
@@ -15764,8 +15749,8 @@ module Godot
       arg_0 = pointerof(val_0).as(Void*)
       val_1 = idx
       arg_1 = pointerof(val_1).as(Void*)
-      val_2 = icon
-      arg_2 = pointerof(val_2).as(Void*)
+      arg_ptr_2 = icon ? icon.pointer : Pointer(Void).null
+      arg_2 = pointerof(arg_ptr_2).as(Void*)
       args = [arg_0, arg_1, arg_2]
       Bridge.ptrcall(@@mb_global_menu_set_item_icon, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -16953,8 +16938,8 @@ module Godot
       if @@mb_window_set_icon.null?
         @@mb_window_set_icon = Bridge.get_method_bind("DisplayServer", "window_set_icon", 2457502155_i64)
       end
-      val_0 = icon
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = icon ? icon.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       val_1 = window_id
       arg_1 = pointerof(val_1).as(Void*)
       args = [arg_0, arg_1]
@@ -18536,8 +18521,8 @@ module Godot
       arg_0 = pointerof(val_0).as(Void*)
       val_1 = text
       arg_1 = pointerof(val_1).as(Void*)
-      val_2 = image
-      arg_2 = pointerof(val_2).as(Void*)
+      arg_ptr_2 = image ? image.pointer : Pointer(Void).null
+      arg_2 = pointerof(arg_ptr_2).as(Void*)
       val_3 = callback
       arg_3 = pointerof(val_3).as(Void*)
       args = [arg_0, arg_1, arg_2, arg_3]
@@ -18869,8 +18854,8 @@ module Godot
       if @@mb_set_icon.null?
         @@mb_set_icon = Bridge.get_method_bind("DisplayServer", "set_icon", 532598488_i64)
       end
-      val_0 = image
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = image ? image.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_icon, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -18881,8 +18866,8 @@ module Godot
       if @@mb_create_status_indicator.null?
         @@mb_create_status_indicator = Bridge.get_method_bind("DisplayServer", "create_status_indicator", 1904285171_i64)
       end
-      val_0 = icon
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = icon ? icon.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       val_1 = tooltip
       arg_1 = pointerof(val_1).as(Void*)
       val_2 = callback
@@ -18901,8 +18886,8 @@ module Godot
       end
       val_0 = id
       arg_0 = pointerof(val_0).as(Void*)
-      val_1 = icon
-      arg_1 = pointerof(val_1).as(Void*)
+      arg_ptr_1 = icon ? icon.pointer : Pointer(Void).null
+      arg_1 = pointerof(arg_ptr_1).as(Void*)
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_status_indicator_set_icon, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -19195,14 +19180,14 @@ module Godot
       end
       val_0 = rect
       arg_0 = pointerof(val_0).as(Void*)
-      val_1 = source
-      arg_1 = pointerof(val_1).as(Void*)
+      arg_ptr_1 = source ? source.pointer : Pointer(Void).null
+      arg_1 = pointerof(arg_ptr_1).as(Void*)
       val_2 = modulate
       arg_2 = pointerof(val_2).as(Void*)
       val_3 = mipmap
       arg_3 = pointerof(val_3).as(Void*)
-      val_4 = material
-      arg_4 = pointerof(val_4).as(Void*)
+      arg_ptr_4 = material ? material.pointer : Pointer(Void).null
+      arg_4 = pointerof(arg_ptr_4).as(Void*)
       args = [arg_0, arg_1, arg_2, arg_3, arg_4]
       Bridge.ptrcall(@@mb_blit_rect, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -19222,8 +19207,8 @@ module Godot
       arg_3 = pointerof(val_3).as(Void*)
       val_4 = mipmap
       arg_4 = pointerof(val_4).as(Void*)
-      val_5 = material
-      arg_5 = pointerof(val_5).as(Void*)
+      arg_ptr_5 = material ? material.pointer : Pointer(Void).null
+      arg_5 = pointerof(arg_ptr_5).as(Void*)
       args = [arg_0, arg_1, arg_2, arg_3, arg_4, arg_5]
       Bridge.ptrcall(@@mb_blit_rect_multi, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -19417,8 +19402,8 @@ module Godot
       if @@mb_dtls_server_setup.null?
         @@mb_dtls_server_setup = Bridge.get_method_bind("ENetConnection", "dtls_server_setup", 1262296096_i64)
       end
-      val_0 = server_options
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = server_options ? server_options.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       ret = 0_i64
       Bridge.ptrcall(@@mb_dtls_server_setup, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
@@ -19432,8 +19417,8 @@ module Godot
       end
       val_0 = hostname
       arg_0 = pointerof(val_0).as(Void*)
-      val_1 = client_options
-      arg_1 = pointerof(val_1).as(Void*)
+      arg_ptr_1 = client_options ? client_options.pointer : Pointer(Void).null
+      arg_1 = pointerof(arg_ptr_1).as(Void*)
       args = [arg_0, arg_1]
       ret = 0_i64
       Bridge.ptrcall(@@mb_dtls_client_setup, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
@@ -19877,8 +19862,8 @@ module Godot
       end
       val_0 = peer_id
       arg_0 = pointerof(val_0).as(Void*)
-      val_1 = host
-      arg_1 = pointerof(val_1).as(Void*)
+      arg_ptr_1 = host ? host.pointer : Pointer(Void).null
+      arg_1 = pointerof(arg_ptr_1).as(Void*)
       args = [arg_0, arg_1]
       ret = 0_i64
       Bridge.ptrcall(@@mb_add_mesh_peer, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
@@ -20230,8 +20215,8 @@ module Godot
       if @@mb_add_menu_shortcut.null?
         @@mb_add_menu_shortcut = Bridge.get_method_bind("EditorContextMenuPlugin", "add_menu_shortcut", 851596305_i64)
       end
-      val_0 = shortcut
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = shortcut ? shortcut.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       val_1 = callback
       arg_1 = pointerof(val_1).as(Void*)
       args = [arg_0, arg_1]
@@ -20254,8 +20239,8 @@ module Godot
       arg_0 = pointerof(val_0).as(Void*)
       val_1 = callback
       arg_1 = pointerof(val_1).as(Void*)
-      val_2 = icon
-      arg_2 = pointerof(val_2).as(Void*)
+      arg_ptr_2 = icon ? icon.pointer : Pointer(Void).null
+      arg_2 = pointerof(arg_ptr_2).as(Void*)
       args = [arg_0, arg_1, arg_2]
       Bridge.ptrcall(@@mb_add_context_menu_item, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -20276,10 +20261,10 @@ module Godot
       end
       val_0 = name
       arg_0 = pointerof(val_0).as(Void*)
-      val_1 = shortcut
-      arg_1 = pointerof(val_1).as(Void*)
-      val_2 = icon
-      arg_2 = pointerof(val_2).as(Void*)
+      arg_ptr_1 = shortcut ? shortcut.pointer : Pointer(Void).null
+      arg_1 = pointerof(arg_ptr_1).as(Void*)
+      arg_ptr_2 = icon ? icon.pointer : Pointer(Void).null
+      arg_2 = pointerof(arg_ptr_2).as(Void*)
       args = [arg_0, arg_1, arg_2]
       Bridge.ptrcall(@@mb_add_context_menu_item_from_shortcut, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -20302,10 +20287,10 @@ module Godot
       end
       val_0 = name
       arg_0 = pointerof(val_0).as(Void*)
-      val_1 = menu
-      arg_1 = pointerof(val_1).as(Void*)
-      val_2 = icon
-      arg_2 = pointerof(val_2).as(Void*)
+      arg_ptr_1 = menu ? menu.pointer : Pointer(Void).null
+      arg_1 = pointerof(arg_ptr_1).as(Void*)
+      arg_ptr_2 = icon ? icon.pointer : Pointer(Void).null
+      arg_2 = pointerof(arg_ptr_2).as(Void*)
       args = [arg_0, arg_1, arg_2]
       Bridge.ptrcall(@@mb_add_context_submenu_item, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -20476,8 +20461,8 @@ module Godot
       if @@mb_add_session_tab.null?
         @@mb_add_session_tab = Bridge.get_method_bind("EditorDebuggerSession", "add_session_tab", 1496901182_i64)
       end
-      val_0 = control
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = control ? control.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_add_session_tab, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -20487,8 +20472,8 @@ module Godot
       if @@mb_remove_session_tab.null?
         @@mb_remove_session_tab = Bridge.get_method_bind("EditorDebuggerSession", "remove_session_tab", 1496901182_i64)
       end
-      val_0 = control
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = control ? control.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_remove_session_tab, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -20732,8 +20717,8 @@ module Godot
       if @@mb_set_dock_icon.null?
         @@mb_set_dock_icon = Bridge.get_method_bind("EditorDock", "set_dock_icon", 4051416890_i64)
       end
-      val_0 = icon
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = icon ? icon.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_dock_icon, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -20789,8 +20774,8 @@ module Godot
       if @@mb_set_dock_shortcut.null?
         @@mb_set_dock_shortcut = Bridge.get_method_bind("EditorDock", "set_dock_shortcut", 857163497_i64)
       end
-      val_0 = shortcut
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = shortcut ? shortcut.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_dock_shortcut, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -20911,8 +20896,8 @@ module Godot
       if @@mb_save_pack.null?
         @@mb_save_pack = Bridge.get_method_bind("EditorExportPlatform", "save_pack", 3420080977_i64)
       end
-      val_0 = preset
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = preset ? preset.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       val_1 = debug
       arg_1 = pointerof(val_1).as(Void*)
       val_2 = path
@@ -20930,8 +20915,8 @@ module Godot
       if @@mb_save_zip.null?
         @@mb_save_zip = Bridge.get_method_bind("EditorExportPlatform", "save_zip", 1485052307_i64)
       end
-      val_0 = preset
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = preset ? preset.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       val_1 = debug
       arg_1 = pointerof(val_1).as(Void*)
       val_2 = path
@@ -20947,8 +20932,8 @@ module Godot
       if @@mb_save_pack_patch.null?
         @@mb_save_pack_patch = Bridge.get_method_bind("EditorExportPlatform", "save_pack_patch", 1485052307_i64)
       end
-      val_0 = preset
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = preset ? preset.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       val_1 = debug
       arg_1 = pointerof(val_1).as(Void*)
       val_2 = path
@@ -20964,8 +20949,8 @@ module Godot
       if @@mb_save_zip_patch.null?
         @@mb_save_zip_patch = Bridge.get_method_bind("EditorExportPlatform", "save_zip_patch", 1485052307_i64)
       end
-      val_0 = preset
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = preset ? preset.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       val_1 = debug
       arg_1 = pointerof(val_1).as(Void*)
       val_2 = path
@@ -20998,8 +20983,8 @@ module Godot
       if @@mb_export_project_files.null?
         @@mb_export_project_files = Bridge.get_method_bind("EditorExportPlatform", "export_project_files", 1063735070_i64)
       end
-      val_0 = preset
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = preset ? preset.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       val_1 = debug
       arg_1 = pointerof(val_1).as(Void*)
       val_2 = save_cb
@@ -21017,8 +21002,8 @@ module Godot
       if @@mb_export_project.null?
         @@mb_export_project = Bridge.get_method_bind("EditorExportPlatform", "export_project", 1201906210_i64)
       end
-      val_0 = preset
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = preset ? preset.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       val_1 = debug
       arg_1 = pointerof(val_1).as(Void*)
       val_2 = path
@@ -21038,8 +21023,8 @@ module Godot
       if @@mb_export_pack.null?
         @@mb_export_pack = Bridge.get_method_bind("EditorExportPlatform", "export_pack", 3879521245_i64)
       end
-      val_0 = preset
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = preset ? preset.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       val_1 = debug
       arg_1 = pointerof(val_1).as(Void*)
       val_2 = path
@@ -21057,8 +21042,8 @@ module Godot
       if @@mb_export_zip.null?
         @@mb_export_zip = Bridge.get_method_bind("EditorExportPlatform", "export_zip", 3879521245_i64)
       end
-      val_0 = preset
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = preset ? preset.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       val_1 = debug
       arg_1 = pointerof(val_1).as(Void*)
       val_2 = path
@@ -21077,8 +21062,8 @@ module Godot
       if @@mb_export_pack_patch.null?
         @@mb_export_pack_patch = Bridge.get_method_bind("EditorExportPlatform", "export_pack_patch", 608021658_i64)
       end
-      val_0 = preset
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = preset ? preset.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       val_1 = debug
       arg_1 = pointerof(val_1).as(Void*)
       val_2 = path
@@ -21099,8 +21084,8 @@ module Godot
       if @@mb_export_zip_patch.null?
         @@mb_export_zip_patch = Bridge.get_method_bind("EditorExportPlatform", "export_zip_patch", 608021658_i64)
       end
-      val_0 = preset
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = preset ? preset.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       val_1 = debug
       arg_1 = pointerof(val_1).as(Void*)
       val_2 = path
@@ -21263,8 +21248,8 @@ module Godot
       if @@mb_get_internal_export_files.null?
         @@mb_get_internal_export_files = Bridge.get_method_bind("EditorExportPlatform", "get_internal_export_files", 89550086_i64)
       end
-      val_0 = preset
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = preset ? preset.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       val_1 = debug
       arg_1 = pointerof(val_1).as(Void*)
       args = [arg_0, arg_1]
@@ -21278,8 +21263,8 @@ module Godot
       if @@mb_get_forced_export_files.null?
         @@mb_get_forced_export_files = Bridge.get_method_bind("EditorExportPlatform", "get_forced_export_files", 1939331020_i64)
       end
-      val_0 = preset
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = preset ? preset.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       ret_ptr = Pointer(Void).null
       Bridge.ptrcall(@@mb_get_forced_export_files, @pointer, args.to_unsafe.as(Void**), pointerof(ret_ptr).as(Void*))
@@ -22712,8 +22697,8 @@ module Godot
       if @@mb_add_side_menu.null?
         @@mb_add_side_menu = Bridge.get_method_bind("EditorFileDialog", "add_side_menu", 402368861_i64)
       end
-      val_0 = menu
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = menu ? menu.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       val_1 = title
       arg_1 = pointerof(val_1).as(Void*)
       args = [arg_0, arg_1]
@@ -23441,8 +23426,8 @@ module Godot
       if @@mb_ensure_control_visible.null?
         @@mb_ensure_control_visible = Bridge.get_method_bind("ScrollContainer", "ensure_control_visible", 1496901182_i64)
       end
-      val_0 = control
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = control ? control.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_ensure_control_visible, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -23563,8 +23548,8 @@ module Godot
       if @@mb_create_default_inspector.null?
         @@mb_create_default_inspector = Bridge.get_method_bind("EditorInspector", "create_default_inspector", 2419746798_i64)
       end
-      val_0 = filter_line_edit
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = filter_line_edit ? filter_line_edit.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       ret_ptr = Pointer(Void).null
       Bridge.ptrcall(@@mb_create_default_inspector, @pointer, args.to_unsafe.as(Void**), pointerof(ret_ptr).as(Void*))
@@ -23611,8 +23596,8 @@ module Godot
       if @@mb_add_custom_control.null?
         @@mb_add_custom_control = Bridge.get_method_bind("EditorInspectorPlugin", "add_custom_control", 1496901182_i64)
       end
-      val_0 = control
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = control ? control.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_add_custom_control, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -23626,8 +23611,8 @@ module Godot
       end
       val_0 = property
       arg_0 = pointerof(val_0).as(Void*)
-      val_1 = editor
-      arg_1 = pointerof(val_1).as(Void*)
+      arg_ptr_1 = editor ? editor.pointer : Pointer(Void).null
+      arg_1 = pointerof(arg_ptr_1).as(Void*)
       val_2 = add_to_end
       arg_2 = pointerof(val_2).as(Void*)
       val_3 = label
@@ -23645,8 +23630,8 @@ module Godot
       arg_0 = pointerof(val_0).as(Void*)
       val_1 = properties
       arg_1 = pointerof(val_1).as(Void*)
-      val_2 = editor
-      arg_2 = pointerof(val_2).as(Void*)
+      arg_ptr_2 = editor ? editor.pointer : Pointer(Void).null
+      arg_2 = pointerof(arg_ptr_2).as(Void*)
       args = [arg_0, arg_1, arg_2]
       Bridge.ptrcall(@@mb_add_property_editor_for_multiple_properties, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -24013,8 +23998,8 @@ module Godot
       if @@mb_popup_dialog.null?
         @@mb_popup_dialog = Bridge.get_method_bind("EditorInterface", "popup_dialog", 2015770942_i64)
       end
-      val_0 = dialog
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = dialog ? dialog.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       val_1 = rect
       arg_1 = pointerof(val_1).as(Void*)
       args = [arg_0, arg_1]
@@ -24027,8 +24012,8 @@ module Godot
       if @@mb_popup_dialog_centered.null?
         @@mb_popup_dialog_centered = Bridge.get_method_bind("EditorInterface", "popup_dialog_centered", 346557367_i64)
       end
-      val_0 = dialog
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = dialog ? dialog.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       val_1 = minsize
       arg_1 = pointerof(val_1).as(Void*)
       args = [arg_0, arg_1]
@@ -24041,8 +24026,8 @@ module Godot
       if @@mb_popup_dialog_centered_ratio.null?
         @@mb_popup_dialog_centered_ratio = Bridge.get_method_bind("EditorInterface", "popup_dialog_centered_ratio", 2093669136_i64)
       end
-      val_0 = dialog
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = dialog ? dialog.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       val_1 = ratio
       arg_1 = pointerof(val_1).as(Void*)
       args = [arg_0, arg_1]
@@ -24055,8 +24040,8 @@ module Godot
       if @@mb_popup_dialog_centered_clamped.null?
         @@mb_popup_dialog_centered_clamped = Bridge.get_method_bind("EditorInterface", "popup_dialog_centered_clamped", 3763385571_i64)
       end
-      val_0 = dialog
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = dialog ? dialog.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       val_1 = minsize
       arg_1 = pointerof(val_1).as(Void*)
       val_2 = fallback_ratio
@@ -24301,8 +24286,8 @@ module Godot
       if @@mb_edit_script.null?
         @@mb_edit_script = Bridge.get_method_bind("EditorInterface", "edit_script", 219829402_i64)
       end
-      val_0 = script
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = script ? script.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       val_1 = line
       arg_1 = pointerof(val_1).as(Void*)
       val_2 = column
@@ -24561,8 +24546,8 @@ module Godot
       end
       val_0 = lines
       arg_0 = pointerof(val_0).as(Void*)
-      val_1 = material
-      arg_1 = pointerof(val_1).as(Void*)
+      arg_ptr_1 = material ? material.pointer : Pointer(Void).null
+      arg_1 = pointerof(arg_ptr_1).as(Void*)
       val_2 = billboard
       arg_2 = pointerof(val_2).as(Void*)
       val_3 = modulate
@@ -24576,14 +24561,14 @@ module Godot
       if @@mb_add_mesh.null?
         @@mb_add_mesh = Bridge.get_method_bind("EditorNode3DGizmo", "add_mesh", 1579955111_i64)
       end
-      val_0 = mesh
-      arg_0 = pointerof(val_0).as(Void*)
-      val_1 = material
-      arg_1 = pointerof(val_1).as(Void*)
+      arg_ptr_0 = mesh ? mesh.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
+      arg_ptr_1 = material ? material.pointer : Pointer(Void).null
+      arg_1 = pointerof(arg_ptr_1).as(Void*)
       val_2 = transform
       arg_2 = pointerof(val_2).as(Void*)
-      val_3 = skeleton
-      arg_3 = pointerof(val_3).as(Void*)
+      arg_ptr_3 = skeleton ? skeleton.pointer : Pointer(Void).null
+      arg_3 = pointerof(arg_ptr_3).as(Void*)
       args = [arg_0, arg_1, arg_2, arg_3]
       Bridge.ptrcall(@@mb_add_mesh, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -24604,8 +24589,8 @@ module Godot
       if @@mb_add_collision_triangles.null?
         @@mb_add_collision_triangles = Bridge.get_method_bind("EditorNode3DGizmo", "add_collision_triangles", 54901064_i64)
       end
-      val_0 = triangles
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = triangles ? triangles.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_add_collision_triangles, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -24615,8 +24600,8 @@ module Godot
       if @@mb_add_unscaled_billboard.null?
         @@mb_add_unscaled_billboard = Bridge.get_method_bind("EditorNode3DGizmo", "add_unscaled_billboard", 520007164_i64)
       end
-      val_0 = material
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = material ? material.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       val_1 = default_scale
       arg_1 = pointerof(val_1).as(Void*)
       val_2 = modulate
@@ -24634,8 +24619,8 @@ module Godot
       end
       val_0 = handles
       arg_0 = pointerof(val_0).as(Void*)
-      val_1 = material
-      arg_1 = pointerof(val_1).as(Void*)
+      arg_ptr_1 = material ? material.pointer : Pointer(Void).null
+      arg_1 = pointerof(arg_ptr_1).as(Void*)
       val_2 = ids
       arg_2 = pointerof(val_2).as(Void*)
       val_3 = billboard
@@ -24764,8 +24749,8 @@ module Godot
       end
       val_0 = name
       arg_0 = pointerof(val_0).as(Void*)
-      val_1 = texture
-      arg_1 = pointerof(val_1).as(Void*)
+      arg_ptr_1 = texture ? texture.pointer : Pointer(Void).null
+      arg_1 = pointerof(arg_ptr_1).as(Void*)
       val_2 = on_top
       arg_2 = pointerof(val_2).as(Void*)
       val_3 = color
@@ -24784,8 +24769,8 @@ module Godot
       arg_0 = pointerof(val_0).as(Void*)
       val_1 = billboard
       arg_1 = pointerof(val_1).as(Void*)
-      val_2 = texture
-      arg_2 = pointerof(val_2).as(Void*)
+      arg_ptr_2 = texture ? texture.pointer : Pointer(Void).null
+      arg_2 = pointerof(arg_ptr_2).as(Void*)
       args = [arg_0, arg_1, arg_2]
       Bridge.ptrcall(@@mb_create_handle_material, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -24797,8 +24782,8 @@ module Godot
       end
       val_0 = name
       arg_0 = pointerof(val_0).as(Void*)
-      val_1 = material
-      arg_1 = pointerof(val_1).as(Void*)
+      arg_ptr_1 = material ? material.pointer : Pointer(Void).null
+      arg_1 = pointerof(arg_ptr_1).as(Void*)
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_add_material, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -24810,8 +24795,8 @@ module Godot
       end
       val_0 = name
       arg_0 = pointerof(val_0).as(Void*)
-      val_1 = gizmo
-      arg_1 = pointerof(val_1).as(Void*)
+      arg_ptr_1 = gizmo ? gizmo.pointer : Pointer(Void).null
+      arg_1 = pointerof(arg_ptr_1).as(Void*)
       args = [arg_0, arg_1]
       ret_ptr = Pointer(Void).null
       Bridge.ptrcall(@@mb_get_material, @pointer, args.to_unsafe.as(Void**), pointerof(ret_ptr).as(Void*))
@@ -24950,8 +24935,8 @@ module Godot
       if @@mb_add_dock.null?
         @@mb_add_dock = Bridge.get_method_bind("EditorPlugin", "add_dock", 158651717_i64)
       end
-      val_0 = dock
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = dock ? dock.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_add_dock, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -24961,8 +24946,8 @@ module Godot
       if @@mb_remove_dock.null?
         @@mb_remove_dock = Bridge.get_method_bind("EditorPlugin", "remove_dock", 158651717_i64)
       end
-      val_0 = dock
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = dock ? dock.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_remove_dock, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -24976,8 +24961,8 @@ module Godot
       end
       val_0 = container
       arg_0 = pointerof(val_0).as(Void*)
-      val_1 = control
-      arg_1 = pointerof(val_1).as(Void*)
+      arg_ptr_1 = control ? control.pointer : Pointer(Void).null
+      arg_1 = pointerof(arg_ptr_1).as(Void*)
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_add_control_to_container, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -24989,8 +24974,8 @@ module Godot
       end
       val_0 = container
       arg_0 = pointerof(val_0).as(Void*)
-      val_1 = control
-      arg_1 = pointerof(val_1).as(Void*)
+      arg_ptr_1 = control ? control.pointer : Pointer(Void).null
+      arg_1 = pointerof(arg_ptr_1).as(Void*)
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_remove_control_from_container, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -25015,8 +25000,8 @@ module Godot
       end
       val_0 = name
       arg_0 = pointerof(val_0).as(Void*)
-      val_1 = submenu
-      arg_1 = pointerof(val_1).as(Void*)
+      arg_ptr_1 = submenu ? submenu.pointer : Pointer(Void).null
+      arg_1 = pointerof(arg_ptr_1).as(Void*)
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_add_tool_submenu_item, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -25056,10 +25041,10 @@ module Godot
       arg_0 = pointerof(val_0).as(Void*)
       val_1 = base
       arg_1 = pointerof(val_1).as(Void*)
-      val_2 = script
-      arg_2 = pointerof(val_2).as(Void*)
-      val_3 = icon
-      arg_3 = pointerof(val_3).as(Void*)
+      arg_ptr_2 = script ? script.pointer : Pointer(Void).null
+      arg_2 = pointerof(arg_ptr_2).as(Void*)
+      arg_ptr_3 = icon ? icon.pointer : Pointer(Void).null
+      arg_3 = pointerof(arg_ptr_3).as(Void*)
       args = [arg_0, arg_1, arg_2, arg_3]
       Bridge.ptrcall(@@mb_add_custom_type, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -25085,10 +25070,10 @@ module Godot
       end
       val_0 = slot
       arg_0 = pointerof(val_0).as(Void*)
-      val_1 = control
-      arg_1 = pointerof(val_1).as(Void*)
-      val_2 = shortcut
-      arg_2 = pointerof(val_2).as(Void*)
+      arg_ptr_1 = control ? control.pointer : Pointer(Void).null
+      arg_1 = pointerof(arg_ptr_1).as(Void*)
+      arg_ptr_2 = shortcut ? shortcut.pointer : Pointer(Void).null
+      arg_2 = pointerof(arg_ptr_2).as(Void*)
       args = [arg_0, arg_1, arg_2]
       Bridge.ptrcall(@@mb_add_control_to_dock, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -25098,8 +25083,8 @@ module Godot
       if @@mb_remove_control_from_docks.null?
         @@mb_remove_control_from_docks = Bridge.get_method_bind("EditorPlugin", "remove_control_from_docks", 1496901182_i64)
       end
-      val_0 = control
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = control ? control.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_remove_control_from_docks, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -25109,10 +25094,10 @@ module Godot
       if @@mb_set_dock_tab_icon.null?
         @@mb_set_dock_tab_icon = Bridge.get_method_bind("EditorPlugin", "set_dock_tab_icon", 3450529724_i64)
       end
-      val_0 = control
-      arg_0 = pointerof(val_0).as(Void*)
-      val_1 = icon
-      arg_1 = pointerof(val_1).as(Void*)
+      arg_ptr_0 = control ? control.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
+      arg_ptr_1 = icon ? icon.pointer : Pointer(Void).null
+      arg_1 = pointerof(arg_ptr_1).as(Void*)
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_set_dock_tab_icon, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -25124,12 +25109,12 @@ module Godot
       if @@mb_add_control_to_bottom_panel.null?
         @@mb_add_control_to_bottom_panel = Bridge.get_method_bind("EditorPlugin", "add_control_to_bottom_panel", 111032269_i64)
       end
-      val_0 = control
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = control ? control.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       val_1 = title
       arg_1 = pointerof(val_1).as(Void*)
-      val_2 = shortcut
-      arg_2 = pointerof(val_2).as(Void*)
+      arg_ptr_2 = shortcut ? shortcut.pointer : Pointer(Void).null
+      arg_2 = pointerof(arg_ptr_2).as(Void*)
       args = [arg_0, arg_1, arg_2]
       ret_ptr = Pointer(Void).null
       Bridge.ptrcall(@@mb_add_control_to_bottom_panel, @pointer, args.to_unsafe.as(Void**), pointerof(ret_ptr).as(Void*))
@@ -25141,8 +25126,8 @@ module Godot
       if @@mb_remove_control_from_bottom_panel.null?
         @@mb_remove_control_from_bottom_panel = Bridge.get_method_bind("EditorPlugin", "remove_control_from_bottom_panel", 1496901182_i64)
       end
-      val_0 = control
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = control ? control.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_remove_control_from_bottom_panel, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -25186,8 +25171,8 @@ module Godot
       if @@mb_make_bottom_panel_item_visible.null?
         @@mb_make_bottom_panel_item_visible = Bridge.get_method_bind("EditorPlugin", "make_bottom_panel_item_visible", 1496901182_i64)
       end
-      val_0 = item
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = item ? item.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_make_bottom_panel_item_visible, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -25246,8 +25231,8 @@ module Godot
       if @@mb_add_translation_parser_plugin.null?
         @@mb_add_translation_parser_plugin = Bridge.get_method_bind("EditorPlugin", "add_translation_parser_plugin", 3116463128_i64)
       end
-      val_0 = parser
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = parser ? parser.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_add_translation_parser_plugin, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -25257,8 +25242,8 @@ module Godot
       if @@mb_remove_translation_parser_plugin.null?
         @@mb_remove_translation_parser_plugin = Bridge.get_method_bind("EditorPlugin", "remove_translation_parser_plugin", 3116463128_i64)
       end
-      val_0 = parser
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = parser ? parser.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_remove_translation_parser_plugin, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -25271,8 +25256,8 @@ module Godot
       if @@mb_add_import_plugin.null?
         @@mb_add_import_plugin = Bridge.get_method_bind("EditorPlugin", "add_import_plugin", 3113975762_i64)
       end
-      val_0 = importer
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = importer ? importer.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       val_1 = first_priority
       arg_1 = pointerof(val_1).as(Void*)
       args = [arg_0, arg_1]
@@ -25284,8 +25269,8 @@ module Godot
       if @@mb_remove_import_plugin.null?
         @@mb_remove_import_plugin = Bridge.get_method_bind("EditorPlugin", "remove_import_plugin", 2312482773_i64)
       end
-      val_0 = importer
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = importer ? importer.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_remove_import_plugin, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -25296,8 +25281,8 @@ module Godot
       if @@mb_add_export_plugin.null?
         @@mb_add_export_plugin = Bridge.get_method_bind("EditorPlugin", "add_export_plugin", 4095952207_i64)
       end
-      val_0 = plugin
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = plugin ? plugin.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_add_export_plugin, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -25307,8 +25292,8 @@ module Godot
       if @@mb_remove_export_plugin.null?
         @@mb_remove_export_plugin = Bridge.get_method_bind("EditorPlugin", "remove_export_plugin", 4095952207_i64)
       end
-      val_0 = plugin
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = plugin ? plugin.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_remove_export_plugin, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -25318,8 +25303,8 @@ module Godot
       if @@mb_add_export_platform.null?
         @@mb_add_export_platform = Bridge.get_method_bind("EditorPlugin", "add_export_platform", 3431312373_i64)
       end
-      val_0 = platform
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = platform ? platform.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_add_export_platform, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -25329,8 +25314,8 @@ module Godot
       if @@mb_remove_export_platform.null?
         @@mb_remove_export_platform = Bridge.get_method_bind("EditorPlugin", "remove_export_platform", 3431312373_i64)
       end
-      val_0 = platform
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = platform ? platform.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_remove_export_platform, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -25354,8 +25339,8 @@ module Godot
       if @@mb_add_inspector_plugin.null?
         @@mb_add_inspector_plugin = Bridge.get_method_bind("EditorPlugin", "add_inspector_plugin", 546395733_i64)
       end
-      val_0 = plugin
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = plugin ? plugin.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_add_inspector_plugin, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -25365,8 +25350,8 @@ module Godot
       if @@mb_remove_inspector_plugin.null?
         @@mb_remove_inspector_plugin = Bridge.get_method_bind("EditorPlugin", "remove_inspector_plugin", 546395733_i64)
       end
-      val_0 = plugin
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = plugin ? plugin.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_remove_inspector_plugin, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -25377,8 +25362,8 @@ module Godot
       if @@mb_add_resource_conversion_plugin.null?
         @@mb_add_resource_conversion_plugin = Bridge.get_method_bind("EditorPlugin", "add_resource_conversion_plugin", 2124849111_i64)
       end
-      val_0 = plugin
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = plugin ? plugin.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_add_resource_conversion_plugin, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -25388,8 +25373,8 @@ module Godot
       if @@mb_remove_resource_conversion_plugin.null?
         @@mb_remove_resource_conversion_plugin = Bridge.get_method_bind("EditorPlugin", "remove_resource_conversion_plugin", 2124849111_i64)
       end
-      val_0 = plugin
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = plugin ? plugin.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_remove_resource_conversion_plugin, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -25418,8 +25403,8 @@ module Godot
       end
       val_0 = slot
       arg_0 = pointerof(val_0).as(Void*)
-      val_1 = plugin
-      arg_1 = pointerof(val_1).as(Void*)
+      arg_ptr_1 = plugin ? plugin.pointer : Pointer(Void).null
+      arg_1 = pointerof(arg_ptr_1).as(Void*)
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_add_context_menu_plugin, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -25429,8 +25414,8 @@ module Godot
       if @@mb_remove_context_menu_plugin.null?
         @@mb_remove_context_menu_plugin = Bridge.get_method_bind("EditorPlugin", "remove_context_menu_plugin", 2281511854_i64)
       end
-      val_0 = plugin
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = plugin ? plugin.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_remove_context_menu_plugin, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -25441,8 +25426,8 @@ module Godot
       if @@mb_add_node_3d_gizmo_plugin.null?
         @@mb_add_node_3d_gizmo_plugin = Bridge.get_method_bind("EditorPlugin", "add_node_3d_gizmo_plugin", 1541015022_i64)
       end
-      val_0 = plugin
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = plugin ? plugin.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_add_node_3d_gizmo_plugin, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -25452,8 +25437,8 @@ module Godot
       if @@mb_remove_node_3d_gizmo_plugin.null?
         @@mb_remove_node_3d_gizmo_plugin = Bridge.get_method_bind("EditorPlugin", "remove_node_3d_gizmo_plugin", 1541015022_i64)
       end
-      val_0 = plugin
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = plugin ? plugin.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_remove_node_3d_gizmo_plugin, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -25464,8 +25449,8 @@ module Godot
       if @@mb_add_scene_format_importer_plugin.null?
         @@mb_add_scene_format_importer_plugin = Bridge.get_method_bind("EditorPlugin", "add_scene_format_importer_plugin", 2764104752_i64)
       end
-      val_0 = scene_format_importer
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = scene_format_importer ? scene_format_importer.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       val_1 = first_priority
       arg_1 = pointerof(val_1).as(Void*)
       args = [arg_0, arg_1]
@@ -25477,8 +25462,8 @@ module Godot
       if @@mb_remove_scene_format_importer_plugin.null?
         @@mb_remove_scene_format_importer_plugin = Bridge.get_method_bind("EditorPlugin", "remove_scene_format_importer_plugin", 2637776123_i64)
       end
-      val_0 = scene_format_importer
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = scene_format_importer ? scene_format_importer.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_remove_scene_format_importer_plugin, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -25489,8 +25474,8 @@ module Godot
       if @@mb_add_scene_post_import_plugin.null?
         @@mb_add_scene_post_import_plugin = Bridge.get_method_bind("EditorPlugin", "add_scene_post_import_plugin", 3492436322_i64)
       end
-      val_0 = scene_import_plugin
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = scene_import_plugin ? scene_import_plugin.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       val_1 = first_priority
       arg_1 = pointerof(val_1).as(Void*)
       args = [arg_0, arg_1]
@@ -25502,8 +25487,8 @@ module Godot
       if @@mb_remove_scene_post_import_plugin.null?
         @@mb_remove_scene_post_import_plugin = Bridge.get_method_bind("EditorPlugin", "remove_scene_post_import_plugin", 3045178206_i64)
       end
-      val_0 = scene_import_plugin
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = scene_import_plugin ? scene_import_plugin.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_remove_scene_post_import_plugin, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -25535,8 +25520,8 @@ module Godot
       if @@mb_add_debugger_plugin.null?
         @@mb_add_debugger_plugin = Bridge.get_method_bind("EditorPlugin", "add_debugger_plugin", 3749880309_i64)
       end
-      val_0 = script
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = script ? script.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_add_debugger_plugin, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -25546,8 +25531,8 @@ module Godot
       if @@mb_remove_debugger_plugin.null?
         @@mb_remove_debugger_plugin = Bridge.get_method_bind("EditorPlugin", "remove_debugger_plugin", 3749880309_i64)
       end
-      val_0 = script
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = script ? script.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_remove_debugger_plugin, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -25770,8 +25755,8 @@ module Godot
       if @@mb_add_focusable.null?
         @@mb_add_focusable = Bridge.get_method_bind("EditorProperty", "add_focusable", 1496901182_i64)
       end
-      val_0 = control
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = control ? control.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_add_focusable, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -25781,8 +25766,8 @@ module Godot
       if @@mb_set_bottom_editor.null?
         @@mb_set_bottom_editor = Bridge.get_method_bind("EditorProperty", "set_bottom_editor", 1496901182_i64)
       end
-      val_0 = editor
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = editor ? editor.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_bottom_editor, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -25891,8 +25876,8 @@ module Godot
       if @@mb_set_label_reference.null?
         @@mb_set_label_reference = Bridge.get_method_bind("EditorProperty", "set_label_reference", 1496901182_i64)
       end
-      val_0 = control
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = control ? control.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_label_reference, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -26104,8 +26089,8 @@ module Godot
       if @@mb_add_preview_generator.null?
         @@mb_add_preview_generator = Bridge.get_method_bind("EditorResourcePreview", "add_preview_generator", 332288124_i64)
       end
-      val_0 = generator
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = generator ? generator.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_add_preview_generator, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -26115,8 +26100,8 @@ module Godot
       if @@mb_remove_preview_generator.null?
         @@mb_remove_preview_generator = Bridge.get_method_bind("EditorResourcePreview", "remove_preview_generator", 332288124_i64)
       end
-      val_0 = generator
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = generator ? generator.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_remove_preview_generator, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -26167,8 +26152,8 @@ module Godot
       end
       val_0 = path
       arg_0 = pointerof(val_0).as(Void*)
-      val_1 = control
-      arg_1 = pointerof(val_1).as(Void*)
+      arg_ptr_1 = control ? control.pointer : Pointer(Void).null
+      arg_1 = pointerof(arg_ptr_1).as(Void*)
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_request_thumbnail, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -26819,8 +26804,8 @@ module Godot
       end
       val_0 = path
       arg_0 = pointerof(val_0).as(Void*)
-      val_1 = shortcut
-      arg_1 = pointerof(val_1).as(Void*)
+      arg_ptr_1 = shortcut ? shortcut.pointer : Pointer(Void).null
+      arg_1 = pointerof(arg_ptr_1).as(Void*)
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_add_shortcut, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -26843,8 +26828,8 @@ module Godot
       end
       val_0 = path
       arg_0 = pointerof(val_0).as(Void*)
-      val_1 = event
-      arg_1 = pointerof(val_1).as(Void*)
+      arg_ptr_1 = event ? event.pointer : Pointer(Void).null
+      arg_1 = pointerof(arg_ptr_1).as(Void*)
       args = [arg_0, arg_1]
       ret = 0_u8
       Bridge.ptrcall(@@mb_is_shortcut, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
@@ -27535,34 +27520,6 @@ module Godot
         @@mb_force_fixed_history = Bridge.get_method_bind("EditorUndoRedoManager", "force_fixed_history", 3218959716_i64)
       end
       Bridge.ptrcall(@@mb_force_fixed_history, @pointer, Pointer(Pointer(Void)).null, Pointer(Void).null)
-    end
-    @@mb_add_do_method : Void* = Pointer(Void).null
-    # Register a method that will be called when the action is committed (i.e. the "do" action).
-    # If this is the first operation, the `object` will be used to deduce target undo history.
-    def add_do_method(object : Godot::Object, method : String) : Void
-      if @@mb_add_do_method.null?
-        @@mb_add_do_method = Bridge.get_method_bind("EditorUndoRedoManager", "add_do_method", 1517810467_i64)
-      end
-      arg_ptr_0 = object ? object.pointer : Pointer(Void).null
-      arg_0 = pointerof(arg_ptr_0).as(Void*)
-      val_1 = method
-      arg_1 = pointerof(val_1).as(Void*)
-      args = [arg_0, arg_1]
-      Bridge.ptrcall(@@mb_add_do_method, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
-    end
-    @@mb_add_undo_method : Void* = Pointer(Void).null
-    # Register a method that will be called when the action is undone (i.e. the "undo" action).
-    # If this is the first operation, the `object` will be used to deduce target undo history.
-    def add_undo_method(object : Godot::Object, method : String) : Void
-      if @@mb_add_undo_method.null?
-        @@mb_add_undo_method = Bridge.get_method_bind("EditorUndoRedoManager", "add_undo_method", 1517810467_i64)
-      end
-      arg_ptr_0 = object ? object.pointer : Pointer(Void).null
-      arg_0 = pointerof(arg_ptr_0).as(Void*)
-      val_1 = method
-      arg_1 = pointerof(val_1).as(Void*)
-      args = [arg_0, arg_1]
-      Bridge.ptrcall(@@mb_add_undo_method, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_add_do_property : Void* = Pointer(Void).null
     # Register a property value change for "do".
@@ -28277,8 +28234,8 @@ module Godot
       if @@mb_register_script_language.null?
         @@mb_register_script_language = Bridge.get_method_bind("Engine", "register_script_language", 1850254898_i64)
       end
-      val_0 = language
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = language ? language.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       ret = 0_i64
       Bridge.ptrcall(@@mb_register_script_language, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
@@ -28293,8 +28250,8 @@ module Godot
       if @@mb_unregister_script_language.null?
         @@mb_unregister_script_language = Bridge.get_method_bind("Engine", "unregister_script_language", 1850254898_i64)
       end
-      val_0 = language
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = language ? language.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       ret = 0_i64
       Bridge.ptrcall(@@mb_unregister_script_language, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
@@ -28451,8 +28408,8 @@ module Godot
       end
       val_0 = name
       arg_0 = pointerof(val_0).as(Void*)
-      val_1 = profiler
-      arg_1 = pointerof(val_1).as(Void*)
+      arg_ptr_1 = profiler ? profiler.pointer : Pointer(Void).null
+      arg_1 = pointerof(arg_ptr_1).as(Void*)
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_register_profiler, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -28600,8 +28557,8 @@ module Godot
       if @@mb_script_debug.null?
         @@mb_script_debug = Bridge.get_method_bind("EngineDebugger", "script_debug", 2442343672_i64)
       end
-      val_0 = language
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = language ? language.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       val_1 = can_continue
       arg_1 = pointerof(val_1).as(Void*)
       val_2 = is_error_breakpoint
@@ -28799,8 +28756,8 @@ module Godot
       if @@mb_set_sky.null?
         @@mb_set_sky = Bridge.get_method_bind("Environment", "set_sky", 3336722921_i64)
       end
-      val_0 = sky
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = sky ? sky.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_sky, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -29965,8 +29922,8 @@ module Godot
       if @@mb_set_glow_map.null?
         @@mb_set_glow_map = Bridge.get_method_bind("Environment", "set_glow_map", 1790811099_i64)
       end
-      val_0 = mode
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = mode ? mode.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_glow_map, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -30554,8 +30511,8 @@ module Godot
       if @@mb_set_adjustment_color_correction.null?
         @@mb_set_adjustment_color_correction = Bridge.get_method_bind("Environment", "set_adjustment_color_correction", 1790811099_i64)
       end
-      val_0 = color_correction
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = color_correction ? color_correction.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_adjustment_color_correction, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -30896,8 +30853,8 @@ module Godot
       end
       val_0 = path
       arg_0 = pointerof(val_0).as(Void*)
-      val_1 = state
-      arg_1 = pointerof(val_1).as(Void*)
+      arg_ptr_1 = state ? state.pointer : Pointer(Void).null
+      arg_1 = pointerof(arg_ptr_1).as(Void*)
       val_2 = flags
       arg_2 = pointerof(val_2).as(Void*)
       val_3 = base_path
@@ -30918,8 +30875,8 @@ module Godot
       arg_0 = pointerof(val_0).as(Void*)
       val_1 = base_path
       arg_1 = pointerof(val_1).as(Void*)
-      val_2 = state
-      arg_2 = pointerof(val_2).as(Void*)
+      arg_ptr_2 = state ? state.pointer : Pointer(Void).null
+      arg_2 = pointerof(arg_ptr_2).as(Void*)
       val_3 = flags
       arg_3 = pointerof(val_3).as(Void*)
       args = [arg_0, arg_1, arg_2, arg_3]
@@ -30935,8 +30892,8 @@ module Godot
       end
       arg_ptr_0 = node ? node.pointer : Pointer(Void).null
       arg_0 = pointerof(arg_ptr_0).as(Void*)
-      val_1 = state
-      arg_1 = pointerof(val_1).as(Void*)
+      arg_ptr_1 = state ? state.pointer : Pointer(Void).null
+      arg_1 = pointerof(arg_ptr_1).as(Void*)
       val_2 = flags
       arg_2 = pointerof(val_2).as(Void*)
       args = [arg_0, arg_1, arg_2]
@@ -30951,8 +30908,8 @@ module Godot
       if @@mb_generate_scene.null?
         @@mb_generate_scene = Bridge.get_method_bind("GLTFDocument", "generate_scene", 596118388_i64)
       end
-      val_0 = state
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = state ? state.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       val_1 = bake_fps
       arg_1 = pointerof(val_1).as(Void*)
       val_2 = trimming
@@ -30970,8 +30927,8 @@ module Godot
       if @@mb_generate_buffer.null?
         @@mb_generate_buffer = Bridge.get_method_bind("GLTFDocument", "generate_buffer", 741783455_i64)
       end
-      val_0 = state
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = state ? state.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       ret_ptr = Pointer(Void).null
       Bridge.ptrcall(@@mb_generate_buffer, @pointer, args.to_unsafe.as(Void**), pointerof(ret_ptr).as(Void*))
@@ -30984,8 +30941,8 @@ module Godot
       if @@mb_write_to_filesystem.null?
         @@mb_write_to_filesystem = Bridge.get_method_bind("GLTFDocument", "write_to_filesystem", 1784551478_i64)
       end
-      val_0 = state
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = state ? state.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       val_1 = path
       arg_1 = pointerof(val_1).as(Void*)
       args = [arg_0, arg_1]
@@ -30999,8 +30956,8 @@ module Godot
       if @@mb_import_object_model_property.null?
         @@mb_import_object_model_property = Bridge.get_method_bind("GLTFDocument", "import_object_model_property", 1206708632_i64)
       end
-      val_0 = state
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = state ? state.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       val_1 = json_pointer
       arg_1 = pointerof(val_1).as(Void*)
       args = [arg_0, arg_1]
@@ -31014,8 +30971,8 @@ module Godot
       if @@mb_export_object_model_property.null?
         @@mb_export_object_model_property = Bridge.get_method_bind("GLTFDocument", "export_object_model_property", 314209806_i64)
       end
-      val_0 = state
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = state ? state.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       val_1 = node_path
       arg_1 = pointerof(val_1).as(Void*)
       arg_ptr_2 = godot_node ? godot_node.pointer : Pointer(Void).null
@@ -31034,8 +30991,8 @@ module Godot
       if @@mb_register_gltf_document_extension.null?
         @@mb_register_gltf_document_extension = Bridge.get_method_bind("GLTFDocument", "register_gltf_document_extension", 3752678331_i64)
       end
-      val_0 = extension
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = extension ? extension.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       val_1 = first_priority
       arg_1 = pointerof(val_1).as(Void*)
       args = [arg_0, arg_1]
@@ -31047,8 +31004,8 @@ module Godot
       if @@mb_unregister_gltf_document_extension.null?
         @@mb_unregister_gltf_document_extension = Bridge.get_method_bind("GLTFDocument", "unregister_gltf_document_extension", 2684415758_i64)
       end
-      val_0 = extension
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = extension ? extension.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_unregister_gltf_document_extension, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -31123,8 +31080,8 @@ module Godot
       if @@mb_append_gltf_node.null?
         @@mb_append_gltf_node = Bridge.get_method_bind("GLTFState", "append_gltf_node", 3562288551_i64)
       end
-      val_0 = gltf_node
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = gltf_node ? gltf_node.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       arg_ptr_1 = godot_scene_node ? godot_scene_node.pointer : Pointer(Void).null
       arg_1 = pointerof(arg_ptr_1).as(Void*)
       val_2 = parent_node_index
@@ -33534,8 +33491,8 @@ module Godot
       if @@mb_add_resource_tooltip_plugin.null?
         @@mb_add_resource_tooltip_plugin = Bridge.get_method_bind("FileSystemDock", "add_resource_tooltip_plugin", 2258356838_i64)
       end
-      val_0 = plugin
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = plugin ? plugin.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_add_resource_tooltip_plugin, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -33545,8 +33502,8 @@ module Godot
       if @@mb_remove_resource_tooltip_plugin.null?
         @@mb_remove_resource_tooltip_plugin = Bridge.get_method_bind("FileSystemDock", "remove_resource_tooltip_plugin", 2258356838_i64)
       end
-      val_0 = plugin
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = plugin ? plugin.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_remove_resource_tooltip_plugin, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -33764,8 +33721,8 @@ module Godot
       if @@mb_set_density_texture.null?
         @@mb_set_density_texture = Bridge.get_method_bind("FogMaterial", "set_density_texture", 1188404210_i64)
       end
-      val_0 = density_texture
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = density_texture ? density_texture.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_density_texture, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -33831,8 +33788,8 @@ module Godot
       if @@mb_set_material.null?
         @@mb_set_material = Bridge.get_method_bind("FogVolume", "set_material", 2757459619_i64)
       end
-      val_0 = material
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = material ? material.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_material, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -33899,8 +33856,8 @@ module Godot
       if @@mb_set_foldable_group.null?
         @@mb_set_foldable_group = Bridge.get_method_bind("FoldableContainer", "set_foldable_group", 3001390597_i64)
       end
-      val_0 = button_group
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = button_group ? button_group.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_foldable_group, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -34030,8 +33987,8 @@ module Godot
       if @@mb_add_title_bar_control.null?
         @@mb_add_title_bar_control = Bridge.get_method_bind("FoldableContainer", "add_title_bar_control", 1496901182_i64)
       end
-      val_0 = control
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = control ? control.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_add_title_bar_control, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -34041,8 +33998,8 @@ module Godot
       if @@mb_remove_title_bar_control.null?
         @@mb_remove_title_bar_control = Bridge.get_method_bind("FoldableContainer", "remove_title_bar_control", 1496901182_i64)
       end
-      val_0 = control
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = control ? control.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_remove_title_bar_control, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -35575,8 +35532,8 @@ module Godot
       arg_1 = pointerof(val_1).as(Void*)
       val_2 = texture_index
       arg_2 = pointerof(val_2).as(Void*)
-      val_3 = image
-      arg_3 = pointerof(val_3).as(Void*)
+      arg_ptr_3 = image ? image.pointer : Pointer(Void).null
+      arg_3 = pointerof(arg_ptr_3).as(Void*)
       args = [arg_0, arg_1, arg_2, arg_3]
       Bridge.ptrcall(@@mb_set_texture_image, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -36145,8 +36102,8 @@ module Godot
       if @@mb_set_base_font.null?
         @@mb_set_base_font = Bridge.get_method_bind("FontVariation", "set_base_font", 1262170328_i64)
       end
-      val_0 = font
-      arg_0 = pointerof(val_0).as(Void*)
+      arg_ptr_0 = font ? font.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_base_font, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
@@ -37006,23 +36963,6 @@ module Godot
   class GDScript < Godot::Script
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
-    end
-    @@mb_new : Void* = Pointer(Void).null
-    # Returns a new instance of the script.
-    # ```gdscript
-    #
-    # var MyClass = load("myclass.gd")
-    # var instance = MyClass.new()
-    # print(instance.get_script() == MyClass) # Prints true
-    #
-    # ```
-    def new() : Void*
-      if @@mb_new.null?
-        @@mb_new = Bridge.get_method_bind("GDScript", "new", 1545262638_i64)
-      end
-      ret_ptr = Pointer(Void).null
-      Bridge.ptrcall(@@mb_new, @pointer, Pointer(Pointer(Void)).null, pointerof(ret_ptr).as(Void*))
-      ret_ptr
     end
   end
   # A helper to handle dictionaries which look like JSONRPC documents.

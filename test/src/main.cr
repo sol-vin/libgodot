@@ -552,6 +552,26 @@ node RunTesterPanel < Godot::Control do
       end
       log_box.call("set_text", lines.join("\n"))
     end
+
+    if suite_label == "All"
+      begin
+        summary = "TOTAL=#{total}\nPASSED=#{passed}\nFAILED=#{total - passed}\n"
+        File.write(".runtime_test_results.txt", summary)
+        if passed == total
+          File.write(".runtime_tests_passed", "PASSED\n")
+          File.delete(".runtime_tests_failed") if File.exists?(".runtime_tests_failed")
+        else
+          File.write(".runtime_tests_failed", "FAILED: #{total - passed} test(s) failed\n")
+          File.delete(".runtime_tests_passed") if File.exists?(".runtime_tests_passed")
+        end
+      rescue
+      end
+
+      if ENV["GODOT_TEST_AUTORUN"]? == "1"
+        tree = get_tree
+        tree.quit(passed == total ? 0_i64 : 1_i64) unless tree.pointer.null?
+      end
+    end
   end
 end
 

@@ -213,9 +213,10 @@ end
 
 puts "Generating #{sorted_classes.size} classes..."
 
-# Classes are already topologically sorted in sorted_classes
+class_names = Set(String).new
+class_map.keys.each { |k| class_names.add(k) }
 
-def generate_class_code(io : IO, c : JSON::Any, keywords : Hash(String, String), type_map : Hash(String, String))
+def generate_class_code(io : IO, c : JSON::Any, keywords : Hash(String, String), type_map : Hash(String, String), class_names : Set(String))
   name = c["name"].as_s
   parent = c["inherits"]?.try(&.as_s) || "Godot::Object"
   parent_type = parent == "Godot::Object" ? parent : (parent.starts_with?("Godot::") ? parent : "Godot::#{parent}")
@@ -313,7 +314,7 @@ def generate_class_code(io : IO, c : JSON::Any, keywords : Hash(String, String),
           raw_a_name = a["name"].as_s
           a_name = sanitize_name(raw_a_name, keywords)
           a_type = crystal_type_name(a["type"].as_s, type_map)
-          if a_type.starts_with?("Godot::") || ["Node", "Resource", "SceneTree", "Object"].includes?(a_type)
+          if class_names.includes?(a["type"].as_s) || a_type.starts_with?("Godot::") || ["Node", "Resource", "SceneTree", "Object", "Mesh"].includes?(a_type)
             io.puts "      arg_ptr_#{idx} = #{a_name} ? #{a_name}.pointer : Pointer(Void).null"
             io.puts "      arg_#{idx} = pointerof(arg_ptr_#{idx}).as(Void*)"
           else
@@ -391,7 +392,7 @@ num_parts.times do |part_idx|
     f.puts "# Generated classes part #{part_num} (in topological order)"
     f.puts "module Godot"
     part_classes.each do |c|
-      generate_class_code(f, c, keywords, type_map)
+      generate_class_code(f, c, keywords, type_map, class_names)
     end
     f.puts "end"
   end

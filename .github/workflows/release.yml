@@ -1,0 +1,162 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Release Tag Name (e.g. v0.1.0)'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    name: Run Test Suite Gating
+    uses: ./.github/workflows/test.yml
+
+  release:
+    name: Build and Publish Release
+    needs: [test]
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install Crystal
+        uses: crystal-lang/install-crystal@v1
+        with:
+          crystal: latest
+
+      - name: Verify Crystal & g++ Toolchain
+        run: |
+          crystal -v
+          g++ --version
+
+      - name: Setup Godot Engine (4.8-dev4)
+        uses: appsinacup/action_setup_godot@v2
+        with:
+          repo: godotengine/godot-builds
+          version: 4.8-dev4
+          enable_cache: true
+
+      - name: Configure Godot Executable
+        shell: pwsh
+        run: |
+          if ($env:GODOT4 -and (Test-Path $env:GODOT4)) {
+            Copy-Item $env:GODOT4 ./godot.exe -Force
+            Write-Host "Copied $env:GODOT4 to ./godot.exe"
+          } elseif (Get-Command godot -ErrorAction SilentlyContinue) {
+            $cmd = (Get-Command godot).Source
+            Copy-Item $cmd ./godot.exe -Force
+            Write-Host "Copied $cmd to ./godot.exe"
+          }
+
+      - name: Compile Release Binaries & Examples
+        shell: pwsh
+        run: |
+          # Build complete project and bridge in release mode
+          make all RELEASE=1
+          # Build standalone executables for all examples in release mode
+          make examples_exe RELEASE=1
+
+      - name: Package Examples Executables (examples.zip)
+        shell: pwsh
+        run: |
+          $examplesDist = "dist/examples_dist"
+          if (Test-Path $examplesDist) { Remove-Item $examplesDist -Recurse -Force }
+          New-Item -ItemType Directory -Force -Path $examplesDist | Out-Null
+
+          # Collect compiled executables for each example
+          if (Test-Path "examples") {
+            foreach ($ex in Get-ChildItem -Path "examples" -Directory) {
+              $exeCandidates = @(
+                (Join-Path $ex.FullName "bin/game.exe"),
+                (Join-Path $ex.FullName "bin/$($ex.Name).exe")
+              )
+              $found = $false
+              foreach ($cand in $exeCandidates) {
+                if (Test-Path $cand) {
+                  $dest = Join-Path $examplesDist "$($ex.Name).exe"
+                  Copy-Item $cand $dest -Force
+                  Write-Host "Packaged example executable: $($ex.Name).exe"
+                  $found = $true
+                  break
+                }
+              }
+              if (-not $found) {
+                Write-Warning "No compiled executable found for example $($ex.Name)"
+              }
+            }
+          }
+
+          # Ensure ONLY .exe files exist in the distribution folder
+          Get-ChildItem -Path $examplesDist -File | Where-Object { $_.Extension -ne ".exe" } | Remove-Item -Force
+
+          # Create examples.zip archive
+          Compress-Archive -Path "$examplesDist/*" -DestinationPath "examples.zip" -Force
+          Write-Host "Successfully packaged examples.zip containing only compiled executables:"
+          Get-ChildItem -Path $examplesDist
+
+      - name: Package Core LibGodot Distribution
+        shell: pwsh
+        run: |
+          $libDist = "dist/libgodot_dist"
+          if (Test-Path $libDist) { Remove-Item $libDist -Recurse -Force }
+          New-Item -ItemType Directory -Force -Path $libDist | Out-Null
+
+          # 1. Library bindings source
+          Copy-Item -Path "src" -Destination (Join-Path $libDist "src") -Recurse -Force
+
+          # 2. GDExtension editor addon
+          Copy-Item -Path "addons" -Destination (Join-Path $libDist "addons") -Recurse -Force
+
+          # 3. Clean starter template
+          Copy-Item -Path "template" -Destination (Join-Path $libDist "template") -Recurse -Force
+
+          # 4. Compiled bridge DLL and runtime dependencies
+          $binTarget = Join-Path $libDist "bin"
+          New-Item -ItemType Directory -Force -Path $binTarget | Out-Null
+          if (Test-Path "bin/crystal_bridge.dll") {
+            Copy-Item "bin/crystal_bridge.dll" "$binTarget/crystal_bridge.dll" -Force
+          }
+          foreach ($dll in @('gc.dll', 'iconv-2.dll', 'pcre2-8.dll', 'libgodot.dll')) {
+            if (Test-Path "bin/$dll") {
+              Copy-Item "bin/$dll" "$binTarget/$dll" -Force
+            }
+          }
+
+          # 5. Metadata and documentation
+          Copy-Item "shard.yml" "$libDist/shard.yml" -Force
+          Copy-Item "README.md" "$libDist/README.md" -Force
+          if (Test-Path "LICENSE") { Copy-Item "LICENSE" "$libDist/LICENSE" -Force }
+
+          # Determine release tag name
+          $tag = if ($env:GITHUB_REF_NAME) { $env:GITHUB_REF_NAME } else { "latest" }
+          $archiveName = "libgodot-crystal-windows-x86_64-$tag.zip"
+          Compress-Archive -Path "$libDist/*" -DestinationPath $archiveName -Force
+          Write-Host "Generated core release archive: $archiveName"
+          Add-Content -Path $env:GITHUB_ENV -Value "CORE_ARCHIVE=$archiveName"
+
+      - name: Generate Checksums
+        shell: pwsh
+        run: |
+          Get-FileHash -Algorithm SHA256 "examples.zip", "$env:CORE_ARCHIVE" | Format-Table -AutoSize | Out-String | Set-Content "checksums.txt"
+          Get-Content "checksums.txt"
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.tag_name || github.ref_name }}
+          files: |
+            examples.zip
+            ${{ env.CORE_ARCHIVE }}
+            checksums.txt
+          generate_release_notes: true
+          draft: false
+          prerelease: false

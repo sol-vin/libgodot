@@ -17,3 +17,7 @@ godot.exe
 /docs/
 /scratch/
 *.obj
+.*_tests_*
+.*_test_results*
+dist/
+*.zip

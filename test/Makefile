@@ -17,6 +17,11 @@ RM           = $(POWERSHELL) "Remove-Item -Force -ErrorAction SilentlyContinue"
 
 LINK_FLAGS   = /DLL /ENTRY:_DllMainCRTStartup /EXPORT:crystal_godot_init
 
+CRYSTAL_FLAGS =
+ifeq ($(RELEASE), 1)
+	CRYSTAL_FLAGS += --release
+endif
+
 .PHONY: all game_dll game_exe deps bridge extension_list addons run editor clean help
 
 all: dirs deps bridge extension_list addons game_dll
@@ -42,12 +47,12 @@ addons:
 
 game_dll: dirs deps bridge extension_list addons
 	@echo [Test] Compiling game.dll from $(ENTRY)...
-	@$(POWERSHELL) "$$env:CRYSTAL_PATH = '../src;' + (crystal env CRYSTAL_PATH); crystal build --link-flags '$(LINK_FLAGS)' $(ENTRY) -o $(GAME_DLL)"
+	@$(POWERSHELL) "$$env:CRYSTAL_PATH = '../src;' + (crystal env CRYSTAL_PATH); crystal build $(CRYSTAL_FLAGS) --link-flags '$(LINK_FLAGS)' $(ENTRY) -o $(GAME_DLL)"
 	@$(POWERSHELL) "if (Test-Path '$(GAME_DLL)') { Copy-Item '$(GAME_DLL)' '../bin/game.dll' -Force -ErrorAction SilentlyContinue }; exit 0"
 
 game_exe: dirs deps bridge
 	@echo [Test] Compiling standalone game.exe from $(ENTRY)...
-	@$(POWERSHELL) "$$env:CRYSTAL_PATH = '../src;' + (crystal env CRYSTAL_PATH); crystal build $(ENTRY) -o $(GAME_EXE)"
+	@$(POWERSHELL) "$$env:CRYSTAL_PATH = '../src;' + (crystal env CRYSTAL_PATH); crystal build $(CRYSTAL_FLAGS) $(ENTRY) -o $(GAME_EXE)"
 	@$(POWERSHELL) "if (Test-Path '$(GAME_EXE)') { Copy-Item '$(GAME_EXE)' '../bin/game.exe' -Force }"
 
 run: all

@@ -71,8 +71,9 @@ func _enter_tree():
 	add_inspector_plugin(inspector_plugin)
 	
 	print("[CrystalPlugin] Crystal integration plugin activated with inspector test support.")
+	if OS.get_environment("GODOT_RUN_TOOL_TESTS") == "1" or "--run-tool-tests" in OS.get_cmdline_args():
+		call_deferred("_run_in_editor_tool_tests")
 
-func _exit_tree():
 	if compile_button:
 		remove_control_from_container(CONTAINER_TOOLBAR, compile_button)
 		compile_button.queue_free()
@@ -178,5 +179,76 @@ func _reselect_nodes(nodes: Array[Node]) -> void:
 			EditorInterface.edit_node(node)
 			EditorInterface.inspect_object(node)
 			print("[CrystalPlugin] Inspector refreshed for node: %s" % node.name)
+
+func _run_in_editor_tool_tests():
+	print("==================================================================")
+	print("[CrystalToolTester] Headless Editor Mode: Tickling @tool Tests...")
+	print("==================================================================")
+	var errors = 0
+	
+	# Wait for editor frame initialization
+	await get_tree().process_frame
+	
+	# 1. Tickle ToolTester2D
+	print("[CrystalToolTester] Instantiating and executing ToolTester2D...")
+	var scene_2d = load("res://scenes/test_tool_2d.tscn")
+	if scene_2d:
+		var node_2d = scene_2d.instantiate()
+		if node_2d:
+			var tester_2d = node_2d if node_2d.get_class() == "ToolTester2D" else node_2d.find_child("ToolTester2D", true, false)
+			if tester_2d:
+				if tester_2d.has_method("run_tool_tests"):
+					tester_2d.call("run_tool_tests")
+				var status_2d = str(tester_2d.get("test_status"))
+				print("[CrystalToolTester] ToolTester2D status: " + status_2d)
+				if status_2d.contains("Failed") or status_2d.contains("Error"):
+					printerr("[CrystalToolTester] ToolTester2D failed: " + status_2d)
+					errors += 1
+			else:
+				printerr("[CrystalToolTester] ToolTester2D node not found in test_tool_2d.tscn")
+				errors += 1
+			node_2d.free()
+	else:
+		printerr("[CrystalToolTester] Failed to load res://scenes/test_tool_2d.tscn")
+		errors += 1
+
+	# 2. Tickle ToolTester3D
+	print("[CrystalToolTester] Instantiating and executing ToolTester3D...")
+	var scene_3d = load("res://scenes/test_tool_3d.tscn")
+	if scene_3d:
+		var node_3d = scene_3d.instantiate()
+		if node_3d:
+			var tester_3d = node_3d if node_3d.get_class() == "ToolTester3D" else node_3d.find_child("ToolTester3D", true, false)
+			if tester_3d:
+				if tester_3d.has_method("run_tool_tests"):
+					tester_3d.call("run_tool_tests")
+				var status_3d = str(tester_3d.get("test_status"))
+				print("[CrystalToolTester] ToolTester3D status: " + status_3d)
+				if status_3d.contains("Failed") or status_3d.contains("Error"):
+					printerr("[CrystalToolTester] ToolTester3D failed: " + status_3d)
+					errors += 1
+			else:
+				printerr("[CrystalToolTester] ToolTester3D node not found in test_tool_3d.tscn")
+				errors += 1
+			node_3d.free()
+	else:
+		printerr("[CrystalToolTester] Failed to load res://scenes/test_tool_3d.tscn")
+		errors += 1
+
+	print("==================================================================")
+	if errors > 0:
+		printerr("[CrystalToolTester] IN-EDITOR TOOL TESTS FAILED (%d errors)!" % errors)
+		var f = FileAccess.open("res://.tool_tests_failed", FileAccess.WRITE)
+		if f:
+			f.store_string("FAILED: %d errors\n" % errors)
+			f.close()
+		get_tree().quit(1)
+	else:
+		print("[CrystalToolTester] ALL IN-EDITOR TOOL TESTS PASSED CLEANLY!")
+		var f = FileAccess.open("res://.tool_tests_passed", FileAccess.WRITE)
+		if f:
+			f.store_string("PASSED\n")
+			f.close()
+		get_tree().quit(0)
 
 
