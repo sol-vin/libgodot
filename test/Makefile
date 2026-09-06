@@ -1,5 +1,5 @@
 # =============================================================================
-# Crystal Godot Demo Makefile
+# Crystal LibGodot Test Suite Makefile
 # =============================================================================
 
 CRYSTAL      ?= crystal
@@ -21,7 +21,7 @@ LINK_FLAGS   = /DLL /ENTRY:_DllMainCRTStartup /EXPORT:crystal_godot_init
 
 all: dirs deps bridge extension_list addons game_dll
 	@echo ===================================================================
-	@echo   Demo game.dll built successfully!
+	@echo   Test Suite game.dll built successfully!
 	@echo ===================================================================
 
 dirs:
@@ -41,21 +41,21 @@ addons:
 	@powershell -ExecutionPolicy Bypass -File ../scripts/sync_addons.ps1 -Source ../addons -Destinations addons
 
 game_dll: dirs deps bridge extension_list addons
-	@echo [Demo] Compiling game.dll from $(ENTRY)...
+	@echo [Test] Compiling game.dll from $(ENTRY)...
 	@$(POWERSHELL) "$$env:CRYSTAL_PATH = '../src;' + (crystal env CRYSTAL_PATH); crystal build --link-flags '$(LINK_FLAGS)' $(ENTRY) -o $(GAME_DLL)"
 	@$(POWERSHELL) "if (Test-Path '$(GAME_DLL)') { Copy-Item '$(GAME_DLL)' '../bin/game.dll' -Force -ErrorAction SilentlyContinue }; exit 0"
 
 game_exe: dirs deps bridge
-	@echo [Demo] Compiling standalone game.exe from $(ENTRY)...
+	@echo [Test] Compiling standalone game.exe from $(ENTRY)...
 	@$(POWERSHELL) "$$env:CRYSTAL_PATH = '../src;' + (crystal env CRYSTAL_PATH); crystal build $(ENTRY) -o $(GAME_EXE)"
 	@$(POWERSHELL) "if (Test-Path '$(GAME_EXE)') { Copy-Item '$(GAME_EXE)' '../bin/game.exe' -Force }"
 
 run: all
-	@echo [Demo] Running demo with Godot...
+	@echo [Test] Running test suite with Godot...
 	$(GODOT) --path .
 
 editor: all
-	@echo [Demo] Opening demo in Godot Editor...
+	@echo [Test] Opening test suite in Godot Editor...
 	$(GODOT) --editor --path .
 
 clean:

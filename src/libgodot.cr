@@ -11,6 +11,27 @@ require "./libgodot/generated/global_enums"
 require "./libgodot/generated/classes/all_classes"
 require "./libgodot/generated/singletons"
 
+module Godot
+  class PackedScene < Resource
+    # Convenience instantiate defaulting edit_state to 0
+    def instantiate(edit_state : Int64 = 0_i64) : Node
+      ptr = Bridge.packed_scene_instantiate(@pointer, edit_state)
+      Node.new(ptr)
+    end
+  end
+
+  class Node < Object
+    # Convenience overloads for find_child
+    def find_child(pattern : String) : Node?
+      find_child(pattern, true, false)
+    end
+
+    def find_child(pattern : String, recursive : Bool) : Node?
+      find_child(pattern, recursive, false)
+    end
+  end
+end
+
 # # LibGodot for Crystal
 #
 # High-performance Crystal bindings and 2-way host language integration for Godot Engine 4.8+.

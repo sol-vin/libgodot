@@ -1,0 +1,12 @@
+name: libgodot_test_suite
+version: 0.1.0
+
+targets:
+  libgodot_test_suite:
+    main: src/main.cr
+
+crystal: '>= 1.10.0'
+
+dependencies:
+  libgodot:
+    path: ../

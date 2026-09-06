@@ -1,9 +1,9 @@
-# Runs the Crystal LibGodot Demo using the root godot.exe
+# Runs the Crystal LibGodot Test Suite using the root godot.exe
 $ErrorActionPreference = "Stop"
 
 $Root = $PSScriptRoot
 $GodotExe = Join-Path $Root "godot.exe"
-$DemoPath = Join-Path $Root "demo"
+$TestPath = Join-Path $Root "test"
 
 if (-not (Test-Path $GodotExe)) {
     Write-Error "godot.exe was not found in root directory: $Root"
@@ -11,10 +11,9 @@ if (-not (Test-Path $GodotExe)) {
 }
 
 Write-Host "==========================================" -ForegroundColor Cyan
-Write-Host "  Launching Crystal LibGodot Demo Game    " -ForegroundColor Cyan
+Write-Host "  Launching Crystal LibGodot Test Runner  " -ForegroundColor Cyan
 Write-Host "==========================================" -ForegroundColor Cyan
 Write-Host "Engine:  $GodotExe"
-Write-Host "Project: $DemoPath"
+Write-Host "Project: $TestPath"
 
-& $GodotExe --path $DemoPath @args | Out-Host
-
+& $GodotExe --path $TestPath @args | Out-Host

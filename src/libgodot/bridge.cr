@@ -71,7 +71,10 @@ module Godot
       node_find_child : (Void*, LibC::Char*, Bool, Bool -> Void*)
       node_get_node : (Void*, LibC::Char* -> Void*)
       range_set_value : (Void*, Float64 -> Void)
-      node_rpc_config : (Void*, LibC::Char*, Int32, Int32, Bool, Int32 -> Void)?
+      node_rpc_config : (Void*, LibC::Char*, Int32, Int32, Bool, Int32 -> Void)
+      resource_loader_load : (LibC::Char*, LibC::Char*, Int64 -> Void*)
+      packed_scene_instantiate : (Void*, Int64 -> Void*)
+      node_get_name : (Void* -> LibC::Char*)
     end
   end
 
@@ -546,11 +549,24 @@ module Godot
     end
 
     def self.node_rpc_config(godot_obj : Void*, method : String, rpc_mode : Int32, transfer_mode : Int32, call_local : Bool, channel : Int32) : Void
-      return if godot_obj.null? || @@api.null?
-      if fn = @@api.value.node_rpc_config
-        return if fn.pointer.null?
-        fn.call(godot_obj, method.to_unsafe, rpc_mode, transfer_mode, call_local, channel)
-      end
+      return if godot_obj.null? || @@api.null? || @@api.value.node_rpc_config.pointer.null?
+      @@api.value.node_rpc_config.call(godot_obj, method.to_unsafe, rpc_mode, transfer_mode, call_local, channel)
+    end
+
+    def self.resource_loader_load(path : String, type_hint : String = "", cache_mode : Int64 = 0_i64) : Void*
+      return Pointer(Void).null if @@api.null? || @@api.value.resource_loader_load.pointer.null?
+      @@api.value.resource_loader_load.call(path.to_unsafe, type_hint.to_unsafe, cache_mode)
+    end
+
+    def self.packed_scene_instantiate(scene_ptr : Void*, edit_state : Int64 = 0_i64) : Void*
+      return Pointer(Void).null if scene_ptr.null? || @@api.null? || @@api.value.packed_scene_instantiate.pointer.null?
+      @@api.value.packed_scene_instantiate.call(scene_ptr, edit_state)
+    end
+
+    def self.node_get_name(godot_obj : Void*) : String
+      return "" if godot_obj.null? || @@api.null? || @@api.value.node_get_name.pointer.null?
+      ptr = @@api.value.node_get_name.call(godot_obj)
+      ptr.null? ? "" : String.new(ptr)
     end
   end
 end

@@ -2,13 +2,17 @@ godot.exe
 /.godot/
 /bin/
 
-/demo/.godot/
-/demo/bin
-/demo/addons
+/examples/*/.godot/
+/examples/*/bin
+/examples/*/addons
 
 /template/.godot/
 /template/bin
 /template/addons
+
+/test/.godot/
+/test/bin
+/test/addons
 
 /docs/
 /scratch/

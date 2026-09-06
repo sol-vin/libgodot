@@ -1,0 +1,90 @@
+[gd_scene format=3 uid="uid://main_test_runner_scene"]
+
+[node name="RunTesterPanel" type="RunTesterPanel"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="VBox" type="VBoxContainer" parent="MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="HeaderBox" type="HBoxContainer" parent="MarginContainer/VBox"]
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="MarginContainer/VBox/HeaderBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 22
+text = "LibGodot Crystal Bridge Test Runner"
+
+[node name="StatusBadge" type="Label" parent="MarginContainer/VBox/HeaderBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "READY"
+
+[node name="ButtonBox" type="HBoxContainer" parent="MarginContainer/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="BtnRunAll" type="Button" parent="MarginContainer/VBox/ButtonBox"]
+custom_minimum_size = Vector2(140, 36)
+layout_mode = 2
+text = "▶ Run All Tests"
+
+[node name="BtnRun2D" type="Button" parent="MarginContainer/VBox/ButtonBox"]
+custom_minimum_size = Vector2(120, 36)
+layout_mode = 2
+text = "Run 2D"
+
+[node name="BtnRun3D" type="Button" parent="MarginContainer/VBox/ButtonBox"]
+custom_minimum_size = Vector2(120, 36)
+layout_mode = 2
+text = "Run 3D"
+
+[node name="BtnRunCore" type="Button" parent="MarginContainer/VBox/ButtonBox"]
+custom_minimum_size = Vector2(120, 36)
+layout_mode = 2
+text = "Run Core"
+
+[node name="BtnRunProps" type="Button" parent="MarginContainer/VBox/ButtonBox"]
+custom_minimum_size = Vector2(140, 36)
+layout_mode = 2
+text = "Run Properties"
+
+[node name="StatsLabel" type="Label" parent="MarginContainer/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Tests: 0 total | 0 passed | 0 failed"
+
+[node name="LogOutput" type="RichTextLabel" parent="MarginContainer/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+bbcode_enabled = true
+scroll_following = true
+
+[node name="ToolTester2D" type="ToolTester2D" parent="."]
+
+[node name="Child2D" type="Node2D" parent="ToolTester2D"]
+
+[node name="Marker2D" type="Marker2D" parent="ToolTester2D/Child2D"]
+
+[node name="ToolTester3D" type="ToolTester3D" parent="."]
+
+[node name="Child3D" type="Node3D" parent="ToolTester3D"]
+
+[node name="Marker3D" type="Marker3D" parent="ToolTester3D/Child3D"]

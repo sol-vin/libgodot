@@ -66,6 +66,23 @@ module Godot
     end
   end
 
+  # Loads a resource from the given path (e.g. "res://scenes/my_scene.tscn")
+  def self.load(path : String, type_hint : String = "", cache_mode : Int64 = 0_i64) : Resource
+    ptr = Bridge.resource_loader_load(path, type_hint, cache_mode)
+    Resource.new(ptr)
+  end
+
+  # Preloads/loads a resource from the given path
+  def self.preload(path : String) : Resource
+    self.load(path)
+  end
+
+  # Loads a resource and casts to the given Crystal resource class (e.g. PackedScene)
+  def self.load_as(type : T.class, path : String, type_hint : String = "", cache_mode : Int64 = 0_i64) : T forall T
+    res = self.load(path, type_hint, cache_mode)
+    T.new(res.pointer)
+  end
+
   # Base class for all Godot engine objects and extension classes.
   # Provides identity, lifecycle dispatch hooks, and signal emission functionality.
   class Object
@@ -151,9 +168,23 @@ module Godot
   end
 
   class PackedScene < Resource
-    def instantiate : Node?
-      # Instantiates scene hierarchy
-      Node.new
+    @@mb_instantiate : Void* = Pointer(Void).null
+
+    # Instantiates the scene's node hierarchy.
+    def instantiate(edit_state : Int64 = 0_i64) : Node
+      if @@mb_instantiate.null?
+        @@mb_instantiate = Bridge.get_method_bind("PackedScene", "instantiate", 2628778455_i64)
+      end
+      if !@@mb_instantiate.null? && !@pointer.null?
+        val_0 = edit_state
+        arg_0 = pointerof(val_0).as(Void*)
+        args = [arg_0]
+        ret_ptr = Pointer(Void).null
+        Bridge.ptrcall(@@mb_instantiate, @pointer, args.to_unsafe.as(Void**), pointerof(ret_ptr).as(Void*))
+        Node.new(ret_ptr)
+      else
+        Node.new
+      end
     end
   end
 
@@ -169,7 +200,20 @@ module Godot
   # Base class for all scene tree nodes in Godot.
   # Provides hierarchy management, node traversal, and lifecycle hooks (`_ready`, `_process`, `_physics_process`).
   class Node < Object
-    property name : String = "Node"
+    @name : String = "Node"
+
+    def name : String
+      if @pointer.null?
+        @name
+      else
+        godot_name = Bridge.node_get_name(@pointer)
+        godot_name.empty? ? @name : godot_name
+      end
+    end
+
+    def name=(val : String)
+      @name = val
+    end
 
     # Returns the SceneTree containing this node.
     def get_tree : SceneTree
@@ -560,4 +604,14 @@ struct Range(B, E)
   def to_godot_bounds : Tuple(Float64, Float64)
     {self.begin.to_f64, self.end.to_f64}
   end
+end
+
+# Global convenience helper to load resources from Godot VFS
+def load(path : String, type_hint : String = "", cache_mode : Int64 = 0_i64) : Godot::Resource
+  Godot.load(path, type_hint, cache_mode)
+end
+
+# Global convenience helper to preload resources from Godot VFS
+def preload(path : String) : Godot::Resource
+  Godot.preload(path)
 end

@@ -441,7 +441,7 @@ macro node(decl, &block)
 
   {% for stmt in stmts %}
     {% if stmt.class_name.id == "Annotation" %}
-      {% anno_name = stmt.name.stringify %}
+      {% anno_name = stmt.name.names.last.stringify %}
       {% if anno_name == "Doc" %}
         {% class_doc = stmt.args[0].stringify %}
       {% elsif anno_name == "Tool" %}
@@ -459,9 +459,9 @@ macro node(decl, &block)
         {% grp_name = stmt.args[0].is_a?(StringLiteral) ? stmt.args[0] : stmt.args[0].id.stringify %}
         {% pfx = "" %}
         {% if stmt.named_args %}
-          {% for na_k, na_v in stmt.named_args %}
-            {% if na_k.stringify == "prefix" %}
-              {% pfx = na_v.is_a?(StringLiteral) ? na_v : na_v.id.stringify %}
+          {% for na in stmt.named_args %}
+            {% if na.name.stringify == "prefix" %}
+              {% pfx = na.value.is_a?(StringLiteral) ? na.value : na.value.id.stringify %}
             {% end %}
           {% end %}
         {% end %}
@@ -473,9 +473,9 @@ macro node(decl, &block)
         {% sub_name = stmt.args[0].is_a?(StringLiteral) ? stmt.args[0] : stmt.args[0].id.stringify %}
         {% pfx = "" %}
         {% if stmt.named_args %}
-          {% for na_k, na_v in stmt.named_args %}
-            {% if na_k.stringify == "prefix" %}
-              {% pfx = na_v.is_a?(StringLiteral) ? na_v : na_v.id.stringify %}
+          {% for na in stmt.named_args %}
+            {% if na.name.stringify == "prefix" %}
+              {% pfx = na.value.is_a?(StringLiteral) ? na.value : na.value.id.stringify %}
             {% end %}
           {% end %}
         {% end %}
@@ -1044,10 +1044,22 @@ macro node(decl, &block)
           {% hint = 39 %}
           {% hint_str = anno.args.size > 0 ? anno.args[0].id.stringify : "" %}
         {% elsif a_name == "ExportCustom" %}
-          {% hint = anno.args[0].id.gsub(/_[a-z0-9]+/, "") %}
-          {% hint_str = anno.args[1].id.stringify %}
-          {% if anno.args.size > 2 %}
-            {% prop_usage = anno.args[2].id.gsub(/_[a-z0-9]+/, "") %}
+          {% if anno.args.size > 0 %}
+            {% hint = anno.args[0].id.gsub(/_[a-z0-9]+/, "") %}
+            {% hint_str = anno.args.size > 1 ? anno.args[1].id.stringify : "" %}
+            {% if anno.args.size > 2 %}
+              {% prop_usage = anno.args[2].id.gsub(/_[a-z0-9]+/, "") %}
+            {% end %}
+          {% elsif anno.named_args %}
+            {% for k, v in anno.named_args %}
+              {% if k.stringify == "hint" %}
+                {% hint = v.id.gsub(/_[a-z0-9]+/, "") %}
+              {% elsif k.stringify == "hint_string" %}
+                {% hint_str = v.id.stringify %}
+              {% elsif k.stringify == "usage" %}
+                {% prop_usage = v.id.gsub(/_[a-z0-9]+/, "") %}
+              {% end %}
+            {% end %}
           {% end %}
         {% end %}
       {% end %}
@@ -1055,9 +1067,9 @@ macro node(decl, &block)
         "{{var_name.id}}",
         "{{var_type.id}}",
         {{vtype}},
-        {{hint}}_u32,
+        {{hint || 0}}_u32,
         "{{hint_str.id}}",
-        {{prop_usage}}_u32
+        {{prop_usage || 6}}_u32
       )
     {% end %}
   {% end %}

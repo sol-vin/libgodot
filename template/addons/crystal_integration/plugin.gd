@@ -2,6 +2,61 @@
 extends EditorPlugin
 
 var compile_button: Button
+var inspector_plugin: EditorInspectorPlugin
+
+# Custom Inspector plugin for @tool test runners and tool buttons
+class CrystalInspectorPlugin extends EditorInspectorPlugin:
+	func _can_handle(object) -> bool:
+		return object != null
+
+	func _parse_property(object: Object, type: int, name: String, hint_type: int, hint_string: String, usage_flags: int, wide: bool) -> bool:
+		if hint_type == PROPERTY_HINT_TOOL_BUTTON or name == "run_tests_button" or name == "run_tool_tests" or name.ends_with("_test_button") or name.ends_with("_button"):
+			var container = VBoxContainer.new()
+			container.add_theme_constant_override("separation", 4)
+			
+			var btn = Button.new()
+			var btn_title = hint_string if hint_string != "" else "▶ Run Tests"
+			btn.text = btn_title
+			btn.tooltip_text = "Execute test suite directly in the Godot editor"
+			btn.custom_minimum_size = Vector2(0, 32)
+			btn.add_theme_color_override("font_color", Color(0.2, 1.0, 0.4))
+			
+			var result_label = Label.new()
+			result_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			result_label.text = "Status: Ready (click to run)"
+			result_label.add_theme_color_override("font_color", Color(0.75, 0.85, 0.95))
+			
+			btn.pressed.connect(func():
+				print("==================================================================")
+				print("[CrystalToolTester] Triggering in-editor tests for: " + object.get_class())
+				print("==================================================================")
+				result_label.text = "Executing tests..."
+				result_label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.2))
+				
+				# Trigger through property setter or method
+				if object.get(name) != null:
+					object.set(name, true)
+				elif object.has_method("run_tool_tests"):
+					object.call("run_tool_tests")
+				
+				# Read status if available
+				var status = object.get("test_status")
+				if status != null and str(status) != "":
+					result_label.text = str(status)
+					if str(status).contains("Failed") or str(status).contains("Error"):
+						result_label.add_theme_color_override("font_color", Color(1.0, 0.3, 0.3))
+					else:
+						result_label.add_theme_color_override("font_color", Color(0.3, 1.0, 0.5))
+				else:
+					result_label.text = "Tests completed! See Output console."
+					result_label.add_theme_color_override("font_color", Color(0.3, 1.0, 0.5))
+			)
+			
+			container.add_child(btn)
+			container.add_child(result_label)
+			add_custom_control(container)
+			return true
+		return false
 
 func _enter_tree():
 	# Add explicit Compile button to the top toolbar
@@ -10,12 +65,19 @@ func _enter_tree():
 	compile_button.tooltip_text = "Compile Crystal source code (runs 'crystal build')"
 	compile_button.pressed.connect(_on_compile_button_pressed)
 	add_control_to_container(CONTAINER_TOOLBAR, compile_button)
-	print("[CrystalPlugin] Crystal integration plugin activated.")
+	
+	# Register custom inspector plugin for @tool test runners
+	inspector_plugin = CrystalInspectorPlugin.new()
+	add_inspector_plugin(inspector_plugin)
+	
+	print("[CrystalPlugin] Crystal integration plugin activated with inspector test support.")
 
 func _exit_tree():
 	if compile_button:
 		remove_control_from_container(CONTAINER_TOOLBAR, compile_button)
 		compile_button.queue_free()
+	if inspector_plugin:
+		remove_inspector_plugin(inspector_plugin)
 
 func _on_compile_button_pressed():
 	print("[CrystalPlugin] Triggering manual Crystal build...")
@@ -38,14 +100,15 @@ func execute_crystal_build() -> bool:
 	# Ensure bin directory exists
 	DirAccess.make_dir_absolute(project_dir + "bin")
 
-	# Determine entry file: prioritize demo/src/main.cr when running inside demo or when demo exists
+	# Determine entry file: check local project src/main.cr first, then test/src/main.cr
 	var entry_file = project_dir + "src/main.cr"
-	if project_dir.ends_with("demo/") or project_dir.ends_with("demo\\"):
-		entry_file = project_dir + "src/main.cr"
-	elif FileAccess.file_exists(project_dir + "demo/src/main.cr"):
-		entry_file = project_dir + "demo/src/main.cr"
-	elif not FileAccess.file_exists(entry_file):
-		entry_file = project_dir + "../demo/src/main.cr"
+	if not FileAccess.file_exists(entry_file):
+		if FileAccess.file_exists(project_dir + "test/src/main.cr"):
+			entry_file = project_dir + "test/src/main.cr"
+		elif FileAccess.file_exists(project_dir + "../test/src/main.cr"):
+			entry_file = project_dir + "../test/src/main.cr"
+		elif FileAccess.file_exists(project_dir + "demo/src/main.cr"):
+			entry_file = project_dir + "demo/src/main.cr"
 
 	var args = ["build", "--link-flags", "/DLL /ENTRY:_DllMainCRTStartup /EXPORT:crystal_godot_init", entry_file, "-o", out_dll]
 	print("[CrystalPlugin] Running: crystal " + " ".join(args))
@@ -60,17 +123,11 @@ func execute_crystal_build() -> bool:
 
 	print("[CrystalPlugin] Crystal build succeeded: " + out_dll)
 
-	# Ensure both bin/game.dll and demo/bin/game.dll are kept in sync
-	if project_dir.ends_with("demo/") or project_dir.ends_with("demo\\"):
-		var root_bin = project_dir + "../bin"
-		if DirAccess.dir_exists_absolute(root_bin):
-			DirAccess.copy_absolute(out_dll, root_bin + "/game.dll")
-			print("[CrystalPlugin] Synced DLL to root: " + root_bin + "/game.dll")
-	else:
-		var demo_bin = project_dir + "demo/bin"
-		if DirAccess.dir_exists_absolute(demo_bin):
-			DirAccess.copy_absolute(out_dll, demo_bin + "/game.dll")
-			print("[CrystalPlugin] Synced DLL to demo: " + demo_bin + "/game.dll")
+	# Ensure root bin/game.dll is kept in sync if compiling from a consumer project
+	var root_bin = project_dir + "../bin"
+	if DirAccess.dir_exists_absolute(root_bin):
+		DirAccess.copy_absolute(out_dll, root_bin + "/game.dll")
+		print("[CrystalPlugin] Synced DLL to root: " + root_bin + "/game.dll")
 
 	# Trigger hot-reload of the GDExtension so newly added nodes and properties immediately update
 	var ext_path = "res://addons/crystal_integration/crystal.gdextension"

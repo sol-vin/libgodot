@@ -1,9 +1,21 @@
 param(
     [string]$Source = "addons",
-    [string[]]$Destinations = @("demo/addons", "template/addons")
+    [string[]]$Destinations = @()
 )
 
 $ErrorActionPreference = "Stop"
+
+if ($Destinations.Count -eq 0) {
+    $dests = [System.Collections.Generic.List[string]]::new()
+    $dests.Add("test/addons")
+    $dests.Add("template/addons")
+    if (Test-Path "examples") {
+        foreach ($ex in Get-ChildItem -Path "examples" -Directory) {
+            $dests.Add("examples/$($ex.Name)/addons")
+        }
+    }
+    $Destinations = $dests.ToArray()
+}
 
 if (-not (Test-Path $Source)) {
     Write-Warning "[Sync] Source directory '$Source' does not exist."
