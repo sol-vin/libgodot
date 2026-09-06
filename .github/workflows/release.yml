@@ -39,7 +39,7 @@ jobs:
           g++ --version
 
       - name: Setup Godot Engine (4.8-dev4)
-        uses: appsinacup/action_setup_godot@v2
+        uses: appsinacup/action_setup_godot@main
         with:
           repo: godotengine/godot-builds
           version: 4.8-dev4
@@ -56,6 +56,22 @@ jobs:
             Copy-Item $cmd ./godot.exe -Force
             Write-Host "Copied $cmd to ./godot.exe"
           }
+
+          if (-not (Test-Path ./godot.exe)) {
+            Write-Host "Fallback: Downloading Godot 4.8-dev4 win64..."
+            $zipUrl = "https://github.com/godotengine/godot-builds/releases/download/4.8-dev4/Godot_v4.8-dev4_win64.exe.zip"
+            Invoke-WebRequest -Uri $zipUrl -OutFile "godot.zip"
+            Expand-Archive -Path "godot.zip" -DestinationPath "godot_temp" -Force
+            $foundExe = (Get-ChildItem -Path "godot_temp" -Filter "*.exe" -Recurse | Select-Object -First 1).FullName
+            Copy-Item $foundExe ./godot.exe -Force
+            Remove-Item "godot.zip", "godot_temp" -Recurse -Force
+          }
+
+          if (-not (Test-Path ./godot.exe)) {
+            Write-Error "Failed to locate or download godot.exe"
+            exit 1
+          }
+          Write-Host "Godot binary verified at ./godot.exe"
 
       - name: Compile Release Binaries & Examples
         shell: pwsh
