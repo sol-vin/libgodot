@@ -1,0 +1,8 @@
+godot.exe
+/.godot/
+/bin/
+/demo/.godot/
+/demo/bin
+/docs/
+/scratch/
+*.obj

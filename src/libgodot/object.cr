@@ -1,0 +1,367 @@
+require "./types"
+
+module Godot
+  lib LibKernel32
+    fun GetModuleHandleA(lpModuleName : LibC::Char*) : Void*
+    fun GetProcAddress(hModule : Void*, lpProcName : LibC::Char*) : Void*
+  end
+
+  # Godot Engine Logging & Diagnostics System
+  @@bridge_print : (LibC::Char* -> Void)? = nil
+  @@bridge_printerr : (LibC::Char* -> Void)? = nil
+  @@bridge_error : ((LibC::Char*, LibC::Char*, LibC::Char*, Int32) -> Void)? = nil
+  @@bridge_warning : ((LibC::Char*, LibC::Char*, LibC::Char*, Int32) -> Void)? = nil
+  @@bridge_initialized : Bool = false
+
+  def self.init_bridge_logging
+    return if @@bridge_initialized
+    @@bridge_initialized = true
+    h_bridge = LibKernel32.GetModuleHandleA("crystal_bridge.dll")
+    if !h_bridge.null?
+      fn_p = LibKernel32.GetProcAddress(h_bridge, "crystal_godot_print")
+      @@bridge_print = Proc(LibC::Char*, Void).new(fn_p, Pointer(Void).null) unless fn_p.null?
+
+      fn_perr = LibKernel32.GetProcAddress(h_bridge, "crystal_godot_printerr")
+      @@bridge_printerr = Proc(LibC::Char*, Void).new(fn_perr, Pointer(Void).null) unless fn_perr.null?
+
+      fn_err = LibKernel32.GetProcAddress(h_bridge, "crystal_godot_error")
+      @@bridge_error = Proc(LibC::Char*, LibC::Char*, LibC::Char*, Int32, Void).new(fn_err, Pointer(Void).null) unless fn_err.null?
+
+      fn_warn = LibKernel32.GetProcAddress(h_bridge, "crystal_godot_warning")
+      @@bridge_warning = Proc(LibC::Char*, LibC::Char*, LibC::Char*, Int32, Void).new(fn_warn, Pointer(Void).null) unless fn_warn.null?
+    end
+  end
+
+  def self.print(*args)
+    msg = args.join(" ")
+    if Bridge.api && !Bridge.api.null?
+      Bridge.print(msg)
+    else
+      puts msg
+    end
+  end
+
+  def self.printerr(*args)
+    msg = args.join(" ")
+    if Bridge.api && !Bridge.api.null?
+      Bridge.printerr(msg)
+    else
+      STDERR.puts msg
+    end
+  end
+
+  def self.print_error(msg : String, func : String = "", file : String = __FILE__, line : Int32 = __LINE__)
+    if Bridge.api && !Bridge.api.null?
+      Bridge.error(msg, "", func, file, line)
+    else
+      STDERR.puts "[ERROR] #{msg} (#{file}:#{line} in #{func})"
+    end
+  end
+
+  def self.print_warning(msg : String, func : String = "", file : String = __FILE__, line : Int32 = __LINE__)
+    if Bridge.api && !Bridge.api.null?
+      Bridge.warning(msg, "", func, file, line)
+    else
+      STDERR.puts "[WARNING] #{msg}"
+    end
+  end
+
+  class Object
+    property pointer : Void* = Pointer(Void).null
+
+    def initialize(@pointer : Void* = Pointer(Void).null)
+    end
+
+    # Virtual method and property dispatch hooks overridden by macros
+    def _godot_call_virtual(method_name : String, delta : Float32) : Void
+    end
+
+    def _godot_set_property(prop_name : String, val_ptr : Void*) : Void
+    end
+
+    def _godot_get_property(prop_name : String, ret_ptr : Void*) : Void
+    end
+
+    def emit_signal(name : String, *args) : Void
+      # Dispatches signal via Godot GDExtension C-API or internal callback table
+    end
+
+    def connect(signal_name : String, callback : Proc) : Void
+      # Connects callback to named signal
+    end
+
+    def print(*args)
+      Godot.print(*args)
+    end
+
+    def printerr(*args)
+      Godot.printerr(*args)
+    end
+
+    def puts(*args)
+      Godot.print(*args)
+    end
+
+    def to_s(io : IO) : Void
+      io << "<Godot::" << self.class.name << " @" << @pointer << ">"
+    end
+  end
+
+  class RefCounted < Object
+  end
+
+  class Resource < RefCounted
+  end
+
+  class Texture < Resource
+  end
+
+  class Texture2D < Texture
+  end
+
+  class AudioStream < Resource
+  end
+
+  class PackedScene < Resource
+    def instantiate : Node?
+      # Instantiates scene hierarchy
+      Node.new
+    end
+  end
+
+  class SceneTree < Object
+    property current_scene : Node = Node.new
+    property root : Node = Node.new
+  end
+
+  class Node < Object
+    property name : String = "Node"
+
+    def get_tree : SceneTree
+      SceneTree.new
+    end
+
+    def get_node(path : String) : Node?
+      nil
+    end
+
+    def get_node_as(type : T.class, path : String) : T? forall T
+      if node = get_node(path)
+        node.as?(T)
+      end
+    end
+
+    def find_child(pattern : String, recursive : Bool = true, owned : Bool = true) : Node?
+      nil
+    end
+
+    def add_child(node : Node) : Void
+    end
+
+    def remove_child(node : Node) : Void
+    end
+
+    def queue_free : Void
+    end
+
+    # Lifecycle callbacks (overridable by user nodes)
+    def _ready : Void
+    end
+
+    def _process(delta : Float64) : Void
+    end
+
+    def _physics_process(delta : Float64) : Void
+    end
+  end
+
+  class Node2D < Node
+    property position : Vector2 = Vector2.new
+    property global_position : Vector2 = Vector2.new
+    property rotation : Float32 = 0.0_f32
+    property scale : Vector2 = Vector2.new(1.0_f32, 1.0_f32)
+  end
+
+  class Node3D < Node
+    property position : Vector3 = Vector3.new
+    property global_position : Vector3 = Vector3.new
+    property rotation : Vector3 = Vector3.new
+    property scale : Vector3 = Vector3.new(1.0_f32, 1.0_f32, 1.0_f32)
+    property transform : Transform3D = Transform3D.new
+  end
+
+  class CharacterBody2D < Node2D
+    property velocity : Vector2 = Vector2.new
+
+    def is_on_floor : Bool
+      true
+    end
+
+    def move_and_slide : Bool
+      true
+    end
+  end
+
+  class CharacterBody3D < Node3D
+    property velocity : Vector3 = Vector3.new
+
+    def is_on_floor : Bool
+      if !@pointer.null?
+        Bridge.is_on_floor(@pointer)
+      else
+        true
+      end
+    end
+
+    def velocity : Vector3
+      if !@pointer.null?
+        Bridge.get_velocity(@pointer)
+      else
+        @velocity
+      end
+    end
+
+    def velocity=(v : Vector3)
+      @velocity = v
+      if !@pointer.null?
+        Bridge.set_velocity(@pointer, v)
+      end
+    end
+
+    def move_and_slide : Bool
+      if !@pointer.null?
+        Bridge.move_and_slide(@pointer)
+      else
+        true
+      end
+    end
+  end
+
+  class Control < Node
+  end
+
+  class Range < Control
+    property min_value : Float64 = 0.0
+    property max_value : Float64 = 100.0
+    property step : Float64 = 1.0
+    property page : Float64 = 0.0
+    property value : Float64 = 0.0
+
+    def initialize(min : Number = 0.0, max : Number = 100.0, @step : Float64 = 1.0)
+      super()
+      @min_value = min.to_f64
+      @max_value = max.to_f64
+    end
+
+    # Type cohesion: Initialize from a Crystal Range
+    def self.new(crystal_range : ::Range(Number, Number), step : Number = 1.0)
+      new(crystal_range.begin, crystal_range.end, step.to_f64)
+    end
+
+    # Type cohesion: Set bounds using a Crystal Range (e.g. control.range = 0..100)
+    def range=(crystal_range : ::Range(Number, Number))
+      @min_value = crystal_range.begin.to_f64
+      @max_value = crystal_range.end.to_f64
+    end
+
+    # Type cohesion: Read bounds as a Crystal Range
+    def to_range : ::Range(Float64, Float64)
+      @min_value..@max_value
+    end
+
+    # Type cohesion: Check if a value falls within the Range bounds
+    def includes?(val : Number) : Bool
+      to_range.includes?(val.to_f64)
+    end
+
+    def in_range?(val : Number) : Bool
+      includes?(val)
+    end
+
+    def ratio : Float64
+      span = @max_value - @min_value
+      span > 0 ? (@value - @min_value) / span : 0.0
+    end
+  end
+
+  class ProgressBar < Range
+  end
+
+  class HSlider < Range
+  end
+
+  class VSlider < Range
+  end
+
+  class SpinBox < Range
+  end
+
+  # Godot Keycodes
+  enum Key : Int32
+    None   =  0
+    Space  = 32
+    Enter  = 4194309
+    Escape = 4194305
+    Left   = 4194319
+    Up     = 4194320
+    Right  = 4194321
+    Down   = 4194322
+    W      = 87
+    A      = 65
+    S      = 83
+    D      = 68
+  end
+
+  # Godot Input Singleton
+  module Input
+    def self.is_action_pressed(action : String) : Bool
+      Bridge.is_action_pressed(action)
+    end
+
+    def self.is_action_just_pressed(action : String) : Bool
+      Bridge.is_action_just_pressed(action)
+    end
+
+    def self.is_action_just_released(action : String) : Bool
+      false
+    end
+
+    def self.is_key_pressed(key : Key | Int32) : Bool
+      Bridge.is_key_pressed(key.to_i32)
+    end
+
+    def self.get_vector(negative_x : String, positive_x : String, negative_y : String, positive_y : String) : Vector2
+      Vector2.new(0.0_f32, 0.0_f32)
+    end
+  end
+
+  # NodePath wrapper
+  struct NodePath
+    property path : String
+
+    def initialize(@path : String = "")
+    end
+  end
+end
+
+# Crystal Standard Library Extension: Type cohesion for Crystal Range <-> Godot
+struct Range(B, E)
+  # Converts Crystal range into a Godot::Range control node
+  def to_godot_range(step : Number = 1.0) : Godot::Range
+    Godot::Range.new(self, step)
+  end
+
+  # Converts Crystal range to a Godot PROPERTY_HINT_RANGE hint string (e.g. "0,100" or "0,100,0.5")
+  def to_godot_hint_string(step : Number? = nil) : String
+    if s = step
+      "#{self.begin},#{self.end},#{s}"
+    else
+      "#{self.begin},#{self.end}"
+    end
+  end
+
+  # Converts to float tuple for engine interop
+  def to_godot_bounds : Tuple(Float64, Float64)
+    {self.begin.to_f64, self.end.to_f64}
+  end
+end

@@ -1,0 +1,702 @@
+#include <windows.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <string.h>
+
+#include "gdextension_interface.h"
+
+#define GDE_EXPORT __declspec(dllexport)
+
+// Cached function pointers from Godot
+static GDExtensionInterfaceGetProcAddress gd_get_proc_address = nullptr;
+static GDExtensionInterfaceStringNameNewWithUtf8Chars gd_string_name_new_with_utf8_chars = nullptr;
+static GDExtensionInterfaceStringNewWithUtf8Chars gd_string_new_with_utf8_chars = nullptr;
+static GDExtensionInterfaceVariantDestroy gd_variant_destroy = nullptr;
+static GDExtensionInterfaceClassdbConstructObject gd_classdb_construct_object = nullptr;
+static GDExtensionInterfaceObjectSetInstance gd_object_set_instance = nullptr;
+static GDExtensionInterfaceClassdbRegisterExtensionClass6 gd_classdb_register_extension_class6 = nullptr;
+static GDExtensionInterfaceClassdbUnregisterExtensionClass gd_classdb_unregister_extension_class = nullptr;
+static GDExtensionInterfaceClassdbRegisterExtensionClassProperty gd_classdb_register_extension_class_property = nullptr;
+static GDExtensionInterfaceClassdbRegisterExtensionClassSignal gd_classdb_register_extension_class_signal = nullptr;
+static GDExtensionInterfaceClassdbRegisterExtensionClassMethod gd_classdb_register_extension_class_method = nullptr;
+static GDExtensionInterfaceClassdbGetMethodBind gd_classdb_get_method_bind = nullptr;
+static GDExtensionInterfaceObjectMethodBindPtrcall gd_object_method_bind_ptrcall = nullptr;
+static GDExtensionInterfaceGlobalGetSingleton gd_global_get_singleton = nullptr;
+static GDExtensionInterfaceGetVariantFromTypeConstructor gd_get_variant_from_type_constructor = nullptr;
+static GDExtensionInterfaceGetVariantToTypeConstructor gd_get_variant_to_type_constructor = nullptr;
+
+// Godot engine logging interfaces
+static GDExtensionInterfacePrintError gd_print_error = nullptr;
+static GDExtensionInterfacePrintErrorWithMessage gd_print_error_with_message = nullptr;
+static GDExtensionInterfacePrintWarning gd_print_warning = nullptr;
+static GDExtensionInterfacePrintWarningWithMessage gd_print_warning_with_message = nullptr;
+static GDExtensionInterfaceVariantGetPtrUtilityFunction gd_variant_get_ptr_utility_function = nullptr;
+static GDExtensionInterfaceVariantGetPtrDestructor gd_variant_get_ptr_destructor = nullptr;
+
+static GDExtensionPtrUtilityFunction gd_util_print = nullptr;
+static GDExtensionPtrUtilityFunction gd_util_printerr = nullptr;
+static GDExtensionVariantFromTypeConstructorFunc gd_variant_from_string = nullptr;
+static GDExtensionPtrDestructor gd_string_destroy = nullptr;
+
+static GDExtensionClassLibraryPtr g_library = nullptr;
+
+// Variant conversion helpers
+static void bridge_type_from_variant(int variant_type, void *dst, const void *variant) {
+    if (gd_get_variant_to_type_constructor && variant && dst) {
+        GDExtensionTypeFromVariantConstructorFunc conv = gd_get_variant_to_type_constructor((GDExtensionVariantType)variant_type);
+        if (conv) {
+            conv(dst, (GDExtensionVariantPtr)variant);
+        }
+    }
+}
+
+static void bridge_variant_from_type(int variant_type, void *variant, const void *src) {
+    if (gd_get_variant_from_type_constructor && variant && src) {
+        GDExtensionVariantFromTypeConstructorFunc conv = gd_get_variant_from_type_constructor((GDExtensionVariantType)variant_type);
+        if (conv) {
+            conv(variant, (GDExtensionTypePtr)src);
+        }
+    }
+}
+
+// Method binds for process management
+static GDExtensionMethodBindPtr mb_set_physics_process = nullptr;
+static GDExtensionMethodBindPtr mb_set_process = nullptr;
+
+// Logging helpers
+static void godot_log_print(const char *msg) {
+    if (!msg) return;
+    printf("%s\n", msg);
+    fflush(stdout);
+
+    if (gd_util_print && gd_variant_from_string && gd_string_new_with_utf8_chars && gd_variant_destroy) {
+        void *gd_str = malloc(sizeof(void*));
+        gd_string_new_with_utf8_chars(gd_str, msg);
+        alignas(void*) char var_buf[24];
+        gd_variant_from_string(var_buf, gd_str);
+        const void *args[1] = { var_buf };
+        gd_util_print(nullptr, args, 1);
+        gd_variant_destroy(var_buf);
+        if (gd_string_destroy) {
+            gd_string_destroy(gd_str);
+        }
+        free(gd_str);
+    }
+}
+
+static void godot_log_printerr(const char *msg) {
+    if (!msg) return;
+    fprintf(stderr, "%s\n", msg);
+    fflush(stderr);
+
+    if (gd_util_printerr && gd_variant_from_string && gd_string_new_with_utf8_chars && gd_variant_destroy) {
+        void *gd_str = malloc(sizeof(void*));
+        gd_string_new_with_utf8_chars(gd_str, msg);
+        alignas(void*) char var_buf[24];
+        gd_variant_from_string(var_buf, gd_str);
+        const void *args[1] = { var_buf };
+        gd_util_printerr(nullptr, args, 1);
+        gd_variant_destroy(var_buf);
+        if (gd_string_destroy) {
+            gd_string_destroy(gd_str);
+        }
+        free(gd_str);
+    }
+}
+
+static void godot_log_error(const char *desc, const char *msg, const char *func, const char *file, int line) {
+    fprintf(stderr, "[ERROR] %s: %s (%s:%d in %s)\n", desc, msg ? msg : "", file, line, func);
+    fflush(stderr);
+
+    if (gd_print_error_with_message && msg) {
+        gd_print_error_with_message(desc, msg, func, file, line, 1);
+    } else if (gd_print_error) {
+        gd_print_error(desc, func, file, line, 1);
+    }
+}
+
+static void godot_log_warning(const char *desc, const char *msg, const char *func, const char *file, int line) {
+    fprintf(stderr, "[WARNING] %s: %s (%s:%d in %s)\n", desc, msg ? msg : "", file, line, func);
+    fflush(stderr);
+
+    if (gd_print_warning_with_message && msg) {
+        gd_print_warning_with_message(desc, msg, func, file, line, 1);
+    } else if (gd_print_warning) {
+        gd_print_warning(desc, func, file, line, 1);
+    }
+}
+
+// Helpers
+static void* make_string_name(const char *name) {
+    void *sn = malloc(sizeof(void*));
+    gd_string_name_new_with_utf8_chars(sn, name);
+    return sn;
+}
+
+static void* make_string(const char *str) {
+    void *s = malloc(sizeof(void*));
+    gd_string_new_with_utf8_chars(s, str ? str : "");
+    return s;
+}
+
+// Win32 Vectored Exception Handler to intercept fatal crashes and log them to Godot
+static LONG WINAPI crystal_crash_handler(EXCEPTION_POINTERS *ExceptionInfo) {
+    DWORD code = ExceptionInfo->ExceptionRecord->ExceptionCode;
+    if (code == 0xC0000005 || code == 0xC000001D || code == 0xC0000025 || 
+        code == 0xC00000FD || code == 0xC0000409) {
+        const char *code_name = "CRASH_EXCEPTION";
+        if (code == 0xC0000005) code_name = "ACCESS_VIOLATION (0xC0000005)";
+        else if (code == 0xC000001D) code_name = "ILLEGAL_INSTRUCTION (0xC000001D)";
+        else if (code == 0xC00000FD) code_name = "STACK_OVERFLOW (0xC00000FD)";
+        else if (code == 0xC0000409) code_name = "STACK_BUFFER_OVERRUN (0xC0000409)";
+
+        char crash_buf[512];
+        snprintf(crash_buf, sizeof(crash_buf),
+            "[Fatal Native Crash] %s at PC 0x%p", code_name, ExceptionInfo->ExceptionRecord->ExceptionAddress);
+
+        godot_log_error(crash_buf, "A fatal unhandled native exception occurred in the game process", "crystal_crash_handler", __FILE__, __LINE__);
+
+        FILE *f = fopen("godot_crash.log", "a");
+        if (f) {
+            fprintf(f, "%s\n", crash_buf);
+            fclose(f);
+        }
+    }
+    return EXCEPTION_CONTINUE_SEARCH;
+}
+
+// ==============================================================================
+// Generic Bridge Registration Data Structures (C-ABI)
+// ==============================================================================
+
+struct CrystalPropertyDesc {
+    const char *name;
+    const char *type_name;
+    int variant_type;
+    uint32_t hint;
+    const char *hint_string;
+    uint32_t usage;
+};
+
+struct CrystalSignalArgDesc {
+    const char *name;
+    int variant_type;
+};
+
+struct CrystalSignalDesc {
+    const char *name;
+    int arg_count;
+    CrystalSignalArgDesc args[8];
+};
+
+struct CrystalClassDesc {
+    const char *name;
+    const char *parent_name;
+    bool is_virtual;
+    bool is_abstract;
+    bool has_ready;
+    bool has_process;
+    bool has_physics_process;
+
+    // Crystal Host Callbacks
+    void* (*create_instance)(const CrystalClassDesc *desc, void *godot_object);
+    void (*free_instance)(void *crystal_instance);
+    void (*call_virtual)(void *crystal_instance, const char *method_name, float delta);
+    void (*set_property)(void *crystal_instance, const char *prop_name, const void *val_ptr);
+    void (*get_property)(void *crystal_instance, const char *prop_name, void *ret_ptr);
+
+    int property_count;
+    CrystalPropertyDesc properties[32];
+
+    int signal_count;
+    CrystalSignalDesc signals[16];
+};
+
+// Generic Instance Wrapper linking Godot Object to Crystal Instance
+struct GenericExtensionInstance {
+    GDExtensionObjectPtr godot_object;
+    void *crystal_instance;
+    const CrystalClassDesc *desc;
+};
+
+// Global list of registered classes for unregistration on shutdown
+#define MAX_REGISTERED_CLASSES 128
+static CrystalClassDesc g_registered_classes[MAX_REGISTERED_CLASSES];
+static int g_registered_class_count = 0;
+
+// Generic ClassDB Callbacks
+static GDExtensionObjectPtr generic_class_create(void *p_class_userdata, GDExtensionBool p_notify_postinitialize) {
+    const CrystalClassDesc *desc = (const CrystalClassDesc*)p_class_userdata;
+    if (!desc) return nullptr;
+
+    void *parent_sn = make_string_name(desc->parent_name);
+    void *class_sn = make_string_name(desc->name);
+
+    GDExtensionObjectPtr obj = gd_classdb_construct_object(parent_sn);
+    if (!obj) {
+        char err[128];
+        snprintf(err, sizeof(err), "Failed to construct base object for %s (%s)", desc->name, desc->parent_name);
+        godot_log_error(err, nullptr, "generic_class_create", __FILE__, __LINE__);
+        free(parent_sn); free(class_sn);
+        return nullptr;
+    }
+
+    GenericExtensionInstance *inst = new GenericExtensionInstance();
+    inst->godot_object = obj;
+    inst->desc = desc;
+    if (desc->create_instance) {
+        inst->crystal_instance = desc->create_instance(desc, obj);
+    } else {
+        inst->crystal_instance = nullptr;
+    }
+
+    gd_object_set_instance(obj, class_sn, (GDExtensionClassInstancePtr)inst);
+
+    // Auto-enable physics process if requested
+    if (desc->has_physics_process && mb_set_physics_process) {
+        uint8_t enabled = 1;
+        const void *args[1] = { &enabled };
+        gd_object_method_bind_ptrcall(mb_set_physics_process, obj, args, nullptr);
+    }
+    // Auto-enable idle process if requested
+    if (desc->has_process && mb_set_process) {
+        uint8_t enabled = 1;
+        const void *args[1] = { &enabled };
+        gd_object_method_bind_ptrcall(mb_set_process, obj, args, nullptr);
+    }
+
+    free(parent_sn);
+    free(class_sn);
+    return obj;
+}
+
+static void generic_class_free(void *p_class_userdata, GDExtensionClassInstancePtr p_instance) {
+    GenericExtensionInstance *inst = (GenericExtensionInstance*)p_instance;
+    if (inst) {
+        if (inst->desc && inst->desc->free_instance && inst->crystal_instance) {
+            inst->desc->free_instance(inst->crystal_instance);
+        }
+        delete inst;
+    }
+}
+
+static void generic_virtual_physics_process(GDExtensionClassInstancePtr p_instance, const GDExtensionConstTypePtr *p_args, GDExtensionTypePtr r_ret) {
+    GenericExtensionInstance *inst = (GenericExtensionInstance*)p_instance;
+    if (!inst || !inst->desc || !inst->desc->call_virtual || !inst->crystal_instance) return;
+    double delta = (p_args && p_args[0]) ? *(const double*)p_args[0] : 0.016666;
+    inst->desc->call_virtual(inst->crystal_instance, "_physics_process", (float)delta);
+}
+
+static void generic_virtual_process(GDExtensionClassInstancePtr p_instance, const GDExtensionConstTypePtr *p_args, GDExtensionTypePtr r_ret) {
+    GenericExtensionInstance *inst = (GenericExtensionInstance*)p_instance;
+    if (!inst || !inst->desc || !inst->desc->call_virtual || !inst->crystal_instance) return;
+    double delta = (p_args && p_args[0]) ? *(const double*)p_args[0] : 0.016666;
+    inst->desc->call_virtual(inst->crystal_instance, "_process", (float)delta);
+}
+
+static void generic_virtual_ready(GDExtensionClassInstancePtr p_instance, const GDExtensionConstTypePtr *p_args, GDExtensionTypePtr r_ret) {
+    GenericExtensionInstance *inst = (GenericExtensionInstance*)p_instance;
+    if (!inst || !inst->desc || !inst->desc->call_virtual || !inst->crystal_instance) return;
+    inst->desc->call_virtual(inst->crystal_instance, "_ready", 0.0f);
+}
+
+static GDExtensionClassCallVirtual generic_class_get_virtual(void *p_class_userdata, GDExtensionConstStringNamePtr p_name, uint32_t p_hash) {
+    const CrystalClassDesc *desc = (const CrystalClassDesc*)p_class_userdata;
+    if (!desc) return nullptr;
+
+    static void *sn_pp = nullptr;
+    static void *sn_p = nullptr;
+    static void *sn_r = nullptr;
+    if (!sn_pp) {
+        sn_pp = make_string_name("_physics_process");
+        sn_p = make_string_name("_process");
+        sn_r = make_string_name("_ready");
+    }
+
+    if (desc->has_physics_process && memcmp(p_name, sn_pp, sizeof(void*)) == 0) {
+        return generic_virtual_physics_process;
+    }
+    if (desc->has_process && memcmp(p_name, sn_p, sizeof(void*)) == 0) {
+        return generic_virtual_process;
+    }
+    if (desc->has_ready && memcmp(p_name, sn_r, sizeof(void*)) == 0) {
+        return generic_virtual_ready;
+    }
+
+    return nullptr;
+}
+
+static GDExtensionBool generic_class_set(GDExtensionClassInstancePtr p_instance, GDExtensionConstStringNamePtr p_name, GDExtensionConstVariantPtr p_value) {
+    GenericExtensionInstance *inst = (GenericExtensionInstance*)p_instance;
+    if (!inst || !inst->desc || !inst->desc->set_property || !inst->crystal_instance) return 0;
+
+    for (int i = 0; i < inst->desc->property_count; i++) {
+        void *prop_sn = make_string_name(inst->desc->properties[i].name);
+        bool match = (memcmp(p_name, prop_sn, sizeof(void*)) == 0);
+        free(prop_sn);
+        if (match) {
+            alignas(void*) char raw_buf[64] = {};
+            bridge_type_from_variant(inst->desc->properties[i].variant_type, raw_buf, p_value);
+            inst->desc->set_property(inst->crystal_instance, inst->desc->properties[i].name, raw_buf);
+            return 1;
+        }
+    }
+    return 0;
+}
+
+static GDExtensionBool generic_class_get(GDExtensionClassInstancePtr p_instance, GDExtensionConstStringNamePtr p_name, GDExtensionVariantPtr r_ret) {
+    GenericExtensionInstance *inst = (GenericExtensionInstance*)p_instance;
+    if (!inst || !inst->desc || !inst->desc->get_property || !inst->crystal_instance) return 0;
+
+    for (int i = 0; i < inst->desc->property_count; i++) {
+        void *prop_sn = make_string_name(inst->desc->properties[i].name);
+        bool match = (memcmp(p_name, prop_sn, sizeof(void*)) == 0);
+        free(prop_sn);
+        if (match) {
+            alignas(void*) char raw_buf[64] = {};
+            inst->desc->get_property(inst->crystal_instance, inst->desc->properties[i].name, raw_buf);
+            bridge_variant_from_type(inst->desc->properties[i].variant_type, r_ret, raw_buf);
+            return 1;
+        }
+    }
+    return 0;
+}
+
+// Function to register a class from Crystal
+static int bridge_register_class(const CrystalClassDesc *p_desc) {
+    if (!p_desc || !g_library) return 0;
+    if (g_registered_class_count >= MAX_REGISTERED_CLASSES) {
+        godot_log_error("Max registered classes exceeded", nullptr, "bridge_register_class", __FILE__, __LINE__);
+        return 0;
+    }
+
+    // Save copy in static storage
+    CrystalClassDesc *desc = &g_registered_classes[g_registered_class_count++];
+    memcpy(desc, p_desc, sizeof(CrystalClassDesc));
+
+    void *class_sn = make_string_name(desc->name);
+    void *parent_sn = make_string_name(desc->parent_name);
+
+    GDExtensionClassCreationInfo6 cinfo = {};
+    cinfo.is_virtual = desc->is_virtual ? 1 : 0;
+    cinfo.is_abstract = desc->is_abstract ? 1 : 0;
+    cinfo.is_exposed = 1;
+    cinfo.is_runtime = 1;
+    cinfo.set_func = generic_class_set;
+    cinfo.get_func = generic_class_get;
+    cinfo.create_instance_func = generic_class_create;
+    cinfo.free_instance_func = generic_class_free;
+    cinfo.get_virtual_func = generic_class_get_virtual;
+    cinfo.class_userdata = (void*)desc;
+
+    gd_classdb_register_extension_class6(g_library, class_sn, parent_sn, &cinfo);
+
+    // Register properties
+    for (int i = 0; i < desc->property_count; i++) {
+        const CrystalPropertyDesc &p = desc->properties[i];
+        GDExtensionPropertyInfo pinfo = {};
+        pinfo.type = (GDExtensionVariantType)p.variant_type;
+        pinfo.name = make_string_name(p.name);
+        pinfo.class_name = make_string_name(p.type_name ? p.type_name : "");
+        pinfo.hint = p.hint;
+        pinfo.hint_string = make_string(p.hint_string ? p.hint_string : "");
+        pinfo.usage = p.usage ? p.usage : 6; // PROPERTY_USAGE_DEFAULT
+
+        void *setter_sn = make_string_name("");
+        void *getter_sn = make_string_name("");
+
+        gd_classdb_register_extension_class_property(g_library, class_sn, &pinfo, setter_sn, getter_sn);
+
+        free(pinfo.name); free(pinfo.class_name); free(pinfo.hint_string);
+        free(setter_sn); free(getter_sn);
+    }
+
+    // Register signals
+    for (int i = 0; i < desc->signal_count; i++) {
+        const CrystalSignalDesc &s = desc->signals[i];
+        void *sig_sn = make_string_name(s.name);
+        GDExtensionPropertyInfo sargs[8] = {};
+        for (int a = 0; a < s.arg_count && a < 8; a++) {
+            sargs[a].type = (GDExtensionVariantType)s.args[a].variant_type;
+            sargs[a].name = make_string_name(s.args[a].name);
+            sargs[a].class_name = make_string_name("");
+            sargs[a].hint = 0;
+            sargs[a].hint_string = make_string("");
+            sargs[a].usage = 6;
+        }
+
+        gd_classdb_register_extension_class_signal(g_library, class_sn, sig_sn, sargs, s.arg_count);
+
+        free(sig_sn);
+        for (int a = 0; a < s.arg_count && a < 8; a++) {
+            free(sargs[a].name); free(sargs[a].class_name); free(sargs[a].hint_string);
+        }
+    }
+
+    char log_buf[128];
+    snprintf(log_buf, sizeof(log_buf), "  [ClassDB] Registered %s < %s", desc->name, desc->parent_name);
+    godot_log_print(log_buf);
+
+    free(class_sn);
+    free(parent_sn);
+    return 1;
+}
+
+// Method bind lookup helper for Crystal
+static GDExtensionMethodBindPtr bridge_get_method_bind(const char *class_name, const char *method_name, int64_t hash) {
+    if (!gd_classdb_get_method_bind) return nullptr;
+    void *c_sn = make_string_name(class_name);
+    void *m_sn = make_string_name(method_name);
+    GDExtensionMethodBindPtr mb = gd_classdb_get_method_bind(c_sn, m_sn, hash);
+    free(c_sn); free(m_sn);
+    return mb;
+}
+
+static void bridge_method_bind_ptrcall(GDExtensionMethodBindPtr method_bind, GDExtensionObjectPtr instance, const void **args, void *ret) {
+    if (gd_object_method_bind_ptrcall && method_bind && instance) {
+        gd_object_method_bind_ptrcall(method_bind, instance, args, ret);
+    }
+}
+
+static GDExtensionObjectPtr bridge_get_singleton(const char *name) {
+    if (!gd_global_get_singleton) return nullptr;
+    void *sn = make_string_name(name);
+    GDExtensionObjectPtr s = gd_global_get_singleton(sn);
+    free(sn);
+    return s;
+}
+
+// Exported BridgeAPI table provided to Crystal
+struct BridgeAPI {
+    int (*register_class)(const CrystalClassDesc *desc);
+    GDExtensionMethodBindPtr (*get_method_bind)(const char *class_name, const char *method_name, int64_t hash);
+    void (*method_bind_ptrcall)(GDExtensionMethodBindPtr method_bind, GDExtensionObjectPtr instance, const void **args, void *ret);
+    GDExtensionObjectPtr (*get_singleton)(const char *name);
+    void* (*make_string_name)(const char *name);
+    void (*free_string_name)(void *sn);
+    void (*type_from_variant)(int type, void *dst, const void *variant);
+    void (*variant_from_type)(int type, void *variant, const void *src);
+    void (*log_print)(const char *msg);
+    void (*log_error)(const char *desc, const char *msg, const char *func, const char *file, int line);
+    void (*log_warning)(const char *desc, const char *msg, const char *func, const char *file, int line);
+};
+
+static BridgeAPI g_bridge_api = {
+    bridge_register_class,
+    bridge_get_method_bind,
+    bridge_method_bind_ptrcall,
+    bridge_get_singleton,
+    make_string_name,
+    free,
+    bridge_type_from_variant,
+    bridge_variant_from_type,
+    godot_log_print,
+    godot_log_error,
+    godot_log_warning
+};
+
+// C API exports
+extern "C" {
+    GDE_EXPORT void crystal_godot_print(const char *msg) {
+        godot_log_print(msg);
+    }
+    GDE_EXPORT void crystal_godot_printerr(const char *msg) {
+        godot_log_printerr(msg);
+    }
+    GDE_EXPORT void crystal_godot_error(const char *msg, const char *func, const char *file, int line) {
+        godot_log_error(msg, nullptr, func, file, line);
+    }
+    GDE_EXPORT void crystal_godot_warning(const char *msg, const char *func, const char *file, int line) {
+        godot_log_warning(msg, nullptr, func, file, line);
+    }
+    GDE_EXPORT const BridgeAPI* crystal_bridge_get_api() {
+        return &g_bridge_api;
+    }
+}
+
+static uint64_t get_file_mtime(const char *path) {
+    WIN32_FILE_ATTRIBUTE_DATA data;
+    if (GetFileAttributesExA(path, GetFileExInfoStandard, &data)) {
+        return ((uint64_t)data.ftLastWriteTime.dwHighDateTime << 32) | data.ftLastWriteTime.dwLowDateTime;
+    }
+    return 0;
+}
+
+// Loads game.dll compiled from Crystal and invokes crystal_godot_init(&g_bridge_api)
+static void load_crystal_game_library() {
+    const char *candidates[] = {
+        "demo/bin/game.dll",
+        "bin/game.dll",
+        "game.dll"
+    };
+
+    const char *sorted_candidates[3];
+    for (int i = 0; i < 3; i++) sorted_candidates[i] = candidates[i];
+    for (int i = 0; i < 2; i++) {
+        for (int j = i + 1; j < 3; j++) {
+            if (get_file_mtime(sorted_candidates[j]) > get_file_mtime(sorted_candidates[i])) {
+                const char *tmp = sorted_candidates[i];
+                sorted_candidates[i] = sorted_candidates[j];
+                sorted_candidates[j] = tmp;
+            }
+        }
+    }
+
+    SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX);
+
+    const char *runtime_deps[] = { "gc.dll", "iconv-2.dll", "pcre2-8.dll" };
+    const char *dep_prefixes[] = { "", "bin/", "demo/bin/", "C:\\Users\\Ian\\scoop\\apps\\crystal\\current\\" };
+    for (int r = 0; r < 3; r++) {
+        for (int p = 0; p < 4; p++) {
+            char path_buf[260];
+            snprintf(path_buf, sizeof(path_buf), "%s%s", dep_prefixes[p], runtime_deps[r]);
+            if (LoadLibraryA(path_buf)) break;
+        }
+    }
+
+    HMODULE hGame = NULL;
+    for (int i = 0; i < 3; i++) {
+        if (strstr(sorted_candidates[i], "demo/bin/")) {
+            SetDllDirectoryA("demo/bin");
+        } else if (strstr(sorted_candidates[i], "bin/")) {
+            SetDllDirectoryA("bin");
+        }
+        hGame = LoadLibraryA(sorted_candidates[i]);
+        if (hGame) {
+            char buf[128];
+            snprintf(buf, sizeof(buf), "[CrystalBridge] Loaded game library from %s (mtime=%llu)", sorted_candidates[i], get_file_mtime(sorted_candidates[i]));
+            godot_log_print(buf);
+            break;
+        } else {
+            DWORD err = GetLastError();
+            if (err != ERROR_MOD_NOT_FOUND && err != ERROR_FILE_NOT_FOUND) {
+                char err_buf[128];
+                snprintf(err_buf, sizeof(err_buf), "LoadLibrary failed for %s with error %lu", candidates[i], err);
+                godot_log_warning(err_buf, nullptr, "load_crystal_game_library", __FILE__, __LINE__);
+            }
+        }
+    }
+
+    if (!hGame) {
+        godot_log_print("[CrystalBridge] No game.dll found yet. Click 'Build Crystal' in the editor to compile your project.");
+        return;
+    }
+
+    typedef void (*CrystalInitFn)(const BridgeAPI *api);
+    CrystalInitFn init_fn = (CrystalInitFn)GetProcAddress(hGame, "crystal_godot_init");
+    if (!init_fn) {
+        godot_log_error("Failed to find 'crystal_godot_init' in game.dll", nullptr, "load_crystal_game_library", __FILE__, __LINE__);
+        return;
+    }
+
+    init_fn(&g_bridge_api);
+}
+
+static void init_common_method_binds() {
+    void *sn_node = make_string_name("Node");
+    void *sn_spp = make_string_name("set_physics_process");
+    void *sn_sp = make_string_name("set_process");
+
+    mb_set_physics_process = gd_classdb_get_method_bind(sn_node, sn_spp, 2586408642);
+    mb_set_process = gd_classdb_get_method_bind(sn_node, sn_sp, 2586408642);
+
+    free(sn_node); free(sn_spp); free(sn_sp);
+
+    if (gd_variant_get_ptr_utility_function) {
+        void *sn_p = make_string_name("print");
+        gd_util_print = gd_variant_get_ptr_utility_function(sn_p, 2648703342ULL);
+        free(sn_p);
+
+        void *sn_perr = make_string_name("printerr");
+        gd_util_printerr = gd_variant_get_ptr_utility_function(sn_perr, 2648703342ULL);
+        free(sn_perr);
+    }
+    if (gd_get_variant_from_type_constructor) {
+        gd_variant_from_string = gd_get_variant_from_type_constructor(GDEXTENSION_VARIANT_TYPE_STRING);
+    }
+}
+
+// Lifecycle callbacks
+static void initialize_crystal_module(void *p_userdata, GDExtensionInitializationLevel p_level) {
+    if (p_level == GDEXTENSION_INITIALIZATION_SCENE) {
+        init_common_method_binds();
+        godot_log_print("[CrystalBridge] Initializing generic Crystal GDExtension host...");
+        load_crystal_game_library();
+    }
+}
+
+static void deinitialize_crystal_module(void *p_userdata, GDExtensionInitializationLevel p_level) {
+    if (p_level == GDEXTENSION_INITIALIZATION_SCENE) {
+        godot_log_print("[CrystalBridge] Unregistering Crystal classes...");
+        if (gd_classdb_unregister_extension_class) {
+            for (int i = g_registered_class_count - 1; i >= 0; i--) {
+                void *sn = make_string_name(g_registered_classes[i].name);
+                gd_classdb_unregister_extension_class(g_library, sn);
+                free(sn);
+            }
+        }
+        g_registered_class_count = 0;
+        godot_log_print("[CrystalBridge] Crystal module deinitialized.");
+    }
+}
+
+// GDExtension Entry Point
+extern "C" GDE_EXPORT GDExtensionBool crystal_library_init(
+    GDExtensionInterfaceGetProcAddress p_get_proc_address,
+    GDExtensionClassLibraryPtr p_library,
+    GDExtensionInitialization *r_initialization
+) {
+    gd_get_proc_address = p_get_proc_address;
+    g_library = p_library;
+
+    gd_string_name_new_with_utf8_chars = (GDExtensionInterfaceStringNameNewWithUtf8Chars)p_get_proc_address("string_name_new_with_utf8_chars");
+    gd_string_new_with_utf8_chars = (GDExtensionInterfaceStringNewWithUtf8Chars)p_get_proc_address("string_new_with_utf8_chars");
+    gd_variant_destroy = (GDExtensionInterfaceVariantDestroy)p_get_proc_address("variant_destroy");
+    gd_classdb_construct_object = (GDExtensionInterfaceClassdbConstructObject)p_get_proc_address("classdb_construct_object");
+    gd_object_set_instance = (GDExtensionInterfaceObjectSetInstance)p_get_proc_address("object_set_instance");
+    gd_classdb_register_extension_class6 = (GDExtensionInterfaceClassdbRegisterExtensionClass6)p_get_proc_address("classdb_register_extension_class6");
+    gd_classdb_unregister_extension_class = (GDExtensionInterfaceClassdbUnregisterExtensionClass)p_get_proc_address("classdb_unregister_extension_class");
+    gd_classdb_register_extension_class_property = (GDExtensionInterfaceClassdbRegisterExtensionClassProperty)p_get_proc_address("classdb_register_extension_class_property");
+    gd_classdb_register_extension_class_signal = (GDExtensionInterfaceClassdbRegisterExtensionClassSignal)p_get_proc_address("classdb_register_extension_class_signal");
+    gd_classdb_register_extension_class_method = (GDExtensionInterfaceClassdbRegisterExtensionClassMethod)p_get_proc_address("classdb_register_extension_class_method");
+    gd_classdb_get_method_bind = (GDExtensionInterfaceClassdbGetMethodBind)p_get_proc_address("classdb_get_method_bind");
+    gd_object_method_bind_ptrcall = (GDExtensionInterfaceObjectMethodBindPtrcall)p_get_proc_address("object_method_bind_ptrcall");
+    gd_global_get_singleton = (GDExtensionInterfaceGlobalGetSingleton)p_get_proc_address("global_get_singleton");
+    gd_get_variant_from_type_constructor = (GDExtensionInterfaceGetVariantFromTypeConstructor)p_get_proc_address("get_variant_from_type_constructor");
+    gd_get_variant_to_type_constructor = (GDExtensionInterfaceGetVariantToTypeConstructor)p_get_proc_address("get_variant_to_type_constructor");
+
+    // Logging & error functions
+    gd_print_error = (GDExtensionInterfacePrintError)p_get_proc_address("print_error");
+    gd_print_error_with_message = (GDExtensionInterfacePrintErrorWithMessage)p_get_proc_address("print_error_with_message");
+    gd_print_warning = (GDExtensionInterfacePrintWarning)p_get_proc_address("print_warning");
+    gd_print_warning_with_message = (GDExtensionInterfacePrintWarningWithMessage)p_get_proc_address("print_warning_with_message");
+    gd_variant_get_ptr_utility_function = (GDExtensionInterfaceVariantGetPtrUtilityFunction)p_get_proc_address("variant_get_ptr_utility_function");
+    gd_variant_get_ptr_destructor = (GDExtensionInterfaceVariantGetPtrDestructor)p_get_proc_address("variant_get_ptr_destructor");
+
+    if (gd_variant_get_ptr_utility_function && gd_string_name_new_with_utf8_chars) {
+        void *sn_print = make_string_name("print");
+        gd_util_print = gd_variant_get_ptr_utility_function(sn_print, 2648703342);
+        free(sn_print);
+
+        void *sn_printerr = make_string_name("printerr");
+        gd_util_printerr = gd_variant_get_ptr_utility_function(sn_printerr, 2648703342);
+        free(sn_printerr);
+    }
+
+    if (gd_get_variant_from_type_constructor) {
+        gd_variant_from_string = gd_get_variant_from_type_constructor(GDEXTENSION_VARIANT_TYPE_STRING);
+    }
+    if (gd_variant_get_ptr_destructor) {
+        gd_string_destroy = gd_variant_get_ptr_destructor(GDEXTENSION_VARIANT_TYPE_STRING);
+    }
+
+    // Catch fatal exceptions so failures are never silent
+    AddVectoredExceptionHandler(1, crystal_crash_handler);
+
+    r_initialization->initialize = initialize_crystal_module;
+    r_initialization->deinitialize = deinitialize_crystal_module;
+    r_initialization->minimum_initialization_level = GDEXTENSION_INITIALIZATION_SCENE;
+    r_initialization->userdata = nullptr;
+
+    return 1;
+}

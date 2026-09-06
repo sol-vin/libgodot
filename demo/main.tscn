@@ -1,0 +1,87 @@
+[gd_scene format=3 uid="uid://dm0yptst38f2"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
+sky_top_color = Color(0.384314, 0.454902, 0.54902, 1)
+sky_horizon_color = Color(0.647059, 0.654902, 0.670588, 1)
+
+[sub_resource type="Sky" id="Sky_env"]
+sky_material = SubResource("ProceduralSkyMaterial_sky")
+
+[sub_resource type="Environment" id="Environment_main"]
+background_mode = 2
+sky = SubResource("Sky_env")
+ambient_light_source = 3
+ambient_light_color = Color(0.8, 0.85, 0.9, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_floor"]
+size = Vector3(20, 0.5, 20)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_floor"]
+size = Vector3(20, 0.5, 20)
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_player"]
+radius = 0.4
+height = 1.8
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_player"]
+radius = 0.4
+height = 1.8
+
+[node name="Main" type="Node3D" unique_id=1902271732]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1487499284]
+environment = SubResource("Environment_main")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=1913846143]
+transform = Transform3D(0.866025, -0.25, 0.433013, 0, 0.866025, 0.5, -0.5, -0.433013, 0.75, 0, 10, 0)
+shadow_enabled = true
+
+[node name="Floor" type="StaticBody3D" parent="." unique_id=504542683]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, 0)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Floor" unique_id=1153339438]
+mesh = SubResource("BoxMesh_floor")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Floor" unique_id=1962019552]
+shape = SubResource("BoxShape3D_floor")
+
+[node name="DemoCharacter" type="DemoCharacter" parent="." unique_id=899405839]
+speed = 350.0
+gravity = 20.0
+max_health = 150
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="DemoCharacter" unique_id=941005614]
+mesh = SubResource("CapsuleMesh_player")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="DemoCharacter" unique_id=1669461880]
+shape = SubResource("CapsuleShape3D_player")
+
+[node name="Camera3D" type="Camera3D" parent="." unique_id=2112491455]
+transform = Transform3D(1, 0, 0, 0, 0.906308, 0.422618, 0, -0.422618, 0.906308, 0, 4, 7)
+
+[node name="UI" type="Control" parent="." unique_id=1478088981]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="UI" unique_id=1067628165]
+layout_mode = 0
+offset_right = 400.0
+offset_bottom = 100.0
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+
+[node name="VBoxContainer" type="VBoxContainer" parent="UI/MarginContainer" unique_id=2082243805]
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="UI/MarginContainer/VBoxContainer" unique_id=1675967350]
+layout_mode = 2
+text = "Crystal LibGodot 4.8 Demo"
+
+[node name="HealthBar" type="ProgressBar" parent="UI/MarginContainer/VBoxContainer" unique_id=806227243]
+layout_mode = 2
+value = 85.0

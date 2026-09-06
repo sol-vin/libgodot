@@ -1,0 +1,10 @@
+name: libgodot
+version: 0.1.0
+
+authors:
+  - Ian
+
+description: |
+  High-performance Crystal bindings and 2-way host integration for Godot Engine 4.8+ using LibGodot and GDExtension.
+
+license: MIT
