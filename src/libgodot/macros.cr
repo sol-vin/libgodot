@@ -1,9 +1,69 @@
-# Annotation for exported properties in Godot Inspector
-annotation Export
-end
+# Export annotations
+annotation Export; end
+annotation ExportRange; end
+annotation ExportEnum; end
+annotation ExportFile; end
+annotation ExportFilePath; end
+annotation ExportDir; end
+annotation ExportGlobalFile; end
+annotation ExportGlobalDir; end
+annotation ExportMultiline; end
+annotation ExportPlaceholder; end
+annotation ExportFlags; end
+annotation ExportFlags2DRender; end
+annotation ExportFlags2DPhysics; end
+annotation ExportFlags2DNavigation; end
+annotation ExportFlags3DRender; end
+annotation ExportFlags3DPhysics; end
+annotation ExportFlags3DNavigation; end
+annotation ExportFlagsAvoidance; end
+annotation ExportExpEasing; end
+annotation ExportColorNoAlpha; end
+annotation ExportNodePath; end
+annotation ExportStorage; end
+annotation ExportToolButton; end
+annotation ExportCustom; end
 
-# Annotation to mark Godot classes internally
-annotation GodotClass
+# Inspector Grouping annotations
+annotation ExportCategory; end
+annotation ExportGroup; end
+annotation ExportSubgroup; end
+
+# Internal / Class / Lifecycle annotations
+annotation GodotClass; end
+annotation Tool; end
+annotation Icon; end
+annotation Abstract; end
+annotation StaticUnload; end
+
+# Node tree initialization
+annotation OnReady; end
+
+# Networking
+annotation RPC; end
+
+# Diagnostics & doc
+annotation WarningIgnore; end
+annotation WarningIgnoreStart; end
+annotation WarningIgnoreRestore; end
+
+# Helper macros
+macro tool; end
+macro static_unload; end
+macro abstract_class; end
+macro icon(path); end
+macro export_category(name); end
+macro export_group(name, prefix = ""); end
+macro export_subgroup(name, prefix = ""); end
+macro warning_ignore(name); end
+macro warning_ignore_start(name); end
+macro warning_ignore_restore(name); end
+macro onready(decl)
+  {% if decl.is_a?(Assign) %}
+    property {{decl.target}}? = nil
+  {% elsif decl.is_a?(TypeDeclaration) %}
+    property {{decl.var}} : {{decl.type}}? = nil
+  {% end %}
 end
 
 module Godot
@@ -47,6 +107,9 @@ module Godot
       property has_physics_process : Bool
       property properties : Array(PropertyInfo)
       property signals : Array(SignalInfo)
+      property icon_path : String
+      property is_abstract : Bool
+      property rpc_methods : Array(NamedTuple(name: String, rpc_mode: Int32, transfer_mode: Int32, call_local: Bool, channel: Int32))
 
       def initialize(
         @class_name : String,
@@ -57,7 +120,10 @@ module Godot
         @has_process : Bool = false,
         @has_physics_process : Bool = false,
         @properties : Array(PropertyInfo) = [] of PropertyInfo,
-        @signals : Array(SignalInfo) = [] of SignalInfo
+        @signals : Array(SignalInfo) = [] of SignalInfo,
+        @icon_path : String = "",
+        @is_abstract : Bool = false,
+        @rpc_methods : Array(NamedTuple(name: String, rpc_mode: Int32, transfer_mode: Int32, call_local: Bool, channel: Int32)) = [] of NamedTuple(name: String, rpc_mode: Int32, transfer_mode: Int32, call_local: Bool, channel: Int32)
       )
       end
     end
@@ -114,9 +180,14 @@ macro node(decl, &block)
     has_process = false
     has_physics_process = false
     is_tool_class = false
+    is_abstract_class = false
+    is_static_unload = false
+    class_icon_path = ""
     props = [] of Nil
     sigs = [] of Nil
     methods_doc = [] of Nil
+    onready_props = [] of Nil
+    rpc_methods = [] of Nil
     class_doc = ""
     stmts = block.body.is_a?(Expressions) ? block.body.expressions : [block.body]
     last_anno = nil
@@ -127,6 +198,7 @@ macro node(decl, &block)
     src_lines = src_content.split("\n")
     comment_accum = ""
     in_target_node = false
+    node_processed = false
     node_depth = 0
     extracted_prop_docs = {} of StringLiteral => StringLiteral
     extracted_sig_docs = {} of StringLiteral => StringLiteral
@@ -134,59 +206,168 @@ macro node(decl, &block)
   %}
 
   {% for s_line in src_lines %}
-    {% s_stripped = s_line.strip %}
-    {% if s_stripped.starts_with?("#") %}
-      {% s_text = s_stripped.gsub(/^#+\s*/, "") %}
-      {% comment_accum = comment_accum.empty? ? s_text : comment_accum + " " + s_text %}
-    {% elsif !in_target_node && (s_stripped.starts_with?("node " + class_name.stringify) || s_stripped.includes?("node " + class_name.stringify + " ") || s_stripped.includes?("node " + class_name.stringify + "<")) %}
-      {% if class_doc.empty? %}
-        {% class_doc = comment_accum %}
-      {% end %}
-      {% comment_accum = "" %}
-      {% in_target_node = true %}
-      {% node_depth = 1 %}
-    {% elsif in_target_node %}
-      {% if s_stripped.starts_with?("property ") %}
-        {% p_var = s_stripped.gsub(/^property\s+/, "").gsub(/\s*[:=].*/, "") %}
-        {% extracted_prop_docs[p_var] = comment_accum %}
-        {% comment_accum = "" %}
-      {% elsif s_stripped.starts_with?("signal ") %}
-        {% s_var = s_stripped.gsub(/^signal\s+/, "").gsub(/\s*[(:].*/, "") %}
-        {% extracted_sig_docs[s_var] = comment_accum %}
-        {% comment_accum = "" %}
-      {% elsif s_stripped.starts_with?("def ") || s_stripped.starts_with?("def self.") %}
-        {% m_var = s_stripped.gsub(/^def\s+(self\.)?/, "").gsub(/\s*[(:].*/, "") %}
-        {% extracted_method_docs[m_var] = comment_accum %}
-        {% comment_accum = "" %}
-        {% node_depth = node_depth + 1 %}
-      {% elsif s_stripped.starts_with?("if ") || s_stripped.starts_with?("unless ") || s_stripped.starts_with?("while ") || s_stripped.starts_with?("until ") || s_stripped.starts_with?("case ") || s_stripped.starts_with?("begin") || s_stripped.ends_with?(" do") || s_stripped.includes?(" do |") %}
-        {% node_depth = node_depth + 1 %}
-        {% comment_accum = "" %}
-      {% elsif s_stripped == "end" %}
-        {% node_depth = node_depth - 1 %}
-        {% if node_depth <= 0 %}
-          {% in_target_node = false %}
+    {% if !node_processed %}
+      {% s_stripped = s_line.strip %}
+      {% if s_stripped.starts_with?("#") %}
+        {% s_text = s_stripped.gsub(/^#+\s*/, "") %}
+        {% comment_accum = comment_accum.empty? ? s_text : comment_accum + " " + s_text %}
+      {% elsif !in_target_node && (s_stripped.starts_with?("node " + class_name.stringify) || s_stripped.includes?("node " + class_name.stringify + " ") || s_stripped.includes?("node " + class_name.stringify + "<")) %}
+        {% if class_doc.empty? %}
+          {% class_doc = comment_accum %}
         {% end %}
         {% comment_accum = "" %}
-      {% elsif !s_stripped.starts_with?("@") && !s_stripped.empty? %}
+        {% in_target_node = true %}
+        {% node_depth = 1 %}
+      {% elsif !in_target_node %}
+        {% if s_stripped.starts_with?("@[Icon(") %}
+          {% class_icon_path = s_stripped.gsub(/^@\[Icon\(\"/, "").gsub(/\"\)\].*/, "") %}
+        {% elsif s_stripped.starts_with?("@[Abstract]") %}
+          {% is_abstract_class = true %}
+        {% elsif s_stripped.starts_with?("@[Tool]") %}
+          {% is_tool_class = true %}
+        {% elsif s_stripped.starts_with?("@[StaticUnload]") %}
+          {% is_static_unload = true %}
+        {% elsif !s_stripped.starts_with?("@") && !s_stripped.empty? %}
+          {% comment_accum = "" %}
+          {% class_icon_path = "" %}
+          {% is_abstract_class = false %}
+          {% is_tool_class = false %}
+          {% is_static_unload = false %}
+        {% end %}
+      {% elsif in_target_node %}
+        {% if s_stripped.starts_with?("property ") %}
+          {% p_var = s_stripped.gsub(/^property\s+/, "").gsub(/\s*[:=].*/, "") %}
+          {% extracted_prop_docs[p_var] = comment_accum %}
+          {% comment_accum = "" %}
+        {% elsif s_stripped.starts_with?("signal ") %}
+          {% s_var = s_stripped.gsub(/^signal\s+/, "").gsub(/\s*[(:].*/, "") %}
+          {% extracted_sig_docs[s_var] = comment_accum %}
+          {% comment_accum = "" %}
+        {% elsif s_stripped.starts_with?("def ") || s_stripped.starts_with?("def self.") %}
+          {% m_var = s_stripped.gsub(/^def\s+(self\.)?/, "").gsub(/\s*[(:].*/, "") %}
+          {% extracted_method_docs[m_var] = comment_accum %}
+          {% comment_accum = "" %}
+          {% node_depth = node_depth + 1 %}
+        {% elsif s_stripped.starts_with?("if ") || s_stripped.starts_with?("unless ") || s_stripped.starts_with?("while ") || s_stripped.starts_with?("until ") || s_stripped.starts_with?("case ") || s_stripped.starts_with?("begin") || s_stripped.ends_with?(" do") || s_stripped.includes?(" do |") %}
+          {% node_depth = node_depth + 1 %}
+          {% comment_accum = "" %}
+        {% elsif s_stripped == "end" %}
+          {% node_depth = node_depth - 1 %}
+          {% if node_depth <= 0 %}
+            {% in_target_node = false %}
+            {% node_processed = true %}
+          {% end %}
+          {% comment_accum = "" %}
+        {% elsif !s_stripped.starts_with?("@") && !s_stripped.empty? %}
+          {% comment_accum = "" %}
+        {% end %}
+      {% else %}
         {% comment_accum = "" %}
       {% end %}
-    {% else %}
-      {% comment_accum = "" %}
     {% end %}
   {% end %}
 
   {% for stmt in stmts %}
     {% if stmt.class_name.id == "Annotation" %}
-      {% if stmt.name.stringify == "Doc" %}
+      {% anno_name = stmt.name.stringify %}
+      {% if anno_name == "Doc" %}
         {% class_doc = stmt.args[0].stringify %}
-      {% elsif stmt.name.stringify == "Tool" %}
+      {% elsif anno_name == "Tool" %}
         {% is_tool_class = true %}
+      {% elsif anno_name == "Icon" %}
+        {% class_icon_path = stmt.args[0].stringify %}
+      {% elsif anno_name == "Abstract" %}
+        {% is_abstract_class = true %}
+      {% elsif anno_name == "StaticUnload" %}
+        {% is_static_unload = true %}
+      {% elsif anno_name == "ExportCategory" %}
+        {% cat_name = stmt.args[0].is_a?(StringLiteral) ? stmt.args[0] : stmt.args[0].id.stringify %}
+        {% props << {:category, cat_name, ""} %}
+      {% elsif anno_name == "ExportGroup" %}
+        {% grp_name = stmt.args[0].is_a?(StringLiteral) ? stmt.args[0] : stmt.args[0].id.stringify %}
+        {% pfx = "" %}
+        {% if stmt.named_args %}
+          {% for na_k, na_v in stmt.named_args %}
+            {% if na_k.stringify == "prefix" %}
+              {% pfx = na_v.is_a?(StringLiteral) ? na_v : na_v.id.stringify %}
+            {% end %}
+          {% end %}
+        {% end %}
+        {% if pfx.empty? && stmt.args.size > 1 %}
+          {% pfx = stmt.args[1].is_a?(StringLiteral) ? stmt.args[1] : stmt.args[1].id.stringify %}
+        {% end %}
+        {% props << {:group, grp_name, pfx} %}
+      {% elsif anno_name == "ExportSubgroup" %}
+        {% sub_name = stmt.args[0].is_a?(StringLiteral) ? stmt.args[0] : stmt.args[0].id.stringify %}
+        {% pfx = "" %}
+        {% if stmt.named_args %}
+          {% for na_k, na_v in stmt.named_args %}
+            {% if na_k.stringify == "prefix" %}
+              {% pfx = na_v.is_a?(StringLiteral) ? na_v : na_v.id.stringify %}
+            {% end %}
+          {% end %}
+        {% end %}
+        {% if pfx.empty? && stmt.args.size > 1 %}
+          {% pfx = stmt.args[1].is_a?(StringLiteral) ? stmt.args[1] : stmt.args[1].id.stringify %}
+        {% end %}
+        {% props << {:subgroup, sub_name, pfx} %}
+      {% elsif anno_name == "WarningIgnore" || anno_name == "WarningIgnoreStart" || anno_name == "WarningIgnoreRestore" %}
+        # suppressed warning, no-op
       {% else %}
         {% last_anno = stmt %}
       {% end %}
     {% elsif stmt.is_a?(Call) && stmt.name.stringify == "tool" %}
       {% is_tool_class = true %}
+    {% elsif stmt.is_a?(Call) && stmt.name.stringify == "icon" %}
+      {% class_icon_path = stmt.args[0].is_a?(StringLiteral) ? stmt.args[0] : stmt.args[0].id.stringify %}
+    {% elsif stmt.is_a?(Call) && stmt.name.stringify == "abstract_class" %}
+      {% is_abstract_class = true %}
+    {% elsif stmt.is_a?(Call) && stmt.name.stringify == "static_unload" %}
+      {% is_static_unload = true %}
+    {% elsif stmt.is_a?(Call) && stmt.name.stringify == "export_category" %}
+      {% cat_name = stmt.args[0].is_a?(StringLiteral) ? stmt.args[0] : stmt.args[0].id.stringify %}
+      {% props << {:category, cat_name, ""} %}
+    {% elsif stmt.is_a?(Call) && stmt.name.stringify == "export_group" %}
+      {% grp_name = stmt.args[0].is_a?(StringLiteral) ? stmt.args[0] : stmt.args[0].id.stringify %}
+      {% pfx = "" %}
+      {% if stmt.named_args %}
+        {% for na in stmt.named_args %}
+          {% if na.name.stringify == "prefix" %}
+            {% pfx = na.value.is_a?(StringLiteral) ? na.value : na.value.id.stringify %}
+          {% end %}
+        {% end %}
+      {% end %}
+      {% if pfx.empty? && stmt.args.size > 1 %}
+        {% pfx = stmt.args[1].is_a?(StringLiteral) ? stmt.args[1] : stmt.args[1].id.stringify %}
+      {% end %}
+      {% props << {:group, grp_name, pfx} %}
+    {% elsif stmt.is_a?(Call) && stmt.name.stringify == "export_subgroup" %}
+      {% sub_name = stmt.args[0].is_a?(StringLiteral) ? stmt.args[0] : stmt.args[0].id.stringify %}
+      {% pfx = "" %}
+      {% if stmt.named_args %}
+        {% for na in stmt.named_args %}
+          {% if na.name.stringify == "prefix" %}
+            {% pfx = na.value.is_a?(StringLiteral) ? na.value : na.value.id.stringify %}
+          {% end %}
+        {% end %}
+      {% end %}
+      {% if pfx.empty? && stmt.args.size > 1 %}
+        {% pfx = stmt.args[1].is_a?(StringLiteral) ? stmt.args[1] : stmt.args[1].id.stringify %}
+      {% end %}
+      {% props << {:subgroup, sub_name, pfx} %}
+    {% elsif stmt.is_a?(Call) && stmt.name.stringify == "onready" %}
+      {% o_decl = stmt.args[0] %}
+      {% if o_decl.is_a?(TypeDeclaration) %}
+        {% o_name = o_decl.var.stringify %}
+        {% o_path = o_decl.value ? (o_decl.value.is_a?(StringLiteral) ? o_decl.value : o_decl.value.id.stringify) : o_name %}
+        {% o_t = o_decl.type %}
+        {% if o_t.is_a?(Union) %}
+          {% actual_o_t = o_t.types.reject { |sub_t| sub_t.stringify == "Nil" || sub_t.stringify == "::Nil" }[0] %}
+        {% else %}
+          {% actual_o_t = o_t %}
+        {% end %}
+        {% onready_props << {o_decl.var, actual_o_t, o_path} %}
+      {% end %}
     {% elsif stmt.is_a?(StringLiteral) && class_doc.empty? %}
       {% class_doc = stmt.value %}
     {% elsif stmt.is_a?(Def) %}
@@ -196,7 +377,65 @@ macro node(decl, &block)
         {% has_process = true %}
       {% elsif stmt.name.stringify == "_physics_process" %}
         {% has_physics_process = true %}
-      {% else %}
+      {% end %}
+      {% if last_anno && last_anno.name.stringify == "RPC" %}
+        {%
+          r_mode = 2
+          r_trans = 2
+          r_local = false
+          r_chan = 0
+        %}
+        {% if last_anno.named_args %}
+          {% for k, v in last_anno.named_args %}
+            {% if k.stringify == "mode" %}
+              {% if v.stringify == "any_peer" || v.id == "any_peer" %}
+                {% r_mode = 1 %}
+              {% else %}
+                {% r_mode = 2 %}
+              {% end %}
+            {% elsif k.stringify == "sync" %}
+              {% if v.stringify == "call_local" || v.id == "call_local" %}
+                {% r_local = true %}
+              {% end %}
+            {% elsif k.stringify == "call_local" %}
+              {% r_local = v %}
+            {% elsif k.stringify == "transfer_mode" %}
+              {% if v.stringify == "unreliable" || v.id == "unreliable" %}
+                {% r_trans = 0 %}
+              {% elsif v.stringify == "unreliable_ordered" || v.id == "unreliable_ordered" %}
+                {% r_trans = 1 %}
+              {% else %}
+                {% r_trans = 2 %}
+              {% end %}
+            {% elsif k.stringify == "channel" %}
+              {% r_chan = v %}
+            {% end %}
+          {% end %}
+        {% elsif last_anno.args.size > 0 %}
+          {% if last_anno.args[0].stringify == "any_peer" || last_anno.args[0].id == "any_peer" %}
+            {% r_mode = 1 %}
+          {% end %}
+          {% if last_anno.args.size > 1 %}
+            {% if last_anno.args[1].stringify == "call_local" || last_anno.args[1].id == "call_local" %}
+              {% r_local = true %}
+            {% end %}
+          {% end %}
+          {% if last_anno.args.size > 2 %}
+            {% if last_anno.args[2].stringify == "unreliable" || last_anno.args[2].id == "unreliable" %}
+              {% r_trans = 0 %}
+            {% elsif last_anno.args[2].stringify == "unreliable_ordered" || last_anno.args[2].id == "unreliable_ordered" %}
+              {% r_trans = 1 %}
+            {% else %}
+              {% r_trans = 2 %}
+            {% end %}
+          {% end %}
+          {% if last_anno.args.size > 3 %}
+            {% r_chan = last_anno.args[3] %}
+          {% end %}
+        {% end %}
+        {% rpc_methods << {stmt.name.stringify, r_mode, r_trans, r_local, r_chan} %}
+      {% end %}
+      {% if stmt.name.stringify != "_ready" && stmt.name.stringify != "_process" && stmt.name.stringify != "_physics_process" %}
         {% m_doc = extracted_method_docs[stmt.name.stringify] || stmt.doc_comment || "" %}
         {% methods_doc << {stmt.name, stmt.args, stmt.return_type, m_doc} %}
       {% end %}
@@ -206,14 +445,25 @@ macro node(decl, &block)
         p_name_str = stmt.args[0].var.stringify
         p_doc = extracted_prop_docs[p_name_str] || ""
       %}
-      {% if last_anno %}
-        {% for key, val in last_anno.named_args %}
-          {% if key.stringify == "doc" %}
-            {% p_doc = val.stringify %}
+      {% if last_anno && last_anno.name.stringify == "OnReady" %}
+        {% onready_path = last_anno.args.size > 0 ? (last_anno.args[0].is_a?(StringLiteral) ? last_anno.args[0] : last_anno.args[0].id.stringify) : p_name_str %}
+        {% o_t = stmt.args[0].type %}
+        {% if o_t.is_a?(Union) %}
+          {% actual_o_t = o_t.types.reject { |sub_t| sub_t.stringify == "Nil" || sub_t.stringify == "::Nil" }[0] %}
+        {% else %}
+          {% actual_o_t = o_t %}
+        {% end %}
+        {% onready_props << {stmt.args[0].var, actual_o_t, onready_path} %}
+      {% else %}
+        {% if last_anno %}
+          {% for key, val in last_anno.named_args %}
+            {% if key.stringify == "doc" %}
+              {% p_doc = val.stringify %}
+            {% end %}
           {% end %}
         {% end %}
+        {% props << {:prop, stmt.args[0], last_anno, p_doc} %}
       {% end %}
-      {% props << {stmt.args[0], last_anno, p_doc} %}
       {% last_anno = nil %}
     {% elsif stmt.is_a?(Call) && stmt.name.id == "signal" %}
       {%
@@ -226,6 +476,10 @@ macro node(decl, &block)
     {% else %}
       {% last_anno = nil %}
     {% end %}
+  {% end %}
+
+  {% if onready_props.size > 0 || rpc_methods.size > 0 %}
+    {% has_ready = true %}
   {% end %}
 
   @[GodotClass]
@@ -241,11 +495,40 @@ macro node(decl, &block)
     # Macro block containing fields, signals, and methods
     {{ yield }}
 
+    {% if onready_props.size > 0 %}
+      private def _godot_init_onready_properties : Void
+        {% for item in onready_props %}
+          {% v_name = item[0] %}
+          {% v_type = item[1] %}
+          {% v_path = item[2] %}
+          if n = get_node({{v_path}})
+            self.{{v_name.id}} = {{v_type}}.new(n.pointer)
+          end
+        {% end %}
+      end
+    {% end %}
+
+    {% if rpc_methods.size > 0 %}
+      private def _godot_setup_rpc_configs : Void
+        {% for r in rpc_methods %}
+          ::Godot::Bridge.node_rpc_config(@pointer, {{r[0]}}, {{r[1]}}, {{r[2]}}, {{r[3]}}, {{r[4]}})
+        {% end %}
+      end
+    {% end %}
+
     def _godot_call_virtual(method_name : String, delta : Float32) : Void
       case method_name
       {% if has_ready %}
       when "_ready"
-        _ready
+        {% if onready_props.size > 0 %}
+          _godot_init_onready_properties
+        {% end %}
+        {% if rpc_methods.size > 0 %}
+          _godot_setup_rpc_configs
+        {% end %}
+        {% if has_ready %}
+          _ready if responds_to?(:_ready)
+        {% end %}
       {% end %}
       {% if has_process %}
       when "_process"
@@ -263,21 +546,29 @@ macro node(decl, &block)
     def _godot_set_property(prop_name : String, val_ptr : Void*) : Void
       case prop_name
       {% for item in props %}
-        {% arg = item[0] %}
-        {% var_name = arg.var %}
-        {% var_type = arg.type.stringify %}
-        when "{{var_name.id}}"
-          {% if var_type == "Float32" %}
-            self.{{var_name.id}} = val_ptr.as(Float64*).value.to_f32
-          {% elsif var_type == "Float64" %}
-            self.{{var_name.id}} = val_ptr.as(Float64*).value
-          {% elsif var_type == "Int32" %}
-            self.{{var_name.id}} = val_ptr.as(Int64*).value.to_i32
-          {% elsif var_type == "Int64" %}
-            self.{{var_name.id}} = val_ptr.as(Int64*).value
-          {% elsif var_type == "Bool" %}
-            self.{{var_name.id}} = val_ptr.as(UInt8*).value != 0_u8
-          {% end %}
+        {% if item[0] == :prop %}
+          {% arg = item[1] %}
+          {% var_name = arg.var %}
+          {% var_type = arg.type.stringify.gsub(/^(::)?Godot::/, "") %}
+          when "{{var_name.id}}"
+            {% if var_type == "Float32" %}
+              self.{{var_name.id}} = val_ptr.as(Float64*).value.to_f32
+            {% elsif var_type == "Float64" %}
+              self.{{var_name.id}} = val_ptr.as(Float64*).value
+            {% elsif var_type == "Int32" %}
+              self.{{var_name.id}} = val_ptr.as(Int64*).value.to_i32
+            {% elsif var_type == "Int64" %}
+              self.{{var_name.id}} = val_ptr.as(Int64*).value
+            {% elsif var_type == "Bool" %}
+              self.{{var_name.id}} = val_ptr.as(UInt8*).value != 0_u8
+            {% elsif var_type == "Vector2" %}
+              self.{{var_name.id}} = val_ptr.as(::Godot::Vector2*).value
+            {% elsif var_type == "Vector3" %}
+              self.{{var_name.id}} = val_ptr.as(::Godot::Vector3*).value
+            {% elsif var_type == "Color" %}
+              self.{{var_name.id}} = val_ptr.as(::Godot::Color*).value
+            {% end %}
+        {% end %}
       {% end %}
       else
         super
@@ -287,17 +578,25 @@ macro node(decl, &block)
     def _godot_get_property(prop_name : String, ret_ptr : Void*) : Void
       case prop_name
       {% for item in props %}
-        {% arg = item[0] %}
-        {% var_name = arg.var %}
-        {% var_type = arg.type.stringify %}
-        when "{{var_name.id}}"
-          {% if var_type == "Float32" || var_type == "Float64" %}
-            ret_ptr.as(Float64*).value = self.{{var_name.id}}.to_f64
-          {% elsif var_type == "Int32" || var_type == "Int64" %}
-            ret_ptr.as(Int64*).value = self.{{var_name.id}}.to_i64
-          {% elsif var_type == "Bool" %}
-            ret_ptr.as(UInt8*).value = self.{{var_name.id}} ? 1_u8 : 0_u8
-          {% end %}
+        {% if item[0] == :prop %}
+          {% arg = item[1] %}
+          {% var_name = arg.var %}
+          {% var_type = arg.type.stringify.gsub(/^(::)?Godot::/, "") %}
+          when "{{var_name.id}}"
+            {% if var_type == "Float32" || var_type == "Float64" %}
+              ret_ptr.as(Float64*).value = self.{{var_name.id}}.to_f64
+            {% elsif var_type == "Int32" || var_type == "Int64" %}
+              ret_ptr.as(Int64*).value = self.{{var_name.id}}.to_i64
+            {% elsif var_type == "Bool" %}
+              ret_ptr.as(UInt8*).value = self.{{var_name.id}} ? 1_u8 : 0_u8
+            {% elsif var_type == "Vector2" %}
+              ret_ptr.as(::Godot::Vector2*).value = self.{{var_name.id}}
+            {% elsif var_type == "Vector3" %}
+              ret_ptr.as(::Godot::Vector3*).value = self.{{var_name.id}}
+            {% elsif var_type == "Color" %}
+              ret_ptr.as(::Godot::Color*).value = self.{{var_name.id}}
+            {% end %}
+        {% end %}
       {% end %}
       else
         super
@@ -308,55 +607,271 @@ macro node(decl, &block)
   # Auto-register this node with full property and signal metadata
   properties_{{class_name}} = Array(::Godot::PropertyInfo).new
   {% for item in props %}
-    {% arg = item[0] %}
-    {% anno = item[1] %}
-    {% var_name = arg.var %}
-    {% var_type = arg.type.stringify %}
-    {%
-      vtype = 0
-      if var_type == "Float32" || var_type == "Float64"
-        vtype = 3 # FLOAT
-      elsif var_type == "Int32" || var_type == "Int64"
-        vtype = 2 # INT
-      elsif var_type == "Bool"
-        vtype = 1 # BOOL
-      elsif var_type == "String"
-        vtype = 4 # STRING
-      elsif var_type == "Vector2"
-        vtype = 5 # VECTOR2
-      elsif var_type == "Vector3"
-        vtype = 9 # VECTOR3
-      end
+    {% if item[0] == :category %}
+      properties_{{class_name}} << ::Godot::PropertyInfo.new(
+        {{item[1]}},
+        "",
+        0,
+        0_u32,
+        "",
+        128_u32
+      )
+    {% elsif item[0] == :group %}
+      properties_{{class_name}} << ::Godot::PropertyInfo.new(
+        {{item[1]}},
+        "",
+        0,
+        0_u32,
+        {{item[2]}},
+        64_u32
+      )
+    {% elsif item[0] == :subgroup %}
+      properties_{{class_name}} << ::Godot::PropertyInfo.new(
+        {{item[1]}},
+        "",
+        0,
+        0_u32,
+        {{item[2]}},
+        256_u32
+      )
+    {% elsif item[0] == :prop %}
+      {% arg = item[1] %}
+      {% anno = item[2] %}
+      {% var_name = arg.var %}
+      {% var_type = arg.type.stringify.gsub(/^(::)?Godot::/, "") %}
+      {%
+        vtype = 0
+        if var_type == "Bool"
+          vtype = 1
+        elsif var_type == "Int32" || var_type == "Int64"
+          vtype = 2
+        elsif var_type == "Float32" || var_type == "Float64"
+          vtype = 3
+        elsif var_type == "String"
+          vtype = 4
+        elsif var_type == "Vector2"
+          vtype = 5
+        elsif var_type == "Vector2i"
+          vtype = 6
+        elsif var_type == "Rect2"
+          vtype = 7
+        elsif var_type == "Rect2i"
+          vtype = 8
+        elsif var_type == "Vector3"
+          vtype = 9
+        elsif var_type == "Vector3i"
+          vtype = 10
+        elsif var_type == "Transform2D"
+          vtype = 11
+        elsif var_type == "Vector4"
+          vtype = 12
+        elsif var_type == "Vector4i"
+          vtype = 13
+        elsif var_type == "Plane"
+          vtype = 14
+        elsif var_type == "Quaternion"
+          vtype = 15
+        elsif var_type == "AABB"
+          vtype = 16
+        elsif var_type == "Basis"
+          vtype = 17
+        elsif var_type == "Transform3D"
+          vtype = 18
+        elsif var_type == "Projection"
+          vtype = 19
+        elsif var_type == "Color"
+          vtype = 20
+        elsif var_type == "StringName"
+          vtype = 21
+        elsif var_type == "NodePath"
+          vtype = 22
+        elsif var_type == "RID"
+          vtype = 23
+        elsif var_type == "Callable"
+          vtype = 25
+        elsif var_type == "Signal"
+          vtype = 26
+        elsif var_type == "Dictionary"
+          vtype = 27
+        elsif var_type == "Array"
+          vtype = 28
+        else
+          vtype = 24
+        end
 
-      hint = 0
-      hint_str = ""
-    %}
-    {% if anno %}
-      {% for key, val in anno.named_args %}
-        {% if key.stringify == "range" %}
+        hint = 0
+        hint_str = ""
+        prop_usage = anno ? 6 : 2
+      %}
+      {% if anno %}
+        {% a_name = anno.name.stringify %}
+        {% if a_name == "Export" %}
+          {% if anno.named_args %}
+            {% for key, val in anno.named_args %}
+              {% k_str = key.stringify %}
+              {% if k_str == "range" %}
+                {% hint = 1 %}
+                {% b_id = val.begin.id.gsub(/_[a-z0-9]+/, "") %}
+                {% e_id = val.end.id.gsub(/_[a-z0-9]+/, "") %}
+                {% hint_str = "#{b_id},#{e_id}" %}
+              {% elsif k_str == "step" %}
+                {% s_id = val.id.gsub(/_[a-z0-9]+/, "") %}
+                {% hint_str = "#{hint_str.id},#{s_id}" %}
+              {% elsif k_str == "enum" %}
+                {% hint = 2 %}
+                {% if val.is_a?(ArrayLiteral) %}
+                  {% hint_str = val.map(&.id.stringify).join(",") %}
+                {% else %}
+                  {% hint_str = val.id.stringify %}
+                {% end %}
+              {% elsif k_str == "file" %}
+                {% hint = 13 %}
+                {% hint_str = val.id.stringify %}
+              {% elsif k_str == "file_path" %}
+                {% hint = 44 %}
+                {% hint_str = val.id.stringify %}
+              {% elsif k_str == "dir" %}
+                {% hint = 14 %}
+              {% elsif k_str == "global_file" %}
+                {% hint = 15 %}
+                {% hint_str = val.id.stringify %}
+              {% elsif k_str == "global_dir" %}
+                {% hint = 16 %}
+              {% elsif k_str == "multiline" %}
+                {% hint = 18 %}
+              {% elsif k_str == "placeholder" %}
+                {% hint = 20 %}
+                {% hint_str = val.id.stringify %}
+              {% elsif k_str == "flags" %}
+                {% hint = 6 %}
+                {% if val.is_a?(ArrayLiteral) %}
+                  {% hint_str = val.map(&.id.stringify).join(",") %}
+                {% else %}
+                  {% hint_str = val.id.stringify %}
+                {% end %}
+              {% elsif k_str == "flags_2d_render" %}
+                {% hint = 7 %}
+              {% elsif k_str == "flags_2d_physics" %}
+                {% hint = 8 %}
+              {% elsif k_str == "flags_2d_navigation" %}
+                {% hint = 9 %}
+              {% elsif k_str == "flags_3d_render" %}
+                {% hint = 10 %}
+              {% elsif k_str == "flags_3d_physics" %}
+                {% hint = 11 %}
+              {% elsif k_str == "flags_3d_navigation" %}
+                {% hint = 12 %}
+              {% elsif k_str == "flags_avoidance" %}
+                {% hint = 37 %}
+              {% elsif k_str == "exp_easing" %}
+                {% hint = 4 %}
+                {% hint_str = val.is_a?(BoolLiteral) ? "" : val.id.stringify %}
+              {% elsif k_str == "color_no_alpha" %}
+                {% hint = 21 %}
+              {% elsif k_str == "node_path" %}
+                {% hint = 26 %}
+                {% hint_str = val.id.stringify %}
+              {% elsif k_str == "storage" %}
+                {% prop_usage = 2 %}
+              {% elsif k_str == "tool_button" %}
+                {% hint = 39 %}
+                {% hint_str = val.id.stringify %}
+              {% elsif k_str == "hint" %}
+                {% hint = val.id.gsub(/_[a-z0-9]+/, "") %}
+              {% elsif k_str == "hint_string" %}
+                {% hint_str = val.id.stringify %}
+              {% elsif k_str == "usage" %}
+                {% prop_usage = val.id.gsub(/_[a-z0-9]+/, "") %}
+              {% end %}
+            {% end %}
+          {% end %}
+        {% elsif a_name == "ExportRange" %}
           {% hint = 1 %}
-          {% b_id = val.begin.id.gsub(/_[a-z0-9]+/, "") %}
-          {% e_id = val.end.id.gsub(/_[a-z0-9]+/, "") %}
-          {% hint_str = "#{b_id},#{e_id}" %}
-        {% elsif key.stringify == "step" %}
-          {% s_id = val.id.gsub(/_[a-z0-9]+/, "") %}
-          {% hint_str = "#{hint_str.id},#{s_id}" %}
+          {% if anno.args[0].is_a?(RangeLiteral) %}
+            {% b_id = anno.args[0].begin.id.gsub(/_[a-z0-9]+/, "") %}
+            {% e_id = anno.args[0].end.id.gsub(/_[a-z0-9]+/, "") %}
+            {% hint_str = "#{b_id},#{e_id}" %}
+            {% if anno.args.size > 1 %}
+              {% s_id = anno.args[1].id.gsub(/_[a-z0-9]+/, "") %}
+              {% hint_str = "#{hint_str.id},#{s_id}" %}
+            {% end %}
+          {% else %}
+            {% b_id = anno.args[0].id.gsub(/_[a-z0-9]+/, "") %}
+            {% e_id = anno.args[1].id.gsub(/_[a-z0-9]+/, "") %}
+            {% hint_str = "#{b_id},#{e_id}" %}
+            {% if anno.args.size > 2 %}
+              {% s_id = anno.args[2].id.gsub(/_[a-z0-9]+/, "") %}
+              {% hint_str = "#{hint_str.id},#{s_id}" %}
+            {% end %}
+          {% end %}
+        {% elsif a_name == "ExportEnum" %}
+          {% hint = 2 %}
+          {% hint_str = anno.args.map(&.id.stringify).join(",") %}
+        {% elsif a_name == "ExportFile" %}
+          {% hint = 13 %}
+          {% hint_str = anno.args.size > 0 ? anno.args[0].id.stringify : "" %}
+        {% elsif a_name == "ExportFilePath" %}
+          {% hint = 44 %}
+          {% hint_str = anno.args.size > 0 ? anno.args[0].id.stringify : "" %}
+        {% elsif a_name == "ExportDir" %}
+          {% hint = 14 %}
+        {% elsif a_name == "ExportGlobalFile" %}
+          {% hint = 15 %}
+          {% hint_str = anno.args.size > 0 ? anno.args[0].id.stringify : "" %}
+        {% elsif a_name == "ExportGlobalDir" %}
+          {% hint = 16 %}
+        {% elsif a_name == "ExportMultiline" %}
+          {% hint = 18 %}
+        {% elsif a_name == "ExportPlaceholder" %}
+          {% hint = 20 %}
+          {% hint_str = anno.args[0].id.stringify %}
+        {% elsif a_name == "ExportFlags" %}
+          {% hint = 6 %}
+          {% hint_str = anno.args.map(&.id.stringify).join(",") %}
+        {% elsif a_name == "ExportFlags2DRender" %}
+          {% hint = 7 %}
+        {% elsif a_name == "ExportFlags2DPhysics" %}
+          {% hint = 8 %}
+        {% elsif a_name == "ExportFlags2DNavigation" %}
+          {% hint = 9 %}
+        {% elsif a_name == "ExportFlags3DRender" %}
+          {% hint = 10 %}
+        {% elsif a_name == "ExportFlags3DPhysics" %}
+          {% hint = 11 %}
+        {% elsif a_name == "ExportFlags3DNavigation" %}
+          {% hint = 12 %}
+        {% elsif a_name == "ExportFlagsAvoidance" %}
+          {% hint = 37 %}
+        {% elsif a_name == "ExportExpEasing" %}
+          {% hint = 4 %}
+          {% hint_str = anno.args.size > 0 ? anno.args[0].id.stringify : "" %}
+        {% elsif a_name == "ExportColorNoAlpha" %}
+          {% hint = 21 %}
+        {% elsif a_name == "ExportNodePath" %}
+          {% hint = 26 %}
+          {% hint_str = anno.args.size > 0 ? anno.args[0].id.stringify : "" %}
+        {% elsif a_name == "ExportStorage" %}
+          {% prop_usage = 2 %}
+        {% elsif a_name == "ExportToolButton" %}
+          {% hint = 39 %}
+          {% hint_str = anno.args.size > 0 ? anno.args[0].id.stringify : "" %}
+        {% elsif a_name == "ExportCustom" %}
+          {% hint = anno.args[0].id.gsub(/_[a-z0-9]+/, "") %}
+          {% hint_str = anno.args[1].id.stringify %}
+          {% if anno.args.size > 2 %}
+            {% prop_usage = anno.args[2].id.gsub(/_[a-z0-9]+/, "") %}
+          {% end %}
         {% end %}
       {% end %}
+      properties_{{class_name}} << ::Godot::PropertyInfo.new(
+        "{{var_name.id}}",
+        "{{var_type.id}}",
+        {{vtype}},
+        {{hint}}_u32,
+        "{{hint_str.id}}",
+        {{prop_usage}}_u32
+      )
     {% end %}
-    {%
-      # If annotated with @[Export], usage is PROPERTY_USAGE_DEFAULT (STORAGE | EDITOR = 6)
-      # Otherwise PROPERTY_USAGE_STORAGE (2) so internal properties don't pollute the Godot inspector
-      prop_usage = anno ? 6_u32 : 2_u32
-    %}
-    properties_{{class_name}} << ::Godot::PropertyInfo.new(
-      "{{var_name.id}}",
-      "{{var_type.id}}",
-      {{vtype}},
-      {{hint}}_u32,
-      "{{hint_str.id}}",
-      {{prop_usage}}
-    )
   {% end %}
 
   signals_{{class_name}} = Array(::Godot::SignalInfo).new
@@ -409,7 +924,18 @@ macro node(decl, &block)
       {{has_process}},
       {{has_physics_process}},
       properties_{{class_name}},
-      signals_{{class_name}}
+      signals_{{class_name}},
+      {{class_icon_path}},
+      {{is_abstract_class}},
+      {% if rpc_methods.size > 0 %}
+      [
+        {% for r in rpc_methods %}
+          {name: {{r[0]}}, rpc_mode: {{r[1]}}, transfer_mode: {{r[2]}}, call_local: {{r[3]}}, channel: {{r[4]}}},
+        {% end %}
+      ]
+      {% else %}
+        [] of NamedTuple(name: String, rpc_mode: Int32, transfer_mode: Int32, call_local: Bool, channel: Int32)
+      {% end %}
     )
   )
 
@@ -430,71 +956,64 @@ macro node(decl, &block)
     io << "  <tutorials>\n  </tutorials>\n"
     io << "  <members>\n"
     {% for item in props %}
-      {% arg = item[0] %}
-      {% p_doc = item[2] %}
-      {% var_type = arg.type.stringify %}
-      {%
-        gtype = "Variant"
-        if var_type == "Float32" || var_type == "Float64"
-          gtype = "float"
-        elsif var_type == "Int32" || var_type == "Int64"
-          gtype = "int"
-        elsif var_type == "Bool"
-          gtype = "bool"
-        elsif var_type == "String"
-          gtype = "String"
-        elsif var_type == "Vector2"
-          gtype = "Vector2"
-        elsif var_type == "Vector3"
-          gtype = "Vector3"
-        elsif var_type == "Color"
-          gtype = "Color"
-        elsif var_type == "NodePath"
-          gtype = "NodePath"
-        end
-      %}
-      io << "    <member name=\"{{arg.var.id}}\" type=\"{{gtype.id}}\" setter=\"\" getter=\"\">"
-      {% if p_doc && p_doc != "" %}
-        io << {{p_doc}}
+      {% if item[0] == :prop %}
+        {% arg = item[1] %}
+        {% p_doc = item[3] %}
+        {% var_type = arg.type.stringify %}
+        {%
+          gtype = "Variant"
+          if var_type == "Float32" || var_type == "Float64"
+            gtype = "float"
+          elsif var_type == "Int32" || var_type == "Int64"
+            gtype = "int"
+          elsif var_type == "Bool"
+            gtype = "bool"
+          elsif var_type == "String"
+            gtype = "String"
+          elsif var_type == "Vector2"
+            gtype = "Vector2"
+          elsif var_type == "Vector3"
+            gtype = "Vector3"
+          elsif var_type == "Color"
+            gtype = "Color"
+          elsif var_type == "NodePath"
+            gtype = "NodePath"
+          end
+        %}
+        io << "    <member name=\"{{arg.var.id}}\" type=\"{{gtype.id}}\" setter=\"\" getter=\"\">"
+        {% if p_doc && p_doc != "" %}
+          io << {{p_doc}}
+        {% end %}
+        io << "</member>\n"
       {% end %}
-      io << "</member>\n"
     {% end %}
     io << "  </members>\n"
     io << "  <signals>\n"
     {% for sig_entry in sigs %}
-      {% s_item = sig_entry[0] %}
-      {% s_doc = sig_entry[1] %}
-      {% s_name = s_item.is_a?(Call) ? s_item.name : s_item %}
-      io << "    <signal name=\"{{s_name.id}}\">\n"
-      {% if s_item.is_a?(Call) %}
-        {% for s_arg, idx in s_item.args %}
-          {% if s_arg.is_a?(TypeDeclaration) %}
-            {% s_atype = s_arg.type.stringify %}
-            {%
-              s_gtype = "Variant"
-              if s_atype == "Float32" || s_atype == "Float64"
-                s_gtype = "float"
-              elsif s_atype == "Int32" || s_atype == "Int64"
-                s_gtype = "int"
-              elsif s_atype == "Bool"
-                s_gtype = "bool"
-              elsif s_atype == "String"
-                s_gtype = "String"
-              end
-            %}
-            io << "      <param index=\"{{idx}}\" name=\"{{s_arg.var.id}}\" type=\"{{s_gtype.id}}\" />\n"
-          {% end %}
-        {% end %}
+      {% sig = sig_entry[0] %}
+      {% sig_doc = sig_entry[1] %}
+      {% if sig.is_a?(Call) %}
+        {% sig_name = sig.name %}
+        {% sig_args = sig.args %}
+      {% else %}
+        {% sig_name = sig %}
+        {% sig_args = [] of Nil %}
       {% end %}
+      io << "    <signal name=\"{{sig_name.id}}\">\n"
       io << "      <description>"
-      {% if s_doc && s_doc != "" %}
-        io << {{s_doc}}
+      {% if sig_doc && sig_doc != "" %}
+        io << {{sig_doc}}
       {% end %}
       io << "</description>\n"
+      {% for a in sig_args %}
+        {% if a.is_a?(TypeDeclaration) %}
+          io << "      <param index=\"0\" name=\"{{a.var.id}}\" type=\"{{a.type.id}}\" />\n"
+        {% end %}
+      {% end %}
       io << "    </signal>\n"
     {% end %}
     io << "  </signals>\n"
-    {% if !methods_doc.empty? %}
+    {% if methods_doc.size > 0 %}
     io << "  <methods>\n"
     {% for m_entry in methods_doc %}
       {% m_name = m_entry[0] %}
@@ -533,11 +1052,4 @@ macro signal(sig_decl)
   def emit_{{sig_name.id}}({% for arg, i in sig_args %}{% if arg.is_a?(TypeDeclaration) %}{{arg.var}} : {{arg.type}}{% else %}{{arg}}{% end %}{% if i < sig_args.size - 1 %}, {% end %}{% end %}) : Void
     emit_signal("{{sig_name.id}}"{% for arg in sig_args %}, {% if arg.is_a?(TypeDeclaration) %}{{arg.var}}{% else %}{{arg}}{% end %}{% end %})
   end
-end
-
-# Inspector organization macros
-macro export_group(name, prefix = "")
-end
-
-macro export_subgroup(name, prefix = "")
 end

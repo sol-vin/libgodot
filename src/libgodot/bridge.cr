@@ -23,6 +23,7 @@ module Godot
     struct CrystalClassDesc
       name : LibC::Char*
       parent_name : LibC::Char*
+      icon_path : LibC::Char*
       is_virtual : Bool
       is_abstract : Bool
       is_tool : Bool
@@ -37,7 +38,7 @@ module Godot
       get_property : (Void*, LibC::Char*, Void* -> Void)
 
       property_count : Int32
-      properties : CrystalPropertyDesc[32]
+      properties : CrystalPropertyDesc[128]
 
       signal_count : Int32
       signals : CrystalSignalDesc[16]
@@ -68,6 +69,7 @@ module Godot
       node_find_child : (Void*, LibC::Char*, Bool, Bool -> Void*)
       node_get_node : (Void*, LibC::Char* -> Void*)
       range_set_value : (Void*, Float64 -> Void)
+      node_rpc_config : (Void*, LibC::Char*, Int32, Int32, Bool, Int32 -> Void)?
     end
   end
 
@@ -169,9 +171,9 @@ module Godot
       Godot::ClassRegistry.entries.each do |entry|
         print "[CrystalBridge]   Registering entry: #{entry.class_name} < #{entry.parent_name} (props=#{entry.properties.size}, sigs=#{entry.signals.size})..."
         # Populate properties StaticArray
-        props = StaticArray(LibBridge::CrystalPropertyDesc, 32).new(LibBridge::CrystalPropertyDesc.new)
+        props = StaticArray(LibBridge::CrystalPropertyDesc, 128).new(LibBridge::CrystalPropertyDesc.new)
         entry.properties.each_with_index do |p, idx|
-          break if idx >= 32
+          break if idx >= 128
           item = LibBridge::CrystalPropertyDesc.new
           item.name = p.name.to_unsafe
           item.type_name = p.type_name.to_unsafe
@@ -204,8 +206,9 @@ module Godot
         desc = LibBridge::CrystalClassDesc.new
         desc.name = entry.class_name.to_unsafe
         desc.parent_name = entry.parent_name.to_unsafe
+        desc.icon_path = entry.icon_path.empty? ? Pointer(LibC::Char).null : entry.icon_path.to_unsafe
         desc.is_virtual = false
-        desc.is_abstract = false
+        desc.is_abstract = entry.is_abstract
         desc.is_tool = entry.is_tool
         desc.has_ready = entry.has_ready
         desc.has_process = entry.has_process
@@ -217,7 +220,7 @@ module Godot
         desc.set_property = set_prop_fn
         desc.get_property = get_prop_fn
 
-        desc.property_count = [entry.properties.size, 32].min
+        desc.property_count = [entry.properties.size, 128].min
         desc.properties = props
 
         desc.signal_count = [entry.signals.size, 16].min
@@ -428,6 +431,14 @@ module Godot
     def self.range_set_value(godot_obj : Void*, value : Float64) : Void
       return if godot_obj.null? || @@api.null? || @@api.value.range_set_value.pointer.null?
       @@api.value.range_set_value.call(godot_obj, value)
+    end
+
+    def self.node_rpc_config(godot_obj : Void*, method : String, rpc_mode : Int32, transfer_mode : Int32, call_local : Bool, channel : Int32) : Void
+      return if godot_obj.null? || @@api.null?
+      if fn = @@api.value.node_rpc_config
+        return if fn.pointer.null?
+        fn.call(godot_obj, method.to_unsafe, rpc_mode, transfer_mode, call_local, channel)
+      end
     end
   end
 end

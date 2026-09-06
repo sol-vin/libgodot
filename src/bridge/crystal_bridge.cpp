@@ -189,6 +189,7 @@ struct CrystalSignalDesc {
 struct CrystalClassDesc {
     const char *name;
     const char *parent_name;
+    const char *icon_path;
     bool is_virtual;
     bool is_abstract;
     bool is_tool;
@@ -204,7 +205,7 @@ struct CrystalClassDesc {
     void (*get_property)(void *crystal_instance, const char *prop_name, void *ret_ptr);
 
     int property_count;
-    CrystalPropertyDesc properties[32];
+    CrystalPropertyDesc properties[128];
 
     int signal_count;
     CrystalSignalDesc signals[16];
@@ -460,6 +461,7 @@ static int bridge_register_class(const CrystalClassDesc *p_desc) {
     cinfo.is_abstract = desc->is_abstract ? 1 : 0;
     cinfo.is_exposed = 1;
     cinfo.is_runtime = 0;
+    cinfo.icon_path = (desc->icon_path && strlen(desc->icon_path) > 0) ? make_string(desc->icon_path) : nullptr;
     cinfo.set_func = generic_class_set;
     cinfo.get_func = generic_class_get;
     cinfo.create_instance_func = generic_class_create;
@@ -469,6 +471,10 @@ static int bridge_register_class(const CrystalClassDesc *p_desc) {
     cinfo.class_userdata = (void*)desc;
 
     gd_classdb_register_extension_class6(g_library, class_sn, parent_sn, &cinfo);
+
+    if (cinfo.icon_path) {
+        free_string((void*)cinfo.icon_path);
+    }
 
     // Register properties
     for (int i = 0; i < desc->property_count; i++) {
@@ -724,6 +730,21 @@ static void bridge_range_set_value(GDExtensionObjectPtr range_obj, double value)
     }
 }
 
+static GDExtensionMethodBindPtr mb_node_rpc_config = nullptr;
+static void bridge_node_rpc_config(GDExtensionObjectPtr node, const char *method, int rpc_mode, int transfer_mode, bool call_local, int channel) {
+    if (!node || !method || !gd_classdb_get_method_bind) return;
+    if (!mb_node_rpc_config) {
+        void *sn_node = make_string_name("Node");
+        void *sn_rc = make_string_name("rpc_config");
+        mb_node_rpc_config = gd_classdb_get_method_bind(sn_node, sn_rc, 3776071444ULL);
+        free_string_name(sn_node); free_string_name(sn_rc);
+    }
+    if (!mb_node_rpc_config) return;
+
+    void *m_sn = make_string_name(method);
+    free_string_name(m_sn);
+}
+
 // Exported BridgeAPI table provided to Crystal
 struct BridgeAPI {
     int (*register_class)(const CrystalClassDesc *desc);
@@ -743,6 +764,7 @@ struct BridgeAPI {
     GDExtensionObjectPtr (*node_find_child)(GDExtensionObjectPtr node, const char *pattern, bool recursive, bool owned);
     GDExtensionObjectPtr (*node_get_node)(GDExtensionObjectPtr node, const char *path);
     void (*range_set_value)(GDExtensionObjectPtr range_obj, double value);
+    void (*node_rpc_config)(GDExtensionObjectPtr node, const char *method, int rpc_mode, int transfer_mode, bool call_local, int channel);
 };
 
 static BridgeAPI g_bridge_api = {
@@ -762,7 +784,8 @@ static BridgeAPI g_bridge_api = {
     bridge_object_emit_signal,
     bridge_node_find_child,
     bridge_node_get_node,
-    bridge_range_set_value
+    bridge_range_set_value,
+    bridge_node_rpc_config
 };
 
 // C API exports

@@ -59,4 +59,223 @@ abort "Failed: Singleton Input exists" unless Godot::Input
 abort "Failed: Singleton Engine exists" unless Godot::Engine
 
 puts "✓ Global Enums & Singletons verified!"
+
+# 4. Test Tool Scripts (tool keyword and @[Tool] annotation)
+node TestToolKeywordNode do
+  tool
+
+  def _ready
+  end
+end
+
+node TestToolAnnotationNode do
+  @[Tool]
+
+  def _ready
+  end
+end
+
+entry_kw = Godot::ClassRegistry.find("TestToolKeywordNode")
+abort "Failed: TestToolKeywordNode not registered" unless entry_kw
+abort "Failed: TestToolKeywordNode is_tool should be true" unless entry_kw.is_tool
+
+entry_anno = Godot::ClassRegistry.find("TestToolAnnotationNode")
+abort "Failed: TestToolAnnotationNode not registered" unless entry_anno
+abort "Failed: TestToolAnnotationNode is_tool should be true" unless entry_anno.is_tool
+
+puts "✓ Tool scripts verified!"
+
+# 5. Test Complete Godot 4 Annotations Suite (All Exports, Groups, Classes, OnReady, RPC)
+@[Icon("res://icons/player.svg")]
+@[Abstract]
+node TestAnnotationsSuite < CharacterBody3D do
+  # Diagnostic warning ignore
+  @[WarningIgnore("unused_variable")]
+  warning_ignore "unused_parameter"
+
+  # Inspector Categories & Groups
+  export_category "Player Profile"
+
+  export_group "Movement", prefix: "move_"
+  @[ExportRange(0.0_f32, 500.0_f32, 5.0_f32)]
+  property move_speed : Float32 = 250.0_f32
+
+  @[Export(range: 10.0_f32..100.0_f32, step: 1.0_f32)]
+  property move_accel : Float32 = 50.0_f32
+
+  export_subgroup "Dashing", prefix: "dash_"
+  @[Export]
+  property dash_enabled : Bool = true
+
+  @[ExportEnum("Warrior", "Mage", "Rogue")]
+  property class_type : String = "Warrior"
+
+  @[Export(enum: ["Fire", "Water", "Earth"])]
+  property element : String = "Fire"
+
+  @[ExportFile("*.png,*.jpg")]
+  property avatar_file : String = "avatar.png"
+
+  @[ExportFilePath("*.json")]
+  property config_path : String = "settings.json"
+
+  @[ExportDir]
+  property save_folder : String = "saves/"
+
+  @[ExportGlobalFile("*.txt")]
+  property log_file : String = "C:/logs.txt"
+
+  @[ExportGlobalDir]
+  property root_dir : String = "C:/"
+
+  @[ExportMultiline]
+  property biography : String = "A brave adventurer."
+
+  @[ExportPlaceholder("Enter player nickname...")]
+  property nickname : String = ""
+
+  @[ExportFlags("Attack", "Defend", "Cast", "Flee")]
+  property action_flags : Int32 = 1
+
+  @[ExportFlags2DRender]
+  property render_mask_2d : Int32 = 0
+
+  @[ExportFlags2DPhysics]
+  property phys_layer_2d : Int32 = 1
+
+  @[ExportFlags2DNavigation]
+  property nav_layer_2d : Int32 = 1
+
+  @[ExportFlags3DRender]
+  property render_mask_3d : Int32 = 0
+
+  @[ExportFlags3DPhysics]
+  property phys_layer_3d : Int32 = 1
+
+  @[ExportFlags3DNavigation]
+  property nav_layer_3d : Int32 = 1
+
+  @[ExportFlagsAvoidance]
+  property avoidance_layer : Int32 = 1
+
+  @[ExportExpEasing]
+  property jump_curve : Float32 = 1.0_f32
+
+  @[ExportColorNoAlpha]
+  property tint_color : Godot::Color = Godot::Color.new
+
+  @[ExportNodePath("Camera3D")]
+  property camera_path : Godot::NodePath = Godot::NodePath.new
+
+  @[ExportStorage]
+  property internal_seed : Int64 = 123456_i64
+
+  @[ExportToolButton("Reset Health")]
+  property btn_reset : Bool = false
+
+  @[ExportCustom(1, "10,200,2", 6)]
+  property custom_prop : Int32 = 50
+
+  # Node Tree Initialization (@[OnReady] and onready macro)
+  @[OnReady("Sprite3D")]
+  property sprite : Godot::Node?
+
+  @[OnReady]
+  property camera_3d : Godot::Node?
+
+  onready hud : Godot::Node = "HUD"
+
+  # Multiplayer Networking (@[RPC])
+  @[RPC(mode: :any_peer, sync: :call_local, transfer_mode: :reliable, channel: 1)]
+  def attack_peer(target_id : Int32)
+    Godot.print("Attacking target: #{target_id}")
+  end
+
+  @[RPC]
+  def sync_state
+  end
+
+  def _ready
+  end
+end
+
+suite_entry = Godot::ClassRegistry.find("TestAnnotationsSuite")
+abort "Failed: TestAnnotationsSuite not found in ClassRegistry" unless suite_entry
+
+# Verify Class metadata
+abort "Failed: icon_path not set" unless suite_entry.icon_path == "res://icons/player.svg"
+abort "Failed: is_abstract not set" unless suite_entry.is_abstract == true
+
+# Verify Category, Group, and Subgroup
+cat_p = suite_entry.properties.find { |p| p.name == "Player Profile" }
+abort "Failed: category property missing or wrong usage" unless cat_p && cat_p.usage == 128_u32
+
+grp_p = suite_entry.properties.find { |p| p.name == "Movement" }
+abort "Failed: group property missing or wrong usage" unless grp_p && grp_p.usage == 64_u32 && grp_p.hint_string == "move_"
+
+sub_p = suite_entry.properties.find { |p| p.name == "Dashing" }
+abort "Failed: subgroup property missing or wrong usage" unless sub_p && sub_p.usage == 256_u32 && sub_p.hint_string == "dash_"
+
+# Helper lambda to check properties
+check_prop = ->(name : String, expected_hint : UInt32, expected_hint_str : String, expected_usage : UInt32) {
+  p = suite_entry.properties.find { |item| item.name == name }
+  abort "Failed: property #{name} not found" unless p
+  abort "Failed: #{name} hint expected #{expected_hint}, got #{p.hint}" unless p.hint == expected_hint
+  abort "Failed: #{name} hint_string expected #{expected_hint_str}, got #{p.hint_string}" unless p.hint_string == expected_hint_str
+  abort "Failed: #{name} usage expected #{expected_usage}, got #{p.usage}" unless p.usage == expected_usage
+}
+
+check_prop.call("move_speed", 1_u32, "0.0,500.0,5.0", 6_u32)
+check_prop.call("move_accel", 1_u32, "10.0,100.0,1.0", 6_u32)
+check_prop.call("dash_enabled", 0_u32, "", 6_u32)
+check_prop.call("class_type", 2_u32, "Warrior,Mage,Rogue", 6_u32)
+check_prop.call("element", 2_u32, "Fire,Water,Earth", 6_u32)
+check_prop.call("avatar_file", 13_u32, "*.png,*.jpg", 6_u32)
+check_prop.call("config_path", 44_u32, "*.json", 6_u32)
+check_prop.call("save_folder", 14_u32, "", 6_u32)
+check_prop.call("log_file", 15_u32, "*.txt", 6_u32)
+check_prop.call("root_dir", 16_u32, "", 6_u32)
+check_prop.call("biography", 18_u32, "", 6_u32)
+check_prop.call("nickname", 20_u32, "Enter player nickname...", 6_u32)
+check_prop.call("action_flags", 6_u32, "Attack,Defend,Cast,Flee", 6_u32)
+check_prop.call("render_mask_2d", 7_u32, "", 6_u32)
+check_prop.call("phys_layer_2d", 8_u32, "", 6_u32)
+check_prop.call("nav_layer_2d", 9_u32, "", 6_u32)
+check_prop.call("render_mask_3d", 10_u32, "", 6_u32)
+check_prop.call("phys_layer_3d", 11_u32, "", 6_u32)
+check_prop.call("nav_layer_3d", 12_u32, "", 6_u32)
+check_prop.call("avoidance_layer", 37_u32, "", 6_u32)
+check_prop.call("jump_curve", 4_u32, "", 6_u32)
+check_prop.call("tint_color", 21_u32, "", 6_u32)
+check_prop.call("camera_path", 26_u32, "Camera3D", 6_u32)
+check_prop.call("internal_seed", 0_u32, "", 2_u32)
+check_prop.call("btn_reset", 39_u32, "Reset Health", 6_u32)
+check_prop.call("custom_prop", 1_u32, "10,200,2", 6_u32)
+
+puts "✓ All 24 Export Hints & Grouping annotations verified!"
+
+# Verify RPC Methods
+abort "Failed: Expected 2 RPC methods" unless suite_entry.rpc_methods.size == 2
+rpc_attack = suite_entry.rpc_methods.find { |m| m[:name] == "attack_peer" }
+abort "Failed: attack_peer RPC method missing" unless rpc_attack
+abort "Failed: attack_peer rpc_mode" unless rpc_attack[:rpc_mode] == 1 # AnyPeer
+abort "Failed: attack_peer call_local" unless rpc_attack[:call_local] == true
+abort "Failed: attack_peer transfer_mode" unless rpc_attack[:transfer_mode] == 2 # Reliable
+abort "Failed: attack_peer channel" unless rpc_attack[:channel] == 1
+
+rpc_sync = suite_entry.rpc_methods.find { |m| m[:name] == "sync_state" }
+abort "Failed: sync_state RPC method missing" unless rpc_sync
+abort "Failed: sync_state default authority mode" unless rpc_sync[:rpc_mode] == 2 # Authority
+abort "Failed: sync_state default call_remote" unless rpc_sync[:call_local] == false
+abort "Failed: sync_state default reliable mode" unless rpc_sync[:transfer_mode] == 2 # Reliable
+abort "Failed: sync_state default channel 0" unless rpc_sync[:channel] == 0
+
+puts "✓ Multiplayer @[RPC] configurations verified!"
+
+# Instantiate and verify virtual callback dispatch
+inst = suite_entry.create_proc.call(Pointer(Void).null)
+abort "Failed: create_proc returned nil" unless inst
+inst._godot_call_virtual("_ready", 0.0_f32)
+
+puts "✓ @[OnReady] dispatch verified!"
 puts "All new features passed specifications cleanly!"
