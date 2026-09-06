@@ -61,18 +61,6 @@ node SpinningCrystal < Node3D do
   @[Export]
   property my_new_property : Int32 = 100
 
-  # Custom test property for inspector testing
-  @[Export]
-  property my_new_property2_electric : Int32 = 567
-
-  # Custom test property for inspector testing
-  @[Export]
-  property my_new_property3_coedsrevenge : Int32 = 9787
-
-  # Custom test property for inspector testing
-  @[Export]
-  property my_new_property4_theticklere : Int32 = 21772
-
   # Whether this crystal has been collected
   property collected : Bool = false
 
@@ -110,6 +98,7 @@ node SpinningCrystal < Node3D do
     @collected = true
     emit_crystal_collected(@score_value)
     Godot.print("[SpinningCrystal] Collected! +#{score_value} points!")
+    Godot.print("HI FROM CRYSTAL/108270172030120")
     # Visually hide crystal by scaling down
     self.scale = Vector3.new(0.0_f32, 0.0_f32, 0.0_f32)
     @score_value

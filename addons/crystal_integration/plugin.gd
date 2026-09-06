@@ -72,7 +72,7 @@ func execute_crystal_build() -> bool:
 			DirAccess.copy_absolute(out_dll, demo_bin + "/game.dll")
 			print("[CrystalPlugin] Synced DLL to demo: " + demo_bin + "/game.dll")
 
-	# Trigger hot-reload of the GDExtension so newly added nodes immediately show up in the editor
+	# Trigger hot-reload of the GDExtension so newly added nodes and properties immediately update
 	var ext_path = "res://addons/crystal_integration/crystal.gdextension"
 	if GDExtensionManager.is_extension_loaded(ext_path):
 		var status = GDExtensionManager.reload_extension(ext_path)
@@ -84,19 +84,42 @@ func execute_crystal_build() -> bool:
 		var status = GDExtensionManager.load_extension(ext_path)
 		print("[CrystalPlugin] GDExtension loaded (status: %d)." % status)
 
+	# Emit extensions_reloaded to trigger EditorNode::_gdextensions_reloaded()
+	# In Godot C++, reload_extension() does not emit this signal automatically.
+	# Emitting it triggers InspectorDock update_tree(), ScriptEditor reload_scripts(), and EditorHelp doc regeneration.
+	if GDExtensionManager.has_signal("extensions_reloaded"):
+		GDExtensionManager.emit_signal("extensions_reloaded")
+
 	# Ensure the Godot Inspector refreshes the currently selected nodes so new properties appear immediately
-	_refresh_inspector.call_deferred()
+	_refresh_inspector()
 
 	return true
 
 func _refresh_inspector() -> void:
 	var selection = EditorInterface.get_selection().get_selected_nodes()
-	for node in selection:
-		node.notify_property_list_changed()
-	var inspector = EditorInterface.get_inspector()
-	if inspector:
-		var obj = inspector.get_edited_object()
-		if obj:
-			obj.notify_property_list_changed()
-			inspector.edit(null)
-			inspector.edit(obj)
+	if selection.is_empty():
+		return
+
+	print("[CrystalPlugin] Refreshing inspector for %d selected node(s)..." % selection.size())
+	# Clear selection and inspected object so EditorInspector clears out old node state
+	EditorInterface.get_selection().clear()
+	EditorInterface.inspect_object(null)
+	EditorInterface.edit_node(null)
+
+	# Defer reselection to let the GDExtension reload and ClassDB caches completely flush
+	await get_tree().process_frame
+	await get_tree().process_frame
+	_reselect_nodes(selection)
+
+func _reselect_nodes(nodes: Array[Node]) -> void:
+	var sel = EditorInterface.get_selection()
+	sel.clear()
+	for node in nodes:
+		if is_instance_valid(node):
+			sel.add_node(node)
+			node.notify_property_list_changed()
+			EditorInterface.edit_node(node)
+			EditorInterface.inspect_object(node)
+			print("[CrystalPlugin] Inspector refreshed for node: %s" % node.name)
+
+

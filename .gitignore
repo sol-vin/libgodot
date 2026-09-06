@@ -1,10 +1,15 @@
 godot.exe
 /.godot/
 /bin/
+
 /demo/.godot/
 /demo/bin
+/demo/addons
+
 /template/.godot/
 /template/bin
+/template/addons
+
 /docs/
 /scratch/
 *.obj

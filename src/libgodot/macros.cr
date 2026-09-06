@@ -41,6 +41,7 @@ module Godot
       getter class_name : String
       getter parent_name : String
       getter create_proc : (Void* -> Object)
+      property is_tool : Bool
       property has_ready : Bool
       property has_process : Bool
       property has_physics_process : Bool
@@ -51,6 +52,7 @@ module Godot
         @class_name : String,
         @parent_name : String,
         @create_proc : (Void* -> Object),
+        @is_tool : Bool = false,
         @has_ready : Bool = false,
         @has_process : Bool = false,
         @has_physics_process : Bool = false,
@@ -64,6 +66,7 @@ module Godot
 
     def self.register(entry : Entry)
       if parent = find(entry.parent_name)
+        entry.is_tool ||= parent.is_tool
         entry.has_ready ||= parent.has_ready
         entry.has_process ||= parent.has_process
         entry.has_physics_process ||= parent.has_physics_process
@@ -110,6 +113,7 @@ macro node(decl, &block)
     has_ready = false
     has_process = false
     has_physics_process = false
+    is_tool_class = false
     props = [] of Nil
     sigs = [] of Nil
     methods_doc = [] of Nil
@@ -155,9 +159,13 @@ macro node(decl, &block)
     {% if stmt.class_name.id == "Annotation" %}
       {% if stmt.name.stringify == "Doc" %}
         {% class_doc = stmt.args[0].stringify %}
+      {% elsif stmt.name.stringify == "Tool" %}
+        {% is_tool_class = true %}
       {% else %}
         {% last_anno = stmt %}
       {% end %}
+    {% elsif stmt.is_a?(Call) && stmt.name.stringify == "tool" %}
+      {% is_tool_class = true %}
     {% elsif stmt.is_a?(StringLiteral) && class_doc.empty? %}
       {% class_doc = stmt.value %}
     {% elsif stmt.is_a?(Def) %}
@@ -375,6 +383,7 @@ macro node(decl, &block)
         inst.pointer = godot_ptr
         inst.as(::Godot::Object)
       },
+      {{is_tool_class}},
       {{has_ready}},
       {{has_process}},
       {{has_physics_process}},

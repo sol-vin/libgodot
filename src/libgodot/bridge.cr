@@ -25,6 +25,7 @@ module Godot
       parent_name : LibC::Char*
       is_virtual : Bool
       is_abstract : Bool
+      is_tool : Bool
       has_ready : Bool
       has_process : Bool
       has_physics_process : Bool
@@ -205,6 +206,7 @@ module Godot
         desc.parent_name = entry.parent_name.to_unsafe
         desc.is_virtual = false
         desc.is_abstract = false
+        desc.is_tool = entry.is_tool
         desc.has_ready = entry.has_ready
         desc.has_process = entry.has_process
         desc.has_physics_process = entry.has_physics_process
