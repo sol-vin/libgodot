@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <vector>
+#include <deque>
 #include <string>
 
 #include "gdextension_interface.h"
@@ -183,7 +184,7 @@ struct CrystalSignalArgDesc {
 struct CrystalSignalDesc {
     const char *name;
     int arg_count;
-    CrystalSignalArgDesc args[8];
+    const CrystalSignalArgDesc *args;
 };
 
 struct CrystalClassDesc {
@@ -200,15 +201,15 @@ struct CrystalClassDesc {
     // Crystal Host Callbacks
     void* (*create_instance)(const CrystalClassDesc *desc, void *godot_object);
     void (*free_instance)(void *crystal_instance);
-    void (*call_virtual)(void *crystal_instance, const char *method_name, float delta);
+    void (*call_virtual)(void *crystal_instance, const char *method_name, double delta);
     void (*set_property)(void *crystal_instance, const char *prop_name, const void *val_ptr);
     void (*get_property)(void *crystal_instance, const char *prop_name, void *ret_ptr);
 
     int property_count;
-    CrystalPropertyDesc properties[128];
+    const CrystalPropertyDesc *properties;
 
     int signal_count;
-    CrystalSignalDesc signals[16];
+    const CrystalSignalDesc *signals;
 
     const CrystalClassDesc *parent_desc;
 };
@@ -220,10 +221,8 @@ struct GenericExtensionInstance {
     const CrystalClassDesc *desc;
 };
 
-// Global list of registered classes for unregistration on shutdown
-#define MAX_REGISTERED_CLASSES 128
-static CrystalClassDesc g_registered_classes[MAX_REGISTERED_CLASSES];
-static int g_registered_class_count = 0;
+// Global list of registered classes for unregistration on shutdown (deque ensures pointer stability)
+static std::deque<CrystalClassDesc> g_registered_classes;
 
 static bool is_editor_active() {
     static int s_cached = -1;
@@ -343,23 +342,23 @@ static void generic_virtual_physics_process(GDExtensionClassInstancePtr p_instan
     GenericExtensionInstance *inst = (GenericExtensionInstance*)p_instance;
     if (!inst || !inst->desc || !inst->desc->call_virtual || !inst->crystal_instance) return;
     if (is_editor_active() && !inst->desc->is_tool) return;
-    double delta = (p_args && p_args[0]) ? *(const double*)p_args[0] : 0.016666;
-    inst->desc->call_virtual(inst->crystal_instance, "_physics_process", (float)delta);
+    double delta = (p_args && p_args[0]) ? *(const double*)p_args[0] : 0.016666666666666666;
+    inst->desc->call_virtual(inst->crystal_instance, "_physics_process", delta);
 }
 
 static void generic_virtual_process(GDExtensionClassInstancePtr p_instance, const GDExtensionConstTypePtr *p_args, GDExtensionTypePtr r_ret) {
     GenericExtensionInstance *inst = (GenericExtensionInstance*)p_instance;
     if (!inst || !inst->desc || !inst->desc->call_virtual || !inst->crystal_instance) return;
     if (is_editor_active() && !inst->desc->is_tool) return;
-    double delta = (p_args && p_args[0]) ? *(const double*)p_args[0] : 0.016666;
-    inst->desc->call_virtual(inst->crystal_instance, "_process", (float)delta);
+    double delta = (p_args && p_args[0]) ? *(const double*)p_args[0] : 0.016666666666666666;
+    inst->desc->call_virtual(inst->crystal_instance, "_process", delta);
 }
 
 static void generic_virtual_ready(GDExtensionClassInstancePtr p_instance, const GDExtensionConstTypePtr *p_args, GDExtensionTypePtr r_ret) {
     GenericExtensionInstance *inst = (GenericExtensionInstance*)p_instance;
     if (!inst || !inst->desc || !inst->desc->call_virtual || !inst->crystal_instance) return;
     if (is_editor_active() && !inst->desc->is_tool) return;
-    inst->desc->call_virtual(inst->crystal_instance, "_ready", 0.0f);
+    inst->desc->call_virtual(inst->crystal_instance, "_ready", 0.0);
 }
 
 static GDExtensionClassCallVirtual generic_class_get_virtual(void *p_class_userdata, GDExtensionConstStringNamePtr p_name, uint32_t p_hash) {
@@ -399,7 +398,7 @@ static GDExtensionBool generic_class_set(GDExtensionClassInstancePtr p_instance,
             bool match = (memcmp(p_name, prop_sn, sizeof(void*)) == 0);
             free_string_name(prop_sn);
             if (match) {
-                alignas(void*) char raw_buf[64] = {};
+                alignas(void*) char raw_buf[128] = {};
                 bridge_type_from_variant(curr->properties[i].variant_type, raw_buf, p_value);
                 inst->desc->set_property(inst->crystal_instance, curr->properties[i].name, raw_buf);
                 return 1;
@@ -421,7 +420,7 @@ static GDExtensionBool generic_class_get(GDExtensionClassInstancePtr p_instance,
             bool match = (memcmp(p_name, prop_sn, sizeof(void*)) == 0);
             free_string_name(prop_sn);
             if (match) {
-                alignas(void*) char raw_buf[64] = {};
+                alignas(void*) char raw_buf[128] = {};
                 inst->desc->get_property(inst->crystal_instance, curr->properties[i].name, raw_buf);
                 bridge_variant_from_type(curr->properties[i].variant_type, r_ret, raw_buf);
                 return 1;
@@ -435,18 +434,13 @@ static GDExtensionBool generic_class_get(GDExtensionClassInstancePtr p_instance,
 // Function to register a class from Crystal
 static int bridge_register_class(const CrystalClassDesc *p_desc) {
     if (!p_desc || !g_library) return 0;
-    if (g_registered_class_count >= MAX_REGISTERED_CLASSES) {
-        godot_log_error("Max registered classes exceeded", nullptr, "bridge_register_class", __FILE__, __LINE__);
-        return 0;
-    }
 
-    // Save copy in static storage
-    CrystalClassDesc *desc = &g_registered_classes[g_registered_class_count++];
-    memcpy(desc, p_desc, sizeof(CrystalClassDesc));
+    g_registered_classes.push_back(*p_desc);
+    CrystalClassDesc *desc = &g_registered_classes.back();
 
     // Link parent_desc if parent is also a registered Crystal class
     desc->parent_desc = nullptr;
-    for (int i = 0; i < g_registered_class_count - 1; i++) {
+    for (size_t i = 0; i < g_registered_classes.size() - 1; i++) {
         if (strcmp(g_registered_classes[i].name, desc->parent_name) == 0) {
             desc->parent_desc = &g_registered_classes[i];
             break;
@@ -476,7 +470,7 @@ static int bridge_register_class(const CrystalClassDesc *p_desc) {
         free_string((void*)cinfo.icon_path);
     }
 
-    // Register properties
+    // Register properties dynamically without arbitrary limits
     for (int i = 0; i < desc->property_count; i++) {
         const CrystalPropertyDesc &p = desc->properties[i];
         GDExtensionPropertyInfo pinfo = {};
@@ -496,12 +490,12 @@ static int bridge_register_class(const CrystalClassDesc *p_desc) {
         free_string_name(setter_sn); free_string_name(getter_sn);
     }
 
-    // Register signals
+    // Register signals dynamically with vector
     for (int i = 0; i < desc->signal_count; i++) {
         const CrystalSignalDesc &s = desc->signals[i];
         void *sig_sn = make_string_name(s.name);
-        GDExtensionPropertyInfo sargs[8] = {};
-        for (int a = 0; a < s.arg_count && a < 8; a++) {
+        std::vector<GDExtensionPropertyInfo> sargs(s.arg_count);
+        for (int a = 0; a < s.arg_count; a++) {
             sargs[a].type = (GDExtensionVariantType)s.args[a].variant_type;
             sargs[a].name = make_string_name(s.args[a].name);
             sargs[a].class_name = make_string_name("");
@@ -510,10 +504,10 @@ static int bridge_register_class(const CrystalClassDesc *p_desc) {
             sargs[a].usage = 6;
         }
 
-        gd_classdb_register_extension_class_signal(g_library, class_sn, sig_sn, sargs, s.arg_count);
+        gd_classdb_register_extension_class_signal(g_library, class_sn, sig_sn, sargs.data(), s.arg_count);
 
         free_string_name(sig_sn);
-        for (int a = 0; a < s.arg_count && a < 8; a++) {
+        for (int a = 0; a < s.arg_count; a++) {
             free_string_name(sargs[a].name); free_string_name(sargs[a].class_name); free_string(sargs[a].hint_string);
         }
     }
@@ -577,35 +571,27 @@ struct BridgeSignalArg {
     const void *data;
 };
 
-static GDExtensionMethodBindPtr mb_object_emit_signal = nullptr;
 static GDExtensionVariantFromTypeConstructorFunc gd_variant_from_string_name = nullptr;
 
-static void bridge_object_emit_signal(GDExtensionObjectPtr instance, const char *signal_name, const BridgeSignalArg *args, int arg_count) {
-    if (!instance || !signal_name || !gd_classdb_get_method_bind || !gd_object_method_bind_call) return;
-    if (!mb_object_emit_signal) {
-        void *sn_obj = make_string_name("Object");
-        void *sn_emit = make_string_name("emit_signal");
-        mb_object_emit_signal = gd_classdb_get_method_bind(sn_obj, sn_emit, 4047867050ULL);
-        free_string_name(sn_obj); free_string_name(sn_emit);
-    }
-    if (!mb_object_emit_signal) return;
+static void bridge_call_method_vararg(GDExtensionMethodBindPtr mb, GDExtensionObjectPtr instance, const char *first_arg_name, const BridgeSignalArg *args, int arg_count) {
+    if (!instance || !first_arg_name || !mb || !gd_object_method_bind_call) return;
 
     if (!gd_variant_from_string_name && gd_get_variant_from_type_constructor) {
         gd_variant_from_string_name = gd_get_variant_from_type_constructor(GDEXTENSION_VARIANT_TYPE_STRING_NAME);
     }
 
-    void *sn = make_string_name(signal_name);
-    alignas(void*) char var_sig_name[24];
-    memset(var_sig_name, 0, sizeof(var_sig_name));
+    void *sn = make_string_name(first_arg_name);
+    alignas(void*) char var_first_arg[24];
+    memset(var_first_arg, 0, sizeof(var_first_arg));
     if (gd_variant_from_string_name) {
-        gd_variant_from_string_name(var_sig_name, sn);
+        gd_variant_from_string_name(var_first_arg, sn);
     }
 
     alignas(void*) char var_args[16][24];
     const void *call_args[17];
-    call_args[0] = var_sig_name;
+    call_args[0] = var_first_arg;
 
-    int actual_count = (arg_count < 16) ? arg_count : 16;
+    int actual_count = (args && arg_count > 0) ? ((arg_count < 16) ? arg_count : 16) : 0;
     for (int i = 0; i < actual_count; i++) {
         memset(var_args[i], 0, sizeof(var_args[i]));
         int t = args[i].type;
@@ -645,7 +631,7 @@ static void bridge_object_emit_signal(GDExtensionObjectPtr instance, const char 
     alignas(void*) char var_ret[24];
     memset(var_ret, 0, sizeof(var_ret));
     GDExtensionCallError call_err;
-    gd_object_method_bind_call(mb_object_emit_signal, instance, (const GDExtensionConstVariantPtr*)call_args, actual_count + 1, var_ret, &call_err);
+    gd_object_method_bind_call(mb, instance, (const GDExtensionConstVariantPtr*)call_args, actual_count + 1, var_ret, &call_err);
 
     // Cleanup
     if (gd_variant_destroy) {
@@ -653,9 +639,48 @@ static void bridge_object_emit_signal(GDExtensionObjectPtr instance, const char 
         for (int i = 0; i < actual_count; i++) {
             gd_variant_destroy(var_args[i]);
         }
-        gd_variant_destroy(var_sig_name);
+        gd_variant_destroy(var_first_arg);
     }
     free_string_name(sn);
+}
+
+static GDExtensionMethodBindPtr mb_object_emit_signal = nullptr;
+static void bridge_object_emit_signal(GDExtensionObjectPtr instance, const char *signal_name, const BridgeSignalArg *args, int arg_count) {
+    if (!instance || !signal_name || !gd_classdb_get_method_bind || !gd_object_method_bind_call) return;
+    if (!mb_object_emit_signal) {
+        void *sn_obj = make_string_name("Object");
+        void *sn_emit = make_string_name("emit_signal");
+        mb_object_emit_signal = gd_classdb_get_method_bind(sn_obj, sn_emit, 4047867050ULL);
+        free_string_name(sn_obj); free_string_name(sn_emit);
+    }
+    if (!mb_object_emit_signal) return;
+    bridge_call_method_vararg(mb_object_emit_signal, instance, signal_name, args, arg_count);
+}
+
+static GDExtensionMethodBindPtr mb_object_call_deferred = nullptr;
+static void bridge_object_call_deferred(GDExtensionObjectPtr instance, const char *method_name, const BridgeSignalArg *args, int arg_count) {
+    if (!instance || !method_name || !gd_classdb_get_method_bind || !gd_object_method_bind_call) return;
+    if (!mb_object_call_deferred) {
+        void *sn_obj = make_string_name("Object");
+        void *sn_cd = make_string_name("call_deferred");
+        mb_object_call_deferred = gd_classdb_get_method_bind(sn_obj, sn_cd, 3400424181ULL);
+        free_string_name(sn_obj); free_string_name(sn_cd);
+    }
+    if (!mb_object_call_deferred) return;
+    bridge_call_method_vararg(mb_object_call_deferred, instance, method_name, args, arg_count);
+}
+
+static GDExtensionMethodBindPtr mb_object_call = nullptr;
+static void bridge_object_call(GDExtensionObjectPtr instance, const char *method_name, const BridgeSignalArg *args, int arg_count) {
+    if (!instance || !method_name || !gd_classdb_get_method_bind || !gd_object_method_bind_call) return;
+    if (!mb_object_call) {
+        void *sn_obj = make_string_name("Object");
+        void *sn_c = make_string_name("call");
+        mb_object_call = gd_classdb_get_method_bind(sn_obj, sn_c, 3400424181ULL);
+        free_string_name(sn_obj); free_string_name(sn_c);
+    }
+    if (!mb_object_call) return;
+    bridge_call_method_vararg(mb_object_call, instance, method_name, args, arg_count);
 }
 
 static GDExtensionMethodBindPtr mb_node_find_child = nullptr;
@@ -732,7 +757,7 @@ static void bridge_range_set_value(GDExtensionObjectPtr range_obj, double value)
 
 static GDExtensionMethodBindPtr mb_node_rpc_config = nullptr;
 static void bridge_node_rpc_config(GDExtensionObjectPtr node, const char *method, int rpc_mode, int transfer_mode, bool call_local, int channel) {
-    if (!node || !method || !gd_classdb_get_method_bind) return;
+    if (!node || !method || !gd_classdb_get_method_bind || !gd_object_method_bind_ptrcall) return;
     if (!mb_node_rpc_config) {
         void *sn_node = make_string_name("Node");
         void *sn_rc = make_string_name("rpc_config");
@@ -742,6 +767,13 @@ static void bridge_node_rpc_config(GDExtensionObjectPtr node, const char *method
     if (!mb_node_rpc_config) return;
 
     void *m_sn = make_string_name(method);
+    alignas(void*) char var_config[24];
+    memset(var_config, 0, sizeof(var_config));
+
+    // Call Node.rpc_config(method, config)
+    const void *args[2] = { m_sn, var_config };
+    gd_object_method_bind_ptrcall(mb_node_rpc_config, node, args, nullptr);
+
     free_string_name(m_sn);
 }
 
@@ -761,6 +793,8 @@ struct BridgeAPI {
     void (*log_error)(const char *desc, const char *msg, const char *func, const char *file, int line);
     void (*log_warning)(const char *desc, const char *msg, const char *func, const char *file, int line);
     void (*object_emit_signal)(GDExtensionObjectPtr instance, const char *signal_name, const BridgeSignalArg *args, int arg_count);
+    void (*object_call_deferred)(GDExtensionObjectPtr instance, const char *method_name, const BridgeSignalArg *args, int arg_count);
+    void (*object_call)(GDExtensionObjectPtr instance, const char *method_name, const BridgeSignalArg *args, int arg_count);
     GDExtensionObjectPtr (*node_find_child)(GDExtensionObjectPtr node, const char *pattern, bool recursive, bool owned);
     GDExtensionObjectPtr (*node_get_node)(GDExtensionObjectPtr node, const char *path);
     void (*range_set_value)(GDExtensionObjectPtr range_obj, double value);
@@ -782,6 +816,8 @@ static BridgeAPI g_bridge_api = {
     godot_log_error,
     godot_log_warning,
     bridge_object_emit_signal,
+    bridge_object_call_deferred,
+    bridge_object_call,
     bridge_node_find_child,
     bridge_node_get_node,
     bridge_range_set_value,
@@ -998,7 +1034,7 @@ static void init_common_method_binds() {
 // Lifecycle callbacks
 static void initialize_crystal_module(void *p_userdata, GDExtensionInitializationLevel p_level) {
     if (p_level == GDEXTENSION_INITIALIZATION_SCENE) {
-        g_registered_class_count = 0;
+        g_registered_classes.clear();
         init_common_method_binds();
         godot_log_print("[CrystalBridge] Initializing generic Crystal GDExtension host...");
         load_crystal_game_library();
@@ -1011,13 +1047,13 @@ static void deinitialize_crystal_module(void *p_userdata, GDExtensionInitializat
     if (p_level == GDEXTENSION_INITIALIZATION_SCENE) {
         godot_log_print("[CrystalBridge] Unregistering Crystal classes...");
         if (gd_classdb_unregister_extension_class) {
-            for (int i = g_registered_class_count - 1; i >= 0; i--) {
+            for (int i = (int)g_registered_classes.size() - 1; i >= 0; i--) {
                 void *sn = make_string_name(g_registered_classes[i].name);
                 gd_classdb_unregister_extension_class(g_library, sn);
                 free_string_name(sn);
             }
         }
-        g_registered_class_count = 0;
+        g_registered_classes.clear();
         g_editor_doc_xmls.clear();
         unload_crystal_game_library();
         godot_log_print("[CrystalBridge] Crystal module deinitialized.");

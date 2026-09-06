@@ -1,63 +1,235 @@
-# Export annotations
+# Marks an instance variable as an exported property visible in the Godot inspector.
+#
+# ```crystal
+# @[Export]
+# property speed : Float32 = 100.0_f32
+# ```
 annotation Export; end
+
+# Exports a numeric property constrained to a specific range in the Godot inspector.
+# Supports min, max, and optional step size.
+#
+# ```crystal
+# @[ExportRange(0.0, 100.0, 0.5)]
+# property health : Float64 = 100.0
+# ```
 annotation ExportRange; end
+
+# Exports a property whose values are constrained to an enumeration or list of string choices.
+#
+# ```crystal
+# @[ExportEnum("Warrior", "Mage", "Rogue")]
+# property character_class : String = "Warrior"
+# ```
 annotation ExportEnum; end
+
+# Exports a string property as a file picker in the Godot inspector.
+# Accepts optional file extension filters (e.g. `"*.png,*.jpg"`).
+#
+# ```crystal
+# @[ExportFile("*.png")]
+# property sprite_path : String = ""
+# ```
 annotation ExportFile; end
+
+# Exports a string property as a file path selector.
 annotation ExportFilePath; end
+
+# Exports a string property as a directory picker in the Godot inspector.
+#
+# ```crystal
+# @[ExportDir]
+# property assets_dir : String = "res://assets"
+# ```
 annotation ExportDir; end
+
+# Exports a string property as a global (system-wide filesystem) file picker.
 annotation ExportGlobalFile; end
+
+# Exports a string property as a global (system-wide filesystem) directory picker.
 annotation ExportGlobalDir; end
+
+# Exports a string property with a multiline text editor in the Godot inspector.
+#
+# ```crystal
+# @[ExportMultiline]
+# property dialogue : String = "Hello\nWorld!"
+# ```
 annotation ExportMultiline; end
+
+# Exports a string property with placeholder ghost text shown when empty.
+#
+# ```crystal
+# @[ExportPlaceholder("Enter player name...")]
+# property player_name : String = ""
+# ```
 annotation ExportPlaceholder; end
+
+# Exports an integer property as a bitmask flag field in the Godot inspector.
+#
+# ```crystal
+# @[ExportFlags("Fire", "Water", "Earth", "Air")]
+# property elemental_affinities : Int32 = 0
+# ```
 annotation ExportFlags; end
+
+# Exports an integer property as 2D render layer visibility bitmask flags.
 annotation ExportFlags2DRender; end
+
+# Exports an integer property as 2D physics collision layers and masks.
 annotation ExportFlags2DPhysics; end
+
+# Exports an integer property as 2D navigation layers.
 annotation ExportFlags2DNavigation; end
+
+# Exports an integer property as 3D render layer visibility bitmask flags.
 annotation ExportFlags3DRender; end
+
+# Exports an integer property as 3D physics collision layers and masks.
 annotation ExportFlags3DPhysics; end
+
+# Exports an integer property as 3D navigation layers.
 annotation ExportFlags3DNavigation; end
+
+# Exports an integer property as navigation avoidance obstacle layers.
 annotation ExportFlagsAvoidance; end
+
+# Exports a float property with exponential easing curve visualization in the inspector.
 annotation ExportExpEasing; end
+
+# Exports a Color property while suppressing the alpha (transparency) channel selector.
+#
+# ```crystal
+# @[ExportColorNoAlpha]
+# property team_color : Color = Color::RED
+# ```
 annotation ExportColorNoAlpha; end
+
+# Exports a NodePath property restricted to specific node types in the scene hierarchy.
+#
+# ```crystal
+# @[ExportNodePath("Camera3D")]
+# property camera_path : NodePath = NodePath.new
+# ```
 annotation ExportNodePath; end
+
+# Exports a property stored within the scene file without displaying in the editor inspector.
 annotation ExportStorage; end
+
+# Exposes a method or property as an interactive button in the inspector.
 annotation ExportToolButton; end
+
+# Exports a property with custom PropertyHint and hint string parameters.
+#
+# ```crystal
+# @[ExportCustom(hint: 1_u32, hint_string: "0,10,1")]
+# property custom_val : Int32 = 5
+# ```
 annotation ExportCustom; end
 
-# Inspector Grouping annotations
+# Starts a top-level category header in the Godot inspector.
 annotation ExportCategory; end
+
+# Groups subsequent exported properties under a collapsible heading in the inspector.
+# An optional prefix strips common prefixes from property names in the group.
+#
+# ```crystal
+# @[ExportGroup("Movement", prefix: "move_")]
+# property move_speed : Float32 = 200.0_f32
+# ```
 annotation ExportGroup; end
+
+# Groups exported properties under a subgroup within an existing group.
 annotation ExportSubgroup; end
 
-# Internal / Class / Lifecycle annotations
+# Explicitly designates a Crystal class for GDExtension registration.
+# (Automatically recognized on classes inheriting from Godot node types).
 annotation GodotClass; end
+
+# Marks a script class to execute in the editor as a tool script.
+#
+# ```crystal
+# @[Tool]
+# class LevelEditorHelper < Godot::Node3D
+# end
+# ```
 annotation Tool; end
+
+# Specifies a custom editor icon path for the node class.
+#
+# ```crystal
+# @[Icon("res://icons/player.svg")]
+# class Player < Godot::CharacterBody3D
+# end
+# ```
 annotation Icon; end
+
+# Marks an extension class as abstract, preventing direct instantiation in the editor.
 annotation Abstract; end
+
+# Configures GDExtension library unloading behavior.
 annotation StaticUnload; end
 
-# Node tree initialization
+# Automatically initializes a node property when `_ready` is called by querying the scene tree.
+#
+# ```crystal
+# @[OnReady("Sprite2D")]
+# property sprite : Godot::Node2D? = nil
+# ```
 annotation OnReady; end
 
-# Networking
+# Configures Remote Procedure Call (RPC) network replication for a method.
+# Accepts mode, sync, transfer_mode, and channel parameters.
+#
+# ```crystal
+# @[RPC(mode: :any_peer, call_local: true)]
+# def sync_player_position(pos : Vector3) : Void
+# end
+# ```
 annotation RPC; end
 
-# Diagnostics & doc
+# Suppresses specific compiler or engine warnings for a class or member.
 annotation WarningIgnore; end
+
+# Starts a warning suppression block.
 annotation WarningIgnoreStart; end
+
+# Restores normal warning behavior following a suppression block.
 annotation WarningIgnoreRestore; end
 
-# Helper macros
+# Convenience macro to mark a class as a tool script executing inside the Godot editor.
+#
+# ```crystal
+# class TerrainGenerator < Godot::Node3D
+#   tool
+# end
+# ```
 macro tool; end
+
+# Convenience macro to mark extension library unloading behavior.
 macro static_unload; end
+
+# Convenience macro to designate a class as abstract in Godot.
 macro abstract_class; end
+
+# Convenience macro to set a custom icon path in the editor.
 macro icon(path); end
+
+# Convenience macro to create a category header in the inspector.
 macro export_category(name); end
+
+# Convenience macro to group properties under a collapsible section in the inspector.
 macro export_group(name, prefix = ""); end
+
+# Convenience macro to create a subgroup under an existing inspector group.
 macro export_subgroup(name, prefix = ""); end
+
+# Convenience macro to suppress compiler warnings.
 macro warning_ignore(name); end
 macro warning_ignore_start(name); end
 macro warning_ignore_restore(name); end
+
+# Declares an `@onready` node property initialized from the scene tree during `_ready`.
 macro onready(decl)
   {% if decl.is_a?(Assign) %}
     property {{decl.target}}? = nil
@@ -516,7 +688,7 @@ macro node(decl, &block)
       end
     {% end %}
 
-    def _godot_call_virtual(method_name : String, delta : Float32) : Void
+    def _godot_call_virtual(method_name : String, delta : Float64) : Void
       case method_name
       {% if has_ready %}
       when "_ready"
@@ -532,11 +704,11 @@ macro node(decl, &block)
       {% end %}
       {% if has_process %}
       when "_process"
-        _process(delta.to_f64)
+        _process(delta)
       {% end %}
       {% if has_physics_process %}
       when "_physics_process"
-        _physics_process(delta.to_f64)
+        _physics_process(delta)
       {% end %}
       else
         super
@@ -563,10 +735,18 @@ macro node(decl, &block)
               self.{{var_name.id}} = val_ptr.as(UInt8*).value != 0_u8
             {% elsif var_type == "Vector2" %}
               self.{{var_name.id}} = val_ptr.as(::Godot::Vector2*).value
+            {% elsif var_type == "Vector2i" %}
+              self.{{var_name.id}} = val_ptr.as(::Godot::Vector2i*).value
             {% elsif var_type == "Vector3" %}
               self.{{var_name.id}} = val_ptr.as(::Godot::Vector3*).value
+            {% elsif var_type == "Vector3i" %}
+              self.{{var_name.id}} = val_ptr.as(::Godot::Vector3i*).value
             {% elsif var_type == "Color" %}
               self.{{var_name.id}} = val_ptr.as(::Godot::Color*).value
+            {% elsif var_type == "Rect2" %}
+              self.{{var_name.id}} = val_ptr.as(::Godot::Rect2*).value
+            {% elsif var_type == "Transform3D" %}
+              self.{{var_name.id}} = val_ptr.as(::Godot::Transform3D*).value
             {% end %}
         {% end %}
       {% end %}
@@ -591,10 +771,18 @@ macro node(decl, &block)
               ret_ptr.as(UInt8*).value = self.{{var_name.id}} ? 1_u8 : 0_u8
             {% elsif var_type == "Vector2" %}
               ret_ptr.as(::Godot::Vector2*).value = self.{{var_name.id}}
+            {% elsif var_type == "Vector2i" %}
+              ret_ptr.as(::Godot::Vector2i*).value = self.{{var_name.id}}
             {% elsif var_type == "Vector3" %}
               ret_ptr.as(::Godot::Vector3*).value = self.{{var_name.id}}
+            {% elsif var_type == "Vector3i" %}
+              ret_ptr.as(::Godot::Vector3i*).value = self.{{var_name.id}}
             {% elsif var_type == "Color" %}
               ret_ptr.as(::Godot::Color*).value = self.{{var_name.id}}
+            {% elsif var_type == "Rect2" %}
+              ret_ptr.as(::Godot::Rect2*).value = self.{{var_name.id}}
+            {% elsif var_type == "Transform3D" %}
+              ret_ptr.as(::Godot::Transform3D*).value = self.{{var_name.id}}
             {% end %}
         {% end %}
       {% end %}
@@ -1035,10 +1223,19 @@ macro node(decl, &block)
   ::Godot::EditorDocRegistry.register(xml_{{class_name}})
 end
 
-# Clean signal declaration macro:
-# Usage:
-#   signal died
+# Declares a custom Godot signal and generates a type-safe `emit_<signal_name>` helper method.
+#
+# ```crystal
+# class Player < Godot::CharacterBody3D
 #   signal health_changed(new_health : Int32, max_health : Int32)
+#   signal died
+#
+#   def take_damage(amount : Int32)
+#     emit_health_changed(50, 100)
+#     emit_died if amount >= 100
+#   end
+# end
+# ```
 macro signal(sig_decl)
   {% if sig_decl.is_a?(Call) %}
     {% sig_name = sig_decl.name %}

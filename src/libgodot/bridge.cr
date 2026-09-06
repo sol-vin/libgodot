@@ -17,7 +17,7 @@ module Godot
     struct CrystalSignalDesc
       name : LibC::Char*
       arg_count : Int32
-      args : CrystalSignalArgDesc[8]
+      args : CrystalSignalArgDesc*
     end
 
     struct CrystalClassDesc
@@ -33,15 +33,15 @@ module Godot
 
       create_instance : (CrystalClassDesc*, Void* -> Void*)
       free_instance : (Void* -> Void)
-      call_virtual : (Void*, LibC::Char*, Float32 -> Void)
+      call_virtual : (Void*, LibC::Char*, Float64 -> Void)
       set_property : (Void*, LibC::Char*, Void* -> Void)
       get_property : (Void*, LibC::Char*, Void* -> Void)
 
       property_count : Int32
-      properties : CrystalPropertyDesc[128]
+      properties : CrystalPropertyDesc*
 
       signal_count : Int32
-      signals : CrystalSignalDesc[16]
+      signals : CrystalSignalDesc*
 
       parent_desc : Void*
     end
@@ -66,6 +66,8 @@ module Godot
       log_error : (LibC::Char*, LibC::Char*, LibC::Char*, LibC::Char*, Int32 -> Void)
       log_warning : (LibC::Char*, LibC::Char*, LibC::Char*, LibC::Char*, Int32 -> Void)
       object_emit_signal : (Void*, LibC::Char*, CrystalSignalArg*, Int32 -> Void)
+      object_call_deferred : (Void*, LibC::Char*, CrystalSignalArg*, Int32 -> Void)
+      object_call : (Void*, LibC::Char*, CrystalSignalArg*, Int32 -> Void)
       node_find_child : (Void*, LibC::Char*, Bool, Bool -> Void*)
       node_get_node : (Void*, LibC::Char* -> Void*)
       range_set_value : (Void*, Float64 -> Void)
@@ -90,6 +92,13 @@ module Godot
 
     # Retain descriptions so their C strings and descriptors stay alive in memory
     @@registered_descs = Array(LibBridge::CrystalClassDesc).new
+    # Active instance table rooting living Crystal nodes to protect against premature Boehm GC deallocation
+    @@alive_instances = Hash(Void*, Godot::Object).new
+
+    # Retrieves the active Crystal instance root table for testing and diagnostics
+    def self.alive_instances : Hash(Void*, Godot::Object)
+      @@alive_instances
+    end
 
     def self.api : LibBridge::BridgeAPI*
       @@api
@@ -136,16 +145,20 @@ module Godot
         if entry = Godot::ClassRegistry.find(class_name)
           inst = entry.create_proc.call(godot_obj)
           inst.pointer = godot_obj
-          return Box(Godot::Object).box(inst)
+          boxed = Box(Godot::Object).box(inst)
+          @@alive_instances[boxed] = inst
+          return boxed
         end
         Pointer(Void).null
       }
 
       free_fn = ->(crystal_inst : Void*) {
-        # Instance will be collected by GC once Godot drops pointer
+        if !crystal_inst.null?
+          @@alive_instances.delete(crystal_inst)
+        end
       }
 
-      virtual_fn = ->(crystal_inst : Void*, method_name : LibC::Char*, delta : Float32) {
+      virtual_fn = ->(crystal_inst : Void*, method_name : LibC::Char*, delta : Float64) {
         if !crystal_inst.null?
           inst = Box(Godot::Object).unbox(crystal_inst)
           inst._godot_call_virtual(String.new(method_name), delta)
@@ -170,10 +183,10 @@ module Godot
       print "[CrystalBridge] Step 3: ClassRegistry has #{Godot::ClassRegistry.entries.size} entries"
       Godot::ClassRegistry.entries.each do |entry|
         print "[CrystalBridge]   Registering entry: #{entry.class_name} < #{entry.parent_name} (props=#{entry.properties.size}, sigs=#{entry.signals.size})..."
-        # Populate properties StaticArray
-        props = StaticArray(LibBridge::CrystalPropertyDesc, 128).new(LibBridge::CrystalPropertyDesc.new)
+        # Populate properties dynamically without fixed limits
+        p_count = entry.properties.size
+        props = Pointer(LibBridge::CrystalPropertyDesc).malloc(p_count > 0 ? p_count : 1)
         entry.properties.each_with_index do |p, idx|
-          break if idx >= 128
           item = LibBridge::CrystalPropertyDesc.new
           item.name = p.name.to_unsafe
           item.type_name = p.type_name.to_unsafe
@@ -184,22 +197,22 @@ module Godot
           props[idx] = item
         end
 
-        # Populate signals StaticArray
-        sigs = StaticArray(LibBridge::CrystalSignalDesc, 16).new(LibBridge::CrystalSignalDesc.new)
+        # Populate signals dynamically without fixed limits
+        s_count = entry.signals.size
+        sigs = Pointer(LibBridge::CrystalSignalDesc).malloc(s_count > 0 ? s_count : 1)
         entry.signals.each_with_index do |s, idx|
-          break if idx >= 16
           sig_item = LibBridge::CrystalSignalDesc.new
           sig_item.name = s.name.to_unsafe
           sig_item.arg_count = s.args.size
-          args_arr = StaticArray(LibBridge::CrystalSignalArgDesc, 8).new(LibBridge::CrystalSignalArgDesc.new)
+          a_count = s.args.size
+          args_ptr = Pointer(LibBridge::CrystalSignalArgDesc).malloc(a_count > 0 ? a_count : 1)
           s.args.each_with_index do |a, aidx|
-            break if aidx >= 8
             arg_item = LibBridge::CrystalSignalArgDesc.new
             arg_item.name = a.name.to_unsafe
             arg_item.variant_type = a.variant_type
-            args_arr[aidx] = arg_item
+            args_ptr[aidx] = arg_item
           end
-          sig_item.args = args_arr
+          sig_item.args = args_ptr
           sigs[idx] = sig_item
         end
 
@@ -220,14 +233,15 @@ module Godot
         desc.set_property = set_prop_fn
         desc.get_property = get_prop_fn
 
-        desc.property_count = [entry.properties.size, 128].min
+        desc.property_count = p_count
         desc.properties = props
 
-        desc.signal_count = [entry.signals.size, 16].min
+        desc.signal_count = s_count
         desc.signals = sigs
 
         desc_ptr = Pointer(LibBridge::CrystalClassDesc).malloc(1)
         desc_ptr.value = desc
+        @@registered_descs << desc
 
         print "[CrystalBridge]   Calling api.register_class for #{entry.class_name}..."
         api.value.register_class.call(desc_ptr)
@@ -416,6 +430,104 @@ module Godot
       end
 
       @@api.value.object_emit_signal.call(godot_obj, signal_name.to_unsafe, c_args.to_unsafe, count)
+    end
+
+    def self.object_call_deferred(godot_obj : Void*, method_name : String) : Void
+      return if godot_obj.null? || @@api.null? || @@api.value.object_call_deferred.pointer.null?
+      @@api.value.object_call_deferred.call(godot_obj, method_name.to_unsafe, Pointer(LibBridge::CrystalSignalArg).null, 0)
+    end
+
+    def self.object_call_deferred(godot_obj : Void*, method_name : String, *args) : Void
+      return if godot_obj.null? || @@api.null? || @@api.value.object_call_deferred.pointer.null?
+      if args.empty?
+        object_call_deferred(godot_obj, method_name)
+        return
+      end
+
+      c_args = StaticArray(LibBridge::CrystalSignalArg, 16).new(LibBridge::CrystalSignalArg.new)
+      int_storage = StaticArray(Int64, 16).new(0_i64)
+      float_storage = StaticArray(Float64, 16).new(0.0_f64)
+      bool_storage = StaticArray(UInt8, 16).new(0_u8)
+      v2_storage = StaticArray(Godot::Vector2, 16).new(Godot::Vector2.new)
+      v3_storage = StaticArray(Godot::Vector3, 16).new(Godot::Vector3.new)
+      obj_storage = StaticArray(Void*, 16).new(Pointer(Void).null)
+
+      count = [args.size, 16].min
+      args.each_with_index do |arg, idx|
+        break if idx >= 16
+        if arg.is_a?(Bool)
+          bool_storage[idx] = arg ? 1_u8 : 0_u8
+          c_args[idx] = LibBridge::CrystalSignalArg.new(arg_type: 1, data: (bool_storage.to_unsafe + idx).as(Void*))
+        elsif arg.is_a?(Int)
+          int_storage[idx] = arg.to_i64
+          c_args[idx] = LibBridge::CrystalSignalArg.new(arg_type: 2, data: (int_storage.to_unsafe + idx).as(Void*))
+        elsif arg.is_a?(Float)
+          float_storage[idx] = arg.to_f64
+          c_args[idx] = LibBridge::CrystalSignalArg.new(arg_type: 3, data: (float_storage.to_unsafe + idx).as(Void*))
+        elsif arg.is_a?(String)
+          c_args[idx] = LibBridge::CrystalSignalArg.new(arg_type: 4, data: arg.to_unsafe.as(Void*))
+        elsif arg.is_a?(Godot::Vector2)
+          v2_storage[idx] = arg
+          c_args[idx] = LibBridge::CrystalSignalArg.new(arg_type: 5, data: (v2_storage.to_unsafe + idx).as(Void*))
+        elsif arg.is_a?(Godot::Vector3)
+          v3_storage[idx] = arg
+          c_args[idx] = LibBridge::CrystalSignalArg.new(arg_type: 6, data: (v3_storage.to_unsafe + idx).as(Void*))
+        elsif arg.is_a?(Godot::Object)
+          obj_storage[idx] = arg.pointer
+          c_args[idx] = LibBridge::CrystalSignalArg.new(arg_type: 7, data: (obj_storage.to_unsafe + idx).as(Void*))
+        end
+      end
+
+      @@api.value.object_call_deferred.call(godot_obj, method_name.to_unsafe, c_args.to_unsafe, count)
+    end
+
+    def self.object_call(godot_obj : Void*, method_name : String) : Void
+      return if godot_obj.null? || @@api.null? || @@api.value.object_call.pointer.null?
+      @@api.value.object_call.call(godot_obj, method_name.to_unsafe, Pointer(LibBridge::CrystalSignalArg).null, 0)
+    end
+
+    def self.object_call(godot_obj : Void*, method_name : String, *args) : Void
+      return if godot_obj.null? || @@api.null? || @@api.value.object_call.pointer.null?
+      if args.empty?
+        object_call(godot_obj, method_name)
+        return
+      end
+
+      c_args = StaticArray(LibBridge::CrystalSignalArg, 16).new(LibBridge::CrystalSignalArg.new)
+      int_storage = StaticArray(Int64, 16).new(0_i64)
+      float_storage = StaticArray(Float64, 16).new(0.0_f64)
+      bool_storage = StaticArray(UInt8, 16).new(0_u8)
+      v2_storage = StaticArray(Godot::Vector2, 16).new(Godot::Vector2.new)
+      v3_storage = StaticArray(Godot::Vector3, 16).new(Godot::Vector3.new)
+      obj_storage = StaticArray(Void*, 16).new(Pointer(Void).null)
+
+      count = [args.size, 16].min
+      args.each_with_index do |arg, idx|
+        break if idx >= 16
+        if arg.is_a?(Bool)
+          bool_storage[idx] = arg ? 1_u8 : 0_u8
+          c_args[idx] = LibBridge::CrystalSignalArg.new(arg_type: 1, data: (bool_storage.to_unsafe + idx).as(Void*))
+        elsif arg.is_a?(Int)
+          int_storage[idx] = arg.to_i64
+          c_args[idx] = LibBridge::CrystalSignalArg.new(arg_type: 2, data: (int_storage.to_unsafe + idx).as(Void*))
+        elsif arg.is_a?(Float)
+          float_storage[idx] = arg.to_f64
+          c_args[idx] = LibBridge::CrystalSignalArg.new(arg_type: 3, data: (float_storage.to_unsafe + idx).as(Void*))
+        elsif arg.is_a?(String)
+          c_args[idx] = LibBridge::CrystalSignalArg.new(arg_type: 4, data: arg.to_unsafe.as(Void*))
+        elsif arg.is_a?(Godot::Vector2)
+          v2_storage[idx] = arg
+          c_args[idx] = LibBridge::CrystalSignalArg.new(arg_type: 5, data: (v2_storage.to_unsafe + idx).as(Void*))
+        elsif arg.is_a?(Godot::Vector3)
+          v3_storage[idx] = arg
+          c_args[idx] = LibBridge::CrystalSignalArg.new(arg_type: 6, data: (v3_storage.to_unsafe + idx).as(Void*))
+        elsif arg.is_a?(Godot::Object)
+          obj_storage[idx] = arg.pointer
+          c_args[idx] = LibBridge::CrystalSignalArg.new(arg_type: 7, data: (obj_storage.to_unsafe + idx).as(Void*))
+        end
+      end
+
+      @@api.value.object_call.call(godot_obj, method_name.to_unsafe, c_args.to_unsafe, count)
     end
 
     def self.node_find_child(godot_obj : Void*, pattern : String, recursive : Bool = true, owned : Bool = false) : Void*

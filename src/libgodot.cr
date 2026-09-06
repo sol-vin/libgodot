@@ -68,7 +68,10 @@ end
 
 # Top-level type aliases for developer ergonomics
 alias Vector2 = Godot::Vector2
+alias Vector2i = Godot::Vector2i
 alias Vector3 = Godot::Vector3
+alias Vector3i = Godot::Vector3i
+alias Rect2 = Godot::Rect2
 alias Color = Godot::Color
 alias Basis = Godot::Basis
 alias Transform3D = Godot::Transform3D

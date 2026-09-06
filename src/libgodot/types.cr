@@ -1,4 +1,5 @@
 module Godot
+  # 2-element structure that can be used to represent 2D coordinates or vectors with 32-bit floating point precision.
   struct Vector2
     property x : Float32
     property y : Float32
@@ -48,8 +49,49 @@ module Godot
     def to_s(io : IO) : Void
       io << "(" << @x << ", " << @y << ")"
     end
+
+    ZERO = Vector2.new(0.0_f32, 0.0_f32)
+    ONE  = Vector2.new(1.0_f32, 1.0_f32)
+    UP   = Vector2.new(0.0_f32, -1.0_f32)
+    DOWN = Vector2.new(0.0_f32, 1.0_f32)
+    LEFT = Vector2.new(-1.0_f32, 0.0_f32)
+    RIGHT= Vector2.new(1.0_f32, 0.0_f32)
   end
 
+  # 2-element structure that can be used to represent 2D grid coordinates or discrete positions with 32-bit integers.
+  struct Vector2i
+    property x : Int32
+    property y : Int32
+
+    def initialize(@x : Int32 = 0, @y : Int32 = 0)
+    end
+
+    def self.new(x : Number, y : Number)
+      new(x.to_i32, y.to_i32)
+    end
+
+    def +(other : Vector2i) : Vector2i
+      Vector2i.new(@x + other.x, @y + other.y)
+    end
+
+    def -(other : Vector2i) : Vector2i
+      Vector2i.new(@x - other.x, @y - other.y)
+    end
+
+    def *(scalar : Number) : Vector2i
+      s = scalar.to_i32
+      Vector2i.new(@x * s, @y * s)
+    end
+
+    def to_s(io : IO) : Void
+      io << "(" << @x << ", " << @y << ")"
+    end
+
+    ZERO = Vector2i.new(0, 0)
+    ONE  = Vector2i.new(1, 1)
+  end
+
+  # 3-element structure that can be used to represent 3D coordinates or vectors with 32-bit floating point precision.
   struct Vector3
     property x : Float32
     property y : Float32
@@ -118,6 +160,59 @@ module Godot
     RIGHT= Vector3.new(1.0_f32, 0.0_f32, 0.0_f32)
   end
 
+  # 3-element structure that can be used to represent 3D grid coordinates or discrete voxels with 32-bit integers.
+  struct Vector3i
+    property x : Int32
+    property y : Int32
+    property z : Int32
+
+    def initialize(@x : Int32 = 0, @y : Int32 = 0, @z : Int32 = 0)
+    end
+
+    def self.new(x : Number, y : Number, z : Number)
+      new(x.to_i32, y.to_i32, z.to_i32)
+    end
+
+    def +(other : Vector3i) : Vector3i
+      Vector3i.new(@x + other.x, @y + other.y, @z + other.z)
+    end
+
+    def -(other : Vector3i) : Vector3i
+      Vector3i.new(@x - other.x, @y - other.y, @z - other.z)
+    end
+
+    def *(scalar : Number) : Vector3i
+      s = scalar.to_i32
+      Vector3i.new(@x * s, @y * s, @z * s)
+    end
+
+    def to_s(io : IO) : Void
+      io << "(" << @x << ", " << @y << ", " << @z << ")"
+    end
+
+    ZERO = Vector3i.new(0, 0, 0)
+    ONE  = Vector3i.new(1, 1, 1)
+  end
+
+  # 2D axis-aligned bounding box defined by a position and size.
+  struct Rect2
+    property position : Vector2
+    property size : Vector2
+
+    def initialize(@position : Vector2 = Vector2.new, @size : Vector2 = Vector2.new)
+    end
+
+    def initialize(x : Number, y : Number, width : Number, height : Number)
+      @position = Vector2.new(x.to_f32, y.to_f32)
+      @size = Vector2.new(width.to_f32, height.to_f32)
+    end
+
+    def to_s(io : IO) : Void
+      io << "[P: " << @position << ", S: " << @size << "]"
+    end
+  end
+
+  # A color represented in RGBA format with 32-bit floating point precision per channel.
   struct Color
     property r : Float32
     property g : Float32
@@ -138,6 +233,7 @@ module Godot
     BLUE  = Color.new(0.0_f32, 0.0_f32, 1.0_f32, 1.0_f32)
   end
 
+  # A 3x3 matrix used for 3D rotation and scale.
   struct Basis
     property x : Vector3
     property y : Vector3
@@ -159,6 +255,7 @@ module Godot
     end
   end
 
+  # A 3x4 matrix (Basis + origin) used for 3D affine transformations.
   struct Transform3D
     property basis : Basis
     property origin : Vector3
@@ -169,6 +266,7 @@ module Godot
 end
 
 module Math
+  # Moves `from` toward `to` by the given `delta` amount, never exceeding `to`.
   def self.move_toward(from : Float32, to : Float32, delta : Float32) : Float32
     if (to - from).abs <= delta
       to
@@ -177,6 +275,7 @@ module Math
     end
   end
 
+  # Moves `from` toward `to` by the given `delta` amount with 64-bit precision, never exceeding `to`.
   def self.move_toward(from : Float64, to : Float64, delta : Float64) : Float64
     if (to - from).abs <= delta
       to

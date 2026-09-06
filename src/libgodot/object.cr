@@ -66,42 +66,65 @@ module Godot
     end
   end
 
+  # Base class for all Godot engine objects and extension classes.
+  # Provides identity, lifecycle dispatch hooks, and signal emission functionality.
   class Object
     property pointer : Void* = Pointer(Void).null
 
     def initialize(@pointer : Void* = Pointer(Void).null)
     end
 
-    # Virtual method and property dispatch hooks overridden by macros
-    def _godot_call_virtual(method_name : String, delta : Float32) : Void
+    # Virtual method and property dispatch hooks overridden by class registration macros.
+    # Delta timestep is received with 64-bit precision (`Float64`).
+    def _godot_call_virtual(method_name : String, delta : Float64) : Void
     end
 
+    # Invoked by the GDExtension bridge when setting an exposed `@export` property.
     def _godot_set_property(prop_name : String, val_ptr : Void*) : Void
     end
 
+    # Invoked by the GDExtension bridge when retrieving an exposed `@export` property.
     def _godot_get_property(prop_name : String, ret_ptr : Void*) : Void
     end
 
+    # Emits a parameterless signal on this Godot object.
     def emit_signal(name : String) : Void
       Bridge.emit_signal(@pointer, name)
     end
 
+    # Emits a signal with variable arguments on this Godot object.
     def emit_signal(name : String, *args) : Void
       Bridge.emit_signal(@pointer, name, *args)
     end
 
+    # Calls the named method on the object during idle time.
+    def call_deferred(method : String, *args) : Void*
+      Bridge.object_call_deferred(@pointer, method, *args)
+      Pointer(Void).null
+    end
+
+    # Calls the named method on the object with variable arguments.
+    def call(method : String, *args) : Void*
+      Bridge.object_call(@pointer, method, *args)
+      Pointer(Void).null
+    end
+
+    # Connects a callback proc to the named signal.
     def connect(signal_name : String, callback : Proc) : Void
       # Connects callback to named signal
     end
 
+    # Prints a message to Godot's debug console.
     def print(*args)
       Godot.print(*args)
     end
 
+    # Prints an error message to Godot's error console.
     def printerr(*args)
       Godot.printerr(*args)
     end
 
+    # Prints a message to Godot's debug console.
     def puts(*args)
       Godot.print(*args)
     end
@@ -111,6 +134,7 @@ module Godot
     end
   end
 
+  # Base class for reference-counted engine objects.
   class RefCounted < Object
   end
 
@@ -136,34 +160,65 @@ module Godot
   class MainLoop < Object
   end
 
+  # Manages the hierarchy of scene nodes and execution loops.
   class SceneTree < MainLoop
     property current_scene : Node = Node.new
     property root : Node = Node.new
   end
 
+  # Base class for all scene tree nodes in Godot.
+  # Provides hierarchy management, node traversal, and lifecycle hooks (`_ready`, `_process`, `_physics_process`).
   class Node < Object
     property name : String = "Node"
 
+    # Returns the SceneTree containing this node.
     def get_tree : SceneTree
       SceneTree.new
     end
 
-    def get_node(path : String) : Node?
+    # Retrieves a child or sibling node by NodePath string.
+    # Returns the Node if found, or produces an error if the node does not exist.
+    def get_node(path : String) : Node
+      ptr = Bridge.node_get_node(@pointer, path)
+      if ptr.null?
+        Godot.printerr("Node not found: '#{path}' (relative to '#{self.name}')")
+        raise "Node not found: '#{path}' (relative to '#{self.name}')"
+      end
+      Node.new(ptr)
+    end
+
+    # Retrieves a child or sibling node by NodePath string, or returns nil if not found.
+    def get_node?(path : String) : Node?
       ptr = Bridge.node_get_node(@pointer, path)
       ptr.null? ? nil : Node.new(ptr)
     end
 
-    def get_node_as(type : T.class, path : String) : T? forall T
-      if node = get_node(path)
+    # Fetches a node by String path. Similar to `#get_node`, but returns nil if `path` does not point to a valid node.
+    def get_node_or_null(path : String) : Node?
+      get_node?(path)
+    end
+
+    # Retrieves a child node cast to the specified Crystal class type `T`.
+    # Returns the node cast to `T`, or produces an error if the node does not exist.
+    def get_node_as(type : T.class, path : String) : T forall T
+      node = get_node(path)
+      T.new(node.pointer)
+    end
+
+    # Retrieves a child node cast to the specified Crystal class type `T`, or nil if not found.
+    def get_node_as?(type : T.class, path : String) : T? forall T
+      if node = get_node?(path)
         T.new(node.pointer)
       end
     end
 
+    # Finds an existing child node matching `pattern`.
     def find_child(pattern : String, recursive : Bool = true, owned : Bool = false) : Node?
       ptr = Bridge.node_find_child(@pointer, pattern, recursive, owned)
       ptr.null? ? nil : Node.new(ptr)
     end
 
+    # Finds a child node matching `pattern` and casts to `T`.
     def find_child_as(type : T.class, pattern : String, recursive : Bool = true, owned : Bool = false) : T? forall T
       if node = find_child(pattern, recursive, owned)
         T.new(node.pointer)
@@ -179,20 +234,24 @@ module Godot
     def queue_free : Void
     end
 
-    # Lifecycle callbacks (overridable by user nodes)
+    # Lifecycle callback called when the node enters the active scene tree.
     def _ready : Void
     end
 
+    # Per-frame process callback receiving delta timestep in seconds (`Float64`).
     def _process(delta : Float64) : Void
     end
 
+    # Fixed-rate physics process callback receiving delta timestep in seconds (`Float64`).
     def _physics_process(delta : Float64) : Void
     end
   end
 
+  # Base class for all 2D canvas items, UI elements, and 2D nodes.
   class CanvasItem < Node
   end
 
+  # A 2D game object with position, rotation, and scale transform.
   class Node2D < CanvasItem
     @position : Vector2 = Vector2.new
     @rotation : Float32 = 0.0_f32
@@ -245,6 +304,7 @@ module Godot
     end
   end
 
+  # A 3D game object with spatial position, rotation, scale, and transform matrix.
   class Node3D < Node
     @position : Vector3 = Vector3.new
     @rotation : Vector3 = Vector3.new
@@ -298,12 +358,15 @@ module Godot
     end
   end
 
+  # Base class for all 2D collision and physics objects.
   class CollisionObject2D < Node2D
   end
 
+  # Base class for all 2D physics bodies.
   class PhysicsBody2D < CollisionObject2D
   end
 
+  # Specialized 2D physics body for character movement, kinematic platforming, and gravity.
   class CharacterBody2D < PhysicsBody2D
     property velocity : Vector2 = Vector2.new
 
@@ -316,15 +379,19 @@ module Godot
     end
   end
 
+  # Base class for all 3D collision and physics objects.
   class CollisionObject3D < Node3D
   end
 
+  # Base class for all 3D physics bodies.
   class PhysicsBody3D < CollisionObject3D
   end
 
+  # Specialized 3D physics body for characters, kinematic controllers, and navigation.
   class CharacterBody3D < PhysicsBody3D
     property velocity : Vector3 = Vector3.new
 
+    # Returns true if the body is currently resting on a floor collider.
     def is_on_floor : Bool
       if !@pointer.null?
         Bridge.is_on_floor(@pointer)
@@ -333,6 +400,7 @@ module Godot
       end
     end
 
+    # Current linear velocity of the character body.
     def velocity : Vector3
       if !@pointer.null?
         Bridge.get_velocity(@pointer)
@@ -348,6 +416,7 @@ module Godot
       end
     end
 
+    # Moves the body along its velocity vector and handles collisions/sliding.
     def move_and_slide : Bool
       if !@pointer.null?
         Bridge.move_and_slide(@pointer)
@@ -357,9 +426,11 @@ module Godot
     end
   end
 
+  # Base class for all GUI and user interface controls.
   class Control < CanvasItem
   end
 
+  # Base class for numeric control elements (sliders, progress bars, spinboxes).
   class Range < Control
     property min_value : Float64 = 0.0
     property max_value : Float64 = 100.0
@@ -413,22 +484,27 @@ module Godot
     end
   end
 
+  # Visual progress bar control displaying completion ratio.
   class ProgressBar < Range
   end
 
+  # Base class for slider controls.
   class Slider < Range
   end
 
+  # Horizontal slider control.
   class HSlider < Slider
   end
 
+  # Vertical slider control.
   class VSlider < Slider
   end
 
+  # Numeric entry spinbox control with up/down adjusters.
   class SpinBox < Range
   end
 
-  # Godot Input Singleton
+  # Singleton interface for handling keyboard, mouse, gamepad, and mapped input actions.
   class Input < Object
     def self.is_action_pressed(action : String) : Bool
       Bridge.is_action_pressed(action)
@@ -455,7 +531,7 @@ module Godot
     end
   end
 
-  # NodePath wrapper
+  # Represents a path to a node or property in the Godot scene tree.
   struct NodePath
     property path : String
 

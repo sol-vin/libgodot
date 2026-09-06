@@ -59,8 +59,8 @@ LIBGODOT_DLL     = $(BIN_DIR)/libgodot.dll
 
 .PHONY: all bridge demo template game_dll game_exe generate dump_api deps addons sync engine test docs run editor clean help
 
-# Default target: compile bridge, demo, and template, then ensure all DLLs are synced
-all: dirs deps bridge addons demo template sync
+# Default target: compile bridge, demo, and template, sync DLLs, and run test suite
+all: dirs deps bridge addons demo template sync test
 	@echo ===================================================================
 	@echo   LibGodot Crystal library build completed successfully!
 	@echo   Run 'make run' to launch the demo or 'make editor' for the editor.
@@ -130,7 +130,7 @@ engine:
 	@echo libgodot.dll updated successfully!
 
 # Run test suites and verification
-test: all
+test:
 	@echo Running Crystal verification specs...
 	$(CRYSTAL) run spec/libgodot_spec.cr
 	$(CRYSTAL) run spec/boot_spec.cr

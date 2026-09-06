@@ -515,16 +515,9 @@ module Godot
     # ```
     #
     # **Note:** In C#, `method` must be in snake_case when referring to built-in Godot methods. Prefer using the names exposed in the `MethodName` class to avoid allocating a new `StringName` on each call.
-    def call(method : String) : Void*
-      if @@mb_call.null?
-        @@mb_call = Bridge.get_method_bind("Object", "call", 3400424181_i64)
-      end
-      val_0 = method
-      arg_0 = pointerof(val_0).as(Void*)
-      args = [arg_0]
-      ret_ptr = Pointer(Void).null
-      Bridge.ptrcall(@@mb_call, @pointer, args.to_unsafe.as(Void**), pointerof(ret_ptr).as(Void*))
-      ret_ptr
+    def call(method : String, *args) : Void*
+      Bridge.object_call(@pointer, method, *args)
+      Pointer(Void).null
     end
     @@mb_call_deferred : Void* = Pointer(Void).null
     # Calls the `method` on the object during idle time. Always returns `null`, **not** the method's result.
@@ -558,16 +551,9 @@ module Godot
     # get_tree().process_frame.connect(callable, CONNECT_ONE_SHOT)
     #
     # ```
-    def call_deferred(method : String) : Void*
-      if @@mb_call_deferred.null?
-        @@mb_call_deferred = Bridge.get_method_bind("Object", "call_deferred", 3400424181_i64)
-      end
-      val_0 = method
-      arg_0 = pointerof(val_0).as(Void*)
-      args = [arg_0]
-      ret_ptr = Pointer(Void).null
-      Bridge.ptrcall(@@mb_call_deferred, @pointer, args.to_unsafe.as(Void**), pointerof(ret_ptr).as(Void*))
-      ret_ptr
+    def call_deferred(method : String, *args) : Void*
+      Bridge.object_call_deferred(@pointer, method, *args)
+      Pointer(Void).null
     end
     @@mb_set_deferred : Void* = Pointer(Void).null
     # Assigns `value` to the given `property`, at the end of the current frame. This is equivalent to calling `#set` through `#call_deferred`.
@@ -2769,11 +2755,15 @@ module Godot
       args = [arg_0]
       ret_ptr = Pointer(Void).null
       Bridge.ptrcall(@@mb_get_node, @pointer, args.to_unsafe.as(Void**), pointerof(ret_ptr).as(Void*))
+      if ret_ptr.null?
+        Godot.printerr("Node not found: '#{path.path}' (relative to '#{self.name}')")
+        raise "Node not found: '#{path.path}' (relative to '#{self.name}')"
+      end
       Node.new(ret_ptr)
     end
     @@mb_get_node_or_null : Void* = Pointer(Void).null
     # Fetches a node by `NodePath`. Similar to `#get_node`, but does not generate an error if `path` does not point to a valid node.
-    def get_node_or_null(path : NodePath) : Node
+    def get_node_or_null(path : NodePath) : Node?
       if @@mb_get_node_or_null.null?
         @@mb_get_node_or_null = Bridge.get_method_bind("Node", "get_node_or_null", 2734337346_i64)
       end
@@ -2782,7 +2772,10 @@ module Godot
       args = [arg_0]
       ret_ptr = Pointer(Void).null
       Bridge.ptrcall(@@mb_get_node_or_null, @pointer, args.to_unsafe.as(Void**), pointerof(ret_ptr).as(Void*))
-      Node.new(ret_ptr)
+      ret_ptr.null? ? nil : Node.new(ret_ptr)
+    end
+    def get_node?(path : NodePath) : Node?
+      get_node_or_null(path)
     end
     @@mb_get_parent : Void* = Pointer(Void).null
     # Returns this node's parent node, or `null` if the node doesn't have a parent.
@@ -4049,16 +4042,9 @@ module Godot
     end
     @@mb_call_deferred_thread_group : Void* = Pointer(Void).null
     # This function is similar to `#Object.call_deferred` except that the call will take place when the node thread group is processed. If the node thread group processes in sub-threads, then the call will be done on that thread, right before `NOTIFICATION_PROCESS` or `NOTIFICATION_PHYSICS_PROCESS`, the `#_process` or `#_physics_process` or their internal versions are called.
-    def call_deferred_thread_group(method : String) : Void*
-      if @@mb_call_deferred_thread_group.null?
-        @@mb_call_deferred_thread_group = Bridge.get_method_bind("Node", "call_deferred_thread_group", 3400424181_i64)
-      end
-      val_0 = method
-      arg_0 = pointerof(val_0).as(Void*)
-      args = [arg_0]
-      ret_ptr = Pointer(Void).null
-      Bridge.ptrcall(@@mb_call_deferred_thread_group, @pointer, args.to_unsafe.as(Void**), pointerof(ret_ptr).as(Void*))
-      ret_ptr
+    def call_deferred_thread_group(method : String, *args) : Void*
+      Bridge.object_call_deferred(@pointer, method, *args)
+      Pointer(Void).null
     end
     @@mb_set_deferred_thread_group : Void* = Pointer(Void).null
     # Similar to `#call_deferred_thread_group`, but for setting properties.

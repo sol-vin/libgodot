@@ -72,4 +72,16 @@ abort "Failed: Range to_godot_hint_string" unless hint == "0.0,100.0,0.5"
 bounds = (10..50).to_godot_bounds
 abort "Failed: Range to_godot_bounds" unless bounds == {10.0, 50.0}
 
-puts "All verification checks (including Range type cohesion) passed successfully!"
+# 5. Test get_node error handling and get_node? / get_node_or_null
+test_node = Godot::Node.new
+begin
+  test_node.get_node("non_existent_node")
+  abort "Failed: get_node with invalid path should have raised an exception"
+rescue ex
+  abort "Failed: unexpected error message: #{ex.message}" unless ex.message.not_nil!.includes?("Node not found")
+end
+
+abort "Failed: get_node? should return nil for invalid path" unless test_node.get_node?("non_existent_node").nil?
+abort "Failed: get_node_or_null should return nil for invalid path" unless test_node.get_node_or_null("non_existent_node").nil?
+
+puts "All verification checks (including get_node and Range type cohesion) passed successfully!"
