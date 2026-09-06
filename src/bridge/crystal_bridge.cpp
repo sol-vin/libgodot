@@ -21,6 +21,8 @@ static GDExtensionInterfaceClassdbRegisterExtensionClassSignal gd_classdb_regist
 static GDExtensionInterfaceClassdbRegisterExtensionClassMethod gd_classdb_register_extension_class_method = nullptr;
 static GDExtensionInterfaceClassdbGetMethodBind gd_classdb_get_method_bind = nullptr;
 static GDExtensionInterfaceObjectMethodBindPtrcall gd_object_method_bind_ptrcall = nullptr;
+static GDExtensionInterfaceObjectMethodBindCall gd_object_method_bind_call = nullptr;
+static GDExtensionsInterfaceEditorHelpLoadXmlFromUtf8Chars gd_editor_help_load_xml_from_utf8_chars = nullptr;
 static GDExtensionInterfaceGlobalGetSingleton gd_global_get_singleton = nullptr;
 static GDExtensionInterfaceGetVariantFromTypeConstructor gd_get_variant_from_type_constructor = nullptr;
 static GDExtensionInterfaceGetVariantToTypeConstructor gd_get_variant_to_type_constructor = nullptr;
@@ -458,6 +460,32 @@ static void bridge_method_bind_ptrcall(GDExtensionMethodBindPtr method_bind, GDE
     }
 }
 
+static void bridge_method_bind_call(GDExtensionMethodBindPtr method_bind, GDExtensionObjectPtr instance, const GDExtensionConstVariantPtr *args, GDExtensionInt arg_count, GDExtensionVariantPtr ret, GDExtensionCallError *error) {
+    if (gd_object_method_bind_call && method_bind && instance) {
+        gd_object_method_bind_call(method_bind, instance, args, arg_count, ret, error);
+    }
+}
+
+static bool is_editor_active() {
+    if (!gd_global_get_singleton || !gd_classdb_get_method_bind || !gd_object_method_bind_ptrcall) return false;
+    void *sn_engine = make_string_name("Engine");
+    GDExtensionObjectPtr engine = gd_global_get_singleton(sn_engine);
+    if (!engine) { free(sn_engine); return false; }
+    void *sn_is_editor = make_string_name("is_editor_hint");
+    GDExtensionMethodBindPtr mb = gd_classdb_get_method_bind(sn_engine, sn_is_editor, 36873697);
+    free(sn_engine); free(sn_is_editor);
+    if (!mb) return false;
+    uint8_t ret_bool = 0;
+    gd_object_method_bind_ptrcall(mb, engine, NULL, &ret_bool);
+    return ret_bool != 0;
+}
+
+static void bridge_load_editor_help_xml(const char *xml) {
+    if (gd_editor_help_load_xml_from_utf8_chars && xml && is_editor_active()) {
+        gd_editor_help_load_xml_from_utf8_chars(xml);
+    }
+}
+
 static GDExtensionObjectPtr bridge_get_singleton(const char *name) {
     if (!gd_global_get_singleton) return nullptr;
     void *sn = make_string_name(name);
@@ -471,6 +499,8 @@ struct BridgeAPI {
     int (*register_class)(const CrystalClassDesc *desc);
     GDExtensionMethodBindPtr (*get_method_bind)(const char *class_name, const char *method_name, int64_t hash);
     void (*method_bind_ptrcall)(GDExtensionMethodBindPtr method_bind, GDExtensionObjectPtr instance, const void **args, void *ret);
+    void (*method_bind_call)(GDExtensionMethodBindPtr method_bind, GDExtensionObjectPtr instance, const GDExtensionConstVariantPtr *args, GDExtensionInt arg_count, GDExtensionVariantPtr ret, GDExtensionCallError *error);
+    void (*load_editor_help_xml)(const char *xml);
     GDExtensionObjectPtr (*get_singleton)(const char *name);
     void* (*make_string_name)(const char *name);
     void (*free_string_name)(void *sn);
@@ -485,6 +515,8 @@ static BridgeAPI g_bridge_api = {
     bridge_register_class,
     bridge_get_method_bind,
     bridge_method_bind_ptrcall,
+    bridge_method_bind_call,
+    bridge_load_editor_help_xml,
     bridge_get_singleton,
     make_string_name,
     free,
@@ -522,57 +554,88 @@ static uint64_t get_file_mtime(const char *path) {
     return 0;
 }
 
+static HMODULE g_hGame = NULL;
+
+static void unload_crystal_game_library() {
+    if (g_hGame) {
+        FreeLibrary(g_hGame);
+        g_hGame = NULL;
+    }
+}
+
 // Loads game.dll compiled from Crystal and invokes crystal_godot_init(&g_bridge_api)
 static void load_crystal_game_library() {
-    const char *candidates[] = {
-        "demo/bin/game.dll",
-        "bin/game.dll",
-        "game.dll"
-    };
+    unload_crystal_game_library();
 
-    const char *sorted_candidates[3];
-    for (int i = 0; i < 3; i++) sorted_candidates[i] = candidates[i];
-    for (int i = 0; i < 2; i++) {
-        for (int j = i + 1; j < 3; j++) {
-            if (get_file_mtime(sorted_candidates[j]) > get_file_mtime(sorted_candidates[i])) {
-                const char *tmp = sorted_candidates[i];
-                sorted_candidates[i] = sorted_candidates[j];
-                sorted_candidates[j] = tmp;
+    char bridge_dir[MAX_PATH] = {0};
+    HMODULE hBridge = NULL;
+    if (GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, (LPCSTR)&load_crystal_game_library, &hBridge)) {
+        if (GetModuleFileNameA(hBridge, bridge_dir, sizeof(bridge_dir))) {
+            char *last_slash = strrchr(bridge_dir, '\\');
+            if (!last_slash) last_slash = strrchr(bridge_dir, '/');
+            if (last_slash) {
+                *last_slash = '\0';
             }
         }
     }
 
-    SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX);
+    char candidate_path[MAX_PATH] = {0};
+    char shadow_path[MAX_PATH] = {0};
 
+    // 1. Primary candidate: game.dll sitting directly next to crystal_bridge.dll
+    if (bridge_dir[0] != '\0') {
+        snprintf(candidate_path, sizeof(candidate_path), "%s\\game.dll", bridge_dir);
+        snprintf(shadow_path, sizeof(shadow_path), "%s\\game_loaded.dll", bridge_dir);
+        SetDllDirectoryA(bridge_dir);
+    }
+
+    // Preload runtime dependencies if present
     const char *runtime_deps[] = { "gc.dll", "iconv-2.dll", "pcre2-8.dll" };
-    const char *dep_prefixes[] = { "", "bin/", "demo/bin/", "C:\\Users\\Ian\\scoop\\apps\\crystal\\current\\" };
     for (int r = 0; r < 3; r++) {
-        for (int p = 0; p < 4; p++) {
-            char path_buf[260];
-            snprintf(path_buf, sizeof(path_buf), "%s%s", dep_prefixes[p], runtime_deps[r]);
-            if (LoadLibraryA(path_buf)) break;
+        char dep_path[MAX_PATH];
+        if (bridge_dir[0] != '\0') {
+            snprintf(dep_path, sizeof(dep_path), "%s\\%s", bridge_dir, runtime_deps[r]);
+            LoadLibraryA(dep_path);
         }
+        LoadLibraryA(runtime_deps[r]);
     }
 
     HMODULE hGame = NULL;
-    for (int i = 0; i < 3; i++) {
-        if (strstr(sorted_candidates[i], "demo/bin/")) {
-            SetDllDirectoryA("demo/bin");
-        } else if (strstr(sorted_candidates[i], "bin/")) {
-            SetDllDirectoryA("bin");
+
+    // Check if the co-located game.dll exists
+    if (candidate_path[0] != '\0' && GetFileAttributesA(candidate_path) != INVALID_FILE_ATTRIBUTES) {
+        CopyFileA(candidate_path, shadow_path, FALSE);
+        hGame = LoadLibraryExA(shadow_path, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
+        if (!hGame) {
+            hGame = LoadLibraryA(shadow_path);
         }
-        hGame = LoadLibraryA(sorted_candidates[i]);
         if (hGame) {
-            char buf[128];
-            snprintf(buf, sizeof(buf), "[CrystalBridge] Loaded game library from %s (mtime=%llu)", sorted_candidates[i], get_file_mtime(sorted_candidates[i]));
+            char buf[512];
+            snprintf(buf, sizeof(buf), "[CrystalBridge] Loaded game library from %s via shadow copy %s", candidate_path, shadow_path);
             godot_log_print(buf);
-            break;
+            g_hGame = hGame;
         } else {
             DWORD err = GetLastError();
-            if (err != ERROR_MOD_NOT_FOUND && err != ERROR_FILE_NOT_FOUND) {
-                char err_buf[128];
-                snprintf(err_buf, sizeof(err_buf), "LoadLibrary failed for %s with error %lu", candidates[i], err);
-                godot_log_warning(err_buf, nullptr, "load_crystal_game_library", __FILE__, __LINE__);
+            char err_buf[256];
+            snprintf(err_buf, sizeof(err_buf), "[CrystalBridge] Failed to LoadLibrary %s (error code %lu)", shadow_path, err);
+            godot_log_warning(err_buf, nullptr, "load_crystal_game_library", __FILE__, __LINE__);
+        }
+    }
+
+    // Fallback search paths if co-located wasn't found
+    if (!hGame) {
+        const char *fallbacks[] = { "demo/bin/game.dll", "bin/game.dll", "game.dll" };
+        for (int i = 0; i < 3; i++) {
+            if (GetFileAttributesA(fallbacks[i]) == INVALID_FILE_ATTRIBUTES) continue;
+            snprintf(shadow_path, sizeof(shadow_path), "%s_loaded.dll", fallbacks[i]);
+            CopyFileA(fallbacks[i], shadow_path, FALSE);
+            hGame = LoadLibraryA(shadow_path);
+            if (hGame) {
+                char buf[256];
+                snprintf(buf, sizeof(buf), "[CrystalBridge] Loaded game library from fallback %s", fallbacks[i]);
+                godot_log_print(buf);
+                g_hGame = hGame;
+                break;
             }
         }
     }
@@ -636,6 +699,7 @@ static void deinitialize_crystal_module(void *p_userdata, GDExtensionInitializat
             }
         }
         g_registered_class_count = 0;
+        unload_crystal_game_library();
         godot_log_print("[CrystalBridge] Crystal module deinitialized.");
     }
 }
@@ -661,6 +725,8 @@ extern "C" GDE_EXPORT GDExtensionBool crystal_library_init(
     gd_classdb_register_extension_class_method = (GDExtensionInterfaceClassdbRegisterExtensionClassMethod)p_get_proc_address("classdb_register_extension_class_method");
     gd_classdb_get_method_bind = (GDExtensionInterfaceClassdbGetMethodBind)p_get_proc_address("classdb_get_method_bind");
     gd_object_method_bind_ptrcall = (GDExtensionInterfaceObjectMethodBindPtrcall)p_get_proc_address("object_method_bind_ptrcall");
+    gd_object_method_bind_call = (GDExtensionInterfaceObjectMethodBindCall)p_get_proc_address("object_method_bind_call");
+    gd_editor_help_load_xml_from_utf8_chars = (GDExtensionsInterfaceEditorHelpLoadXmlFromUtf8Chars)p_get_proc_address("editor_help_load_xml_from_utf8_chars");
     gd_global_get_singleton = (GDExtensionInterfaceGlobalGetSingleton)p_get_proc_address("global_get_singleton");
     gd_get_variant_from_type_constructor = (GDExtensionInterfaceGetVariantFromTypeConstructor)p_get_proc_address("get_variant_from_type_constructor");
     gd_get_variant_to_type_constructor = (GDExtensionInterfaceGetVariantToTypeConstructor)p_get_proc_address("get_variant_to_type_constructor");

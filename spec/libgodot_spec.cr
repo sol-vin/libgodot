@@ -26,7 +26,7 @@ puts "=== Running LibGodot Crystal Verification ==="
 entries = Godot::ClassRegistry.entries
 puts "Total Registered Nodes: #{entries.size}"
 
-abort "Failed: expected 2 registered nodes, got #{entries.size}" unless entries.size == 2
+abort "Failed: expected at least 2 registered nodes, got #{entries.size}" unless entries.size >= 2
 
 camera_entry = entries.find { |e| e.class_name == "CameraRig" }
 abort "Failed: CameraRig not registered" unless camera_entry

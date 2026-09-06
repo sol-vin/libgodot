@@ -72,4 +72,13 @@ func execute_crystal_build() -> bool:
 			DirAccess.copy_absolute(out_dll, demo_bin + "/game.dll")
 			print("[CrystalPlugin] Synced DLL to demo: " + demo_bin + "/game.dll")
 
+	# Trigger hot-reload of the GDExtension so newly added nodes immediately show up in the editor
+	var ext_path = "res://addons/crystal_integration/crystal.gdextension"
+	if GDExtensionManager.is_extension_loaded(ext_path):
+		var status = GDExtensionManager.reload_extension(ext_path)
+		print("[CrystalPlugin] GDExtension reloaded (status: %d). New classes are now available in Editor." % status)
+	else:
+		GDExtensionManager.reload_extensions()
+		print("[CrystalPlugin] GDExtension reload requested.")
+
 	return true

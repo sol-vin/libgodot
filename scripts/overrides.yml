@@ -1,0 +1,72 @@
+# Configuration & overrides for LibGodot binding generator
+
+# Mapping of Godot argument/method names that collide with Crystal reserved words
+keywords:
+  class: godot_class
+  type: get_type
+  self: godot_self
+  end: end_val
+  alias: godot_alias
+  def: godot_def
+  nil: nil_val
+  "true": true_val
+  "false": false_val
+  in: in_val
+  out: out_val
+  select: select_val
+  begin: begin_val
+  case: case_val
+  when: when_val
+  for: for_val
+  while: while_val
+  until: until_val
+  yield: yield_val
+  return: return_val
+  break: break_val
+  next: next_val
+  redo: redo_val
+  retry: retry_val
+  rescue: rescue_val
+  ensure: ensure_val
+  include: include_val
+  extend: extend_val
+  abstract: abstract_val
+  private: private_val
+  protected: protected_val
+
+# Primitive and core type mappings from Godot C-API to Crystal
+type_map:
+  void: Void
+  bool: Bool
+  int: Int64
+  float: Float64
+  String: String
+  StringName: String
+  NodePath: NodePath
+  RID: Int64
+  Callable: Void*
+  Signal: Void*
+  Dictionary: Void*
+  Array: Godot::Array
+  PackedByteArray: Void*
+  PackedInt32Array: Void*
+  PackedInt64Array: Void*
+  PackedFloat32Array: Void*
+  PackedFloat64Array: Void*
+  PackedStringArray: Void*
+  PackedVector2Array: Void*
+  PackedVector3Array: Void*
+  PackedColorArray: Void*
+  Variant: Void*
+  Object: Godot::Object
+
+# Classes excluded from automatic generation (handled manually or internal)
+excluded_classes: []
+
+# Method renames for specific classes
+method_renames:
+  Object:
+    get_class: godot_class_name
+    to_string: to_godot_string
+  Node:
+    type: node_type

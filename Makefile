@@ -56,48 +56,53 @@ GAME_DLL      = $(BIN_DIR)/game.dll
 GAME_EXE      = $(BIN_DIR)/game.exe
 LIBGODOT_DLL  = $(BIN_DIR)/libgodot.dll
 
-.PHONY: all bridge game_dll game_exe deps sync engine test docs run editor clean help
+.PHONY: all bridge demo template generate dump_api deps sync engine test docs run editor clean help
 
-# Default target: compile bridge, game.dll, game.exe, ensure deps and sync
-all: dirs deps bridge game_dll game_exe sync
+# Default target: compile bridge, demo, and template
+all: dirs deps bridge demo template sync
 	@echo ===================================================================
-	@echo   LibGodot Crystal build completed successfully!
-	@echo   Run 'make test' to verify or 'make run' to launch the demo.
+	@echo   LibGodot Crystal library build completed successfully!
+	@echo   Run 'make run' to launch the demo or 'make editor' for the editor.
 	@echo ===================================================================
 
 # Ensure output directories exist
 dirs:
 	@$(POWERSHELL) "if (-not (Test-Path '$(BIN_DIR)')) { New-Item -ItemType Directory -Force -Path '$(BIN_DIR)' | Out-Null }; if (-not (Test-Path '$(DEMO_BIN_DIR)')) { New-Item -ItemType Directory -Force -Path '$(DEMO_BIN_DIR)' | Out-Null }"
 
-
 # Compile C++ GDExtension bridge
 bridge: dirs
-	@echo [1/4] Compiling GDExtension bridge (crystal_bridge.dll)...
+	@echo [Bridge] Compiling GDExtension bridge (crystal_bridge.dll)...
 	$(CXX) -shared $(CXXFLAGS) src/bridge/crystal_bridge.cpp -o $(BRIDGE_DLL)
 
-# Compile Crystal shared library (game.dll)
-game_dll: dirs
-	@echo [2/4] Compiling Crystal game library (game.dll)...
-	$(CRYSTAL) build $(CRYSTAL_FLAGS) --link-flags "$(LINK_FLAGS)" $(ENTRY) -o $(GAME_DLL)
+# Build consumer projects
+demo: dirs deps bridge
+	@echo [Demo] Building demo consumer project...
+	$(MAKE) -C demo
 
-# Compile Crystal standalone executable (game.exe)
-game_exe: dirs
-	@echo [3/4] Compiling Crystal host executable (game.exe)...
-	$(CRYSTAL) build $(CRYSTAL_FLAGS) $(ENTRY) -o $(GAME_EXE)
+template: dirs deps bridge
+	@echo [Template] Building template project...
+	$(MAKE) -C template
+
+# Generate Crystal bindings from Godot extension_api.json
+dump_api:
+	@echo [API] Dumping extension_api.json from Godot...
+	$(GODOT) --headless --dump-extension-api
+
+generate:
+	@echo [Generator] Generating complete Godot bindings from extension_api.json...
+	$(CRYSTAL) run scripts/generate_bindings.cr
 
 # Copy Crystal runtime dependencies (gc.dll, iconv-2.dll, pcre2-8.dll) and libgodot.dll
 deps: dirs
 	@echo [Dependencies] Ensuring runtime DLLs are available in bin/ and demo/bin/...
-	@$(POWERSHELL) "$$c = Split-Path (Get-Command crystal -ErrorAction SilentlyContinue).Source; if ($$c) { foreach ($$dll in @('gc.dll','iconv-2.dll','pcre2-8.dll')) { $$src = Join-Path $$c $$dll; if (Test-Path $$src) { Copy-Item $$src '$(BIN_DIR)/' -Force; Copy-Item $$src '$(DEMO_BIN_DIR)/' -Force } } }"
+	@$(POWERSHELL) "$$c = Split-Path (Get-Command crystal -ErrorAction SilentlyContinue).Source; if ($$c) { foreach ($$dll in @('gc.dll','iconv-2.dll','pcre2-8.dll')) { $$src = Join-Path $$c $$dll; if (Test-Path $$src) { Copy-Item $$src '$(BIN_DIR)/' -Force; Copy-Item $$src '$(DEMO_BIN_DIR)/' -Force; if (Test-Path 'template/bin') { Copy-Item $$src 'template/bin/' -Force } } } }"
 	@$(POWERSHELL) "if (Test-Path 'godot-src/bin/godot.windows.template_debug.x86_64.dll') { Copy-Item 'godot-src/bin/godot.windows.template_debug.x86_64.dll' '$(BIN_DIR)/libgodot.dll' -Force; Copy-Item 'godot-src/bin/godot.windows.template_debug.x86_64.dll' '$(DEMO_BIN_DIR)/libgodot.dll' -Force }; if ((Test-Path '$(BIN_DIR)/libgodot.dll') -and (-not (Test-Path '$(DEMO_BIN_DIR)/libgodot.dll'))) { Copy-Item '$(BIN_DIR)/libgodot.dll' '$(DEMO_BIN_DIR)/libgodot.dll' -Force }"
 
-
-# Synchronize compiled artifacts into demo/bin
+# Synchronize compiled bridge to consumer projects
 sync:
-	@echo [4/4] Syncing compiled binaries to demo/bin/...
+	@echo [Sync] Syncing crystal_bridge.dll to demo/bin and template/bin...
 	@$(CP) $(BRIDGE_DLL) $(DEMO_BIN_DIR)/crystal_bridge.dll
-	@$(CP) $(GAME_DLL) $(DEMO_BIN_DIR)/game.dll
-	@$(CP) $(GAME_EXE) $(DEMO_BIN_DIR)/game.exe
+	@$(POWERSHELL) "if (Test-Path 'template/bin') { Copy-Item '$(BRIDGE_DLL)' 'template/bin/crystal_bridge.dll' -Force }"
 
 # Build Godot engine shared library from source (requires godot-src and scons)
 engine:

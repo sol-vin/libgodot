@@ -107,6 +107,8 @@ macro node(decl, &block)
     has_physics_process = false
     props = [] of Nil
     sigs = [] of Nil
+    methods_doc = [] of Nil
+    class_doc = ""
 
     stmts = block.body.is_a?(Expressions) ? block.body.expressions : [block.body]
     last_anno = nil
@@ -114,7 +116,11 @@ macro node(decl, &block)
 
   {% for stmt in stmts %}
     {% if stmt.class_name.id == "Annotation" %}
-      {% last_anno = stmt %}
+      {% if stmt.name.stringify == "Doc" %}
+        {% class_doc = stmt.args[0].stringify %}
+      {% else %}
+        {% last_anno = stmt %}
+      {% end %}
     {% elsif stmt.is_a?(Def) %}
       {% if stmt.name.stringify == "_ready" %}
         {% has_ready = true %}
@@ -122,15 +128,27 @@ macro node(decl, &block)
         {% has_process = true %}
       {% elsif stmt.name.stringify == "_physics_process" %}
         {% has_physics_process = true %}
+      {% else %}
+        {% m_doc = stmt.doc_comment || "" %}
+        {% methods_doc << {stmt.name, stmt.args, stmt.return_type, m_doc} %}
       {% end %}
       {% last_anno = nil %}
     {% elsif stmt.is_a?(Call) && stmt.name.id == "property" %}
+      {% p_doc = stmt.doc_comment || (last_anno ? last_anno.doc_comment : "") || "" %}
       {% if last_anno %}
-        {% props << {stmt.args[0], last_anno} %}
+        {% for key, val in last_anno.named_args %}
+          {% if key.stringify == "doc" %}
+            {% p_doc = val.stringify %}
+          {% end %}
+        {% end %}
+        {% props << {stmt.args[0], last_anno, p_doc} %}
         {% last_anno = nil %}
+      {% else %}
+        {% props << {stmt.args[0], nil, p_doc} %}
       {% end %}
     {% elsif stmt.is_a?(Call) && stmt.name.id == "signal" %}
-      {% sigs << stmt.args[0] %}
+      {% s_doc = stmt.doc_comment || "" %}
+      {% sigs << {stmt.args[0], s_doc} %}
       {% last_anno = nil %}
     {% else %}
       {% last_anno = nil %}
@@ -258,7 +276,9 @@ macro node(decl, &block)
   {% end %}
 
   signals_{{class_name}} = Array(::Godot::SignalInfo).new
-  {% for sig in sigs %}
+  {% for sig_entry in sigs %}
+    {% sig = sig_entry[0] %}
+    {% sig_doc = sig_entry[1] %}
     {% if sig.is_a?(Call) %}
       {% sig_name = sig.name %}
       {% sig_args = sig.args %}
@@ -307,6 +327,41 @@ macro node(decl, &block)
       signals_{{class_name}}
     )
   )
+
+  # Auto-register Godot Editor documentation XML
+  xml_{{class_name}} = String.build do |io|
+    io << "<class name=\"{{class_name.id}}\" inherits=\"" << {{base_godot_name}} << "\">\n"
+    {% if class_doc != "" %}
+      io << "  <description>" << {{class_doc}} << "</description>\n"
+    {% elsif decl.doc_comment && decl.doc_comment != "" %}
+      io << "  <description>" << {{decl.doc_comment.stringify}} << "</description>\n"
+    {% end %}
+    io << "  <members>\n"
+    {% for item in props %}
+      {% arg = item[0] %}
+      {% p_doc = item[2] %}
+      io << "    <member name=\"{{arg.var.id}}\" type=\"{{arg.type.id}}\">"
+      {% if p_doc && p_doc != "" %}
+        io << {{p_doc.stringify}}
+      {% end %}
+      io << "</member>\n"
+    {% end %}
+    io << "  </members>\n"
+    io << "  <signals>\n"
+    {% for sig_entry in sigs %}
+      {% s_item = sig_entry[0] %}
+      {% s_doc = sig_entry[1] %}
+      {% s_name = s_item.is_a?(Call) ? s_item.name : s_item %}
+      io << "    <signal name=\"{{s_name.id}}\">"
+      {% if s_doc && s_doc != "" %}
+        io << {{s_doc.stringify}}
+      {% end %}
+      io << "</signal>\n"
+    {% end %}
+    io << "  </signals>\n"
+    io << "</class>"
+  end
+  ::Godot::EditorDocRegistry.register(xml_{{class_name}})
 end
 
 # Clean signal declaration macro:

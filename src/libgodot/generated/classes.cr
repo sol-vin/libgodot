@@ -1,0 +1,6 @@
+require "./global_enums"
+require "./singletons"
+require "./classes/core"
+require "./classes/scene_2d"
+require "./classes/scene_3d"
+require "./classes/gui"

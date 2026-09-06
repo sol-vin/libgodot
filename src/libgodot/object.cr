@@ -296,22 +296,6 @@ module Godot
   class SpinBox < Range
   end
 
-  # Godot Keycodes
-  enum Key : Int32
-    None   =  0
-    Space  = 32
-    Enter  = 4194309
-    Escape = 4194305
-    Left   = 4194319
-    Up     = 4194320
-    Right  = 4194321
-    Down   = 4194322
-    W      = 87
-    A      = 65
-    S      = 83
-    D      = 68
-  end
-
   # Godot Input Singleton
   module Input
     def self.is_action_pressed(action : String) : Bool

@@ -1,10 +1,14 @@
 require "./libgodot/types"
 require "./libgodot/object"
+require "./libgodot/doc_macro"
 require "./libgodot/macros"
 require "./libgodot/bridge"
+require "./libgodot/gdscript"
 require "./libgodot/gdextension_interface"
 require "./libgodot/c_api"
 require "./libgodot/instance"
+require "./libgodot/generated/global_enums"
+require "./libgodot/generated/singletons"
 
 # # LibGodot for Crystal
 #

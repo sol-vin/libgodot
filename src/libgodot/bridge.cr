@@ -46,6 +46,8 @@ module Godot
       register_class : (CrystalClassDesc* -> Int32)
       get_method_bind : (LibC::Char*, LibC::Char*, Int64 -> Void*)
       method_bind_ptrcall : (Void*, Void*, Void**, Void* -> Void)
+      method_bind_call : (Void*, Void*, Void**, Int64, Void*, Void* -> Void)
+      load_editor_help_xml : (LibC::Char* -> Void)
       get_singleton : (LibC::Char* -> Void*)
       make_string_name : (LibC::Char* -> Void*)
       free_string_name : (Void* -> Void)
@@ -214,6 +216,8 @@ module Godot
       end
 
       print "[CrystalBridge] Successfully registered #{Godot::ClassRegistry.entries.size} Crystal classes with Godot!"
+      # Load all compile-time generated XML documentation into Godot Editor Help & Inspector
+      Godot::EditorDocRegistry.load_all
     end
 
     # Engine Logging Helpers
@@ -247,6 +251,27 @@ module Godot
       else
         STDERR.puts "[WARNING] #{desc}: #{msg}"
       end
+    end
+
+    # Generic Engine Dispatchers
+    def self.get_method_bind(class_name : String, method_name : String, hash : Int64) : Void*
+      return Pointer(Void).null if @@api.null? || @@api.value.get_method_bind.pointer.null?
+      @@api.value.get_method_bind.call(class_name.to_unsafe, method_name.to_unsafe, hash)
+    end
+
+    def self.ptrcall(method_bind : Void*, instance : Void*, args : Void**, ret : Void*) : Void
+      return if @@api.null? || @@api.value.method_bind_ptrcall.pointer.null? || method_bind.null? || instance.null?
+      @@api.value.method_bind_ptrcall.call(method_bind, instance, args, ret)
+    end
+
+    def self.get_singleton(name : String) : Void*
+      return Pointer(Void).null if @@api.null? || @@api.value.get_singleton.pointer.null?
+      @@api.value.get_singleton.call(name.to_unsafe)
+    end
+
+    def self.load_editor_help(xml : String) : Void
+      return if @@api.null? || @@api.value.load_editor_help_xml.pointer.null?
+      @@api.value.load_editor_help_xml.call(xml.to_unsafe)
     end
 
     # Engine Method Calls

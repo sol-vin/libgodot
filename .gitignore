@@ -3,6 +3,8 @@ godot.exe
 /bin/
 /demo/.godot/
 /demo/bin
+/template/.godot/
+/template/bin
 /docs/
 /scratch/
 *.obj
