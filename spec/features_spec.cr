@@ -7,7 +7,7 @@ node TestDocPlayer < CharacterBody3D do
   @[Doc("Represents a test player entity")]
 
   # Player movement speed in pixels
-  @[Export(range: 10.0_f32..500.0_f32, doc: "Movement velocity")]
+  @[Export(range: 10.0_f32..500.0_f32)]
   property speed : Float32 = 250.0_f32
 
   # Emitted on player death
@@ -26,8 +26,10 @@ abort "Failed: TestDocPlayer doc not found in registry" unless player_doc
 
 abort "Failed: missing class description" unless player_doc.includes?("Represents a test player entity")
 abort "Failed: missing member speed" unless player_doc.includes?("<member name=\"speed\"")
-abort "Failed: missing member speed doc" unless player_doc.includes?("Movement velocity")
+abort "Failed: missing member speed doc comment" unless player_doc.includes?("Player movement speed in pixels")
 abort "Failed: missing signal player_died" unless player_doc.includes?("<signal name=\"player_died\"")
+abort "Failed: missing method take_damage" unless player_doc.includes?("<method name=\"take_damage\"")
+abort "Failed: missing method take_damage doc comment" unless player_doc.includes?("Inflicts damage to the entity")
 
 puts "✓ Compile-time Doc Comments and Godot XML DocData generation verified!"
 

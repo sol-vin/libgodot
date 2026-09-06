@@ -122,12 +122,15 @@ macro node(decl, &block)
     last_anno = nil
 
     # Extract source file text to harvest doc comments
-    src_content = read_file(__FILE__)
+    src_file = block.filename ? block.filename : __FILE__
+    src_content = read_file(src_file)
     src_lines = src_content.split("\n")
     comment_accum = ""
     in_target_node = false
+    node_depth = 0
     extracted_prop_docs = {} of StringLiteral => StringLiteral
     extracted_sig_docs = {} of StringLiteral => StringLiteral
+    extracted_method_docs = {} of StringLiteral => StringLiteral
   %}
 
   {% for s_line in src_lines %}
@@ -135,22 +138,40 @@ macro node(decl, &block)
     {% if s_stripped.starts_with?("#") %}
       {% s_text = s_stripped.gsub(/^#+\s*/, "") %}
       {% comment_accum = comment_accum.empty? ? s_text : comment_accum + " " + s_text %}
-    {% elsif s_stripped.includes?("node " + class_name.stringify) %}
-      {% class_doc = comment_accum %}
+    {% elsif !in_target_node && (s_stripped.starts_with?("node " + class_name.stringify) || s_stripped.includes?("node " + class_name.stringify + " ") || s_stripped.includes?("node " + class_name.stringify + "<")) %}
+      {% if class_doc.empty? %}
+        {% class_doc = comment_accum %}
+      {% end %}
       {% comment_accum = "" %}
       {% in_target_node = true %}
-    {% elsif in_target_node && s_stripped.starts_with?("property ") %}
-      {% p_var = s_stripped.gsub(/^property\s+/, "").gsub(/\s*[:=].*/, "") %}
-      {% extracted_prop_docs[p_var] = comment_accum %}
-      {% comment_accum = "" %}
-    {% elsif in_target_node && s_stripped.starts_with?("signal ") %}
-      {% s_var = s_stripped.gsub(/^signal\s+/, "").gsub(/\s*[(:].*/, "") %}
-      {% extracted_sig_docs[s_var] = comment_accum %}
-      {% comment_accum = "" %}
-    {% elsif in_target_node && s_stripped == "end" %}
-      {% in_target_node = false %}
-      {% comment_accum = "" %}
-    {% elsif !s_stripped.starts_with?("@") && !s_stripped.empty? %}
+      {% node_depth = 1 %}
+    {% elsif in_target_node %}
+      {% if s_stripped.starts_with?("property ") %}
+        {% p_var = s_stripped.gsub(/^property\s+/, "").gsub(/\s*[:=].*/, "") %}
+        {% extracted_prop_docs[p_var] = comment_accum %}
+        {% comment_accum = "" %}
+      {% elsif s_stripped.starts_with?("signal ") %}
+        {% s_var = s_stripped.gsub(/^signal\s+/, "").gsub(/\s*[(:].*/, "") %}
+        {% extracted_sig_docs[s_var] = comment_accum %}
+        {% comment_accum = "" %}
+      {% elsif s_stripped.starts_with?("def ") || s_stripped.starts_with?("def self.") %}
+        {% m_var = s_stripped.gsub(/^def\s+(self\.)?/, "").gsub(/\s*[(:].*/, "") %}
+        {% extracted_method_docs[m_var] = comment_accum %}
+        {% comment_accum = "" %}
+        {% node_depth = node_depth + 1 %}
+      {% elsif s_stripped.starts_with?("if ") || s_stripped.starts_with?("unless ") || s_stripped.starts_with?("while ") || s_stripped.starts_with?("until ") || s_stripped.starts_with?("case ") || s_stripped.starts_with?("begin") || s_stripped.ends_with?(" do") || s_stripped.includes?(" do |") %}
+        {% node_depth = node_depth + 1 %}
+        {% comment_accum = "" %}
+      {% elsif s_stripped == "end" %}
+        {% node_depth = node_depth - 1 %}
+        {% if node_depth <= 0 %}
+          {% in_target_node = false %}
+        {% end %}
+        {% comment_accum = "" %}
+      {% elsif !s_stripped.starts_with?("@") && !s_stripped.empty? %}
+        {% comment_accum = "" %}
+      {% end %}
+    {% else %}
       {% comment_accum = "" %}
     {% end %}
   {% end %}
@@ -176,7 +197,7 @@ macro node(decl, &block)
       {% elsif stmt.name.stringify == "_physics_process" %}
         {% has_physics_process = true %}
       {% else %}
-        {% m_doc = stmt.doc_comment || "" %}
+        {% m_doc = extracted_method_docs[stmt.name.stringify] || stmt.doc_comment || "" %}
         {% methods_doc << {stmt.name, stmt.args, stmt.return_type, m_doc} %}
       {% end %}
       {% last_anno = nil %}
@@ -473,6 +494,23 @@ macro node(decl, &block)
       io << "    </signal>\n"
     {% end %}
     io << "  </signals>\n"
+    {% if !methods_doc.empty? %}
+    io << "  <methods>\n"
+    {% for m_entry in methods_doc %}
+      {% m_name = m_entry[0] %}
+      {% m_args = m_entry[1] %}
+      {% m_ret = m_entry[2] %}
+      {% m_doc = m_entry[3] %}
+      io << "    <method name=\"{{m_name.id}}\">\n"
+      io << "      <description>"
+      {% if m_doc && m_doc != "" %}
+        io << {{m_doc}}
+      {% end %}
+      io << "</description>\n"
+      io << "    </method>\n"
+    {% end %}
+    io << "  </methods>\n"
+    {% end %}
     io << "</class>"
   end
   ::Godot::EditorDocRegistry.register(xml_{{class_name}})

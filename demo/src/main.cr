@@ -42,15 +42,15 @@ node SpinningCrystal < Node3D do
   end
 
   # Rotation rate in radians per second
-  @[Export(range: 0.1_f32..10.0_f32, step: 0.1_f32, doc: "Rotation speed in radians/second")]
+  @[Export(range: 0.1_f32..10.0_f32, step: 0.1_f32)]
   property rotation_speed : Float32 = 2.5_f32
 
   # Vertical oscillation height
-  @[Export(range: 0.05_f32..1.5_f32, step: 0.05_f32, doc: "Vertical bobbing amplitude")]
+  @[Export(range: 0.05_f32..1.5_f32, step: 0.05_f32)]
   property bob_height : Float32 = 0.25_f32
 
   # Vertical oscillation speed
-  @[Export(range: 0.5_f32..10.0_f32, step: 0.5_f32, doc: "Vertical bobbing frequency")]
+  @[Export(range: 0.5_f32..10.0_f32, step: 0.5_f32)]
   property bob_frequency : Float32 = 3.0_f32
 
   # Score value awarded when collected
@@ -116,20 +116,20 @@ node DemoCharacter < CharacterBody3D do
   # Active player instance for global access
   class_property current_player : DemoCharacter? = nil
 
-  # Base ground movement speed
-  @[Export(range: 1.0_f32..15.0_f32, step: 0.5_f32, doc: "Base movement speed in meters per second")]
+  # Base ground movement speed in meters per second
+  @[Export(range: 1.0_f32..15.0_f32, step: 0.5_f32)]
   property speed : Float32 = 6.5_f32
 
   # Sprint multiplier applied when holding Shift
-  @[Export(range: 1.1_f32..3.0_f32, step: 0.1_f32, doc: "Sprint multiplier while holding Shift")]
+  @[Export(range: 1.1_f32..3.0_f32, step: 0.1_f32)]
   property sprint_multiplier : Float32 = 1.8_f32
 
   # Vertical jump impulse velocity
-  @[Export(range: 1.0_f32..25.0_f32, step: 0.5_f32, doc: "Vertical jump impulse")]
+  @[Export(range: 1.0_f32..25.0_f32, step: 0.5_f32)]
   property jump_velocity : Float32 = 7.5_f32
 
   # Downward gravitational acceleration
-  @[Export(range: 1.0_f32..50.0_f32, step: 1.0_f32, doc: "Gravity acceleration")]
+  @[Export(range: 1.0_f32..50.0_f32, step: 1.0_f32)]
   property gravity : Float32 = 18.0_f32
 
   # Maximum character hit points
@@ -153,8 +153,13 @@ node DemoCharacter < CharacterBody3D do
   property last_dir_x : Float32 = 0.0_f32
   property last_dir_z : Float32 = -1.0_f32
 
+  # Emitted when player health changes
   signal health_changed(new_health : Int32, max_health : Int32)
+
+  # Emitted when player score increases
   signal score_changed(new_score : Int32)
+
+  # Emitted when player hit points reach zero
   signal died
 
   # Interactive physics character with WASD movement, jumping, dash, and health
