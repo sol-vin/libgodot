@@ -2,6 +2,8 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include <vector>
+#include <string>
 
 #include "gdextension_interface.h"
 
@@ -141,31 +143,7 @@ static void* make_string(const char *str) {
     return s;
 }
 
-// Win32 Vectored Exception Handler to intercept fatal crashes and log them to Godot
-static LONG WINAPI crystal_crash_handler(EXCEPTION_POINTERS *ExceptionInfo) {
-    DWORD code = ExceptionInfo->ExceptionRecord->ExceptionCode;
-    if (code == 0xC0000005 || code == 0xC000001D || code == 0xC0000025 || 
-        code == 0xC00000FD || code == 0xC0000409) {
-        const char *code_name = "CRASH_EXCEPTION";
-        if (code == 0xC0000005) code_name = "ACCESS_VIOLATION (0xC0000005)";
-        else if (code == 0xC000001D) code_name = "ILLEGAL_INSTRUCTION (0xC000001D)";
-        else if (code == 0xC00000FD) code_name = "STACK_OVERFLOW (0xC00000FD)";
-        else if (code == 0xC0000409) code_name = "STACK_BUFFER_OVERRUN (0xC0000409)";
 
-        char crash_buf[512];
-        snprintf(crash_buf, sizeof(crash_buf),
-            "[Fatal Native Crash] %s at PC 0x%p", code_name, ExceptionInfo->ExceptionRecord->ExceptionAddress);
-
-        godot_log_error(crash_buf, "A fatal unhandled native exception occurred in the game process", "crystal_crash_handler", __FILE__, __LINE__);
-
-        FILE *f = fopen("godot_crash.log", "a");
-        if (f) {
-            fprintf(f, "%s\n", crash_buf);
-            fclose(f);
-        }
-    }
-    return EXCEPTION_CONTINUE_SEARCH;
-}
 
 // ==============================================================================
 // Generic Bridge Registration Data Structures (C-ABI)
@@ -272,6 +250,35 @@ static GDExtensionObjectPtr generic_class_create(void *p_class_userdata, GDExten
     free(parent_sn);
     free(class_sn);
     return obj;
+}
+
+static GDExtensionClassInstancePtr generic_class_recreate(void *p_class_userdata, GDExtensionObjectPtr p_object) {
+    const CrystalClassDesc *desc = (const CrystalClassDesc*)p_class_userdata;
+    if (!desc) return nullptr;
+
+    GenericExtensionInstance *inst = new GenericExtensionInstance();
+    inst->godot_object = p_object;
+    inst->desc = desc;
+    if (desc->create_instance) {
+        inst->crystal_instance = desc->create_instance(desc, p_object);
+    } else {
+        inst->crystal_instance = nullptr;
+    }
+
+    // Auto-enable physics process if requested
+    if (desc->has_physics_process && mb_set_physics_process) {
+        uint8_t enabled = 1;
+        const void *args[1] = { &enabled };
+        gd_object_method_bind_ptrcall(mb_set_physics_process, p_object, args, nullptr);
+    }
+    // Auto-enable idle process if requested
+    if (desc->has_process && mb_set_process) {
+        uint8_t enabled = 1;
+        const void *args[1] = { &enabled };
+        gd_object_method_bind_ptrcall(mb_set_process, p_object, args, nullptr);
+    }
+
+    return (GDExtensionClassInstancePtr)inst;
 }
 
 static void generic_class_free(void *p_class_userdata, GDExtensionClassInstancePtr p_instance) {
@@ -407,6 +414,7 @@ static int bridge_register_class(const CrystalClassDesc *p_desc) {
     cinfo.get_func = generic_class_get;
     cinfo.create_instance_func = generic_class_create;
     cinfo.free_instance_func = generic_class_free;
+    cinfo.recreate_instance_func = generic_class_recreate;
     cinfo.get_virtual_func = generic_class_get_virtual;
     cinfo.class_userdata = (void*)desc;
 
@@ -499,9 +507,20 @@ static bool is_editor_active() {
     return ret_bool != 0;
 }
 
+static std::vector<std::string> g_editor_doc_xmls;
+
 static void bridge_load_editor_help_xml(const char *xml) {
-    if (gd_editor_help_load_xml_from_utf8_chars && xml && is_editor_active()) {
+    if (!xml) return;
+    g_editor_doc_xmls.push_back(std::string(xml));
+    if (gd_editor_help_load_xml_from_utf8_chars && is_editor_active()) {
         gd_editor_help_load_xml_from_utf8_chars(xml);
+    }
+}
+
+static void bridge_flush_editor_help() {
+    if (!gd_editor_help_load_xml_from_utf8_chars) return;
+    for (const auto &xml : g_editor_doc_xmls) {
+        gd_editor_help_load_xml_from_utf8_chars(xml.c_str());
     }
 }
 
@@ -763,10 +782,10 @@ static uint64_t get_file_mtime(const char *path) {
 static HMODULE g_hGame = NULL;
 
 static void unload_crystal_game_library() {
-    if (g_hGame) {
-        FreeLibrary(g_hGame);
-        g_hGame = NULL;
-    }
+    // Note: Do not call FreeLibrary(g_hGame). Crystal's Boehm GC and runtime
+    // remain resident across hot-reloads; subsequent builds are loaded via
+    // distinct shadow DLL copies (game_loaded_<pid>_<count>.dll).
+    g_hGame = NULL;
 }
 
 // Loads game.dll compiled from Crystal and invokes crystal_godot_init(&g_bridge_api)
@@ -894,9 +913,12 @@ static void init_common_method_binds() {
 // Lifecycle callbacks
 static void initialize_crystal_module(void *p_userdata, GDExtensionInitializationLevel p_level) {
     if (p_level == GDEXTENSION_INITIALIZATION_SCENE) {
+        g_registered_class_count = 0;
         init_common_method_binds();
         godot_log_print("[CrystalBridge] Initializing generic Crystal GDExtension host...");
         load_crystal_game_library();
+    } else if (p_level == GDEXTENSION_INITIALIZATION_EDITOR) {
+        bridge_flush_editor_help();
     }
 }
 
@@ -911,7 +933,7 @@ static void deinitialize_crystal_module(void *p_userdata, GDExtensionInitializat
             }
         }
         g_registered_class_count = 0;
-        unload_crystal_game_library();
+        g_editor_doc_xmls.clear();
         godot_log_print("[CrystalBridge] Crystal module deinitialized.");
     }
 }
@@ -967,9 +989,6 @@ extern "C" GDE_EXPORT GDExtensionBool crystal_library_init(
     if (gd_variant_get_ptr_destructor) {
         gd_string_destroy = gd_variant_get_ptr_destructor(GDEXTENSION_VARIANT_TYPE_STRING);
     }
-
-    // Catch fatal exceptions so failures are never silent
-    AddVectoredExceptionHandler(1, crystal_crash_handler);
 
     r_initialization->initialize = initialize_crystal_module;
     r_initialization->deinitialize = deinitialize_crystal_module;

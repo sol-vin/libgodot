@@ -17,9 +17,9 @@ RM           = $(POWERSHELL) "Remove-Item -Force -ErrorAction SilentlyContinue"
 
 LINK_FLAGS   = /DLL /ENTRY:_DllMainCRTStartup /EXPORT:crystal_godot_init
 
-.PHONY: all game_dll game_exe deps bridge run editor clean help
+.PHONY: all game_dll game_exe deps bridge extension_list addons run editor clean help
 
-all: dirs deps bridge game_dll
+all: dirs deps bridge extension_list addons game_dll
 	@echo ===================================================================
 	@echo   Demo game.dll built successfully!
 	@echo ===================================================================
@@ -28,18 +28,27 @@ dirs:
 	@$(POWERSHELL) "if (-not (Test-Path '$(BIN_DIR)')) { New-Item -ItemType Directory -Force -Path '$(BIN_DIR)' | Out-Null }"
 
 deps: dirs
-	@$(POWERSHELL) "$$c = Split-Path (Get-Command crystal -ErrorAction SilentlyContinue).Source; if ($$c) { foreach ($$dll in @('gc.dll','iconv-2.dll','pcre2-8.dll')) { $$src = Join-Path $$c $$dll; if ((Test-Path $$src) -and (-not (Test-Path ('$(BIN_DIR)/' + $$dll)))) { Copy-Item $$src '$(BIN_DIR)/' -Force } } }"
+	@$(POWERSHELL) "$$c = Split-Path (Get-Command crystal -ErrorAction SilentlyContinue).Source; if ($$c) { foreach ($$dll in @('gc.dll','iconv-2.dll','pcre2-8.dll')) { $$src = Join-Path $$c $$dll; if ((Test-Path $$src) -and (-not (Test-Path ('$(BIN_DIR)/' + $$dll)))) { Copy-Item $$src '$(BIN_DIR)/' -Force -ErrorAction SilentlyContinue } } }; exit 0"
+	@$(POWERSHELL) "if ((Test-Path '../bin/libgodot.dll') -and (-not (Test-Path '$(BIN_DIR)/libgodot.dll'))) { Copy-Item '../bin/libgodot.dll' '$(BIN_DIR)/libgodot.dll' -Force -ErrorAction SilentlyContinue }; exit 0"
 
 bridge: dirs
-	@$(POWERSHELL) "if (Test-Path '$(BRIDGE_SRC)') { Copy-Item '$(BRIDGE_SRC)' '$(BIN_DIR)/crystal_bridge.dll' -Force }"
+	@$(POWERSHELL) "if (Test-Path '$(BRIDGE_SRC)') { Copy-Item '$(BRIDGE_SRC)' '$(BIN_DIR)/crystal_bridge.dll' -Force -ErrorAction SilentlyContinue }; exit 0"
 
-game_dll: dirs deps bridge
+extension_list:
+	@$(POWERSHELL) "if (-not (Test-Path '.godot')) { New-Item -ItemType Directory -Force -Path '.godot' | Out-Null }; Set-Content -Path '.godot/extension_list.cfg' -Value 'res://addons/crystal_integration/crystal.gdextension' -Force; exit 0"
+
+addons:
+	@powershell -ExecutionPolicy Bypass -File ../scripts/sync_addons.ps1 -Source ../addons -Destinations addons
+
+game_dll: dirs deps bridge extension_list addons
 	@echo [Demo] Compiling game.dll from $(ENTRY)...
 	@$(POWERSHELL) "$$env:CRYSTAL_PATH = '../src;' + (crystal env CRYSTAL_PATH); crystal build --link-flags '$(LINK_FLAGS)' $(ENTRY) -o $(GAME_DLL)"
+	@$(POWERSHELL) "if (Test-Path '$(GAME_DLL)') { Copy-Item '$(GAME_DLL)' '../bin/game.dll' -Force -ErrorAction SilentlyContinue }; exit 0"
 
 game_exe: dirs deps bridge
 	@echo [Demo] Compiling standalone game.exe from $(ENTRY)...
 	@$(POWERSHELL) "$$env:CRYSTAL_PATH = '../src;' + (crystal env CRYSTAL_PATH); crystal build $(ENTRY) -o $(GAME_EXE)"
+	@$(POWERSHELL) "if (Test-Path '$(GAME_EXE)') { Copy-Item '$(GAME_EXE)' '../bin/game.exe' -Force }"
 
 run: all
 	@echo [Demo] Running demo with Godot...

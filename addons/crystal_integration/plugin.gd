@@ -76,9 +76,27 @@ func execute_crystal_build() -> bool:
 	var ext_path = "res://addons/crystal_integration/crystal.gdextension"
 	if GDExtensionManager.is_extension_loaded(ext_path):
 		var status = GDExtensionManager.reload_extension(ext_path)
-		print("[CrystalPlugin] GDExtension reloaded (status: %d). New classes are now available in Editor." % status)
+		if status == OK:
+			print("[CrystalPlugin] GDExtension reloaded successfully (status: %d). New classes are now available in Editor." % status)
+		else:
+			printerr("[CrystalPlugin] GDExtension reload failed (status: %d). Check output log." % status)
 	else:
 		var status = GDExtensionManager.load_extension(ext_path)
 		print("[CrystalPlugin] GDExtension loaded (status: %d)." % status)
 
+	# Ensure the Godot Inspector refreshes the currently selected nodes so new properties appear immediately
+	_refresh_inspector.call_deferred()
+
 	return true
+
+func _refresh_inspector() -> void:
+	var selection = EditorInterface.get_selection().get_selected_nodes()
+	for node in selection:
+		node.notify_property_list_changed()
+	var inspector = EditorInterface.get_inspector()
+	if inspector:
+		var obj = inspector.get_edited_object()
+		if obj:
+			obj.notify_property_list_changed()
+			inspector.edit(null)
+			inspector.edit(obj)

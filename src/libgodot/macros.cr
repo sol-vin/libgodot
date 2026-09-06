@@ -114,15 +114,42 @@ macro node(decl, &block)
     sigs = [] of Nil
     methods_doc = [] of Nil
     class_doc = ""
-    if decl.doc_comment && decl.doc_comment != ""
-      class_doc = decl.doc_comment
-    elsif block.body.doc_comment && block.body.doc_comment != ""
-      class_doc = block.body.doc_comment
-    end
-
     stmts = block.body.is_a?(Expressions) ? block.body.expressions : [block.body]
     last_anno = nil
+
+    # Extract source file text to harvest doc comments
+    src_content = read_file(__FILE__)
+    src_lines = src_content.split("\n")
+    comment_accum = ""
+    in_target_node = false
+    extracted_prop_docs = {} of StringLiteral => StringLiteral
+    extracted_sig_docs = {} of StringLiteral => StringLiteral
   %}
+
+  {% for s_line in src_lines %}
+    {% s_stripped = s_line.strip %}
+    {% if s_stripped.starts_with?("#") %}
+      {% s_text = s_stripped.gsub(/^#+\s*/, "") %}
+      {% comment_accum = comment_accum.empty? ? s_text : comment_accum + " " + s_text %}
+    {% elsif s_stripped.includes?("node " + class_name.stringify) %}
+      {% class_doc = comment_accum %}
+      {% comment_accum = "" %}
+      {% in_target_node = true %}
+    {% elsif in_target_node && s_stripped.starts_with?("property ") %}
+      {% p_var = s_stripped.gsub(/^property\s+/, "").gsub(/\s*[:=].*/, "") %}
+      {% extracted_prop_docs[p_var] = comment_accum %}
+      {% comment_accum = "" %}
+    {% elsif in_target_node && s_stripped.starts_with?("signal ") %}
+      {% s_var = s_stripped.gsub(/^signal\s+/, "").gsub(/\s*[(:].*/, "") %}
+      {% extracted_sig_docs[s_var] = comment_accum %}
+      {% comment_accum = "" %}
+    {% elsif in_target_node && s_stripped == "end" %}
+      {% in_target_node = false %}
+      {% comment_accum = "" %}
+    {% elsif !s_stripped.starts_with?("@") && !s_stripped.empty? %}
+      {% comment_accum = "" %}
+    {% end %}
+  {% end %}
 
   {% for stmt in stmts %}
     {% if stmt.class_name.id == "Annotation" %}
@@ -146,20 +173,25 @@ macro node(decl, &block)
       {% end %}
       {% last_anno = nil %}
     {% elsif stmt.is_a?(Call) && stmt.name.id == "property" %}
-      {% p_doc = stmt.doc_comment || (last_anno ? last_anno.doc_comment : "") || "" %}
+      {%
+        p_name_str = stmt.args[0].var.stringify
+        p_doc = extracted_prop_docs[p_name_str] || ""
+      %}
       {% if last_anno %}
         {% for key, val in last_anno.named_args %}
           {% if key.stringify == "doc" %}
             {% p_doc = val.stringify %}
           {% end %}
         {% end %}
-        {% props << {stmt.args[0], last_anno, p_doc} %}
-        {% last_anno = nil %}
-      {% else %}
-        {% props << {stmt.args[0], nil, p_doc} %}
       {% end %}
+      {% props << {stmt.args[0], last_anno, p_doc} %}
+      {% last_anno = nil %}
     {% elsif stmt.is_a?(Call) && stmt.name.id == "signal" %}
-      {% s_doc = stmt.doc_comment || "" %}
+      {%
+        s_item = stmt.args[0]
+        s_name_str = (s_item.is_a?(Call) ? s_item.name : s_item).stringify
+        s_doc = extracted_sig_docs[s_name_str] || ""
+      %}
       {% sigs << {stmt.args[0], s_doc} %}
       {% last_anno = nil %}
     {% else %}
@@ -283,13 +315,18 @@ macro node(decl, &block)
         {% end %}
       {% end %}
     {% end %}
+    {%
+      # If annotated with @[Export], usage is PROPERTY_USAGE_DEFAULT (STORAGE | EDITOR = 6)
+      # Otherwise PROPERTY_USAGE_STORAGE (2) so internal properties don't pollute the Godot inspector
+      prop_usage = anno ? 6_u32 : 2_u32
+    %}
     properties_{{class_name}} << ::Godot::PropertyInfo.new(
       "{{var_name.id}}",
       "{{var_type.id}}",
       {{vtype}},
       {{hint}}_u32,
       "{{hint_str.id}}",
-      6_u32
+      {{prop_usage}}
     )
   {% end %}
 
@@ -348,19 +385,47 @@ macro node(decl, &block)
 
   # Auto-register Godot Editor documentation XML
   xml_{{class_name}} = String.build do |io|
+    io << "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n"
     io << "<class name=\"{{class_name.id}}\" inherits=\"" << {{base_godot_name}} << "\">\n"
+    io << "  <brief_description>\n"
     {% if class_doc != "" %}
-      io << "  <description>" << {{class_doc}} << "</description>\n"
-    {% elsif decl.doc_comment && decl.doc_comment != "" %}
-      io << "  <description>" << {{decl.doc_comment.stringify}} << "</description>\n"
+      io << "    " << {{class_doc}} << "\n"
     {% end %}
+    io << "  </brief_description>\n"
+    io << "  <description>\n"
+    {% if class_doc != "" %}
+      io << "    " << {{class_doc}} << "\n"
+    {% end %}
+    io << "  </description>\n"
+    io << "  <tutorials>\n  </tutorials>\n"
     io << "  <members>\n"
     {% for item in props %}
       {% arg = item[0] %}
       {% p_doc = item[2] %}
-      io << "    <member name=\"{{arg.var.id}}\" type=\"{{arg.type.id}}\">"
+      {% var_type = arg.type.stringify %}
+      {%
+        gtype = "Variant"
+        if var_type == "Float32" || var_type == "Float64"
+          gtype = "float"
+        elsif var_type == "Int32" || var_type == "Int64"
+          gtype = "int"
+        elsif var_type == "Bool"
+          gtype = "bool"
+        elsif var_type == "String"
+          gtype = "String"
+        elsif var_type == "Vector2"
+          gtype = "Vector2"
+        elsif var_type == "Vector3"
+          gtype = "Vector3"
+        elsif var_type == "Color"
+          gtype = "Color"
+        elsif var_type == "NodePath"
+          gtype = "NodePath"
+        end
+      %}
+      io << "    <member name=\"{{arg.var.id}}\" type=\"{{gtype.id}}\" setter=\"\" getter=\"\">"
       {% if p_doc && p_doc != "" %}
-        io << {{p_doc.stringify}}
+        io << {{p_doc}}
       {% end %}
       io << "</member>\n"
     {% end %}
@@ -370,11 +435,33 @@ macro node(decl, &block)
       {% s_item = sig_entry[0] %}
       {% s_doc = sig_entry[1] %}
       {% s_name = s_item.is_a?(Call) ? s_item.name : s_item %}
-      io << "    <signal name=\"{{s_name.id}}\">"
-      {% if s_doc && s_doc != "" %}
-        io << {{s_doc.stringify}}
+      io << "    <signal name=\"{{s_name.id}}\">\n"
+      {% if s_item.is_a?(Call) %}
+        {% for s_arg, idx in s_item.args %}
+          {% if s_arg.is_a?(TypeDeclaration) %}
+            {% s_atype = s_arg.type.stringify %}
+            {%
+              s_gtype = "Variant"
+              if s_atype == "Float32" || s_atype == "Float64"
+                s_gtype = "float"
+              elsif s_atype == "Int32" || s_atype == "Int64"
+                s_gtype = "int"
+              elsif s_atype == "Bool"
+                s_gtype = "bool"
+              elsif s_atype == "String"
+                s_gtype = "String"
+              end
+            %}
+            io << "      <param index=\"{{idx}}\" name=\"{{s_arg.var.id}}\" type=\"{{s_gtype.id}}\" />\n"
+          {% end %}
+        {% end %}
       {% end %}
-      io << "</signal>\n"
+      io << "      <description>"
+      {% if s_doc && s_doc != "" %}
+        io << {{s_doc}}
+      {% end %}
+      io << "</description>\n"
+      io << "    </signal>\n"
     {% end %}
     io << "  </signals>\n"
     io << "</class>"

@@ -6,6 +6,17 @@ if (-not (Test-Path "bin")) {
     New-Item -ItemType Directory -Path "bin" | Out-Null
 }
 
+# Ensure .godot/extension_list.cfg exists so GDExtension is discovered
+if (-not (Test-Path ".godot")) {
+    New-Item -ItemType Directory -Path ".godot" | Out-Null
+}
+Set-Content -Path ".godot/extension_list.cfg" -Value "res://addons/crystal_integration/crystal.gdextension" -Force
+
+# Sync addons from root for complete parity
+if (Test-Path "../addons") {
+    & powershell -ExecutionPolicy Bypass -File "../scripts/sync_addons.ps1" -Source "../addons" -Destinations "addons"
+}
+
 # Copy runtime DLLs
 $crystalPath = Split-Path (Get-Command crystal).Source
 foreach ($dll in @("gc.dll", "iconv-2.dll", "pcre2-8.dll")) {
@@ -18,6 +29,11 @@ foreach ($dll in @("gc.dll", "iconv-2.dll", "pcre2-8.dll")) {
 # Copy crystal_bridge.dll
 if (Test-Path "../bin/crystal_bridge.dll") {
     Copy-Item "../bin/crystal_bridge.dll" "bin/" -Force
+}
+
+# Copy libgodot.dll if present
+if (Test-Path "../bin/libgodot.dll") {
+    Copy-Item "../bin/libgodot.dll" "bin/" -Force
 }
 
 # Set CRYSTAL_PATH so require "libgodot" finds ../src/libgodot.cr

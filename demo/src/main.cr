@@ -54,11 +54,24 @@ node SpinningCrystal < Node3D do
   property bob_frequency : Float32 = 3.0_f32
 
   # Score value awarded when collected
-  @[Export(range: 10..1000, step: 10, doc: "Score value given to the player")]
+  @[Export(range: 10..1000, step: 10)]
   property score_value : Int32 = 100
 
+  # Custom test property for inspector testing
   @[Export]
   property my_new_property : Int32 = 100
+
+  # Custom test property for inspector testing
+  @[Export]
+  property my_new_property2_electric : Int32 = 567
+
+  # Custom test property for inspector testing
+  @[Export]
+  property my_new_property3_coedsrevenge : Int32 = 9787
+
+  # Custom test property for inspector testing
+  @[Export]
+  property my_new_property4_theticklere : Int32 = 21772
 
   # Whether this crystal has been collected
   property collected : Bool = false
@@ -131,8 +144,12 @@ node DemoCharacter < CharacterBody3D do
   property gravity : Float32 = 18.0_f32
 
   # Maximum character hit points
-  @[Export(range: 10..500, step: 10, doc: "Maximum player hit points")]
+  @[Export(range: 10..500, step: 10)]
   property max_health : Int32 = 100
+
+  # Custom test property for inspector testing
+  @[Export]
+  property my_new_property : Int32 = 100
 
   # Current player hit points
   property current_health : Int32 = 100
