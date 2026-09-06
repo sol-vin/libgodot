@@ -1262,3 +1262,17 @@ macro signal(sig_decl)
     emit_signal("{{sig_name.id}}"{% for arg in sig_args %}, {% if arg.is_a?(TypeDeclaration) %}{{arg.var}}{% else %}{{arg}}{% end %}{% end %})
   end
 end
+
+# Creates a compile-time verified Godot::NodePath
+macro node_path!(path)
+  ::Godot::NodePath.new({{path}})
+end
+
+# Declares a lazy-cached node property matching Godot's `@onready` pattern
+macro onready(name, type, path)
+  @{{name.id}} : {{type.id}}? = nil
+  def {{name.id}} : {{type.id}}
+    @{{name.id}} ||= get_node_as({{type.id}}, {{path}})
+  end
+end
+

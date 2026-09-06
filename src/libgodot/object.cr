@@ -83,6 +83,19 @@ module Godot
     T.new(res.pointer)
   end
 
+  # Constructs a new native Godot engine object of the given class name (e.g. "Node2D", "MeshInstance3D", "BoxMesh")
+  def self.create(class_name : String) : Node
+    ptr = Bridge.construct_object(class_name)
+    Node.new(ptr)
+  end
+
+  # Constructs a new native Godot engine object and wraps it in the given Crystal class
+  def self.create(type : T.class) : T forall T
+    class_name = {{ T.name.stringify.split("::").last }}
+    ptr = Bridge.construct_object(class_name)
+    T.new(ptr)
+  end
+
   # Base class for all Godot engine objects and extension classes.
   # Provides identity, lifecycle dispatch hooks, and signal emission functionality.
   class Object
@@ -124,6 +137,38 @@ module Godot
     def call(method : String, *args) : Void*
       Bridge.object_call(@pointer, method, *args)
       Pointer(Void).null
+    end
+
+    # Calls the named method and returns an Object/Node (or nil if null)
+    def call_obj(method : String, *args) : Node?
+      ptr = Bridge.object_call_ret_object(@pointer, method, *args)
+      ptr.null? ? nil : Node.new(ptr)
+    end
+
+    # Calls the named method and returns the result cast to T (or nil if null)
+    def call_obj_as(type : T.class, method : String, *args) : T? forall T
+      ptr = Bridge.object_call_ret_object(@pointer, method, *args)
+      ptr.null? ? nil : T.new(ptr)
+    end
+
+    # Calls the named method and returns the result as Int64
+    def call_i64(method : String, *args) : Int64
+      Bridge.object_call_ret_int(@pointer, method, *args)
+    end
+
+    # Calls the named method and returns the result as Float64
+    def call_f64(method : String, *args) : Float64
+      Bridge.object_call_ret_float(@pointer, method, *args)
+    end
+
+    # Calls the named method and returns the result as Bool
+    def call_bool(method : String, *args) : Bool
+      Bridge.object_call_ret_bool(@pointer, method, *args)
+    end
+
+    # Calls the named method and returns the result as String
+    def call_str(method : String, *args) : String
+      Bridge.object_call_ret_string(@pointer, method, *args)
     end
 
     # Connects a callback proc to the named signal.
@@ -254,15 +299,6 @@ module Godot
       if node = find_child(pattern, recursive, owned)
         T.new(node.pointer)
       end
-    end
-
-    def add_child(node : Node) : Void
-    end
-
-    def remove_child(node : Node) : Void
-    end
-
-    def queue_free : Void
     end
 
     # Lifecycle callback called when the node enters the active scene tree.

@@ -25,6 +25,10 @@
 
 ## 3. Build Tooling & Entry Points
 
+- **Always use `make all`**:
+  - Whenever compiling or rebuilding, agents MUST run `make all` (or `make all RELEASE=1`).
+  - NEVER run partial build targets (e.g. `make bridge`, `make test_project`, or `make game_dll`) in isolation. `make all` guarantees the loader bridge, test suite, examples, template, and all synchronized DLLs across `bin/`, `test/bin/`, `template/bin/`, and `examples/*/bin/` remain consistent and in sync.
 - The root `Makefile` defaults to compiling `test/src/main.cr` as the application entry point (`ENTRY = test/src/main.cr`).
 - When compiling binaries, output artifacts are generated and synchronized into `bin/`, `test/bin/`, `template/bin/`, and `examples/*/bin/`.
 - Automated specifications and unit tests reside in `spec/`.
+

@@ -62,9 +62,34 @@ layout_mode = 2
 text = "Run Core"
 
 [node name="BtnRunProps" type="Button" parent="MarginContainer/VBox/ButtonBox"]
-custom_minimum_size = Vector2(140, 36)
+custom_minimum_size = Vector2(130, 36)
 layout_mode = 2
-text = "Run Properties"
+text = "Properties"
+
+[node name="BtnRunNodes" type="Button" parent="MarginContainer/VBox/ButtonBox"]
+custom_minimum_size = Vector2(110, 36)
+layout_mode = 2
+text = "Nodes"
+
+[node name="BtnRunGDScript" type="Button" parent="MarginContainer/VBox/ButtonBox"]
+custom_minimum_size = Vector2(110, 36)
+layout_mode = 2
+text = "GDScript"
+
+[node name="BtnRunMesh" type="Button" parent="MarginContainer/VBox/ButtonBox"]
+custom_minimum_size = Vector2(110, 36)
+layout_mode = 2
+text = "3D Mesh"
+
+[node name="BtnRunPhysics" type="Button" parent="MarginContainer/VBox/ButtonBox"]
+custom_minimum_size = Vector2(110, 36)
+layout_mode = 2
+text = "Physics"
+
+[node name="BtnRunStress" type="Button" parent="MarginContainer/VBox/ButtonBox"]
+custom_minimum_size = Vector2(110, 36)
+layout_mode = 2
+text = "Stress"
 
 [node name="StatsLabel" type="Label" parent="MarginContainer/VBox"]
 layout_mode = 2

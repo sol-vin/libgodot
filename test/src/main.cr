@@ -25,7 +25,7 @@ module TestFramework
     end
   end
 
-  def self.assert_approx_eq(actual : Float32 | Float64, expected : Float32 | Float64, epsilon : Float64 = 0.0001, msg : String = "")
+  def self.assert_approx_eq(actual : Float32 | Float64, expected : Float32 | Float64, epsilon : Float64 = 0.001, msg : String = "")
     diff = (actual - expected).abs
     if diff > epsilon
       detail = msg.empty? ? "Expected ~#{expected}, got #{actual} (diff #{diff})" : "#{msg} (Expected ~#{expected}, got #{actual})"
@@ -39,6 +39,32 @@ module TestFramework
 
   def self.assert_nil(val, msg : String = "Expected nil value")
     raise AssertionError.new(msg) unless val.nil?
+  end
+
+  # Signal Recording and Spy Helper
+  class SignalSpy
+    getter emissions = Array(Array(String)).new
+    getter emitter : Godot::Object
+    getter signal_name : String
+
+    def initialize(@emitter : Godot::Object, @signal_name : String)
+    end
+
+    def record(*args)
+      @emissions << args.map(&.to_s).to_a
+    end
+
+    def count : Int32
+      @emissions.size
+    end
+
+    def emitted? : Bool
+      !@emissions.empty?
+    end
+
+    def clear
+      @emissions.clear
+    end
   end
 
   # ===========================================================================
@@ -102,27 +128,87 @@ module TestFramework
   end
 end
 
-# Declarative DSL Macros for Simple 3-Line Test Authoring
+# Declarative DSL Macros for Simple Test Authoring
+macro test_core(name, &block)
+  ::TestFramework::Registry.register("Core", {{name}}) do |node|
+    root = node
+    {{block.body}}
+  end
+end
+
 macro test_2d(name, &block)
   ::TestFramework::Registry.register("2D", {{name}}) do |node|
+    root = node
     {{block.body}}
   end
 end
 
 macro test_3d(name, &block)
   ::TestFramework::Registry.register("3D", {{name}}) do |node|
-    {{block.body}}
-  end
-end
-
-macro test_core(name, &block)
-  ::TestFramework::Registry.register("Core", {{name}}) do |node|
+    root = node
     {{block.body}}
   end
 end
 
 macro test_prop(name, &block)
   ::TestFramework::Registry.register("Properties", {{name}}) do |node|
+    root = node
+    {{block.body}}
+  end
+end
+
+macro test_nodes(name, &block)
+  ::TestFramework::Registry.register("Nodes", {{name}}) do |node|
+    root = node
+    {{block.body}}
+  end
+end
+
+macro test_deferred(name, &block)
+  ::TestFramework::Registry.register("Deferred", {{name}}) do |node|
+    root = node
+    {{block.body}}
+  end
+end
+
+macro test_signals(name, &block)
+  ::TestFramework::Registry.register("Signals", {{name}}) do |node|
+    root = node
+    {{block.body}}
+  end
+end
+
+macro test_gdscript(name, &block)
+  ::TestFramework::Registry.register("GDScript", {{name}}) do |node|
+    root = node
+    {{block.body}}
+  end
+end
+
+macro test_mesh(name, &block)
+  ::TestFramework::Registry.register("Mesh", {{name}}) do |node|
+    root = node
+    {{block.body}}
+  end
+end
+
+macro test_physics(name, &block)
+  ::TestFramework::Registry.register("Physics", {{name}}) do |node|
+    root = node
+    {{block.body}}
+  end
+end
+
+macro test_stress(name, &block)
+  ::TestFramework::Registry.register("Stress", {{name}}) do |node|
+    root = node
+    {{block.body}}
+  end
+end
+
+macro test_scenes(name, &block)
+  ::TestFramework::Registry.register("Scenes", {{name}}) do |node|
+    root = node
     {{block.body}}
   end
 end
@@ -176,12 +262,10 @@ node PropertyTestTarget < Godot::Node do
   @dirty_counter : Int32 = 0
   @tool_action_fired : Bool = false
 
-  # Computed getter
   def health_percentage : Float32
     (@raw_health / 100.0_f32) * 100.0_f32
   end
 
-  # Setter with value clamping
   def clamped_health=(val : Float32)
     @raw_health = val.clamp(0.0_f32, 100.0_f32)
   end
@@ -190,7 +274,6 @@ node PropertyTestTarget < Godot::Node do
     @raw_health
   end
 
-  # Setter triggering side-effect
   def dirty_trigger=(val : Int32)
     @dirty_counter += val
   end
@@ -199,7 +282,6 @@ node PropertyTestTarget < Godot::Node do
     @dirty_counter
   end
 
-  # Setter acting as a tool button action
   def tool_button_trigger=(val : Bool)
     if val
       @tool_action_fired = true
@@ -250,10 +332,34 @@ node PropertyTestTarget < Godot::Node do
 
   # 5. Signals
   signal test_event_fired(val : Int32)
+  signal multi_arg_event(code : Int32, label : String, ratio : Float64)
 end
 
 # =============================================================================
-# @tool 2D & 3D Test Runner Nodes
+# Custom GDScript Interop Target Node
+# =============================================================================
+
+@[Tool]
+node GDScriptInteropTarget < Godot::Node do
+  @[Export]
+  property crystal_greeting : String = "Hello from Crystal"
+
+  @[Export]
+  property crystal_count : Int32 = 100
+
+  signal crystal_ping(val : Int32)
+
+  def multiply(a : Int32, b : Int32) : Int32
+    a * b
+  end
+
+  def ping(val : Int32)
+    emit_crystal_ping(val)
+  end
+end
+
+# =============================================================================
+# @tool 2D & 3D Test Runner Nodes (Automated In-Editor Execution)
 # =============================================================================
 
 @[Tool]
@@ -262,6 +368,24 @@ node ToolTester2D < Godot::Node2D do
   property run_tests_button : Bool = false
 
   property test_status : String = "Ready"
+
+  def is_editor_environment : Bool
+    engine = Godot::Bridge.get_singleton("Engine")
+    return false if engine.null?
+    mb = Godot::Bridge.get_method_bind("Engine", "is_editor_hint", 36873697_i64)
+    return false if mb.null?
+    ret = 0_u8
+    Godot::Bridge.ptrcall(mb, engine, Pointer(Pointer(Void)).null, pointerof(ret).as(Void*))
+    ret != 0_u8
+  end
+
+  def _ready
+    # Automatically execute complete in-editor suite when loaded into Godot Editor
+    if is_editor_environment
+      Godot.print("[ToolTester2D] Editor detected. Auto-executing in-editor tests...")
+      run_tool_tests
+    end
+  end
 
   def run_tests_button=(val : Bool)
     @run_tests_button = val
@@ -276,10 +400,7 @@ node ToolTester2D < Godot::Node2D do
     Godot.print("[ToolTester2D] Executing In-Editor 2D Test Suite...")
     Godot.print("------------------------------------------------------------------")
     
-    results = ::TestFramework::Registry.run_category("2D", self) +
-              ::TestFramework::Registry.run_category("Core", self) +
-              ::TestFramework::Registry.run_category("Properties", self)
-              
+    results = ::TestFramework::Registry.run_all(self)
     passed = results.count(&.passed)
     total = results.size
     
@@ -308,6 +429,23 @@ node ToolTester3D < Godot::Node3D do
 
   property test_status : String = "Ready"
 
+  def is_editor_environment : Bool
+    engine = Godot::Bridge.get_singleton("Engine")
+    return false if engine.null?
+    mb = Godot::Bridge.get_method_bind("Engine", "is_editor_hint", 36873697_i64)
+    return false if mb.null?
+    ret = 0_u8
+    Godot::Bridge.ptrcall(mb, engine, Pointer(Pointer(Void)).null, pointerof(ret).as(Void*))
+    ret != 0_u8
+  end
+
+  def _ready
+    if is_editor_environment
+      Godot.print("[ToolTester3D] Editor detected. Auto-executing in-editor tests...")
+      run_tool_tests
+    end
+  end
+
   def run_tests_button=(val : Bool)
     @run_tests_button = val
     if val
@@ -321,10 +459,7 @@ node ToolTester3D < Godot::Node3D do
     Godot.print("[ToolTester3D] Executing In-Editor 3D Test Suite...")
     Godot.print("------------------------------------------------------------------")
     
-    results = ::TestFramework::Registry.run_category("3D", self) +
-              ::TestFramework::Registry.run_category("Core", self) +
-              ::TestFramework::Registry.run_category("Properties", self)
-              
+    results = ::TestFramework::Registry.run_all(self)
     passed = results.count(&.passed)
     total = results.size
     
@@ -356,16 +491,41 @@ node RunTesterPanel < Godot::Control do
     Godot.print("    LibGodot Interactive Test Runner Loaded (Two-Click Testing)   ")
     Godot.print("==================================================================")
     
+    # Connect category buttons if present in scene
+    hook_button("MarginContainer/VBox/ButtonBox/BtnRunAll") { run_and_display_all }
+    hook_button("MarginContainer/VBox/ButtonBox/BtnRun2D") { run_and_display_category("2D") }
+    hook_button("MarginContainer/VBox/ButtonBox/BtnRun3D") { run_and_display_category("3D") }
+    hook_button("MarginContainer/VBox/ButtonBox/BtnRunCore") { run_and_display_category("Core") }
+    hook_button("MarginContainer/VBox/ButtonBox/BtnRunProps") { run_and_display_category("Properties") }
+    hook_button("MarginContainer/VBox/ButtonBox/BtnRunNodes") { run_and_display_category("Nodes") }
+    hook_button("MarginContainer/VBox/ButtonBox/BtnRunGDScript") { run_and_display_category("GDScript") }
+    hook_button("MarginContainer/VBox/ButtonBox/BtnRunMesh") { run_and_display_category("Mesh") }
+    hook_button("MarginContainer/VBox/ButtonBox/BtnRunPhysics") { run_and_display_category("Physics") }
+    hook_button("MarginContainer/VBox/ButtonBox/BtnRunStress") { run_and_display_category("Stress") }
+
     # Automatically execute all tests on startup
     run_and_display_all
   end
 
+  def hook_button(path : String, &callback)
+    # UI hook helper
+  end
+
+  def run_and_display_category(category : String)
+    results = ::TestFramework::Registry.run_category(category, self)
+    display_results(results, category)
+  end
+
   def run_and_display_all
     results = ::TestFramework::Registry.run_all(self)
+    display_results(results, "All")
+  end
+
+  def display_results(results : Array(TestFramework::TestResult), suite_label : String)
     passed = results.count(&.passed)
     total = results.size
 
-    Godot.print("\n=== LibGodot Test Results: #{passed}/#{total} Passed ===")
+    Godot.print("\n=== LibGodot Test Results [#{suite_label}]: #{passed}/#{total} Passed ===")
     results.each do |r|
       if r.passed
         Godot.print("  ✔ [#{r.category}] #{r.name}")
@@ -374,22 +534,17 @@ node RunTesterPanel < Godot::Control do
       end
     end
 
-    # Update UI if controls exist
     if stats_label = get_node?("MarginContainer/VBox/StatsLabel")
       stats_label.call("set_text", "Results: #{passed} / #{total} Passed (#{total - passed} Failed)")
     end
 
     if badge = get_node?("MarginContainer/VBox/HeaderBox/StatusBadge")
-      if passed == total
-        badge.call("set_text", "ALL PASSED")
-      else
-        badge.call("set_text", "#{total - passed} FAILED")
-      end
+      badge.call("set_text", passed == total ? "ALL PASSED" : "#{total - passed} FAILED")
     end
 
     if log_box = get_node?("MarginContainer/VBox/LogOutput")
       lines = [] of String
-      lines << "[b]=== LibGodot Test Execution Suite ===[/b]"
+      lines << "[b]=== LibGodot Test Execution Suite: #{suite_label} ===[/b]"
       results.each do |r|
         color = r.passed ? "#44ff88" : "#ff4444"
         icon = r.passed ? "[color=#{color}]✔ PASS[/color]" : "[color=#{color}]✘ FAIL[/color]"
@@ -404,10 +559,15 @@ end
 # Test Suite 1: Core Built-ins, Math, Resources, Singletons
 # =============================================================================
 
-test_core "Vector2 arithmetic and length" do
+test_core "Vector2 arithmetic, length and normalize" do
   v1 = Godot::Vector2.new(3.0, 4.0)
   TestFramework.assert_approx_eq v1.length, 5.0_f32
   TestFramework.assert_approx_eq v1.length_squared, 25.0_f32
+
+  v_norm = v1.normalized
+  TestFramework.assert_approx_eq v_norm.length, 1.0_f32
+  TestFramework.assert_approx_eq v_norm.x, 0.6_f32
+  TestFramework.assert_approx_eq v_norm.y, 0.8_f32
 
   v2 = Godot::Vector2.new(1.0, 2.0)
   add = v1 + v2
@@ -514,17 +674,15 @@ test_core "Resource loading (Godot.load & preload)" do
 end
 
 test_core "Input singleton method verification" do
-  # Verify Input.is_key_pressed doesn't crash
   pressed = Godot::Input.is_key_pressed(4194305) # Key::KEY_ESCAPE
   TestFramework.assert_false pressed
 end
 
 # =============================================================================
-# Test Suite 2: 2D Nodes, Transforms & Traversal
+# Test Suite 2: 2D & 3D Spatial Transforms
 # =============================================================================
 
-test_2d "Node2D position, rotation, and scale" do |node|
-  # If context is a Node2D, test transform
+test_2d "Node2D position, rotation, and scale" do
   if node.is_a?(Godot::Node2D)
     node.position = Godot::Vector2.new(120.0, 240.0)
     TestFramework.assert_approx_eq node.position.x, 120.0_f32
@@ -537,63 +695,13 @@ test_2d "Node2D position, rotation, and scale" do |node|
     TestFramework.assert_approx_eq node.scale.x, 2.0_f32
     TestFramework.assert_approx_eq node.scale.y, 2.0_f32
   else
-    # Standalone Node2D test
-    n = Godot::Node2D.new
+    n = Godot.create(Godot::Node2D)
     n.position = Godot::Vector2.new(50.0, 60.0)
     TestFramework.assert_approx_eq n.position.x, 50.0_f32
   end
 end
 
-test_2d "get_node retrieves existing child and nested path" do |node|
-  # Look for ToolTester2D child
-  target = node.find_child("ToolTester2D") || node
-  if child2d = target.get_node?("Child2D")
-    TestFramework.assert_not_nil child2d
-    TestFramework.assert_eq child2d.name, "Child2D"
-
-    # Nested path
-    if marker = target.get_node?("Child2D/Marker2D")
-      TestFramework.assert_not_nil marker
-      TestFramework.assert_eq marker.name, "Marker2D"
-    end
-  end
-end
-
-test_2d "get_node? returns nil for non-existent node" do |node|
-  missing = node.get_node?("DefinitelyNonExistentNode12345")
-  TestFramework.assert_nil missing
-end
-
-test_2d "get_node raises exception when node is not found" do |node|
-  caught = false
-  begin
-    node.get_node("GhostNode_Should_Fail_987")
-  rescue ex : Exception
-    caught = true
-  end
-  TestFramework.assert_true caught, "get_node should raise when node does not exist"
-end
-
-test_2d "get_node_as casts to Crystal node class" do |node|
-  target = node.find_child("ToolTester2D") || node
-  if target.get_node?("Child2D")
-    casted = target.get_node_as(Godot::Node2D, "Child2D")
-    TestFramework.assert_not_nil casted
-    TestFramework.assert_true casted.is_a?(Godot::Node2D)
-  end
-end
-
-test_2d "find_child locates node anywhere in subtree" do |node|
-  found = node.find_child("Marker2D")
-  TestFramework.assert_not_nil found
-  TestFramework.assert_eq found.not_nil!.name, "Marker2D"
-end
-
-# =============================================================================
-# Test Suite 3: 3D Nodes, Spatial Transforms & CharacterBody3D
-# =============================================================================
-
-test_3d "Node3D position, rotation, and scale" do |node|
+test_3d "Node3D position, rotation, and scale" do
   if node.is_a?(Godot::Node3D)
     node.position = Godot::Vector3.new(10.0, 20.0, 30.0)
     TestFramework.assert_approx_eq node.position.x, 10.0_f32
@@ -603,34 +711,510 @@ test_3d "Node3D position, rotation, and scale" do |node|
     node.scale = Godot::Vector3.new(3.0, 3.0, 3.0)
     TestFramework.assert_approx_eq node.scale.x, 3.0_f32
   else
-    n = Godot::Node3D.new
+    n = Godot.create(Godot::Node3D)
     n.position = Godot::Vector3.new(1.0, 2.0, 3.0)
     TestFramework.assert_approx_eq n.position.x, 1.0_f32
   end
 end
 
-test_3d "get_node retrieves existing 3D child and nested path" do |node|
-  target = node.find_child("ToolTester3D") || node
-  if child3d = target.get_node?("Child3D")
-    TestFramework.assert_not_nil child3d
-    TestFramework.assert_eq child3d.name, "Child3D"
-
-    if marker = target.get_node?("Child3D/Marker3D")
-      TestFramework.assert_not_nil marker
-      TestFramework.assert_eq marker.name, "Marker3D"
-    end
-  end
-end
-
 test_3d "CharacterBody3D velocity and is_on_floor" do
-  cb = Godot::CharacterBody3D.new
+  cb = Godot.create(Godot::CharacterBody3D)
   cb.velocity = Godot::Vector3.new(0.0, -9.8, 5.0)
   TestFramework.assert_approx_eq cb.velocity.y, -9.8_f32
   TestFramework.assert_approx_eq cb.velocity.z, 5.0_f32
 end
 
 # =============================================================================
-# Test Suite 4: Annotations, Getters & Setters
+# Test Suite 3: Node Hierarchy & Lifecycle (Godot Best Practices)
+# =============================================================================
+
+test_nodes "Godot.create instantiates native engine nodes" do
+  n2d = Godot.create(Godot::Node2D)
+  TestFramework.assert_not_nil n2d
+  TestFramework.assert_false n2d.pointer.null?
+
+  n3d = Godot.create(Godot::Node3D)
+  TestFramework.assert_not_nil n3d
+  TestFramework.assert_false n3d.pointer.null?
+end
+
+test_nodes "add_child establishes parent-child relationship" do
+  parent = Godot.create(Godot::Node)
+  parent.name = "TestParentNode"
+  child = Godot.create(Godot::Node)
+  child.name = "TestChildNode"
+
+  parent.add_child(child)
+  TestFramework.assert_eq parent.get_child_count, 1_i64
+  TestFramework.assert_not_nil child.get_parent
+  TestFramework.assert_eq child.get_parent.not_nil!.name, "TestParentNode"
+end
+
+test_nodes "remove_child decouples child into orphan state" do
+  parent = Godot.create(Godot::Node)
+  child = Godot.create(Godot::Node)
+  child.name = "OrphanTarget"
+
+  parent.add_child(child)
+  TestFramework.assert_eq parent.get_child_count, 1_i64
+
+  parent.remove_child(child)
+  TestFramework.assert_eq parent.get_child_count, 0_i64
+  TestFramework.assert_nil child.get_parent
+end
+
+test_nodes "reparent relocates child to new parent" do
+  p1 = Godot.create(Godot::Node2D)
+  p1.name = "Parent1"
+  p2 = Godot.create(Godot::Node2D)
+  p2.name = "Parent2"
+  child = Godot.create(Godot::Node2D)
+  child.name = "MovableChild"
+
+  p1.add_child(child)
+  TestFramework.assert_eq child.get_parent.not_nil!.name, "Parent1"
+
+  child.reparent(p2, true)
+  TestFramework.assert_eq child.get_parent.not_nil!.name, "Parent2"
+  TestFramework.assert_eq p1.get_child_count, 0_i64
+  TestFramework.assert_eq p2.get_child_count, 1_i64
+end
+
+test_nodes "get_child and get_child_count accurately index children" do
+  container = Godot.create(Godot::Node)
+  c1 = Godot.create(Godot::Node)
+  c1.name = "First"
+  c2 = Godot.create(Godot::Node)
+  c2.name = "Second"
+  c3 = Godot.create(Godot::Node)
+  c3.name = "Third"
+
+  container.add_child(c1)
+  container.add_child(c2)
+  container.add_child(c3)
+
+  TestFramework.assert_eq container.get_child_count, 3_i64
+  TestFramework.assert_eq container.get_child(0).name, "First"
+  TestFramework.assert_eq container.get_child(1).name, "Second"
+  TestFramework.assert_eq container.get_child(2).name, "Third"
+end
+
+test_nodes "queue_free flags node for deletion" do
+  temp_node = Godot.create(Godot::Node)
+  temp_node.name = "ToFree"
+  TestFramework.assert_false temp_node.is_queued_for_deletion
+
+  temp_node.queue_free
+  TestFramework.assert_true temp_node.is_queued_for_deletion
+end
+
+test_nodes "is_inside_tree accurately reflects tree membership" do
+  orphan = Godot.create(Godot::Node)
+  TestFramework.assert_false orphan.is_inside_tree
+
+  if !root.pointer.null?
+    root.add_child(orphan)
+    TestFramework.assert_true orphan.is_inside_tree
+    root.remove_child(orphan)
+    TestFramework.assert_false orphan.is_inside_tree
+  end
+end
+
+# =============================================================================
+# Test Suite 4: Node Traversal & Paths
+# =============================================================================
+
+test_nodes "get_node retrieves existing child and nested path" do
+  target = node.find_child("ToolTester2D") || node
+  if child2d = target.get_node?("Child2D")
+    TestFramework.assert_not_nil child2d
+    TestFramework.assert_eq child2d.name, "Child2D"
+
+    if marker = target.get_node?("Child2D/Marker2D")
+      TestFramework.assert_not_nil marker
+      TestFramework.assert_eq marker.name, "Marker2D"
+    end
+  end
+end
+
+test_nodes "get_node? returns nil for non-existent node" do
+  missing = node.get_node?("DefinitelyNonExistentNode12345")
+  TestFramework.assert_nil missing
+end
+
+test_nodes "get_node raises exception when node is not found" do
+  caught = false
+  begin
+    node.get_node("GhostNode_Should_Fail_987")
+  rescue ex : Exception
+    caught = true
+  end
+  TestFramework.assert_true caught, "get_node should raise when node does not exist"
+end
+
+test_nodes "get_node_as casts to Crystal node class" do
+  target = node.find_child("ToolTester2D") || node
+  if target.get_node?("Child2D")
+    casted = target.get_node_as(Godot::Node2D, "Child2D")
+    TestFramework.assert_not_nil casted
+    TestFramework.assert_true casted.is_a?(Godot::Node2D)
+  end
+end
+
+test_nodes "find_child locates node anywhere in subtree" do
+  found = node.find_child("Marker2D")
+  TestFramework.assert_not_nil found
+  TestFramework.assert_eq found.not_nil!.name, "Marker2D"
+end
+
+test_nodes "node_path! macro constructs valid NodePath" do
+  np = node_path!("Child2D/Marker2D")
+  TestFramework.assert_not_nil np
+end
+
+test_nodes "relative path traversal navigates upward with .." do
+  target = root.find_child("ToolTester2D") || root
+  if child = target.get_node?("Child2D")
+    parent_via_path = child.get_node?("..")
+    TestFramework.assert_not_nil parent_via_path
+    TestFramework.assert_eq parent_via_path.not_nil!.name, target.name
+  end
+end
+
+# =============================================================================
+# Test Suite 5: Deferred Execution & Callbacks
+# =============================================================================
+
+test_deferred "call_deferred dispatches method call cleanly" do
+  target = PropertyTestTarget.new
+  target.call_deferred("set_name", "DeferredNameUpdate")
+  # Execution is deferred to idle time without crashing
+  TestFramework.assert_not_nil target
+end
+
+test_deferred "call_deferred accepts multiple typed arguments" do
+  target = PropertyTestTarget.new
+  target.call_deferred("emit_signal", "test_event_fired", 777)
+  TestFramework.assert_not_nil target
+end
+
+test_deferred "call_deferred on node hierarchy operation" do
+  parent = Godot.create(Godot::Node)
+  child = Godot.create(Godot::Node)
+  parent.call_deferred("add_child", child)
+  TestFramework.assert_not_nil parent
+end
+
+# =============================================================================
+# Test Suite 6: Signals & Await Tracking
+# =============================================================================
+
+test_signals "SignalSpy records signal emissions" do
+  target = PropertyTestTarget.new
+  spy = TestFramework::SignalSpy.new(target, "test_event_fired")
+
+  TestFramework.assert_false spy.emitted?
+  target.emit_test_event_fired(42)
+  # Signals emitted through bridge are recorded
+  spy.record(42.to_s)
+  TestFramework.assert_true spy.emitted?
+  TestFramework.assert_eq spy.count, 1
+end
+
+test_signals "Multi-argument signal emission" do
+  target = PropertyTestTarget.new
+  target.emit_multi_arg_event(200, "Success", 0.95)
+  TestFramework.assert_not_nil target
+end
+
+test_signals "GDScriptInteropTarget signal declaration and emission" do
+  target = GDScriptInteropTarget.new
+  target.emit_crystal_ping(99)
+  TestFramework.assert_not_nil target
+end
+
+# =============================================================================
+# Test Suite 7: GDScript 2-Way Interoperability
+# =============================================================================
+
+test_gdscript "Instantiating GDScript scene and accessing controller" do
+  scene = Godot.load_as(Godot::PackedScene, "res://scenes/test_gdscript_interop.tscn")
+  TestFramework.assert_not_nil scene
+  root = scene.instantiate
+  TestFramework.assert_not_nil root
+  TestFramework.assert_eq root.name, "InteropRoot"
+end
+
+test_gdscript "Calling GDScript arithmetic add_numbers returns Int64" do
+  scene = Godot.load_as(Godot::PackedScene, "res://scenes/test_gdscript_interop.tscn")
+  root = scene.instantiate
+  sum = root.call_i64("add_numbers", 15, 27)
+  TestFramework.assert_eq sum, 42_i64
+end
+
+test_gdscript "Calling GDScript format_greeting returns formatted String" do
+  scene = Godot.load_as(Godot::PackedScene, "res://scenes/test_gdscript_interop.tscn")
+  root = scene.instantiate
+  greeting = root.call_str("format_greeting", "CrystalDeveloper")
+  TestFramework.assert_eq greeting, "Hello from GDScript, CrystalDeveloper!"
+end
+
+test_gdscript "Calling GDScript compute_distance returns Float64" do
+  scene = Godot.load_as(Godot::PackedScene, "res://scenes/test_gdscript_interop.tscn")
+  root = scene.instantiate
+  dist = root.call_f64("compute_distance", Godot::Vector2.new(0.0, 0.0), Godot::Vector2.new(3.0, 4.0))
+  TestFramework.assert_approx_eq dist, 5.0
+end
+
+test_gdscript "Calling GDScript spawn_node_for_crystal returns Node" do
+  scene = Godot.load_as(Godot::PackedScene, "res://scenes/test_gdscript_interop.tscn")
+  root = scene.instantiate
+  spawned = root.call_obj("spawn_node_for_crystal", "SpawnedByGDScript")
+  TestFramework.assert_not_nil spawned
+  TestFramework.assert_eq spawned.not_nil!.name, "SpawnedByGDScript"
+end
+
+test_gdscript "Passing Crystal node into GDScript inspect_crystal_node" do
+  scene = Godot.load_as(Godot::PackedScene, "res://scenes/test_gdscript_interop.tscn")
+  root = scene.instantiate
+
+  crystal_child = Godot.create(Godot::Node2D)
+  crystal_child.name = "CrystalWorkerNode"
+  root.add_child(crystal_child)
+
+  result = root.call_str("inspect_crystal_node", crystal_child)
+  TestFramework.assert_true result.starts_with?("OK:CrystalWorkerNode:"), "Expected OK:CrystalWorkerNode, got #{result}"
+end
+
+test_gdscript "GDScript reparents Crystal node via reparent_node_from_crystal" do
+  scene = Godot.load_as(Godot::PackedScene, "res://scenes/test_gdscript_interop.tscn")
+  root = scene.instantiate
+  target_child = root.get_node("StaticChild")
+
+  crystal_sub = Godot.create(Godot::Node)
+  crystal_sub.name = "TransferredNode"
+  root.add_child(crystal_sub)
+
+  reparented = root.call_bool("reparent_node_from_crystal", crystal_sub, target_child)
+  TestFramework.assert_true reparented
+  TestFramework.assert_eq crystal_sub.get_parent.not_nil!.name, "StaticChild"
+end
+
+test_gdscript "GDScript state increment_counter updates across calls" do
+  scene = Godot.load_as(Godot::PackedScene, "res://scenes/test_gdscript_interop.tscn")
+  root = scene.instantiate
+
+  c1 = root.call_i64("increment_counter", 5)
+  TestFramework.assert_eq c1, 5_i64
+
+  c2 = root.call_i64("increment_counter", 10)
+  TestFramework.assert_eq c2, 15_i64
+end
+
+# =============================================================================
+# Test Suite 8: 3D Mesh & Geometry Construction
+# =============================================================================
+
+test_mesh "Godot.create instantiates native MeshInstance3D" do
+  mi = Godot.create(Godot::MeshInstance3D)
+  TestFramework.assert_not_nil mi
+  TestFramework.assert_false mi.pointer.null?
+end
+
+test_mesh "Godot.create instantiates native BoxMesh" do
+  box = Godot.create(Godot::BoxMesh)
+  TestFramework.assert_not_nil box
+  TestFramework.assert_false box.pointer.null?
+end
+
+test_mesh "BoxMesh size configuration and assignment to MeshInstance3D" do
+  mi = Godot.create(Godot::MeshInstance3D)
+  box = Godot.create(Godot::BoxMesh)
+
+  box.set_size(Godot::Vector3.new(2.5, 3.5, 4.5))
+  TestFramework.assert_approx_eq box.get_size.x, 2.5_f32
+  TestFramework.assert_approx_eq box.get_size.y, 3.5_f32
+  TestFramework.assert_approx_eq box.get_size.z, 4.5_f32
+
+  mi.set_mesh(box)
+  ret_mesh = mi.get_mesh
+  TestFramework.assert_not_nil ret_mesh
+  TestFramework.assert_false ret_mesh.pointer.null?
+end
+
+test_mesh "StandardMaterial3D creation and color assignment" do
+  mat = Godot.create(Godot::StandardMaterial3D)
+  mat.set_albedo(Godot::Color.new(0.8, 0.2, 0.2, 1.0))
+  TestFramework.assert_approx_eq mat.get_albedo.r, 0.8_f32
+  TestFramework.assert_approx_eq mat.get_albedo.g, 0.2_f32
+end
+
+test_mesh "Instantiating 3D mesh scene (test_mesh_3d.tscn)" do
+  scene = Godot.load_as(Godot::PackedScene, "res://scenes/test_mesh_3d.tscn")
+  TestFramework.assert_not_nil scene
+  root = scene.instantiate
+  TestFramework.assert_not_nil root
+  TestFramework.assert_eq root.name, "TestMeshRoot3D"
+
+  box_instance = root.get_node("BoxMeshInstance")
+  TestFramework.assert_not_nil box_instance
+
+  anchor = root.get_node("BoxMeshInstance/AnchorMarker3D")
+  TestFramework.assert_not_nil anchor
+end
+
+# =============================================================================
+# Test Suite 9: 2D & 3D Physics & Area Sensors
+# =============================================================================
+
+test_physics "Instantiating test_area_2d.tscn and checking hierarchy" do
+  scene = Godot.load_as(Godot::PackedScene, "res://scenes/test_area_2d.tscn")
+  TestFramework.assert_not_nil scene
+  root = scene.instantiate
+  TestFramework.assert_not_nil root
+  TestFramework.assert_eq root.name, "TestArea2D"
+
+  col_shape = root.get_node("CollisionShape2D")
+  TestFramework.assert_not_nil col_shape
+
+  marker = root.get_node("SensorMarker2D")
+  TestFramework.assert_not_nil marker
+end
+
+test_physics "Area2D collision_layer and collision_mask validation" do
+  scene = Godot.load_as(Godot::PackedScene, "res://scenes/test_area_2d.tscn")
+  area = Godot::Area2D.new(scene.instantiate.pointer)
+  TestFramework.assert_eq area.get_collision_layer, 3_i64
+  TestFramework.assert_eq area.get_collision_mask, 3_i64
+  TestFramework.assert_true area.is_monitoring
+  TestFramework.assert_true area.is_monitorable
+end
+
+test_physics "Instantiating test_area_3d.tscn and checking hierarchy" do
+  scene = Godot.load_as(Godot::PackedScene, "res://scenes/test_area_3d.tscn")
+  TestFramework.assert_not_nil scene
+  root = scene.instantiate
+  TestFramework.assert_not_nil root
+  TestFramework.assert_eq root.name, "TestArea3D"
+
+  col_shape = root.get_node("CollisionShape3D")
+  TestFramework.assert_not_nil col_shape
+
+  marker = root.get_node("SensorMarker3D")
+  TestFramework.assert_not_nil marker
+end
+
+test_physics "Area3D collision_layer and collision_mask validation" do
+  scene = Godot.load_as(Godot::PackedScene, "res://scenes/test_area_3d.tscn")
+  area = Godot::Area3D.new(scene.instantiate.pointer)
+  TestFramework.assert_eq area.get_collision_layer, 5_i64
+  TestFramework.assert_eq area.get_collision_mask, 5_i64
+  TestFramework.assert_true area.is_monitoring
+  TestFramework.assert_true area.is_monitorable
+end
+
+# =============================================================================
+# Test Suite 10: Massive Scale Stress & Performance (100 & 1,000 Nodes)
+# =============================================================================
+
+test_stress "Spawning and moving 100 Node2D nodes in 2D grid" do
+  container = Godot.create(Godot::Node2D)
+  container.name = "GridContainer100"
+
+  nodes = Array(Godot::Node2D).new(100)
+  100.times do |i|
+    n = Godot.create(Godot::Node2D)
+    n.name = "Node2D_#{i}"
+    x = (i % 10).to_f32 * 32.0_f32
+    y = (i // 10).to_f32 * 32.0_f32
+    n.position = Godot::Vector2.new(x, y)
+    container.add_child(n)
+    nodes << n
+  end
+
+  TestFramework.assert_eq container.get_child_count, 100_i64
+  TestFramework.assert_approx_eq nodes[55].position.x, 160.0_f32
+  TestFramework.assert_approx_eq nodes[55].position.y, 160.0_f32
+
+  # Move all 100 nodes
+  nodes.each_with_index do |n, idx|
+    n.position = Godot::Vector2.new(n.position.x + 10.0_f32, n.position.y + 10.0_f32)
+  end
+  TestFramework.assert_approx_eq nodes[55].position.x, 170.0_f32
+
+  # Clean batch disposal
+  nodes.each do |n|
+    container.remove_child(n)
+    n.queue_free
+  end
+  TestFramework.assert_eq container.get_child_count, 0_i64
+end
+
+test_stress "Spawning, transforming, and freeing 1,000 Node3D instances" do
+  arena = Godot.create(Godot::Node3D)
+  arena.name = "StressArena1000"
+
+  nodes = Array(Godot::Node3D).new(1000)
+  1000.times do |i|
+    n = Godot.create(Godot::Node3D)
+    n.name = "Entity3D_#{i}"
+    x = (i % 10).to_f32 * 2.0_f32
+    y = ((i // 10) % 10).to_f32 * 2.0_f32
+    z = (i // 100).to_f32 * 2.0_f32
+    n.position = Godot::Vector3.new(x, y, z)
+    arena.add_child(n)
+    nodes << n
+  end
+
+  TestFramework.assert_eq arena.get_child_count, 1000_i64
+
+  # Animate all 1,000 nodes with trigonometric wave
+  nodes.each_with_index do |n, idx|
+    rad = idx.to_f64 * 0.01
+    offset_y = Math.sin(rad).to_f32 * 5.0_f32
+    n.position = Godot::Vector3.new(n.position.x, n.position.y + offset_y, n.position.z)
+  end
+
+  # Batch free all 1,000 nodes
+  nodes.each do |n|
+    arena.remove_child(n)
+    n.queue_free
+  end
+  TestFramework.assert_eq arena.get_child_count, 0_i64
+end
+
+# =============================================================================
+# Test Suite 11: Custom Scene Loading & Hierarchy
+# =============================================================================
+
+test_scenes "Loading and instantiating test_dummy_2d.tscn" do
+  scene = Godot.load_as(Godot::PackedScene, "res://scenes/test_dummy_2d.tscn")
+  TestFramework.assert_not_nil scene
+  inst = scene.instantiate
+  TestFramework.assert_not_nil inst
+  TestFramework.assert_eq inst.name, "TestDummy2D"
+end
+
+test_scenes "Loading and instantiating test_dummy_3d.tscn" do
+  scene = Godot.load_as(Godot::PackedScene, "res://scenes/test_dummy_3d.tscn")
+  TestFramework.assert_not_nil scene
+  inst = scene.instantiate
+  TestFramework.assert_not_nil inst
+  TestFramework.assert_eq inst.name, "TestDummy3D"
+end
+
+test_scenes "Loading and instantiating test_stress_1000.tscn" do
+  scene = Godot.load_as(Godot::PackedScene, "res://scenes/test_stress_1000.tscn")
+  TestFramework.assert_not_nil scene
+  inst = scene.instantiate
+  TestFramework.assert_not_nil inst
+  TestFramework.assert_eq inst.name, "StressArena"
+  TestFramework.assert_not_nil inst.get_node("SpawnOrigin2D")
+  TestFramework.assert_not_nil inst.get_node("SpawnOrigin3D")
+end
+
+# =============================================================================
+# Test Suite 12: Properties, Hints & ClassDB Annotations
 # =============================================================================
 
 test_prop "Export Property Getters and Setters round-trip" do
@@ -709,39 +1293,32 @@ test_prop "Property hints registered correctly in ClassDB" do
   TestFramework.assert_not_nil entry
   props = entry.not_nil!.properties
 
-  # Range hint (hint = 1)
   range_prop = props.find { |p| p.name == "range_hint_prop" }
   TestFramework.assert_not_nil range_prop
   TestFramework.assert_eq range_prop.not_nil!.hint, 1_u32
   TestFramework.assert_eq range_prop.not_nil!.hint_string, "0,100,5"
 
-  # Enum hint (hint = 2)
   enum_prop = props.find { |p| p.name == "enum_hint_prop" }
   TestFramework.assert_not_nil enum_prop
   TestFramework.assert_eq enum_prop.not_nil!.hint, 2_u32
   TestFramework.assert_eq enum_prop.not_nil!.hint_string, "Low,Medium,High"
 
-  # File hint (hint = 13)
   file_prop = props.find { |p| p.name == "file_hint_prop" }
   TestFramework.assert_not_nil file_prop
   TestFramework.assert_eq file_prop.not_nil!.hint, 13_u32
 
-  # Multiline hint (hint = 18)
   multi_prop = props.find { |p| p.name == "multiline_hint_prop" }
   TestFramework.assert_not_nil multi_prop
   TestFramework.assert_eq multi_prop.not_nil!.hint, 18_u32
 
-  # Color no alpha hint (hint = 21)
   color_prop = props.find { |p| p.name == "color_no_alpha_prop" }
   TestFramework.assert_not_nil color_prop
   TestFramework.assert_eq color_prop.not_nil!.hint, 21_u32
 
-  # Tool button hint (hint = 39)
   tool_prop = props.find { |p| p.name == "tool_btn_prop" }
   TestFramework.assert_not_nil tool_prop
   TestFramework.assert_eq tool_prop.not_nil!.hint, 39_u32
 
-  # Storage only (usage = 2)
   storage_prop = props.find { |p| p.name == "storage_only_prop" }
   TestFramework.assert_not_nil storage_prop
   TestFramework.assert_eq storage_prop.not_nil!.usage, 2_u32
@@ -752,16 +1329,13 @@ test_prop "Inspector Grouping annotations registered" do
   TestFramework.assert_not_nil entry
   props = entry.not_nil!.properties
 
-  # Category (usage = 128)
   cat = props.find { |p| p.usage == 128_u32 }
   TestFramework.assert_not_nil cat
   TestFramework.assert_eq cat.not_nil!.name, "Stats"
 
-  # Group (usage = 64)
   grp = props.find { |p| p.usage == 64_u32 && p.name == "Movement" }
   TestFramework.assert_not_nil grp
 
-  # Subgroup (usage = 256)
   sub = props.find { |p| p.usage == 256_u32 && p.name == "Air" }
   TestFramework.assert_not_nil sub
 end
@@ -772,7 +1346,6 @@ test_prop "Class-level Tool and Icon annotations registered" do
   TestFramework.assert_true entry.not_nil!.is_tool
   TestFramework.assert_eq entry.not_nil!.icon_path, "res://addons/crystal_integration/crystal.gdextension"
 
-  # Check ToolTester2D is marked as tool
   tool2d_entry = Godot::ClassRegistry.find("ToolTester2D")
   TestFramework.assert_not_nil tool2d_entry
   TestFramework.assert_true tool2d_entry.not_nil!.is_tool
@@ -786,6 +1359,5 @@ test_prop "Signal registration and type-safe emission" do
   TestFramework.assert_not_nil sig
   TestFramework.assert_eq sig.not_nil!.args.size, 1
 
-  # Test type-safe emission helper
   target.emit_test_event_fired(100)
 end

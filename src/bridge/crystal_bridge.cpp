@@ -684,6 +684,89 @@ static void bridge_call_method_vararg(GDExtensionMethodBindPtr mb, GDExtensionOb
     free_string_name(sn);
 }
 
+static void bridge_call_method_vararg_ret(GDExtensionMethodBindPtr mb, GDExtensionObjectPtr instance, const char *first_arg_name, const BridgeSignalArg *args, int arg_count, void *r_ret_variant) {
+    if (!instance || !first_arg_name || !mb || !gd_object_method_bind_call) return;
+
+    if (!gd_variant_from_string_name && gd_get_variant_from_type_constructor) {
+        gd_variant_from_string_name = gd_get_variant_from_type_constructor(GDEXTENSION_VARIANT_TYPE_STRING_NAME);
+    }
+
+    void *sn = make_string_name(first_arg_name);
+    alignas(void*) char var_first_arg[24];
+    memset(var_first_arg, 0, sizeof(var_first_arg));
+    if (gd_variant_from_string_name) {
+        gd_variant_from_string_name(var_first_arg, sn);
+    }
+
+    alignas(void*) char var_args[16][24];
+    const void *call_args[17];
+    call_args[0] = var_first_arg;
+
+    int actual_count = (args && arg_count > 0) ? ((arg_count < 16) ? arg_count : 16) : 0;
+    for (int i = 0; i < actual_count; i++) {
+        memset(var_args[i], 0, sizeof(var_args[i]));
+        int t = args[i].type;
+        const void *d = args[i].data;
+        if (d) {
+            if (t == 1) { // bool
+                uint8_t val = *(const uint8_t*)d;
+                GDExtensionVariantFromTypeConstructorFunc conv = gd_get_variant_from_type_constructor(GDEXTENSION_VARIANT_TYPE_BOOL);
+                if (conv) conv(var_args[i], &val);
+            } else if (t == 2) { // int64
+                int64_t val = *(const int64_t*)d;
+                GDExtensionVariantFromTypeConstructorFunc conv = gd_get_variant_from_type_constructor(GDEXTENSION_VARIANT_TYPE_INT);
+                if (conv) conv(var_args[i], &val);
+            } else if (t == 3) { // double
+                double val = *(const double*)d;
+                GDExtensionVariantFromTypeConstructorFunc conv = gd_get_variant_from_type_constructor(GDEXTENSION_VARIANT_TYPE_FLOAT);
+                if (conv) conv(var_args[i], &val);
+            } else if (t == 4) { // string
+                void *gd_str = make_string((const char*)d);
+                if (gd_variant_from_string) gd_variant_from_string(var_args[i], gd_str);
+                if (gd_string_destroy) gd_string_destroy(gd_str);
+                free(gd_str);
+            } else if (t == 5) { // Vector2
+                GDExtensionVariantFromTypeConstructorFunc conv = gd_get_variant_from_type_constructor(GDEXTENSION_VARIANT_TYPE_VECTOR2);
+                if (conv) conv(var_args[i], (GDExtensionTypePtr)d);
+            } else if (t == 6) { // Vector3
+                GDExtensionVariantFromTypeConstructorFunc conv = gd_get_variant_from_type_constructor(GDEXTENSION_VARIANT_TYPE_VECTOR3);
+                if (conv) conv(var_args[i], (GDExtensionTypePtr)d);
+            } else if (t == 7) { // Object*
+                GDExtensionVariantFromTypeConstructorFunc conv = gd_get_variant_from_type_constructor(GDEXTENSION_VARIANT_TYPE_OBJECT);
+                if (conv) conv(var_args[i], (GDExtensionTypePtr)d);
+            }
+        }
+        call_args[i + 1] = var_args[i];
+    }
+
+    alignas(void*) char var_ret[24];
+    memset(var_ret, 0, sizeof(var_ret));
+    GDExtensionCallError call_err;
+    gd_object_method_bind_call(mb, instance, (const GDExtensionConstVariantPtr*)call_args, actual_count + 1, var_ret, &call_err);
+
+    if (r_ret_variant) {
+        memcpy(r_ret_variant, var_ret, 24);
+    } else if (gd_variant_destroy) {
+        gd_variant_destroy(var_ret);
+    }
+
+    if (gd_variant_destroy) {
+        for (int i = 0; i < actual_count; i++) {
+            gd_variant_destroy(var_args[i]);
+        }
+        gd_variant_destroy(var_first_arg);
+    }
+    free_string_name(sn);
+}
+
+static GDExtensionObjectPtr bridge_classdb_construct_object(const char *class_name) {
+    if (!gd_classdb_construct_object || !class_name) return nullptr;
+    void *sn = make_string_name(class_name);
+    GDExtensionObjectPtr obj = gd_classdb_construct_object(sn);
+    free_string_name(sn);
+    return obj;
+}
+
 static GDExtensionMethodBindPtr mb_object_emit_signal = nullptr;
 static void bridge_object_emit_signal(GDExtensionObjectPtr instance, const char *signal_name, const BridgeSignalArg *args, int arg_count) {
     if (!instance || !signal_name || !gd_classdb_get_method_bind || !gd_object_method_bind_call) return;
@@ -721,6 +804,109 @@ static void bridge_object_call(GDExtensionObjectPtr instance, const char *method
     }
     if (!mb_object_call) return;
     bridge_call_method_vararg(mb_object_call, instance, method_name, args, arg_count);
+}
+
+static GDExtensionObjectPtr bridge_object_call_ret_object(GDExtensionObjectPtr instance, const char *method_name, const BridgeSignalArg *args, int arg_count) {
+    if (!instance || !method_name || !gd_classdb_get_method_bind || !gd_object_method_bind_call) return nullptr;
+    if (!mb_object_call) {
+        void *sn_obj = make_string_name("Object");
+        void *sn_c = make_string_name("call");
+        mb_object_call = gd_classdb_get_method_bind(sn_obj, sn_c, 3400424181ULL);
+        free_string_name(sn_obj); free_string_name(sn_c);
+    }
+    if (!mb_object_call) return nullptr;
+
+    alignas(void*) char var_ret[24] = {0};
+    bridge_call_method_vararg_ret(mb_object_call, instance, method_name, args, arg_count, var_ret);
+
+    GDExtensionObjectPtr ret_obj = bridge_object_from_variant(var_ret);
+    if (gd_variant_destroy) gd_variant_destroy(var_ret);
+    return ret_obj;
+}
+
+static int64_t bridge_object_call_ret_int(GDExtensionObjectPtr instance, const char *method_name, const BridgeSignalArg *args, int arg_count) {
+    if (!instance || !method_name || !gd_classdb_get_method_bind || !gd_object_method_bind_call) return 0;
+    if (!mb_object_call) {
+        void *sn_obj = make_string_name("Object");
+        void *sn_c = make_string_name("call");
+        mb_object_call = gd_classdb_get_method_bind(sn_obj, sn_c, 3400424181ULL);
+        free_string_name(sn_obj); free_string_name(sn_c);
+    }
+    if (!mb_object_call) return 0;
+
+    alignas(void*) char var_ret[24] = {0};
+    bridge_call_method_vararg_ret(mb_object_call, instance, method_name, args, arg_count, var_ret);
+
+    int64_t ret_val = 0;
+    bridge_type_from_variant(GDEXTENSION_VARIANT_TYPE_INT, &ret_val, var_ret);
+    if (gd_variant_destroy) gd_variant_destroy(var_ret);
+    return ret_val;
+}
+
+static double bridge_object_call_ret_float(GDExtensionObjectPtr instance, const char *method_name, const BridgeSignalArg *args, int arg_count) {
+    if (!instance || !method_name || !gd_classdb_get_method_bind || !gd_object_method_bind_call) return 0.0;
+    if (!mb_object_call) {
+        void *sn_obj = make_string_name("Object");
+        void *sn_c = make_string_name("call");
+        mb_object_call = gd_classdb_get_method_bind(sn_obj, sn_c, 3400424181ULL);
+        free_string_name(sn_obj); free_string_name(sn_c);
+    }
+    if (!mb_object_call) return 0.0;
+
+    alignas(void*) char var_ret[24] = {0};
+    bridge_call_method_vararg_ret(mb_object_call, instance, method_name, args, arg_count, var_ret);
+
+    double ret_val = 0.0;
+    bridge_type_from_variant(GDEXTENSION_VARIANT_TYPE_FLOAT, &ret_val, var_ret);
+    if (gd_variant_destroy) gd_variant_destroy(var_ret);
+    return ret_val;
+}
+
+static bool bridge_object_call_ret_bool(GDExtensionObjectPtr instance, const char *method_name, const BridgeSignalArg *args, int arg_count) {
+    if (!instance || !method_name || !gd_classdb_get_method_bind || !gd_object_method_bind_call) return false;
+    if (!mb_object_call) {
+        void *sn_obj = make_string_name("Object");
+        void *sn_c = make_string_name("call");
+        mb_object_call = gd_classdb_get_method_bind(sn_obj, sn_c, 3400424181ULL);
+        free_string_name(sn_obj); free_string_name(sn_c);
+    }
+    if (!mb_object_call) return false;
+
+    alignas(void*) char var_ret[24] = {0};
+    bridge_call_method_vararg_ret(mb_object_call, instance, method_name, args, arg_count, var_ret);
+
+    uint8_t ret_val = 0;
+    bridge_type_from_variant(GDEXTENSION_VARIANT_TYPE_BOOL, &ret_val, var_ret);
+    if (gd_variant_destroy) gd_variant_destroy(var_ret);
+    return ret_val != 0;
+}
+
+static const char* bridge_object_call_ret_string(GDExtensionObjectPtr instance, const char *method_name, const BridgeSignalArg *args, int arg_count) {
+    static thread_local char s_call_str_buf[1024];
+    s_call_str_buf[0] = '\0';
+    if (!instance || !method_name || !gd_classdb_get_method_bind || !gd_object_method_bind_call) return "";
+    if (!mb_object_call) {
+        void *sn_obj = make_string_name("Object");
+        void *sn_c = make_string_name("call");
+        mb_object_call = gd_classdb_get_method_bind(sn_obj, sn_c, 3400424181ULL);
+        free_string_name(sn_obj); free_string_name(sn_c);
+    }
+    if (!mb_object_call) return "";
+
+    alignas(void*) char var_ret[24] = {0};
+    bridge_call_method_vararg_ret(mb_object_call, instance, method_name, args, arg_count, var_ret);
+
+    if (gd_variant_stringify && gd_string_to_utf8_chars) {
+        alignas(void*) char gd_str[8] = {0};
+        gd_variant_stringify(var_ret, gd_str);
+        int64_t len = gd_string_to_utf8_chars(gd_str, s_call_str_buf, sizeof(s_call_str_buf) - 1);
+        if (len >= 0 && len < (int64_t)sizeof(s_call_str_buf)) {
+            s_call_str_buf[len] = '\0';
+        }
+        if (gd_string_destroy) gd_string_destroy(gd_str);
+    }
+    if (gd_variant_destroy) gd_variant_destroy(var_ret);
+    return s_call_str_buf;
 }
 
 static GDExtensionMethodBindPtr mb_node_find_child = nullptr;
@@ -986,6 +1172,12 @@ struct BridgeAPI {
     GDExtensionObjectPtr (*resource_loader_load)(const char *path, const char *type_hint, int64_t cache_mode);
     GDExtensionObjectPtr (*packed_scene_instantiate)(GDExtensionObjectPtr scene, int64_t edit_state);
     const char* (*node_get_name)(GDExtensionObjectPtr node);
+    GDExtensionObjectPtr (*classdb_construct_object)(const char *class_name);
+    GDExtensionObjectPtr (*object_call_ret_object)(GDExtensionObjectPtr instance, const char *method_name, const BridgeSignalArg *args, int arg_count);
+    int64_t (*object_call_ret_int)(GDExtensionObjectPtr instance, const char *method_name, const BridgeSignalArg *args, int arg_count);
+    double (*object_call_ret_float)(GDExtensionObjectPtr instance, const char *method_name, const BridgeSignalArg *args, int arg_count);
+    bool (*object_call_ret_bool)(GDExtensionObjectPtr instance, const char *method_name, const BridgeSignalArg *args, int arg_count);
+    const char* (*object_call_ret_string)(GDExtensionObjectPtr instance, const char *method_name, const BridgeSignalArg *args, int arg_count);
 };
 
 static BridgeAPI g_bridge_api = {
@@ -1011,7 +1203,13 @@ static BridgeAPI g_bridge_api = {
     bridge_node_rpc_config,
     bridge_resource_loader_load,
     bridge_packed_scene_instantiate,
-    bridge_node_get_name
+    bridge_node_get_name,
+    bridge_classdb_construct_object,
+    bridge_object_call_ret_object,
+    bridge_object_call_ret_int,
+    bridge_object_call_ret_float,
+    bridge_object_call_ret_bool,
+    bridge_object_call_ret_string
 };
 
 // C API exports
