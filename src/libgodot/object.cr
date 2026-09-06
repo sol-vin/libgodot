@@ -168,23 +168,10 @@ module Godot
   end
 
   class PackedScene < Resource
-    @@mb_instantiate : Void* = Pointer(Void).null
-
     # Instantiates the scene's node hierarchy.
     def instantiate(edit_state : Int64 = 0_i64) : Node
-      if @@mb_instantiate.null?
-        @@mb_instantiate = Bridge.get_method_bind("PackedScene", "instantiate", 2628778455_i64)
-      end
-      if !@@mb_instantiate.null? && !@pointer.null?
-        val_0 = edit_state
-        arg_0 = pointerof(val_0).as(Void*)
-        args = [arg_0]
-        ret_ptr = Pointer(Void).null
-        Bridge.ptrcall(@@mb_instantiate, @pointer, args.to_unsafe.as(Void**), pointerof(ret_ptr).as(Void*))
-        Node.new(ret_ptr)
-      else
-        Node.new
-      end
+      ptr = Bridge.packed_scene_instantiate(@pointer, edit_state)
+      Node.new(ptr)
     end
   end
 

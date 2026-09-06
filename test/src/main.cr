@@ -499,20 +499,17 @@ test_core "Godot::Range and Crystal Range cohesion" do
 end
 
 test_core "Resource loading (Godot.load & preload)" do
-  # Load dummy scene
   res = Godot.load("res://scenes/test_dummy_2d.tscn")
   TestFramework.assert_not_nil res
-  TestFramework.assert_false res.pointer.null?
+  TestFramework.assert_false res.pointer.null?, "res.pointer is null"
 
-  # Load via load_as PackedScene
   scene = Godot.load_as(Godot::PackedScene, "res://scenes/test_dummy_2d.tscn")
   TestFramework.assert_not_nil scene
-  TestFramework.assert_false scene.pointer.null?
+  TestFramework.assert_false scene.pointer.null?, "scene.pointer is null"
 
-  # Instantiate the loaded scene
   inst = scene.instantiate
   TestFramework.assert_not_nil inst
-  TestFramework.assert_false inst.pointer.null?
+  TestFramework.assert_false inst.pointer.null?, "inst.pointer is null"
   TestFramework.assert_eq inst.name, "TestDummy2D"
 end
 
@@ -764,8 +761,8 @@ test_prop "Inspector Grouping annotations registered" do
   grp = props.find { |p| p.usage == 64_u32 && p.name == "Movement" }
   TestFramework.assert_not_nil grp
 
-  # Subgroup (usage = 64)
-  sub = props.find { |p| p.usage == 64_u32 && p.name == "Air" }
+  # Subgroup (usage = 256)
+  sub = props.find { |p| p.usage == 256_u32 && p.name == "Air" }
   TestFramework.assert_not_nil sub
 end
 

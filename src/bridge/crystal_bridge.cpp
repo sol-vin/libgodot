@@ -43,16 +43,34 @@ static GDExtensionPtrUtilityFunction gd_util_printerr = nullptr;
 static GDExtensionVariantFromTypeConstructorFunc gd_variant_from_string = nullptr;
 static GDExtensionPtrDestructor gd_string_destroy = nullptr;
 static GDExtensionPtrDestructor gd_string_name_destroy = nullptr;
+static GDExtensionInterfaceVariantGetType gd_variant_get_type = nullptr;
 static GDExtensionInterfaceVariantGetObjectInstanceId gd_variant_get_object_instance_id = nullptr;
 static GDExtensionInterfaceObjectGetInstanceFromId gd_object_get_instance_from_id = nullptr;
 static GDExtensionInterfaceVariantStringify gd_variant_stringify = nullptr;
 static GDExtensionInterfaceStringToUtf8Chars gd_string_to_utf8_chars = nullptr;
+typedef GDExtensionVariantGetInternalPtrFunc (*GDExtensionInterfaceVariantGetPtrInternalGetter)(GDExtensionVariantType p_type);
+static GDExtensionVariantGetInternalPtrFunc gd_variant_get_internal_ptr_object = nullptr;
 
 static GDExtensionClassLibraryPtr g_library = nullptr;
 
 // Object extraction helper
 static GDExtensionObjectPtr bridge_object_from_variant(const void *variant) {
     if (!variant) return nullptr;
+    if (gd_variant_get_internal_ptr_object) {
+        void *internal_ptr = gd_variant_get_internal_ptr_object((GDExtensionVariantPtr)variant);
+        if (internal_ptr) {
+            GDExtensionObjectPtr obj = *(GDExtensionObjectPtr*)internal_ptr;
+            if (obj) return obj;
+        }
+    }
+    GDExtensionObjectPtr obj = nullptr;
+    if (gd_get_variant_to_type_constructor) {
+        GDExtensionTypeFromVariantConstructorFunc conv = gd_get_variant_to_type_constructor(GDEXTENSION_VARIANT_TYPE_OBJECT);
+        if (conv) {
+            conv(&obj, (GDExtensionVariantPtr)variant);
+            if (obj) return obj;
+        }
+    }
     if (gd_variant_get_object_instance_id && gd_object_get_instance_from_id) {
         GDObjectInstanceID id = gd_variant_get_object_instance_id(variant);
         if (id != 0) {
@@ -836,6 +854,18 @@ static GDExtensionObjectPtr bridge_resource_loader_load(const char *path, const 
     GDExtensionObjectPtr ret_obj = nullptr;
     bridge_type_from_variant(GDEXTENSION_VARIANT_TYPE_OBJECT, &ret_obj, var_ret);
 
+    static GDExtensionMethodBindPtr mb_refcounted_reference = nullptr;
+    if (ret_obj && !mb_refcounted_reference) {
+        void *sn_rc = make_string_name("RefCounted");
+        void *sn_ref = make_string_name("reference");
+        mb_refcounted_reference = gd_classdb_get_method_bind(sn_rc, sn_ref, 2240911060ULL);
+        free_string_name(sn_rc); free_string_name(sn_ref);
+    }
+    if (ret_obj && mb_refcounted_reference && gd_object_method_bind_ptrcall) {
+        uint8_t success = 0;
+        gd_object_method_bind_ptrcall(mb_refcounted_reference, ret_obj, nullptr, &success);
+    }
+
     if (gd_variant_destroy) {
         gd_variant_destroy(var_path);
         gd_variant_destroy(var_type);
@@ -850,7 +880,7 @@ static GDExtensionObjectPtr bridge_resource_loader_load(const char *path, const 
 
 static GDExtensionMethodBindPtr mb_packed_scene_instantiate = nullptr;
 static GDExtensionObjectPtr bridge_packed_scene_instantiate(GDExtensionObjectPtr scene, int64_t edit_state) {
-    if (!scene || !gd_classdb_get_method_bind || !gd_object_method_bind_call) return nullptr;
+    if (!scene || !gd_classdb_get_method_bind) return nullptr;
     if (!mb_packed_scene_instantiate) {
         void *sn_ps = make_string_name("PackedScene");
         void *sn_inst = make_string_name("instantiate");
@@ -859,27 +889,37 @@ static GDExtensionObjectPtr bridge_packed_scene_instantiate(GDExtensionObjectPtr
     }
     if (!mb_packed_scene_instantiate) return nullptr;
 
-    alignas(void*) char var_edit[24] = {};
-    alignas(void*) char var_ret[24] = {};
-
-    if (gd_get_variant_from_type_constructor) {
-        GDExtensionVariantFromTypeConstructorFunc conv = gd_get_variant_from_type_constructor(GDEXTENSION_VARIANT_TYPE_INT);
-        if (conv) conv(var_edit, &edit_state);
+    if (gd_object_method_bind_ptrcall) {
+        const void *args[1] = { &edit_state };
+        GDExtensionObjectPtr ret_node = nullptr;
+        gd_object_method_bind_ptrcall(mb_packed_scene_instantiate, scene, args, &ret_node);
+        if (ret_node) return ret_node;
     }
 
-    const void *call_args[1] = { var_edit };
-    GDExtensionCallError call_err;
-    gd_object_method_bind_call(mb_packed_scene_instantiate, scene, (const GDExtensionConstVariantPtr*)call_args, 1, var_ret, &call_err);
+    if (gd_object_method_bind_call) {
+        alignas(void*) char var_edit[24] = {};
+        alignas(void*) char var_ret[24] = {};
 
-    GDExtensionObjectPtr ret_node = nullptr;
-    bridge_type_from_variant(GDEXTENSION_VARIANT_TYPE_OBJECT, &ret_node, var_ret);
+        if (gd_get_variant_from_type_constructor) {
+            GDExtensionVariantFromTypeConstructorFunc conv = gd_get_variant_from_type_constructor(GDEXTENSION_VARIANT_TYPE_INT);
+            if (conv) conv(var_edit, &edit_state);
+        }
 
-    if (gd_variant_destroy) {
-        gd_variant_destroy(var_edit);
-        gd_variant_destroy(var_ret);
+        const void *call_args[1] = { var_edit };
+        GDExtensionCallError call_err;
+        gd_object_method_bind_call(mb_packed_scene_instantiate, scene, (const GDExtensionConstVariantPtr*)call_args, 1, var_ret, &call_err);
+
+        GDExtensionObjectPtr ret_node = bridge_object_from_variant(var_ret);
+
+        if (gd_variant_destroy) {
+            gd_variant_destroy(var_edit);
+            gd_variant_destroy(var_ret);
+        }
+
+        return ret_node;
     }
 
-    return ret_node;
+    return nullptr;
 }
 
 static GDExtensionMethodBindPtr mb_node_get_name = nullptr;
@@ -1236,10 +1276,16 @@ extern "C" GDE_EXPORT GDExtensionBool crystal_library_init(
     gd_global_get_singleton = (GDExtensionInterfaceGlobalGetSingleton)p_get_proc_address("global_get_singleton");
     gd_get_variant_from_type_constructor = (GDExtensionInterfaceGetVariantFromTypeConstructor)p_get_proc_address("get_variant_from_type_constructor");
     gd_get_variant_to_type_constructor = (GDExtensionInterfaceGetVariantToTypeConstructor)p_get_proc_address("get_variant_to_type_constructor");
+    gd_variant_get_type = (GDExtensionInterfaceVariantGetType)p_get_proc_address("variant_get_type");
     gd_variant_get_object_instance_id = (GDExtensionInterfaceVariantGetObjectInstanceId)p_get_proc_address("variant_get_object_instance_id");
     gd_object_get_instance_from_id = (GDExtensionInterfaceObjectGetInstanceFromId)p_get_proc_address("object_get_instance_from_id");
     gd_variant_stringify = (GDExtensionInterfaceVariantStringify)p_get_proc_address("variant_stringify");
     gd_string_to_utf8_chars = (GDExtensionInterfaceStringToUtf8Chars)p_get_proc_address("string_to_utf8_chars");
+
+    GDExtensionInterfaceVariantGetPtrInternalGetter get_internal = (GDExtensionInterfaceVariantGetPtrInternalGetter)p_get_proc_address("variant_get_ptr_internal_getter");
+    if (get_internal) {
+        gd_variant_get_internal_ptr_object = get_internal(GDEXTENSION_VARIANT_TYPE_OBJECT);
+    }
 
     // Logging & error functions
     gd_print_error = (GDExtensionInterfacePrintError)p_get_proc_address("print_error");

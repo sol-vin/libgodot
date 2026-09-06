@@ -53,7 +53,7 @@ name: $Name
 version: 0.1.0
 
 targets:
-  $Name:
+  ${Name}:
     main: src/main.cr
 
 crystal: '>= 1.10.0'

@@ -459,9 +459,9 @@ macro node(decl, &block)
         {% grp_name = stmt.args[0].is_a?(StringLiteral) ? stmt.args[0] : stmt.args[0].id.stringify %}
         {% pfx = "" %}
         {% if stmt.named_args %}
-          {% for na in stmt.named_args %}
-            {% if na.name.stringify == "prefix" %}
-              {% pfx = na.value.is_a?(StringLiteral) ? na.value : na.value.id.stringify %}
+          {% for k, v in stmt.named_args %}
+            {% if k.stringify == "prefix" %}
+              {% pfx = v.is_a?(StringLiteral) ? v : v.id.stringify %}
             {% end %}
           {% end %}
         {% end %}
@@ -473,9 +473,9 @@ macro node(decl, &block)
         {% sub_name = stmt.args[0].is_a?(StringLiteral) ? stmt.args[0] : stmt.args[0].id.stringify %}
         {% pfx = "" %}
         {% if stmt.named_args %}
-          {% for na in stmt.named_args %}
-            {% if na.name.stringify == "prefix" %}
-              {% pfx = na.value.is_a?(StringLiteral) ? na.value : na.value.id.stringify %}
+          {% for k, v in stmt.named_args %}
+            {% if k.stringify == "prefix" %}
+              {% pfx = v.is_a?(StringLiteral) ? v : v.id.stringify %}
             {% end %}
           {% end %}
         {% end %}

@@ -21,13 +21,10 @@ module Godot
   end
 
   class Node < Object
-    # Convenience overloads for find_child
-    def find_child(pattern : String) : Node?
-      find_child(pattern, true, false)
-    end
-
-    def find_child(pattern : String, recursive : Bool) : Node?
-      find_child(pattern, recursive, false)
+    # Reliable GDExtension bridge implementation of find_child
+    def find_child(pattern : String, recursive : Bool = true, owned : Bool = false) : Node?
+      ptr = Bridge.node_find_child(@pointer, pattern, recursive, owned)
+      ptr.null? ? nil : Node.new(ptr)
     end
   end
 end
