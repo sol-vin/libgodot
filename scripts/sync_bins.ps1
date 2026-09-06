@@ -21,7 +21,7 @@ foreach ($dir in $targetDirs) {
     foreach ($dll in @('crystal_bridge.dll', 'gc.dll', 'iconv-2.dll', 'pcre2-8.dll', 'libgodot.dll', 'libgodot.lib')) {
         $src = Join-Path $binDir $dll
         $dst = Join-Path $dir $dll
-        if ((Test-Path $src) -and (-not (Test-Path $dst))) {
+        if (Test-Path $src) {
             Copy-Item $src $dst -Force -ErrorAction SilentlyContinue
         }
     }

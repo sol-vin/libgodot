@@ -74,9 +74,9 @@ dirs:
 
 # Compile C++ GDExtension bridge and sync to consumer projects
 bridge: dirs
-	@echo [Bridge] Compiling GDExtension bridge (crystal_bridge.dll)...
+	@echo [Bridge] Compiling GDExtension bridge crystal_bridge.dll...
 	$(CXX) -shared $(CXXFLAGS) src/bridge/crystal_bridge.cpp -o $(BRIDGE_DLL)
-	@powershell -ExecutionPolicy Bypass -Command "Copy-Item '$(BRIDGE_DLL)' '$(TEST_BIN_DIR)/crystal_bridge.dll' -Force -ErrorAction SilentlyContinue; Copy-Item '$(BRIDGE_DLL)' '$(TEMPLATE_BIN_DIR)/crystal_bridge.dll' -Force -ErrorAction SilentlyContinue"
+	@powershell -ExecutionPolicy Bypass -File scripts/sync_bins.ps1
 
 # Synchronize addons across root, test, template, and examples
 addons: dirs
@@ -132,9 +132,9 @@ sync: addons
 
 # Build Godot engine shared library from source (requires godot-src and scons)
 engine:
-	@echo Compiling Godot Engine shared library (libgodot.dll) via SCons...
+	@echo Compiling Godot Engine shared library libgodot.dll via SCons...
 	$(SCONS) -C godot-src target=template_debug dev_build=yes library_type=shared_library -j$(SCONS_JOBS)
-	@powershell -ExecutionPolicy Bypass -Command "Copy-Item 'godot-src/bin/godot.windows.template_debug.x86_64.dll' '$(BIN_DIR)/libgodot.dll' -Force; Copy-Item 'godot-src/bin/godot.windows.template_debug.x86_64.dll' '$(TEST_BIN_DIR)/libgodot.dll' -Force; Copy-Item 'godot-src/bin/godot.windows.template_debug.x86_64.dll' '$(TEMPLATE_BIN_DIR)/libgodot.dll' -Force; if (Test-Path 'godot-src/bin/godot.windows.template_debug.x86_64.lib') { Copy-Item 'godot-src/bin/godot.windows.template_debug.x86_64.lib' '$(BIN_DIR)/libgodot.lib' -Force }"
+	@powershell -ExecutionPolicy Bypass -File scripts/sync_bins.ps1
 	@echo libgodot.dll updated successfully!
 
 # Run complete test suites and verification (Crystal specs, in-editor @tool tests, runtime project tests, smoke tests)
@@ -178,10 +178,10 @@ help:
 	@echo   make examples     Build all projects in examples/
 	@echo   make template     Build template/bin/game.dll
 	@echo   make game_dll     Build and sync game.dll across all targets
-	@echo   make deps         Ensure runtime DLLs (gc, iconv, pcre2) are copied
+	@echo   make deps         Ensure runtime DLLs - gc, iconv, pcre2 are copied
 	@echo   make sync         Sync bin/ binaries to test/bin, template/bin, examples
 	@echo   make test         Run verification specs and headless smoke tests
-	@echo   make docs         Generate API documentation (crystal docs)
+	@echo   make docs         Generate API documentation via crystal docs
 	@echo   make run          Run the test suite in Godot
 	@echo   make editor       Open the test suite in the Godot Editor
 	@echo   make engine       Rebuild Godot engine shared library via SCons
