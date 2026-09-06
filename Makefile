@@ -70,13 +70,13 @@ all: dirs deps bridge addons test_project examples template sync test
 
 # Ensure output directories exist
 dirs:
-	@$(POWERSHELL) "foreach ($$dir in @('$(BIN_DIR)', '$(TEST_BIN_DIR)', '$(TEMPLATE_BIN_DIR)')) { if (-not (Test-Path $$dir)) { New-Item -ItemType Directory -Force -Path $$dir | Out-Null } }"
+	@powershell -ExecutionPolicy Bypass -File scripts/ensure_dirs.ps1
 
 # Compile C++ GDExtension bridge and sync to consumer projects
 bridge: dirs
 	@echo [Bridge] Compiling GDExtension bridge (crystal_bridge.dll)...
 	$(CXX) -shared $(CXXFLAGS) src/bridge/crystal_bridge.cpp -o $(BRIDGE_DLL)
-	@$(POWERSHELL) "try { Copy-Item '$(BRIDGE_DLL)' '$(TEST_BIN_DIR)/crystal_bridge.dll' -Force } catch {}; try { Copy-Item '$(BRIDGE_DLL)' '$(TEMPLATE_BIN_DIR)/crystal_bridge.dll' -Force } catch {}"
+	@powershell -ExecutionPolicy Bypass -Command "Copy-Item '$(BRIDGE_DLL)' '$(TEST_BIN_DIR)/crystal_bridge.dll' -Force -ErrorAction SilentlyContinue; Copy-Item '$(BRIDGE_DLL)' '$(TEMPLATE_BIN_DIR)/crystal_bridge.dll' -Force -ErrorAction SilentlyContinue"
 
 # Synchronize addons across root, test, template, and examples
 addons: dirs
@@ -90,12 +90,12 @@ test_project: dirs deps bridge addons
 # Build all example projects in examples/
 examples: dirs deps bridge addons
 	@echo [Examples] Building all projects in $(EXAMPLES_DIR)...
-	@$(POWERSHELL) "if (Test-Path '$(EXAMPLES_DIR)') { foreach ($$ex in Get-ChildItem -Path '$(EXAMPLES_DIR)' -Directory) { if (Test-Path (Join-Path $$ex.FullName 'Makefile')) { Write-Host \"[Examples] Building $($$ex.Name)...\"; & make -C $$ex.FullName RELEASE=$(RELEASE) } } }"
+	@powershell -ExecutionPolicy Bypass -File scripts/build_examples.ps1 -Release "$(RELEASE)"
 
 # Build standalone executables for all example projects in examples/
 examples_exe: dirs deps bridge addons
 	@echo [Examples] Building standalone executables for all projects in $(EXAMPLES_DIR)...
-	@$(POWERSHELL) "if (Test-Path '$(EXAMPLES_DIR)') { foreach ($$ex in Get-ChildItem -Path '$(EXAMPLES_DIR)' -Directory) { if (Test-Path (Join-Path $$ex.FullName 'Makefile')) { Write-Host \"[Examples] Building executable for $($$ex.Name)...\"; & make -C $$ex.FullName game_exe RELEASE=$(RELEASE) } } }"
+	@powershell -ExecutionPolicy Bypass -File scripts/build_examples.ps1 -Exe -Release "$(RELEASE)"
 
 template: dirs deps bridge addons
 	@echo [Template] Building template project...
@@ -108,8 +108,8 @@ game_dll: dirs deps bridge addons test_project examples template sync
 # Compile standalone game executable for LibGodot host paradigm
 game_exe: dirs deps bridge
 	@echo [Standalone] Compiling standalone game.exe from $(ENTRY)...
-	@$(POWERSHELL) "$$env:CRYSTAL_PATH = 'src;' + (crystal env CRYSTAL_PATH); crystal build $(CRYSTAL_FLAGS) $(ENTRY) -o $(GAME_EXE)"
-	@$(POWERSHELL) "try { Copy-Item '$(GAME_EXE)' '$(TEST_BIN_DIR)/game.exe' -Force } catch {}"
+	@powershell -ExecutionPolicy Bypass -File scripts/build_crystal.ps1 -Entry $(ENTRY) -Output $(GAME_EXE) $(if $(filter 1,$(RELEASE)),-Release,)
+	@powershell -ExecutionPolicy Bypass -Command "Copy-Item '$(GAME_EXE)' '$(TEST_BIN_DIR)/game.exe' -Force -ErrorAction SilentlyContinue"
 
 # Generate Crystal bindings from Godot extension_api.json
 dump_api:
@@ -123,22 +123,18 @@ generate:
 # Copy Crystal runtime dependencies and libgodot.dll to all bin dirs
 deps: dirs
 	@echo [Dependencies] Ensuring runtime DLLs are available in bin/, test/bin/, and template/bin/...
-	@$(POWERSHELL) "$$c = Split-Path (Get-Command crystal -ErrorAction SilentlyContinue).Source; if ($$c) { foreach ($$dll in @('gc.dll','iconv-2.dll','pcre2-8.dll')) { $$src = Join-Path $$c $$dll; if (Test-Path $$src) { foreach ($$d in @('$(BIN_DIR)', '$(TEST_BIN_DIR)', '$(TEMPLATE_BIN_DIR)')) { if (-not (Test-Path ($$d + '/' + $$dll))) { Copy-Item $$src ($$d + '/') -Force -ErrorAction SilentlyContinue } } } } }; exit 0"
-	@$(POWERSHELL) "if ((Test-Path 'godot-src/bin/godot.windows.template_debug.x86_64.dll') -and (-not (Test-Path '$(BIN_DIR)/libgodot.dll'))) { Copy-Item 'godot-src/bin/godot.windows.template_debug.x86_64.dll' '$(BIN_DIR)/libgodot.dll' -Force -ErrorAction SilentlyContinue }; if (Test-Path '$(BIN_DIR)/libgodot.dll') { foreach ($$d in @('$(TEST_BIN_DIR)', '$(TEMPLATE_BIN_DIR)')) { if (-not (Test-Path ($$d + '/libgodot.dll'))) { Copy-Item '$(BIN_DIR)/libgodot.dll' ($$d + '/libgodot.dll') -Force -ErrorAction SilentlyContinue } } }; exit 0"
+	@powershell -ExecutionPolicy Bypass -File scripts/ensure_deps.ps1
 
 # Synchronize compiled binaries and runtime dependencies to consumer projects
 sync: addons
 	@echo [Sync] Syncing runtime DLLs and bridge to test/bin, template/bin, and examples...
-	@$(POWERSHELL) "$$targetDirs = [System.Collections.Generic.List[string]]::new(); $$targetDirs.Add('$(TEST_BIN_DIR)'); $$targetDirs.Add('$(TEMPLATE_BIN_DIR)'); if (Test-Path '$(EXAMPLES_DIR)') { foreach ($$ex in Get-ChildItem -Path '$(EXAMPLES_DIR)' -Directory) { $$targetDirs.Add(\"$(EXAMPLES_DIR)/$$($$ex.Name)/bin\") } }; foreach ($$dir in $$targetDirs) { if (-not (Test-Path $$dir)) { New-Item -ItemType Directory -Force -Path $$dir | Out-Null }; foreach ($$dll in @('crystal_bridge.dll', 'gc.dll', 'iconv-2.dll', 'pcre2-8.dll', 'libgodot.dll', 'libgodot.lib')) { $$src = Join-Path '$(BIN_DIR)' $$dll; if ((Test-Path $$src) -and (-not (Test-Path (Join-Path $$dir $$dll)))) { Copy-Item $$src (Join-Path $$dir $$dll) -Force -ErrorAction SilentlyContinue } } }; exit 0"
-	@$(POWERSHELL) "if (Test-Path '$(TEST_BIN_DIR)/game.dll') { Copy-Item '$(TEST_BIN_DIR)/game.dll' '$(BIN_DIR)/game.dll' -Force -ErrorAction SilentlyContinue }; exit 0"
-	@$(POWERSHELL) "if (Test-Path '$(TEST_BIN_DIR)/game.exe') { Copy-Item '$(TEST_BIN_DIR)/game.exe' '$(BIN_DIR)/game.exe' -Force -ErrorAction SilentlyContinue }; exit 0"
-	@$(POWERSHELL) "$$projects = [System.Collections.Generic.List[string]]::new(); $$projects.Add('test'); $$projects.Add('template'); if (Test-Path '$(EXAMPLES_DIR)') { foreach ($$ex in Get-ChildItem -Path '$(EXAMPLES_DIR)' -Directory) { $$projects.Add(\"$(EXAMPLES_DIR)/$$($$ex.Name)\") } }; foreach ($$p in $$projects) { $$cfgDir = Join-Path $$p '.godot'; if (-not (Test-Path $$cfgDir)) { New-Item -ItemType Directory -Force -Path $$cfgDir | Out-Null }; Set-Content -Path (Join-Path $$cfgDir 'extension_list.cfg') -Value 'res://addons/crystal_integration/crystal.gdextension' -Force }; exit 0"
+	@powershell -ExecutionPolicy Bypass -File scripts/sync_bins.ps1
 
 # Build Godot engine shared library from source (requires godot-src and scons)
 engine:
 	@echo Compiling Godot Engine shared library (libgodot.dll) via SCons...
 	$(SCONS) -C godot-src target=template_debug dev_build=yes library_type=shared_library -j$(SCONS_JOBS)
-	@$(POWERSHELL) "Copy-Item 'godot-src/bin/godot.windows.template_debug.x86_64.dll' '$(BIN_DIR)/libgodot.dll' -Force; Copy-Item 'godot-src/bin/godot.windows.template_debug.x86_64.dll' '$(TEST_BIN_DIR)/libgodot.dll' -Force; Copy-Item 'godot-src/bin/godot.windows.template_debug.x86_64.dll' '$(TEMPLATE_BIN_DIR)/libgodot.dll' -Force; if (Test-Path 'godot-src/bin/godot.windows.template_debug.x86_64.lib') { Copy-Item 'godot-src/bin/godot.windows.template_debug.x86_64.lib' '$(BIN_DIR)/libgodot.lib' -Force }"
+	@powershell -ExecutionPolicy Bypass -Command "Copy-Item 'godot-src/bin/godot.windows.template_debug.x86_64.dll' '$(BIN_DIR)/libgodot.dll' -Force; Copy-Item 'godot-src/bin/godot.windows.template_debug.x86_64.dll' '$(TEST_BIN_DIR)/libgodot.dll' -Force; Copy-Item 'godot-src/bin/godot.windows.template_debug.x86_64.dll' '$(TEMPLATE_BIN_DIR)/libgodot.dll' -Force; if (Test-Path 'godot-src/bin/godot.windows.template_debug.x86_64.lib') { Copy-Item 'godot-src/bin/godot.windows.template_debug.x86_64.lib' '$(BIN_DIR)/libgodot.lib' -Force }"
 	@echo libgodot.dll updated successfully!
 
 # Run complete test suites and verification (Crystal specs, in-editor @tool tests, runtime project tests, smoke tests)
