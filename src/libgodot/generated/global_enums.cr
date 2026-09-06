@@ -1,37 +1,44 @@
 # Generated Global Enums for Godot 4.8+
 module Godot
+  # Godot `Side` global enum.
   enum Side : Int64
     Left = 0_i64
     Top = 1_i64
     Right = 2_i64
     Bottom = 3_i64
   end
+  # Godot `Corner` global enum.
   enum Corner : Int64
     TopLeft = 0_i64
     TopRight = 1_i64
     BottomRight = 2_i64
     BottomLeft = 3_i64
   end
+  # Godot `Orientation` global enum.
   enum Orientation : Int64
     Vertical = 1_i64
     Horizontal = 0_i64
   end
+  # Godot `ClockDirection` global enum.
   enum ClockDirection : Int64
     Clockwise = 0_i64
     Counterclockwise = 1_i64
   end
+  # Godot `HorizontalAlignment` global enum.
   enum HorizontalAlignment : Int64
     Left = 0_i64
     Center = 1_i64
     Right = 2_i64
     Fill = 3_i64
   end
+  # Godot `VerticalAlignment` global enum.
   enum VerticalAlignment : Int64
     Top = 0_i64
     Center = 1_i64
     Bottom = 2_i64
     Fill = 3_i64
   end
+  # Godot `InlineAlignment` global enum.
   enum InlineAlignment : Int64
     TopTo = 0_i64
     CenterTo = 1_i64
@@ -47,6 +54,7 @@ module Godot
     ImageMask = 3_i64
     TextMask = 12_i64
   end
+  # Godot `EulerOrder` global enum.
   enum EulerOrder : Int64
     Xyz = 0_i64
     Xzy = 1_i64
@@ -55,6 +63,7 @@ module Godot
     Zxy = 4_i64
     Zyx = 5_i64
   end
+  # Godot `Key` global enum.
   enum Key : Int64
     None = 0_i64
     Special = 4194304_i64
@@ -250,6 +259,7 @@ module Godot
     Yen = 165_i64
     Section = 167_i64
   end
+  # Godot `KeyModifierMask` global enum.
   enum KeyModifierMask : Int64
     KeyCodeMask = 8388607_i64
     KeyModifierMask = 2130706432_i64
@@ -261,11 +271,13 @@ module Godot
     KeyMaskKpad = 536870912_i64
     KeyMaskGroupSwitch = 1073741824_i64
   end
+  # Godot `KeyLocation` global enum.
   enum KeyLocation : Int64
     Unspecified = 0_i64
     Left = 1_i64
     Right = 2_i64
   end
+  # Godot `MouseButton` global enum.
   enum MouseButton : Int64
     None = 0_i64
     Left = 1_i64
@@ -278,6 +290,7 @@ module Godot
     Xbutton1 = 8_i64
     Xbutton2 = 9_i64
   end
+  # Godot `MouseButtonMask` global enum.
   enum MouseButtonMask : Int64
     Left = 1_i64
     Right = 2_i64
@@ -285,6 +298,7 @@ module Godot
     MbXbutton1 = 128_i64
     MbXbutton2 = 256_i64
   end
+  # Godot `JoyButton` global enum.
   enum JoyButton : Int64
     Invalid = -1_i64
     A = 0_i64
@@ -316,6 +330,7 @@ module Godot
     SdlMax = 26_i64
     Max = 128_i64
   end
+  # Godot `JoyAxis` global enum.
   enum JoyAxis : Int64
     Invalid = -1_i64
     LeftX = 0_i64
@@ -327,6 +342,7 @@ module Godot
     SdlMax = 6_i64
     Max = 10_i64
   end
+  # Godot `MIDIMessage` global enum.
   enum MIDIMessage : Int64
     None = 0_i64
     NoteOff = 8_i64
@@ -348,6 +364,7 @@ module Godot
     ActiveSensing = 254_i64
     SystemReset = 255_i64
   end
+  # Godot `Error` global enum.
   enum Error : Int64
     Ok = 0_i64
     Failed = 1_i64
@@ -399,6 +416,7 @@ module Godot
     ErrBug = 47_i64
     ErrPrinterOnFire = 48_i64
   end
+  # Godot `PropertyHint` global enum.
   enum PropertyHint : Int64
     None = 0_i64
     Range = 1_i64
@@ -446,6 +464,7 @@ module Godot
     FilePath = 44_i64
     Max = 45_i64
   end
+  # Godot `PropertyUsageFlags` global enum.
   enum PropertyUsageFlags : Int64
     PropertyUsageNone = 0_i64
     PropertyUsageStorage = 2_i64
@@ -480,6 +499,7 @@ module Godot
     PropertyUsageDefault = 6_i64
     PropertyUsageNoEditor = 2_i64
   end
+  # Godot `MethodFlags` global enum.
   enum MethodFlags : Int64
     MethodFlagNormal = 1_i64
     MethodFlagEditor = 2_i64
@@ -491,6 +511,7 @@ module Godot
     MethodFlagVirtualRequired = 128_i64
     Default = 1_i64
   end
+  # Godot `Type` global enum.
   enum Type : Int64
     Nil = 0_i64
     Bool = 1_i64
@@ -533,6 +554,7 @@ module Godot
     PackedVector4Array = 38_i64
     Max = 39_i64
   end
+  # Godot `Operator` global enum.
   enum Operator : Int64
     OpEqual = 0_i64
     OpNotEqual = 1_i64

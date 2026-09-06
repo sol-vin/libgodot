@@ -33,6 +33,23 @@ keywords:
   abstract: abstract_val
   private: private_val
   protected: protected_val
+  with: with_val
+  super: super_val
+  as: as_val
+  typeof: typeof_val
+  pointerof: pointerof_val
+  sizeof: sizeof_val
+  instance_sizeof: instance_sizeof_val
+  offset_of: offset_of_val
+  offsetof: offsetof_val
+  alignof: alignof_val
+  enum: enum_val
+  struct: struct_val
+  union: union_val
+  lib: lib_val
+  fun: fun_val
+  module: module_val
+  macro: macro_val
 
 # Primitive and core type mappings from Godot C-API to Crystal
 type_map:

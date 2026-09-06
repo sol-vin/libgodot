@@ -12,10 +12,8 @@ require "../../src/libgodot"
 # 7. Hotkeys: H=Heal, J=Damage, R=Respawn Crystals, C=Companion Chat, E=Dash
 # 8. Crystal Signal emissions and Range type cohesion
 
-# Main Scene Root Manager
+# Main scene controller managing game lifecycle and stats
 node DemoScene do
-  @[Doc("Main scene controller managing game lifecycle and stats")]
-
   def _ready
     Godot.print("==================================================================")
     Godot.print("       Welcome to the Crystal LibGodot 4.8 Interactive Demo!      ")
@@ -27,11 +25,10 @@ node DemoScene do
 end
 
 # Floating and rotating collectible crystal
+# An animated floating collectible crystal that spins, bobs, and rewards score
 node SpinningCrystal < Node3D do
   # Global registry of all active crystals in the scene
   class_property all : Array(SpinningCrystal) = [] of SpinningCrystal
-
-  @[Doc("An animated floating collectible crystal that spins, bobs, and rewards score")]
 
   def self.reset_all! : Void
     count = 0
@@ -59,6 +56,9 @@ node SpinningCrystal < Node3D do
   # Score value awarded when collected
   @[Export(range: 10..1000, step: 10, doc: "Score value given to the player")]
   property score_value : Int32 = 100
+
+  @[Export]
+  property my_new_property : Int32 = 100
 
   # Whether this crystal has been collected
   property collected : Bool = false
@@ -151,7 +151,7 @@ node DemoCharacter < CharacterBody3D do
   signal score_changed(new_score : Int32)
   signal died
 
-  @[Doc("Interactive physics character with WASD movement, jumping, dash, and health")]
+  # Interactive physics character with WASD movement, jumping, dash, and health
   def _ready
     @current_health = @max_health
     DemoCharacter.current_player = self
@@ -292,8 +292,8 @@ node DemoCharacter < CharacterBody3D do
   end
 end
 
+# Specialized player character node inheriting DemoCharacter
 node DemoPlayer < DemoCharacter do
-  @[Doc("Specialized player character node inheriting DemoCharacter")]
 end
 
 node CompanionController < Node do
@@ -318,7 +318,7 @@ node CompanionController < Node do
     end
   end
 
-  @[Doc("Demonstrates binding and calling GDScript methods from Crystal")]
+  # Demonstrates binding and calling GDScript methods from Crystal
   def _ready
     @@current_instance = self
     Godot.print("[CompanionController] Initialized GDScript interop bindings!")
@@ -335,15 +335,30 @@ node CompanionController < Node do
   end
 end
 
-# In-Game UI Controller showcasing Range cohesion
+# In-Game UI Controller showcasing Range cohesion and health bar tracking
 node DemoHUD < Control do
-  @[Doc("In-game HUD display with score, health, and range controls")]
+  @health_bar : Godot::Range? = nil
 
   def _ready
     Godot.print("[DemoHUD] HUD activated with Range cohesion and health bar tracking.")
     # Crystal Range cohesion demonstration
     godot_range = (0..100).to_godot_range(step: 1.0)
     Godot.print("[DemoHUD] Created Godot::Range with bounds: #{godot_range.to_range}")
+
+    if hb = find_child("HealthBar", recursive: true, owned: false)
+      @health_bar = Godot::Range.new(hb.pointer)
+      Godot.print("[DemoHUD] HealthBar found and bound to Range control!")
+    else
+      Godot.printerr("[DemoHUD] HealthBar node not found in HUD children!")
+    end
+  end
+
+  def _process(delta : Float64) : Void
+    if bar = @health_bar
+      if player = DemoCharacter.current_player
+        bar.set_value(player.current_health.to_f64)
+      end
+    end
   end
 end
 

@@ -35,8 +35,11 @@ end
 
 def sanitize_name(name : String, keywords : Hash(String, String)) : String
   clean = name.gsub(/[^a-zA-Z0-9_]/, "_")
+  clean = clean.underscore
   if clean.starts_with?(/[0-9]/)
     clean = "arg_#{clean}"
+  elsif clean.empty?
+    clean = "arg"
   end
   if mapped = keywords[clean]?
     mapped
@@ -52,9 +55,48 @@ def crystal_type_name(godot_type : String, type_map : Hash(String, String)) : St
     mapped
   elsif godot_type.starts_with?("typedarray::")
     return "Godot::Array"
+  elsif godot_type.ends_with?("*") || godot_type.starts_with?("const ") || godot_type.includes?("*")
+    return "Void*"
   else
     godot_type.gsub(/[^a-zA-Z0-9_]/, "")
   end
+end
+
+def format_doc_comment(raw_text : String?, indent : String = "  ") : String
+  return "" if raw_text.nil? || raw_text.to_s.strip.empty?
+
+  # Clean Godot BBCode tags into standard Markdown
+  text = raw_text.to_s
+    .gsub(/\[codeblock\]/m, "```gdscript\n")
+    .gsub(/\[\/codeblock\]/m, "\n```")
+    .gsub(/\[codeblocks\]/m, "")
+    .gsub(/\[\/codeblocks\]/m, "")
+    .gsub(/\[gdscript\]/m, "```gdscript\n")
+    .gsub(/\[\/gdscript\]/m, "\n```")
+    .gsub(/\[csharp\]/m, "```csharp\n")
+    .gsub(/\[\/csharp\]/m, "\n```")
+    .gsub(/\[code\](.*?)\[\/code\]/m) { "`#{$1}`" }
+    .gsub(/\[b\](.*?)\[\/b\]/m) { "**#{$1}**" }
+    .gsub(/\[i\](.*?)\[\/i\]/m) { "*#{$1}*" }
+    .gsub(/\[kbd\](.*?)\[\/kbd\]/m) { "`#{$1}`" }
+    .gsub(/\[url=(.*?)\](.*?)\[\/url\]/m) { "[$2]($1)" }
+    .gsub(/\[url\](.*?)\[\/url\]/m) { "[$1]($1)" }
+    .gsub(/\[annotation\s+([^\]]+)\]/) { "`#{$1}`" }
+    .gsub(/\[param\s+(\w+)\]/) { "`#{$1}`" }
+    .gsub(/\[member\s+([\w\.]+)\]/) { "`#{$1}`" }
+    .gsub(/\[method\s+([\w\.]+)\]/) { "`##{$1}`" }
+    .gsub(/\[constant\s+([\w\.]+)\]/) { "`#{$1}`" }
+    .gsub(/\[enum\s+([\w\.]+)\]/) { "`#{$1}`" }
+    .gsub(/\[signal\s+([\w\.]+)\]/) { "`#{$1}`" }
+    .gsub(/\[(\w+)\]/) { "`#{$1}`" }
+
+  lines = text.strip.lines
+  doc_lines = lines.map do |line|
+    cleaned = line.rstrip
+    cleaned.empty? ? "#{indent}#" : "#{indent}# #{cleaned}"
+  end
+
+  doc_lines.join("\n") + "\n"
 end
 
 # Ensure directories
@@ -75,6 +117,7 @@ File.open("src/libgodot/generated/global_enums.cr", "w") do |f|
       enum_name = raw_enum_name.starts_with?("Variant.") ? raw_enum_name.gsub("Variant.", "") : raw_enum_name
       next if enum_name.empty?
 
+      f.puts "  # Godot `#{enum_name}` global enum."
       f.puts "  enum #{enum_name} : Int64"
       enum_prefix = "#{enum_name.underscore.upcase}_"
       alt_prefix = "#{enum_name.upcase}_"
@@ -114,7 +157,10 @@ File.open("src/libgodot/generated/singletons.cr", "w") do |f|
   if singletons = api_data["singletons"]?
     singletons.as_a.each do |s|
       s_name = s["name"].as_s
-      f.puts "  module #{s_name}"
+      s_type = s["type"]?.try(&.as_s) || s_name
+      parent_type = s_name == "GDScriptLanguageProtocol" ? "Godot::JSONRPC" : "Godot::Object"
+      f.puts "  # Godot `#{s_name}` singleton (#{s_type})."
+      f.puts "  class #{s_name} < #{parent_type}"
       f.puts "    @@instance : Void* = Pointer(Void).null"
       f.puts "    def self.singleton_ptr : Void*"
       f.puts "      if @@instance.null?"
@@ -167,47 +213,47 @@ end
 
 puts "Generating #{sorted_classes.size} classes..."
 
-# Categorize classes
-core_classes = [] of JSON::Any
-scene_2d_classes = [] of JSON::Any
-scene_3d_classes = [] of JSON::Any
-gui_classes = [] of JSON::Any
-server_classes = [] of JSON::Any
-other_classes = [] of JSON::Any
-
-sorted_classes.each do |c|
-  name = c["name"].as_s
-  parent = c["inherits"]?.try(&.as_s) || ""
-  if name.includes?("2D")
-    scene_2d_classes << c
-  elsif name.includes?("3D")
-    scene_3d_classes << c
-  elsif name.includes?("Server")
-    server_classes << c
-  elsif ["Control", "Button", "Label", "Range", "ProgressBar", "Slider", "ScrollContainer", "BoxContainer", "TextureRect"].includes?(name) || parent == "Control" || parent == "Range"
-    gui_classes << c
-  elsif ["Object", "RefCounted", "Resource", "Node", "SceneTree", "MainLoop"].includes?(name)
-    core_classes << c
-  else
-    other_classes << c
-  end
-end
+# Classes are already topologically sorted in sorted_classes
 
 def generate_class_code(io : IO, c : JSON::Any, keywords : Hash(String, String), type_map : Hash(String, String))
   name = c["name"].as_s
   parent = c["inherits"]?.try(&.as_s) || "Godot::Object"
   parent_type = parent == "Godot::Object" ? parent : (parent.starts_with?("Godot::") ? parent : "Godot::#{parent}")
 
-  io.puts "  class #{name} < #{parent_type}"
-  io.puts "    def initialize(pointer : Void* = Pointer(Void).null)"
-  io.puts "      super(pointer)"
-  io.puts "    end\n"
+  # Class documentation
+  class_doc_parts = [] of String
+  if brief = c["brief_description"]?.try(&.as_s.strip)
+    class_doc_parts << brief unless brief.empty?
+  end
+  if desc = c["description"]?.try(&.as_s.strip)
+    if !desc.empty? && !class_doc_parts.includes?(desc)
+      class_doc_parts << desc
+    end
+  end
+  full_class_doc = class_doc_parts.join("\n\n")
+  if !full_class_doc.empty?
+    io.print format_doc_comment(full_class_doc, indent: "  ")
+  end
+
+  if name == "Object"
+    io.puts "  class Object"
+    io.puts "    def initialize(@pointer : Void* = Pointer(Void).null)"
+    io.puts "    end\n"
+  else
+    io.puts "  class #{name} < #{parent_type}"
+    io.puts "    def initialize(pointer : Void* = Pointer(Void).null)"
+    io.puts "      super(pointer)"
+    io.puts "    end\n"
+  end
 
   # Inner enums
   if enums = c["enums"]?
     enums.as_a.each do |e|
       e_name = e["name"].as_s
       next if e_name.empty?
+      if e_doc = e["description"]?.try(&.as_s.strip)
+        io.print format_doc_comment(e_doc, indent: "    ")
+      end
       io.puts "    enum #{e_name} : Int64"
       if values = e["values"]?
         values.as_a.each do |v|
@@ -228,6 +274,7 @@ def generate_class_code(io : IO, c : JSON::Any, keywords : Hash(String, String),
     methods.as_a.each do |m|
       m_name = m["name"].as_s
       next if m["is_virtual"]?.try(&.as_bool)
+      next if m["is_vararg"]?.try(&.as_bool)
       hash_val = m["hash"]?.try(&.as_i64) || 0_i64
       sanitized_m_name = sanitize_name(m_name, keywords)
 
@@ -250,6 +297,9 @@ def generate_class_code(io : IO, c : JSON::Any, keywords : Hash(String, String),
       # Lazy method bind variable
       clean_var_name = m_name.gsub(/[^a-zA-Z0-9_]/, "_")
       io.puts "    @@mb_#{clean_var_name} : Void* = Pointer(Void).null"
+      if m_doc = m["description"]?.try(&.as_s.strip)
+        io.print format_doc_comment(m_doc, indent: "    ")
+      end
       io.puts "    def #{sanitized_m_name}(#{arg_defs.join(", ")}) : #{ret_type_crystal}"
       io.puts "      if @@mb_#{clean_var_name}.null?"
       io.puts "        @@mb_#{clean_var_name} = Bridge.get_method_bind(\"#{name}\", \"#{m_name}\", #{hash_val}_i64)"
@@ -326,22 +376,21 @@ def generate_class_code(io : IO, c : JSON::Any, keywords : Hash(String, String),
   io.puts "  end\n"
 end
 
-# Generate modular files
-categories = {
-  "core" => core_classes,
-  "scene_2d" => scene_2d_classes,
-  "scene_3d" => scene_3d_classes,
-  "gui" => gui_classes,
-  "servers" => server_classes,
-  "other" => other_classes
-}
+# Generate modular files in topological dependency order
+num_parts = 6
+chunk_size = (sorted_classes.size.to_f / num_parts).ceil.to_i
 
-categories.each do |cat_name, cat_classes|
-  puts "Writing src/libgodot/generated/classes/#{cat_name}.cr (#{cat_classes.size} classes)..."
-  File.open("src/libgodot/generated/classes/#{cat_name}.cr", "w") do |f|
-    f.puts "# Generated #{cat_name} classes"
+num_parts.times do |part_idx|
+  start_idx = part_idx * chunk_size
+  end_idx = Math.min((part_idx + 1) * chunk_size, sorted_classes.size)
+  part_classes = sorted_classes[start_idx...end_idx]
+  part_num = part_idx + 1
+
+  puts "Writing src/libgodot/generated/classes/classes_part#{part_num}.cr (#{part_classes.size} classes)..."
+  File.open("src/libgodot/generated/classes/classes_part#{part_num}.cr", "w") do |f|
+    f.puts "# Generated classes part #{part_num} (in topological order)"
     f.puts "module Godot"
-    cat_classes.each do |c|
+    part_classes.each do |c|
       generate_class_code(f, c, keywords, type_map)
     end
     f.puts "end"
@@ -350,23 +399,10 @@ end
 
 # Generate master all_classes.cr
 File.open("src/libgodot/generated/classes/all_classes.cr", "w") do |f|
-  f.puts "# Master index requiring all class categories in dependency order"
-  f.puts "require \"./core\""
-  f.puts "require \"./servers\""
-  f.puts "require \"./gui\""
-  f.puts "require \"./scene_2d\""
-  f.puts "require \"./scene_3d\""
-  f.puts "require \"./other\""
-end
-
-# Generate generated.cr index
-File.open("src/libgodot/generated/classes.cr", "w") do |f|
-  f.puts "require \"./global_enums\""
-  f.puts "require \"./singletons\""
-  f.puts "require \"./classes/core\""
-  f.puts "require \"./classes/scene_2d\""
-  f.puts "require \"./classes/scene_3d\""
-  f.puts "require \"./classes/gui\""
+  f.puts "# Master index requiring all classes in topological dependency order"
+  num_parts.times do |part_idx|
+    f.puts "require \"./classes_part#{part_idx + 1}\""
+  end
 end
 
 puts "=== Binding Generation Complete! ==="

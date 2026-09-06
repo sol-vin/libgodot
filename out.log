@@ -1,32 +1,35 @@
 Godot Engine v4.8.dev4.official.b56a91878 - https://godotengine.org
+Vulkan 1.4.312 - Forward+ - Using Device #0: NVIDIA - NVIDIA GeForce GTX 980
 
 [CrystalBridge] Initializing generic Crystal GDExtension host...
 [CrystalBridge] Initializing generic Crystal GDExtension host...
-[CrystalBridge] Loaded game library from C:\Users\Ian\Documents\libgodot\demo\bin\game.dll via shadow copy C:\Users\Ian\Documents\libgodot\demo\bin\game_loaded.dll
-[CrystalBridge] Loaded game library from C:\Users\Ian\Documents\libgodot\demo\bin\game.dll via shadow copy C:\Users\Ian\Documents\libgodot\demo\bin\game_loaded.dll
+[CrystalBridge] Loaded game library from C:\Users\Ian\Documents\libgodot\demo\bin\game.dll via shadow copy C:\Users\Ian\Documents\libgodot\demo\bin\game_loaded_23036_1.dll
+[CrystalBridge] Loaded game library from C:\Users\Ian\Documents\libgodot\demo\bin\game.dll via shadow copy C:\Users\Ian\Documents\libgodot\demo\bin\game_loaded_23036_1.dll
 [Crystal Demo] Successfully loaded interactive showcase with 6 nodes!
 [CrystalBridge] Initializing Crystal runtime from game.dll...
 [CrystalBridge] Initializing Crystal runtime from game.dll...
 [CrystalBridge] Step 1: Getting CharacterBody3D method binds...
 [CrystalBridge] Step 1: Getting CharacterBody3D method binds...
-[CrystalBridge]   move_and_slide: Pointer(Void)@0x2da09883f80
-[CrystalBridge]   move_and_slide: Pointer(Void)@0x2da09883f80
-[CrystalBridge]   is_on_floor: Pointer(Void)@0x2da09886b80
-[CrystalBridge]   is_on_floor: Pointer(Void)@0x2da09886b80
-[CrystalBridge]   get_velocity: Pointer(Void)@0x2da09884d80
-[CrystalBridge]   get_velocity: Pointer(Void)@0x2da09884d80
-[CrystalBridge]   set_velocity: Pointer(Void)@0x2da09884b00
-[CrystalBridge]   set_velocity: Pointer(Void)@0x2da09884b00
+[CrystalBridge]   move_and_slide: Pointer(Void)@0x2671d136110
+[CrystalBridge]   move_and_slide: Pointer(Void)@0x2671d136110
+[CrystalBridge]   is_on_floor: Pointer(Void)@0x2671d138090
+[CrystalBridge]   is_on_floor: Pointer(Void)@0x2671d138090
+[CrystalBridge]   get_velocity: Pointer(Void)@0x2671d136c90
+[CrystalBridge]   get_velocity: Pointer(Void)@0x2671d136c90
+[CrystalBridge]   set_velocity: Pointer(Void)@0x2671d136c10
+[CrystalBridge]   set_velocity: Pointer(Void)@0x2671d136c10
 [CrystalBridge] Step 2: Getting Input singleton...
 [CrystalBridge] Step 2: Getting Input singleton...
-[CrystalBridge]   singleton_input: Pointer(Void)@0x2da08640a90
-[CrystalBridge]   singleton_input: Pointer(Void)@0x2da08640a90
-[CrystalBridge]   is_key_pressed: Pointer(Void)@0x2da07d66f50
-[CrystalBridge]   is_key_pressed: Pointer(Void)@0x2da07d66f50
-[CrystalBridge]   is_action_just_pressed: Pointer(Void)@0x2da07d67050
-[CrystalBridge]   is_action_just_pressed: Pointer(Void)@0x2da07d67050
-[CrystalBridge]   is_action_pressed: Pointer(Void)@0x2da07d66ed0
-[CrystalBridge]   is_action_pressed: Pointer(Void)@0x2da07d66ed0
+[CrystalBridge]   singleton_input: Pointer(Void)@0x26772775f10
+[CrystalBridge]   singleton_input: Pointer(Void)@0x26772775f10
+[CrystalBridge]   is_key_pressed: Pointer(Void)@0x26771ec50c0
+[CrystalBridge]   is_key_pressed: Pointer(Void)@0x26771ec50c0
+[CrystalBridge]   is_physical_key_pressed: Pointer(Void)@0x26771ec5140
+[CrystalBridge]   is_physical_key_pressed: Pointer(Void)@0x26771ec5140
+[CrystalBridge]   is_action_just_pressed: Pointer(Void)@0x26771ec53c0
+[CrystalBridge]   is_action_just_pressed: Pointer(Void)@0x26771ec53c0
+[CrystalBridge]   is_action_pressed: Pointer(Void)@0x26771ec51c0
+[CrystalBridge]   is_action_pressed: Pointer(Void)@0x26771ec51c0
 [CrystalBridge] Step 3: ClassRegistry has 6 entries
 [CrystalBridge] Step 3: ClassRegistry has 6 entries
 [CrystalBridge]   Registering entry: DemoScene < Node (props=0, sigs=0)...
@@ -79,18 +82,20 @@ Godot Engine v4.8.dev4.official.b56a91878 - https://godotengine.org
 [CrystalBridge]   Done registering DemoHUD!
 [CrystalBridge] Successfully registered 6 Crystal classes with Godot!
 [CrystalBridge] Successfully registered 6 Crystal classes with Godot!
-[SpinningCrystal] Ready at (0.0, 0.0, 0.0) with value 100!
-[SpinningCrystal] Ready at (0.0, 0.0, 0.0) with value 100!
-[SpinningCrystal] Ready at (0.0, 0.0, 0.0) with value 250!
-[SpinningCrystal] Ready at (0.0, 0.0, 0.0) with value 250!
-[SpinningCrystal] Ready at (0.0, 0.0, 0.0) with value 150!
-[SpinningCrystal] Ready at (0.0, 0.0, 0.0) with value 150!
-[SpinningCrystal] Ready at (0.0, 0.0, 0.0) with value 500!
-[SpinningCrystal] Ready at (0.0, 0.0, 0.0) with value 500!
+[DemoCharacter] Spawned at position: (0.0, 1.0, 3.0)
+[DemoCharacter] Spawned at position: (0.0, 1.0, 3.0)
+[SpinningCrystal] Ready at (-4.0, 1.2, -3.0) with value 100!
+[SpinningCrystal] Ready at (-4.0, 1.2, -3.0) with value 100!
+[SpinningCrystal] Ready at (0.0, 1.5, -6.0) with value 250!
+[SpinningCrystal] Ready at (0.0, 1.5, -6.0) with value 250!
+[SpinningCrystal] Ready at (4.0, 1.2, -3.0) with value 150!
+[SpinningCrystal] Ready at (4.0, 1.2, -3.0) with value 150!
+[SpinningCrystal] Ready at (0.0, 1.2, 0.0) with value 500!
+[SpinningCrystal] Ready at (0.0, 1.2, 0.0) with value 500!
 [CompanionController] Initialized GDScript interop bindings!
 [CompanionController] Initialized GDScript interop bindings!
-[GDScript] Calling calculate_bonus on Pointer(Void)@0x2da0c7c3440
-[GDScript] Calling calculate_bonus on Pointer(Void)@0x2da0c7c3440
+[GDScript] Calling calculate_bonus on Pointer(Void)@0x2671e77eb40
+[GDScript] Calling calculate_bonus on Pointer(Void)@0x2671e77eb40
 [GDScript] Calling static get_system_status
 [GDScript] Calling static get_system_status
 [DemoHUD] HUD activated with Range cohesion and health bar tracking.

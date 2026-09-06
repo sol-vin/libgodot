@@ -78,7 +78,7 @@ func execute_crystal_build() -> bool:
 		var status = GDExtensionManager.reload_extension(ext_path)
 		print("[CrystalPlugin] GDExtension reloaded (status: %d). New classes are now available in Editor." % status)
 	else:
-		GDExtensionManager.reload_extensions()
-		print("[CrystalPlugin] GDExtension reload requested.")
+		var status = GDExtensionManager.load_extension(ext_path)
+		print("[CrystalPlugin] GDExtension loaded (status: %d)." % status)
 
 	return true

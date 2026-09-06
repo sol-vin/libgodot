@@ -117,12 +117,12 @@ mesh = SubResource("BoxMesh_floor")
 shape = SubResource("BoxShape3D_floor")
 
 [node name="DemoPlayer" type="DemoPlayer" parent="." unique_id=899405839]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 3)
 speed = 7.0
 sprint_multiplier = 1.8
 jump_velocity = 8.0
 gravity = 18.0
 max_health = 100
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 3)
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="DemoPlayer" unique_id=941005614]
 mesh = SubResource("CapsuleMesh_player")
@@ -134,60 +134,58 @@ shape = SubResource("CapsuleShape3D_player")
 transform = Transform3D(1, 0, 0, 0, 0.906308, 0.422618, 0, -0.422618, 0.906308, 0, 6, 12)
 
 [node name="GoldCrystal" type="SpinningCrystal" parent="." unique_id=3001]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 1.2, -3)
 rotation_speed = 3.0
 bob_height = 0.3
 bob_frequency = 3.5
-score_value = 100
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 1.2, -3)
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="GoldCrystal"]
+[node name="MeshInstance3D" type="MeshInstance3D" parent="GoldCrystal" unique_id=1852853055]
 mesh = SubResource("PrismMesh_gem")
 
 [node name="CyanCrystal" type="SpinningCrystal" parent="." unique_id=3002]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, -6)
 rotation_speed = 2.0
 bob_height = 0.4
 bob_frequency = 2.5
 score_value = 250
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, -6)
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="CyanCrystal"]
+[node name="MeshInstance3D" type="MeshInstance3D" parent="CyanCrystal" unique_id=11251394]
 mesh = SubResource("PrismMesh_gem_cyan")
 
 [node name="MagentaCrystal" type="SpinningCrystal" parent="." unique_id=3003]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 1.2, -3)
 rotation_speed = 4.0
-bob_height = 0.25
 bob_frequency = 4.0
 score_value = 150
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 1.2, -3)
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="MagentaCrystal"]
+[node name="MeshInstance3D" type="MeshInstance3D" parent="MagentaCrystal" unique_id=1230234464]
 mesh = SubResource("PrismMesh_gem_magenta")
 
 [node name="EmeraldCrystal" type="SpinningCrystal" parent="." unique_id=3004]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
 rotation_speed = 3.5
 bob_height = 0.35
 bob_frequency = 3.2
 score_value = 500
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="EmeraldCrystal"]
+[node name="MeshInstance3D" type="MeshInstance3D" parent="EmeraldCrystal" unique_id=2053547695]
 mesh = SubResource("PrismMesh_gem_emerald")
 
 [node name="CompanionBotVisual" type="Node3D" parent="." unique_id=4000]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5, 1.2, 3)
 
-[node name="SphereMesh" type="MeshInstance3D" parent="CompanionBotVisual"]
+[node name="SphereMesh" type="MeshInstance3D" parent="CompanionBotVisual" unique_id=881231440]
 mesh = SubResource("SphereMesh_companion")
 
 [node name="CompanionController" type="CompanionController" parent="." unique_id=4001]
 
 [node name="UI" type="DemoHUD" parent="." unique_id=1478088981]
-layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 
 [node name="MarginContainer" type="MarginContainer" parent="UI" unique_id=1067628165]
 layout_mode = 0

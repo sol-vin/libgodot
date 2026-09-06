@@ -212,6 +212,8 @@ struct CrystalClassDesc {
 
     int signal_count;
     CrystalSignalDesc signals[16];
+
+    const CrystalClassDesc *parent_desc;
 };
 
 // Generic Instance Wrapper linking Godot Object to Crystal Instance
@@ -332,16 +334,20 @@ static GDExtensionBool generic_class_set(GDExtensionClassInstancePtr p_instance,
     GenericExtensionInstance *inst = (GenericExtensionInstance*)p_instance;
     if (!inst || !inst->desc || !inst->desc->set_property || !inst->crystal_instance) return 0;
 
-    for (int i = 0; i < inst->desc->property_count; i++) {
-        void *prop_sn = make_string_name(inst->desc->properties[i].name);
-        bool match = (memcmp(p_name, prop_sn, sizeof(void*)) == 0);
-        free(prop_sn);
-        if (match) {
-            alignas(void*) char raw_buf[64] = {};
-            bridge_type_from_variant(inst->desc->properties[i].variant_type, raw_buf, p_value);
-            inst->desc->set_property(inst->crystal_instance, inst->desc->properties[i].name, raw_buf);
-            return 1;
+    const CrystalClassDesc *curr = inst->desc;
+    while (curr) {
+        for (int i = 0; i < curr->property_count; i++) {
+            void *prop_sn = make_string_name(curr->properties[i].name);
+            bool match = (memcmp(p_name, prop_sn, sizeof(void*)) == 0);
+            free(prop_sn);
+            if (match) {
+                alignas(void*) char raw_buf[64] = {};
+                bridge_type_from_variant(curr->properties[i].variant_type, raw_buf, p_value);
+                inst->desc->set_property(inst->crystal_instance, curr->properties[i].name, raw_buf);
+                return 1;
+            }
         }
+        curr = curr->parent_desc;
     }
     return 0;
 }
@@ -350,16 +356,20 @@ static GDExtensionBool generic_class_get(GDExtensionClassInstancePtr p_instance,
     GenericExtensionInstance *inst = (GenericExtensionInstance*)p_instance;
     if (!inst || !inst->desc || !inst->desc->get_property || !inst->crystal_instance) return 0;
 
-    for (int i = 0; i < inst->desc->property_count; i++) {
-        void *prop_sn = make_string_name(inst->desc->properties[i].name);
-        bool match = (memcmp(p_name, prop_sn, sizeof(void*)) == 0);
-        free(prop_sn);
-        if (match) {
-            alignas(void*) char raw_buf[64] = {};
-            inst->desc->get_property(inst->crystal_instance, inst->desc->properties[i].name, raw_buf);
-            bridge_variant_from_type(inst->desc->properties[i].variant_type, r_ret, raw_buf);
-            return 1;
+    const CrystalClassDesc *curr = inst->desc;
+    while (curr) {
+        for (int i = 0; i < curr->property_count; i++) {
+            void *prop_sn = make_string_name(curr->properties[i].name);
+            bool match = (memcmp(p_name, prop_sn, sizeof(void*)) == 0);
+            free(prop_sn);
+            if (match) {
+                alignas(void*) char raw_buf[64] = {};
+                inst->desc->get_property(inst->crystal_instance, curr->properties[i].name, raw_buf);
+                bridge_variant_from_type(curr->properties[i].variant_type, r_ret, raw_buf);
+                return 1;
+            }
         }
+        curr = curr->parent_desc;
     }
     return 0;
 }
@@ -375,6 +385,15 @@ static int bridge_register_class(const CrystalClassDesc *p_desc) {
     // Save copy in static storage
     CrystalClassDesc *desc = &g_registered_classes[g_registered_class_count++];
     memcpy(desc, p_desc, sizeof(CrystalClassDesc));
+
+    // Link parent_desc if parent is also a registered Crystal class
+    desc->parent_desc = nullptr;
+    for (int i = 0; i < g_registered_class_count - 1; i++) {
+        if (strcmp(g_registered_classes[i].name, desc->parent_name) == 0) {
+            desc->parent_desc = &g_registered_classes[i];
+            break;
+        }
+    }
 
     void *class_sn = make_string_name(desc->name);
     void *parent_sn = make_string_name(desc->parent_name);
@@ -494,6 +513,173 @@ static GDExtensionObjectPtr bridge_get_singleton(const char *name) {
     return s;
 }
 
+struct BridgeSignalArg {
+    int type;
+    const void *data;
+};
+
+static GDExtensionMethodBindPtr mb_object_emit_signal = nullptr;
+static GDExtensionVariantFromTypeConstructorFunc gd_variant_from_string_name = nullptr;
+static GDExtensionPtrDestructor gd_string_name_destroy = nullptr;
+
+static void bridge_object_emit_signal(GDExtensionObjectPtr instance, const char *signal_name, const BridgeSignalArg *args, int arg_count) {
+    if (!instance || !signal_name || !gd_classdb_get_method_bind || !gd_object_method_bind_call) return;
+    if (!mb_object_emit_signal) {
+        void *sn_obj = make_string_name("Object");
+        void *sn_emit = make_string_name("emit_signal");
+        mb_object_emit_signal = gd_classdb_get_method_bind(sn_obj, sn_emit, 4047867050ULL);
+        free(sn_obj); free(sn_emit);
+    }
+    if (!mb_object_emit_signal) return;
+
+    if (!gd_variant_from_string_name && gd_get_variant_from_type_constructor) {
+        gd_variant_from_string_name = gd_get_variant_from_type_constructor(GDEXTENSION_VARIANT_TYPE_STRING_NAME);
+    }
+    if (!gd_string_name_destroy && gd_variant_get_ptr_destructor) {
+        gd_string_name_destroy = gd_variant_get_ptr_destructor(GDEXTENSION_VARIANT_TYPE_STRING_NAME);
+    }
+
+    void *sn = make_string_name(signal_name);
+    alignas(void*) char var_sig_name[24];
+    memset(var_sig_name, 0, sizeof(var_sig_name));
+    if (gd_variant_from_string_name) {
+        gd_variant_from_string_name(var_sig_name, sn);
+    }
+
+    alignas(void*) char var_args[16][24];
+    const void *call_args[17];
+    call_args[0] = var_sig_name;
+
+    int actual_count = (arg_count < 16) ? arg_count : 16;
+    for (int i = 0; i < actual_count; i++) {
+        memset(var_args[i], 0, sizeof(var_args[i]));
+        int t = args[i].type;
+        const void *d = args[i].data;
+        if (d) {
+            if (t == 1) { // bool
+                uint8_t val = *(const uint8_t*)d;
+                GDExtensionVariantFromTypeConstructorFunc conv = gd_get_variant_from_type_constructor(GDEXTENSION_VARIANT_TYPE_BOOL);
+                if (conv) conv(var_args[i], &val);
+            } else if (t == 2) { // int64
+                int64_t val = *(const int64_t*)d;
+                GDExtensionVariantFromTypeConstructorFunc conv = gd_get_variant_from_type_constructor(GDEXTENSION_VARIANT_TYPE_INT);
+                if (conv) conv(var_args[i], &val);
+            } else if (t == 3) { // double
+                double val = *(const double*)d;
+                GDExtensionVariantFromTypeConstructorFunc conv = gd_get_variant_from_type_constructor(GDEXTENSION_VARIANT_TYPE_FLOAT);
+                if (conv) conv(var_args[i], &val);
+            } else if (t == 4) { // string
+                void *gd_str = make_string((const char*)d);
+                if (gd_variant_from_string) gd_variant_from_string(var_args[i], gd_str);
+                if (gd_string_destroy) gd_string_destroy(gd_str);
+                free(gd_str);
+            } else if (t == 5) { // Vector2
+                GDExtensionVariantFromTypeConstructorFunc conv = gd_get_variant_from_type_constructor(GDEXTENSION_VARIANT_TYPE_VECTOR2);
+                if (conv) conv(var_args[i], (GDExtensionTypePtr)d);
+            } else if (t == 6) { // Vector3
+                GDExtensionVariantFromTypeConstructorFunc conv = gd_get_variant_from_type_constructor(GDEXTENSION_VARIANT_TYPE_VECTOR3);
+                if (conv) conv(var_args[i], (GDExtensionTypePtr)d);
+            } else if (t == 7) { // Object*
+                GDExtensionVariantFromTypeConstructorFunc conv = gd_get_variant_from_type_constructor(GDEXTENSION_VARIANT_TYPE_OBJECT);
+                if (conv) conv(var_args[i], (GDExtensionTypePtr)d);
+            }
+        }
+        call_args[i + 1] = var_args[i];
+    }
+
+    alignas(void*) char var_ret[24];
+    memset(var_ret, 0, sizeof(var_ret));
+    GDExtensionCallError call_err;
+    gd_object_method_bind_call(mb_object_emit_signal, instance, (const GDExtensionConstVariantPtr*)call_args, actual_count + 1, var_ret, &call_err);
+
+    // Cleanup
+    if (gd_variant_destroy) {
+        gd_variant_destroy(var_ret);
+        for (int i = 0; i < actual_count; i++) {
+            gd_variant_destroy(var_args[i]);
+        }
+        gd_variant_destroy(var_sig_name);
+    }
+    if (gd_string_name_destroy) {
+        gd_string_name_destroy(sn);
+    }
+    free(sn);
+}
+
+static GDExtensionMethodBindPtr mb_node_find_child = nullptr;
+static GDExtensionObjectPtr bridge_node_find_child(GDExtensionObjectPtr node, const char *pattern, bool recursive, bool owned) {
+    if (!node || !pattern || !gd_classdb_get_method_bind || !gd_object_method_bind_ptrcall) return nullptr;
+    if (!mb_node_find_child) {
+        void *sn_node = make_string_name("Node");
+        void *sn_fc = make_string_name("find_child");
+        mb_node_find_child = gd_classdb_get_method_bind(sn_node, sn_fc, 2008217037ULL);
+        free(sn_node); free(sn_fc);
+    }
+    if (!mb_node_find_child) return nullptr;
+
+    void *gd_str = make_string(pattern);
+    uint8_t rec = recursive ? 1 : 0;
+    uint8_t own = owned ? 1 : 0;
+    const void *args[3] = { gd_str, &rec, &own };
+    GDExtensionObjectPtr ret_node = nullptr;
+    gd_object_method_bind_ptrcall(mb_node_find_child, node, args, &ret_node);
+
+    if (gd_string_destroy) gd_string_destroy(gd_str);
+    free(gd_str);
+
+    return ret_node;
+}
+
+static GDExtensionMethodBindPtr mb_node_get_node = nullptr;
+static GDExtensionObjectPtr bridge_node_get_node(GDExtensionObjectPtr node, const char *path) {
+    if (!node || !path || !gd_classdb_get_method_bind || !gd_object_method_bind_ptrcall) return nullptr;
+    if (!mb_node_get_node) {
+        void *sn_node = make_string_name("Node");
+        void *sn_gn = make_string_name("get_node_or_null");
+        mb_node_get_node = gd_classdb_get_method_bind(sn_node, sn_gn, 2734337346ULL);
+        free(sn_node); free(sn_gn);
+    }
+    if (!mb_node_get_node) return nullptr;
+
+    void *gd_str = make_string(path);
+    alignas(void*) char var_str[24];
+    memset(var_str, 0, sizeof(var_str));
+    if (gd_variant_from_string) gd_variant_from_string(var_str, gd_str);
+
+    alignas(void*) char np_buf[8];
+    memset(np_buf, 0, sizeof(np_buf));
+    bridge_type_from_variant(GDEXTENSION_VARIANT_TYPE_NODE_PATH, np_buf, var_str);
+
+    const void *args[1] = { np_buf };
+    GDExtensionObjectPtr ret_node = nullptr;
+    gd_object_method_bind_ptrcall(mb_node_get_node, node, args, &ret_node);
+
+    if (gd_variant_get_ptr_destructor) {
+        GDExtensionPtrDestructor np_des = gd_variant_get_ptr_destructor(GDEXTENSION_VARIANT_TYPE_NODE_PATH);
+        if (np_des) np_des(np_buf);
+    }
+    if (gd_variant_destroy) gd_variant_destroy(var_str);
+    if (gd_string_destroy) gd_string_destroy(gd_str);
+    free(gd_str);
+
+    return ret_node;
+}
+
+static GDExtensionMethodBindPtr mb_range_set_value = nullptr;
+static void bridge_range_set_value(GDExtensionObjectPtr range_obj, double value) {
+    if (!range_obj || !gd_classdb_get_method_bind || !gd_object_method_bind_ptrcall) return;
+    if (!mb_range_set_value) {
+        void *sn_range = make_string_name("Range");
+        void *sn_sv = make_string_name("set_value");
+        mb_range_set_value = gd_classdb_get_method_bind(sn_range, sn_sv, 373806689ULL);
+        free(sn_range); free(sn_sv);
+    }
+    if (mb_range_set_value) {
+        const void *args[1] = { &value };
+        gd_object_method_bind_ptrcall(mb_range_set_value, range_obj, args, nullptr);
+    }
+}
+
 // Exported BridgeAPI table provided to Crystal
 struct BridgeAPI {
     int (*register_class)(const CrystalClassDesc *desc);
@@ -509,6 +695,10 @@ struct BridgeAPI {
     void (*log_print)(const char *msg);
     void (*log_error)(const char *desc, const char *msg, const char *func, const char *file, int line);
     void (*log_warning)(const char *desc, const char *msg, const char *func, const char *file, int line);
+    void (*object_emit_signal)(GDExtensionObjectPtr instance, const char *signal_name, const BridgeSignalArg *args, int arg_count);
+    GDExtensionObjectPtr (*node_find_child)(GDExtensionObjectPtr node, const char *pattern, bool recursive, bool owned);
+    GDExtensionObjectPtr (*node_get_node)(GDExtensionObjectPtr node, const char *path);
+    void (*range_set_value)(GDExtensionObjectPtr range_obj, double value);
 };
 
 static BridgeAPI g_bridge_api = {
@@ -524,7 +714,11 @@ static BridgeAPI g_bridge_api = {
     bridge_variant_from_type,
     godot_log_print,
     godot_log_error,
-    godot_log_warning
+    godot_log_warning,
+    bridge_object_emit_signal,
+    bridge_node_find_child,
+    bridge_node_get_node,
+    bridge_range_set_value
 };
 
 // C API exports
@@ -540,6 +734,18 @@ extern "C" {
     }
     GDE_EXPORT void crystal_godot_warning(const char *msg, const char *func, const char *file, int line) {
         godot_log_warning(msg, nullptr, func, file, line);
+    }
+    GDE_EXPORT void crystal_object_emit_signal(GDExtensionObjectPtr instance, const char *signal_name, const BridgeSignalArg *args, int arg_count) {
+        bridge_object_emit_signal(instance, signal_name, args, arg_count);
+    }
+    GDE_EXPORT GDExtensionObjectPtr crystal_node_find_child(GDExtensionObjectPtr node, const char *pattern, bool recursive, bool owned) {
+        return bridge_node_find_child(node, pattern, recursive, owned);
+    }
+    GDE_EXPORT GDExtensionObjectPtr crystal_node_get_node(GDExtensionObjectPtr node, const char *path) {
+        return bridge_node_get_node(node, path);
+    }
+    GDE_EXPORT void crystal_range_set_value(GDExtensionObjectPtr range_obj, double value) {
+        bridge_range_set_value(range_obj, value);
     }
     GDE_EXPORT const BridgeAPI* crystal_bridge_get_api() {
         return &g_bridge_api;
@@ -582,10 +788,13 @@ static void load_crystal_game_library() {
     char candidate_path[MAX_PATH] = {0};
     char shadow_path[MAX_PATH] = {0};
 
+    static int s_reload_count = 0;
+    s_reload_count++;
+
     // 1. Primary candidate: game.dll sitting directly next to crystal_bridge.dll
     if (bridge_dir[0] != '\0') {
         snprintf(candidate_path, sizeof(candidate_path), "%s\\game.dll", bridge_dir);
-        snprintf(shadow_path, sizeof(shadow_path), "%s\\game_loaded.dll", bridge_dir);
+        snprintf(shadow_path, sizeof(shadow_path), "%s\\game_loaded_%lu_%d.dll", bridge_dir, GetCurrentProcessId(), s_reload_count);
         SetDllDirectoryA(bridge_dir);
     }
 
@@ -627,12 +836,15 @@ static void load_crystal_game_library() {
         const char *fallbacks[] = { "demo/bin/game.dll", "bin/game.dll", "game.dll" };
         for (int i = 0; i < 3; i++) {
             if (GetFileAttributesA(fallbacks[i]) == INVALID_FILE_ATTRIBUTES) continue;
-            snprintf(shadow_path, sizeof(shadow_path), "%s_loaded.dll", fallbacks[i]);
+            snprintf(shadow_path, sizeof(shadow_path), "%s_loaded_%lu_%d.dll", fallbacks[i], GetCurrentProcessId(), s_reload_count);
             CopyFileA(fallbacks[i], shadow_path, FALSE);
-            hGame = LoadLibraryA(shadow_path);
+            hGame = LoadLibraryExA(shadow_path, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
+            if (!hGame) {
+                hGame = LoadLibraryA(shadow_path);
+            }
             if (hGame) {
-                char buf[256];
-                snprintf(buf, sizeof(buf), "[CrystalBridge] Loaded game library from fallback %s", fallbacks[i]);
+                char buf[512];
+                snprintf(buf, sizeof(buf), "[CrystalBridge] Loaded fallback game library from %s via %s", fallbacks[i], shadow_path);
                 godot_log_print(buf);
                 g_hGame = hGame;
                 break;

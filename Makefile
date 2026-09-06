@@ -95,8 +95,8 @@ generate:
 # Copy Crystal runtime dependencies (gc.dll, iconv-2.dll, pcre2-8.dll) and libgodot.dll
 deps: dirs
 	@echo [Dependencies] Ensuring runtime DLLs are available in bin/ and demo/bin/...
-	@$(POWERSHELL) "$$c = Split-Path (Get-Command crystal -ErrorAction SilentlyContinue).Source; if ($$c) { foreach ($$dll in @('gc.dll','iconv-2.dll','pcre2-8.dll')) { $$src = Join-Path $$c $$dll; if (Test-Path $$src) { Copy-Item $$src '$(BIN_DIR)/' -Force; Copy-Item $$src '$(DEMO_BIN_DIR)/' -Force; if (Test-Path 'template/bin') { Copy-Item $$src 'template/bin/' -Force } } } }"
-	@$(POWERSHELL) "if (Test-Path 'godot-src/bin/godot.windows.template_debug.x86_64.dll') { Copy-Item 'godot-src/bin/godot.windows.template_debug.x86_64.dll' '$(BIN_DIR)/libgodot.dll' -Force; Copy-Item 'godot-src/bin/godot.windows.template_debug.x86_64.dll' '$(DEMO_BIN_DIR)/libgodot.dll' -Force }; if ((Test-Path '$(BIN_DIR)/libgodot.dll') -and (-not (Test-Path '$(DEMO_BIN_DIR)/libgodot.dll'))) { Copy-Item '$(BIN_DIR)/libgodot.dll' '$(DEMO_BIN_DIR)/libgodot.dll' -Force }"
+	@$(POWERSHELL) "$$c = Split-Path (Get-Command crystal -ErrorAction SilentlyContinue).Source; if ($$c) { foreach ($$dll in @('gc.dll','iconv-2.dll','pcre2-8.dll')) { $$src = Join-Path $$c $$dll; if (Test-Path $$src) { if (-not (Test-Path ('$(BIN_DIR)/' + $$dll))) { Copy-Item $$src '$(BIN_DIR)/' -Force }; if (-not (Test-Path ('$(DEMO_BIN_DIR)/' + $$dll))) { Copy-Item $$src '$(DEMO_BIN_DIR)/' -Force }; if ((Test-Path 'template/bin') -and (-not (Test-Path ('template/bin/' + $$dll)))) { Copy-Item $$src 'template/bin/' -Force } } } }"
+	@$(POWERSHELL) "if ((Test-Path 'godot-src/bin/godot.windows.template_debug.x86_64.dll') -and (-not (Test-Path '$(BIN_DIR)/libgodot.dll'))) { Copy-Item 'godot-src/bin/godot.windows.template_debug.x86_64.dll' '$(BIN_DIR)/libgodot.dll' -Force }; if ((Test-Path '$(BIN_DIR)/libgodot.dll') -and (-not (Test-Path '$(DEMO_BIN_DIR)/libgodot.dll'))) { Copy-Item '$(BIN_DIR)/libgodot.dll' '$(DEMO_BIN_DIR)/libgodot.dll' -Force }"
 
 # Synchronize compiled bridge to consumer projects
 sync:

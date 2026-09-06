@@ -41,11 +41,11 @@ module Godot
       getter class_name : String
       getter parent_name : String
       getter create_proc : (Void* -> Object)
-      getter has_ready : Bool
-      getter has_process : Bool
-      getter has_physics_process : Bool
-      getter properties : Array(PropertyInfo)
-      getter signals : Array(SignalInfo)
+      property has_ready : Bool
+      property has_process : Bool
+      property has_physics_process : Bool
+      property properties : Array(PropertyInfo)
+      property signals : Array(SignalInfo)
 
       def initialize(
         @class_name : String,
@@ -63,6 +63,11 @@ module Godot
     class_getter entries = Array(Entry).new
 
     def self.register(entry : Entry)
+      if parent = find(entry.parent_name)
+        entry.has_ready ||= parent.has_ready
+        entry.has_process ||= parent.has_process
+        entry.has_physics_process ||= parent.has_physics_process
+      end
       @@entries << entry
     end
 
@@ -109,6 +114,11 @@ macro node(decl, &block)
     sigs = [] of Nil
     methods_doc = [] of Nil
     class_doc = ""
+    if decl.doc_comment && decl.doc_comment != ""
+      class_doc = decl.doc_comment
+    elsif block.body.doc_comment && block.body.doc_comment != ""
+      class_doc = block.body.doc_comment
+    end
 
     stmts = block.body.is_a?(Expressions) ? block.body.expressions : [block.body]
     last_anno = nil
@@ -121,6 +131,8 @@ macro node(decl, &block)
       {% else %}
         {% last_anno = stmt %}
       {% end %}
+    {% elsif stmt.is_a?(StringLiteral) && class_doc.empty? %}
+      {% class_doc = stmt.value %}
     {% elsif stmt.is_a?(Def) %}
       {% if stmt.name.stringify == "_ready" %}
         {% has_ready = true %}
@@ -182,6 +194,8 @@ macro node(decl, &block)
       when "_physics_process"
         _physics_process(delta.to_f64)
       {% end %}
+      else
+        super
       end
     end
 
@@ -204,6 +218,8 @@ macro node(decl, &block)
             self.{{var_name.id}} = val_ptr.as(UInt8*).value != 0_u8
           {% end %}
       {% end %}
+      else
+        super
       end
     end
 
@@ -222,6 +238,8 @@ macro node(decl, &block)
             ret_ptr.as(UInt8*).value = self.{{var_name.id}} ? 1_u8 : 0_u8
           {% end %}
       {% end %}
+      else
+        super
       end
     end
   end

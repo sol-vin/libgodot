@@ -40,6 +40,13 @@ module Godot
 
       signal_count : Int32
       signals : CrystalSignalDesc[16]
+
+      parent_desc : Void*
+    end
+
+    struct CrystalSignalArg
+      arg_type : Int32
+      data : Void*
     end
 
     struct BridgeAPI
@@ -56,6 +63,10 @@ module Godot
       log_print : (LibC::Char* -> Void)
       log_error : (LibC::Char*, LibC::Char*, LibC::Char*, LibC::Char*, Int32 -> Void)
       log_warning : (LibC::Char*, LibC::Char*, LibC::Char*, LibC::Char*, Int32 -> Void)
+      object_emit_signal : (Void*, LibC::Char*, CrystalSignalArg*, Int32 -> Void)
+      node_find_child : (Void*, LibC::Char*, Bool, Bool -> Void*)
+      node_get_node : (Void*, LibC::Char* -> Void*)
+      range_set_value : (Void*, Float64 -> Void)
     end
   end
 
@@ -70,6 +81,7 @@ module Godot
 
     @@singleton_input : Void* = Pointer(Void).null
     @@mb_input_is_key_pressed : Void* = Pointer(Void).null
+    @@mb_input_is_physical_key_pressed : Void* = Pointer(Void).null
     @@mb_input_is_action_just_pressed : Void* = Pointer(Void).null
     @@mb_input_is_action_pressed : Void* = Pointer(Void).null
 
@@ -107,6 +119,8 @@ module Godot
       if !api.value.get_method_bind.pointer.null?
         @@mb_input_is_key_pressed = api.value.get_method_bind.call("Input".to_unsafe, "is_key_pressed".to_unsafe, 1938909964_i64)
         print "[CrystalBridge]   is_key_pressed: #{@@mb_input_is_key_pressed}"
+        @@mb_input_is_physical_key_pressed = api.value.get_method_bind.call("Input".to_unsafe, "is_physical_key_pressed".to_unsafe, 1938909964_i64)
+        print "[CrystalBridge]   is_physical_key_pressed: #{@@mb_input_is_physical_key_pressed}"
         @@mb_input_is_action_just_pressed = api.value.get_method_bind.call("Input".to_unsafe, "is_action_just_pressed".to_unsafe, 1558498928_i64)
         print "[CrystalBridge]   is_action_just_pressed: #{@@mb_input_is_action_just_pressed}"
         @@mb_input_is_action_pressed = api.value.get_method_bind.call("Input".to_unsafe, "is_action_pressed".to_unsafe, 1558498928_i64)
@@ -314,6 +328,16 @@ module Godot
       ret != 0_u8
     end
 
+    def self.is_physical_key_pressed(key : Int32) : Bool
+      return false if @@singleton_input.null? || @@mb_input_is_physical_key_pressed.null? || @@api.null?
+      k = key.to_i64
+      arg = pointerof(k).as(Void*)
+      args = pointerof(arg)
+      ret = 0_u8
+      @@api.value.method_bind_ptrcall.call(@@mb_input_is_physical_key_pressed, @@singleton_input, args, pointerof(ret).as(Void*))
+      ret != 0_u8
+    end
+
     def self.is_action_just_pressed(action : String) : Bool
       return false if @@singleton_input.null? || @@mb_input_is_action_just_pressed.null? || @@api.null?
       sn = @@api.value.make_string_name.call(action.to_unsafe)
@@ -338,6 +362,70 @@ module Godot
       @@api.value.method_bind_ptrcall.call(@@mb_input_is_action_pressed, @@singleton_input, args.to_unsafe, pointerof(ret).as(Void*))
       @@api.value.free_string_name.call(sn)
       ret != 0_u8
+    end
+
+    def self.emit_signal(godot_obj : Void*, signal_name : String) : Void
+      return if godot_obj.null? || @@api.null? || @@api.value.object_emit_signal.pointer.null?
+      @@api.value.object_emit_signal.call(godot_obj, signal_name.to_unsafe, Pointer(LibBridge::CrystalSignalArg).null, 0)
+    end
+
+    def self.emit_signal(godot_obj : Void*, signal_name : String, *args) : Void
+      return if godot_obj.null? || @@api.null? || @@api.value.object_emit_signal.pointer.null?
+      if args.empty?
+        emit_signal(godot_obj, signal_name)
+        return
+      end
+
+      c_args = StaticArray(LibBridge::CrystalSignalArg, 16).new(LibBridge::CrystalSignalArg.new)
+      int_storage = StaticArray(Int64, 16).new(0_i64)
+      float_storage = StaticArray(Float64, 16).new(0.0_f64)
+      bool_storage = StaticArray(UInt8, 16).new(0_u8)
+      v2_storage = StaticArray(Godot::Vector2, 16).new(Godot::Vector2.new)
+      v3_storage = StaticArray(Godot::Vector3, 16).new(Godot::Vector3.new)
+      obj_storage = StaticArray(Void*, 16).new(Pointer(Void).null)
+
+      count = [args.size, 16].min
+      args.each_with_index do |arg, idx|
+        break if idx >= 16
+        if arg.is_a?(Bool)
+          bool_storage[idx] = arg ? 1_u8 : 0_u8
+          c_args[idx] = LibBridge::CrystalSignalArg.new(arg_type: 1, data: (bool_storage.to_unsafe + idx).as(Void*))
+        elsif arg.is_a?(Int)
+          int_storage[idx] = arg.to_i64
+          c_args[idx] = LibBridge::CrystalSignalArg.new(arg_type: 2, data: (int_storage.to_unsafe + idx).as(Void*))
+        elsif arg.is_a?(Float)
+          float_storage[idx] = arg.to_f64
+          c_args[idx] = LibBridge::CrystalSignalArg.new(arg_type: 3, data: (float_storage.to_unsafe + idx).as(Void*))
+        elsif arg.is_a?(String)
+          c_args[idx] = LibBridge::CrystalSignalArg.new(arg_type: 4, data: arg.to_unsafe.as(Void*))
+        elsif arg.is_a?(Godot::Vector2)
+          v2_storage[idx] = arg
+          c_args[idx] = LibBridge::CrystalSignalArg.new(arg_type: 5, data: (v2_storage.to_unsafe + idx).as(Void*))
+        elsif arg.is_a?(Godot::Vector3)
+          v3_storage[idx] = arg
+          c_args[idx] = LibBridge::CrystalSignalArg.new(arg_type: 6, data: (v3_storage.to_unsafe + idx).as(Void*))
+        elsif arg.is_a?(Godot::Object)
+          obj_storage[idx] = arg.pointer
+          c_args[idx] = LibBridge::CrystalSignalArg.new(arg_type: 7, data: (obj_storage.to_unsafe + idx).as(Void*))
+        end
+      end
+
+      @@api.value.object_emit_signal.call(godot_obj, signal_name.to_unsafe, c_args.to_unsafe, count)
+    end
+
+    def self.node_find_child(godot_obj : Void*, pattern : String, recursive : Bool = true, owned : Bool = false) : Void*
+      return Pointer(Void).null if godot_obj.null? || @@api.null? || @@api.value.node_find_child.pointer.null?
+      @@api.value.node_find_child.call(godot_obj, pattern.to_unsafe, recursive, owned)
+    end
+
+    def self.node_get_node(godot_obj : Void*, path : String) : Void*
+      return Pointer(Void).null if godot_obj.null? || @@api.null? || @@api.value.node_get_node.pointer.null?
+      @@api.value.node_get_node.call(godot_obj, path.to_unsafe)
+    end
+
+    def self.range_set_value(godot_obj : Void*, value : Float64) : Void
+      return if godot_obj.null? || @@api.null? || @@api.value.range_set_value.pointer.null?
+      @@api.value.range_set_value.call(godot_obj, value)
     end
   end
 end

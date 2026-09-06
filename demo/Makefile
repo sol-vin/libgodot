@@ -28,7 +28,7 @@ dirs:
 	@$(POWERSHELL) "if (-not (Test-Path '$(BIN_DIR)')) { New-Item -ItemType Directory -Force -Path '$(BIN_DIR)' | Out-Null }"
 
 deps: dirs
-	@$(POWERSHELL) "$$c = Split-Path (Get-Command crystal -ErrorAction SilentlyContinue).Source; if ($$c) { foreach ($$dll in @('gc.dll','iconv-2.dll','pcre2-8.dll')) { $$src = Join-Path $$c $$dll; if (Test-Path $$src) { Copy-Item $$src '$(BIN_DIR)/' -Force } } }"
+	@$(POWERSHELL) "$$c = Split-Path (Get-Command crystal -ErrorAction SilentlyContinue).Source; if ($$c) { foreach ($$dll in @('gc.dll','iconv-2.dll','pcre2-8.dll')) { $$src = Join-Path $$c $$dll; if ((Test-Path $$src) -and (-not (Test-Path ('$(BIN_DIR)/' + $$dll)))) { Copy-Item $$src '$(BIN_DIR)/' -Force } } }"
 
 bridge: dirs
 	@$(POWERSHELL) "if (Test-Path '$(BRIDGE_SRC)') { Copy-Item '$(BRIDGE_SRC)' '$(BIN_DIR)/crystal_bridge.dll' -Force }"

@@ -82,8 +82,12 @@ module Godot
     def _godot_get_property(prop_name : String, ret_ptr : Void*) : Void
     end
 
+    def emit_signal(name : String) : Void
+      Bridge.emit_signal(@pointer, name)
+    end
+
     def emit_signal(name : String, *args) : Void
-      # Dispatches signal via Godot GDExtension C-API or internal callback table
+      Bridge.emit_signal(@pointer, name, *args)
     end
 
     def connect(signal_name : String, callback : Proc) : Void
@@ -129,7 +133,10 @@ module Godot
     end
   end
 
-  class SceneTree < Object
+  class MainLoop < Object
+  end
+
+  class SceneTree < MainLoop
     property current_scene : Node = Node.new
     property root : Node = Node.new
   end
@@ -142,17 +149,25 @@ module Godot
     end
 
     def get_node(path : String) : Node?
-      nil
+      ptr = Bridge.node_get_node(@pointer, path)
+      ptr.null? ? nil : Node.new(ptr)
     end
 
     def get_node_as(type : T.class, path : String) : T? forall T
       if node = get_node(path)
-        node.as?(T)
+        T.new(node.pointer)
       end
     end
 
-    def find_child(pattern : String, recursive : Bool = true, owned : Bool = true) : Node?
-      nil
+    def find_child(pattern : String, recursive : Bool = true, owned : Bool = false) : Node?
+      ptr = Bridge.node_find_child(@pointer, pattern, recursive, owned)
+      ptr.null? ? nil : Node.new(ptr)
+    end
+
+    def find_child_as(type : T.class, pattern : String, recursive : Bool = true, owned : Bool = false) : T? forall T
+      if node = find_child(pattern, recursive, owned)
+        T.new(node.pointer)
+      end
     end
 
     def add_child(node : Node) : Void
@@ -175,22 +190,121 @@ module Godot
     end
   end
 
-  class Node2D < Node
-    property position : Vector2 = Vector2.new
+  class CanvasItem < Node
+  end
+
+  class Node2D < CanvasItem
+    @position : Vector2 = Vector2.new
+    @rotation : Float32 = 0.0_f32
+    @scale : Vector2 = Vector2.new(1.0_f32, 1.0_f32)
     property global_position : Vector2 = Vector2.new
-    property rotation : Float32 = 0.0_f32
-    property scale : Vector2 = Vector2.new(1.0_f32, 1.0_f32)
+
+    def position : Vector2
+      if !@pointer.null?
+        get_position
+      else
+        @position
+      end
+    end
+
+    def position=(v : Vector2)
+      @position = v
+      if !@pointer.null?
+        set_position(v)
+      end
+    end
+
+    def rotation : Float32
+      if !@pointer.null?
+        get_rotation.to_f32
+      else
+        @rotation
+      end
+    end
+
+    def rotation=(v : Float32)
+      @rotation = v
+      if !@pointer.null?
+        set_rotation(v.to_f64)
+      end
+    end
+
+    def scale : Vector2
+      if !@pointer.null?
+        get_scale
+      else
+        @scale
+      end
+    end
+
+    def scale=(v : Vector2)
+      @scale = v
+      if !@pointer.null?
+        set_scale(v)
+      end
+    end
   end
 
   class Node3D < Node
-    property position : Vector3 = Vector3.new
+    @position : Vector3 = Vector3.new
+    @rotation : Vector3 = Vector3.new
+    @scale : Vector3 = Vector3.new(1.0_f32, 1.0_f32, 1.0_f32)
     property global_position : Vector3 = Vector3.new
-    property rotation : Vector3 = Vector3.new
-    property scale : Vector3 = Vector3.new(1.0_f32, 1.0_f32, 1.0_f32)
     property transform : Transform3D = Transform3D.new
+
+    def position : Vector3
+      if !@pointer.null?
+        get_position
+      else
+        @position
+      end
+    end
+
+    def position=(v : Vector3)
+      @position = v
+      if !@pointer.null?
+        set_position(v)
+      end
+    end
+
+    def rotation : Vector3
+      if !@pointer.null?
+        get_rotation
+      else
+        @rotation
+      end
+    end
+
+    def rotation=(v : Vector3)
+      @rotation = v
+      if !@pointer.null?
+        set_rotation(v)
+      end
+    end
+
+    def scale : Vector3
+      if !@pointer.null?
+        get_scale
+      else
+        @scale
+      end
+    end
+
+    def scale=(v : Vector3)
+      @scale = v
+      if !@pointer.null?
+        set_scale(v)
+      end
+    end
   end
 
-  class CharacterBody2D < Node2D
+  class CollisionObject2D < Node2D
+  end
+
+  class PhysicsBody2D < CollisionObject2D
+  end
+
+  class CharacterBody2D < PhysicsBody2D
     property velocity : Vector2 = Vector2.new
 
     def is_on_floor : Bool
@@ -202,7 +316,13 @@ module Godot
     end
   end
 
-  class CharacterBody3D < Node3D
+  class CollisionObject3D < Node3D
+  end
+
+  class PhysicsBody3D < CollisionObject3D
+  end
+
+  class CharacterBody3D < PhysicsBody3D
     property velocity : Vector3 = Vector3.new
 
     def is_on_floor : Bool
@@ -237,7 +357,7 @@ module Godot
     end
   end
 
-  class Control < Node
+  class Control < CanvasItem
   end
 
   class Range < Control
@@ -251,6 +371,15 @@ module Godot
       super()
       @min_value = min.to_f64
       @max_value = max.to_f64
+    end
+
+    def value=(val : Number)
+      @value = val.to_f64
+      Bridge.range_set_value(@pointer, @value) unless @pointer.null?
+    end
+
+    def set_value(val : Number) : Void
+      self.value = val
     end
 
     # Type cohesion: Initialize from a Crystal Range
@@ -287,17 +416,20 @@ module Godot
   class ProgressBar < Range
   end
 
-  class HSlider < Range
+  class Slider < Range
   end
 
-  class VSlider < Range
+  class HSlider < Slider
+  end
+
+  class VSlider < Slider
   end
 
   class SpinBox < Range
   end
 
   # Godot Input Singleton
-  module Input
+  class Input < Object
     def self.is_action_pressed(action : String) : Bool
       Bridge.is_action_pressed(action)
     end
@@ -311,7 +443,11 @@ module Godot
     end
 
     def self.is_key_pressed(key : Key | Int32) : Bool
-      Bridge.is_key_pressed(key.to_i32)
+      Bridge.is_key_pressed(key.to_i32) || Bridge.is_physical_key_pressed(key.to_i32)
+    end
+
+    def self.is_physical_key_pressed(key : Key | Int32) : Bool
+      Bridge.is_physical_key_pressed(key.to_i32)
     end
 
     def self.get_vector(negative_x : String, positive_x : String, negative_y : String, positive_y : String) : Vector2

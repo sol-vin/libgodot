@@ -1,6 +1,7 @@
 # Generated Singletons for Godot 4.8+
 module Godot
-  module Performance
+  # Godot `Performance` singleton (Performance).
+  class Performance < Godot::Object
     @@instance : Void* = Pointer(Void).null
     def self.singleton_ptr : Void*
       if @@instance.null?
@@ -9,7 +10,8 @@ module Godot
       @@instance
     end
   end
-  module Engine
+  # Godot `Engine` singleton (Engine).
+  class Engine < Godot::Object
     @@instance : Void* = Pointer(Void).null
     def self.singleton_ptr : Void*
       if @@instance.null?
@@ -18,7 +20,8 @@ module Godot
       @@instance
     end
   end
-  module ProjectSettings
+  # Godot `ProjectSettings` singleton (ProjectSettings).
+  class ProjectSettings < Godot::Object
     @@instance : Void* = Pointer(Void).null
     def self.singleton_ptr : Void*
       if @@instance.null?
@@ -27,7 +30,8 @@ module Godot
       @@instance
     end
   end
-  module OS
+  # Godot `OS` singleton (OS).
+  class OS < Godot::Object
     @@instance : Void* = Pointer(Void).null
     def self.singleton_ptr : Void*
       if @@instance.null?
@@ -36,7 +40,8 @@ module Godot
       @@instance
     end
   end
-  module Time
+  # Godot `Time` singleton (Time).
+  class Time < Godot::Object
     @@instance : Void* = Pointer(Void).null
     def self.singleton_ptr : Void*
       if @@instance.null?
@@ -45,7 +50,8 @@ module Godot
       @@instance
     end
   end
-  module ClassDB
+  # Godot `ClassDB` singleton (ClassDB).
+  class ClassDB < Godot::Object
     @@instance : Void* = Pointer(Void).null
     def self.singleton_ptr : Void*
       if @@instance.null?
@@ -54,7 +60,8 @@ module Godot
       @@instance
     end
   end
-  module TextServerManager
+  # Godot `TextServerManager` singleton (TextServerManager).
+  class TextServerManager < Godot::Object
     @@instance : Void* = Pointer(Void).null
     def self.singleton_ptr : Void*
       if @@instance.null?
@@ -63,7 +70,8 @@ module Godot
       @@instance
     end
   end
-  module NavigationServer2DManager
+  # Godot `NavigationServer2DManager` singleton (NavigationServer2DManager).
+  class NavigationServer2DManager < Godot::Object
     @@instance : Void* = Pointer(Void).null
     def self.singleton_ptr : Void*
       if @@instance.null?
@@ -72,7 +80,8 @@ module Godot
       @@instance
     end
   end
-  module PhysicsServer2DManager
+  # Godot `PhysicsServer2DManager` singleton (PhysicsServer2DManager).
+  class PhysicsServer2DManager < Godot::Object
     @@instance : Void* = Pointer(Void).null
     def self.singleton_ptr : Void*
       if @@instance.null?
@@ -81,7 +90,8 @@ module Godot
       @@instance
     end
   end
-  module NavigationServer3DManager
+  # Godot `NavigationServer3DManager` singleton (NavigationServer3DManager).
+  class NavigationServer3DManager < Godot::Object
     @@instance : Void* = Pointer(Void).null
     def self.singleton_ptr : Void*
       if @@instance.null?
@@ -90,7 +100,8 @@ module Godot
       @@instance
     end
   end
-  module PhysicsServer3DManager
+  # Godot `PhysicsServer3DManager` singleton (PhysicsServer3DManager).
+  class PhysicsServer3DManager < Godot::Object
     @@instance : Void* = Pointer(Void).null
     def self.singleton_ptr : Void*
       if @@instance.null?
@@ -99,7 +110,8 @@ module Godot
       @@instance
     end
   end
-  module NavigationMeshGenerator
+  # Godot `NavigationMeshGenerator` singleton (NavigationMeshGenerator).
+  class NavigationMeshGenerator < Godot::Object
     @@instance : Void* = Pointer(Void).null
     def self.singleton_ptr : Void*
       if @@instance.null?
@@ -108,7 +120,8 @@ module Godot
       @@instance
     end
   end
-  module IP
+  # Godot `IP` singleton (IP).
+  class IP < Godot::Object
     @@instance : Void* = Pointer(Void).null
     def self.singleton_ptr : Void*
       if @@instance.null?
@@ -117,7 +130,8 @@ module Godot
       @@instance
     end
   end
-  module Geometry2D
+  # Godot `Geometry2D` singleton (Geometry2D).
+  class Geometry2D < Godot::Object
     @@instance : Void* = Pointer(Void).null
     def self.singleton_ptr : Void*
       if @@instance.null?
@@ -126,7 +140,8 @@ module Godot
       @@instance
     end
   end
-  module Geometry3D
+  # Godot `Geometry3D` singleton (Geometry3D).
+  class Geometry3D < Godot::Object
     @@instance : Void* = Pointer(Void).null
     def self.singleton_ptr : Void*
       if @@instance.null?
@@ -135,7 +150,8 @@ module Godot
       @@instance
     end
   end
-  module ResourceLoader
+  # Godot `ResourceLoader` singleton (ResourceLoader).
+  class ResourceLoader < Godot::Object
     @@instance : Void* = Pointer(Void).null
     def self.singleton_ptr : Void*
       if @@instance.null?
@@ -144,7 +160,8 @@ module Godot
       @@instance
     end
   end
-  module ResourceSaver
+  # Godot `ResourceSaver` singleton (ResourceSaver).
+  class ResourceSaver < Godot::Object
     @@instance : Void* = Pointer(Void).null
     def self.singleton_ptr : Void*
       if @@instance.null?
@@ -153,7 +170,8 @@ module Godot
       @@instance
     end
   end
-  module Marshalls
+  # Godot `Marshalls` singleton (Marshalls).
+  class Marshalls < Godot::Object
     @@instance : Void* = Pointer(Void).null
     def self.singleton_ptr : Void*
       if @@instance.null?
@@ -162,7 +180,8 @@ module Godot
       @@instance
     end
   end
-  module TranslationServer
+  # Godot `TranslationServer` singleton (TranslationServer).
+  class TranslationServer < Godot::Object
     @@instance : Void* = Pointer(Void).null
     def self.singleton_ptr : Void*
       if @@instance.null?
@@ -171,7 +190,8 @@ module Godot
       @@instance
     end
   end
-  module Input
+  # Godot `Input` singleton (Input).
+  class Input < Godot::Object
     @@instance : Void* = Pointer(Void).null
     def self.singleton_ptr : Void*
       if @@instance.null?
@@ -180,7 +200,8 @@ module Godot
       @@instance
     end
   end
-  module InputMap
+  # Godot `InputMap` singleton (InputMap).
+  class InputMap < Godot::Object
     @@instance : Void* = Pointer(Void).null
     def self.singleton_ptr : Void*
       if @@instance.null?
@@ -189,7 +210,8 @@ module Godot
       @@instance
     end
   end
-  module EngineDebugger
+  # Godot `EngineDebugger` singleton (EngineDebugger).
+  class EngineDebugger < Godot::Object
     @@instance : Void* = Pointer(Void).null
     def self.singleton_ptr : Void*
       if @@instance.null?
@@ -198,7 +220,8 @@ module Godot
       @@instance
     end
   end
-  module GDExtensionManager
+  # Godot `GDExtensionManager` singleton (GDExtensionManager).
+  class GDExtensionManager < Godot::Object
     @@instance : Void* = Pointer(Void).null
     def self.singleton_ptr : Void*
       if @@instance.null?
@@ -207,7 +230,8 @@ module Godot
       @@instance
     end
   end
-  module ResourceUID
+  # Godot `ResourceUID` singleton (ResourceUID).
+  class ResourceUID < Godot::Object
     @@instance : Void* = Pointer(Void).null
     def self.singleton_ptr : Void*
       if @@instance.null?
@@ -216,7 +240,8 @@ module Godot
       @@instance
     end
   end
-  module WorkerThreadPool
+  # Godot `WorkerThreadPool` singleton (WorkerThreadPool).
+  class WorkerThreadPool < Godot::Object
     @@instance : Void* = Pointer(Void).null
     def self.singleton_ptr : Void*
       if @@instance.null?
@@ -225,7 +250,8 @@ module Godot
       @@instance
     end
   end
-  module ThemeDB
+  # Godot `ThemeDB` singleton (ThemeDB).
+  class ThemeDB < Godot::Object
     @@instance : Void* = Pointer(Void).null
     def self.singleton_ptr : Void*
       if @@instance.null?
@@ -234,7 +260,8 @@ module Godot
       @@instance
     end
   end
-  module EditorInterface
+  # Godot `EditorInterface` singleton (EditorInterface).
+  class EditorInterface < Godot::Object
     @@instance : Void* = Pointer(Void).null
     def self.singleton_ptr : Void*
       if @@instance.null?
@@ -243,7 +270,8 @@ module Godot
       @@instance
     end
   end
-  module GDScriptLanguageProtocol
+  # Godot `GDScriptLanguageProtocol` singleton (GDScriptLanguageProtocol).
+  class GDScriptLanguageProtocol < Godot::JSONRPC
     @@instance : Void* = Pointer(Void).null
     def self.singleton_ptr : Void*
       if @@instance.null?
@@ -252,7 +280,8 @@ module Godot
       @@instance
     end
   end
-  module JavaClassWrapper
+  # Godot `JavaClassWrapper` singleton (JavaClassWrapper).
+  class JavaClassWrapper < Godot::Object
     @@instance : Void* = Pointer(Void).null
     def self.singleton_ptr : Void*
       if @@instance.null?
@@ -261,7 +290,8 @@ module Godot
       @@instance
     end
   end
-  module JavaScriptBridge
+  # Godot `JavaScriptBridge` singleton (JavaScriptBridge).
+  class JavaScriptBridge < Godot::Object
     @@instance : Void* = Pointer(Void).null
     def self.singleton_ptr : Void*
       if @@instance.null?
@@ -270,7 +300,8 @@ module Godot
       @@instance
     end
   end
-  module AccessibilityServer
+  # Godot `AccessibilityServer` singleton (AccessibilityServer).
+  class AccessibilityServer < Godot::Object
     @@instance : Void* = Pointer(Void).null
     def self.singleton_ptr : Void*
       if @@instance.null?
@@ -279,7 +310,8 @@ module Godot
       @@instance
     end
   end
-  module AudioServer
+  # Godot `AudioServer` singleton (AudioServer).
+  class AudioServer < Godot::Object
     @@instance : Void* = Pointer(Void).null
     def self.singleton_ptr : Void*
       if @@instance.null?
@@ -288,7 +320,8 @@ module Godot
       @@instance
     end
   end
-  module CameraServer
+  # Godot `CameraServer` singleton (CameraServer).
+  class CameraServer < Godot::Object
     @@instance : Void* = Pointer(Void).null
     def self.singleton_ptr : Void*
       if @@instance.null?
@@ -297,7 +330,8 @@ module Godot
       @@instance
     end
   end
-  module DisplayServer
+  # Godot `DisplayServer` singleton (DisplayServer).
+  class DisplayServer < Godot::Object
     @@instance : Void* = Pointer(Void).null
     def self.singleton_ptr : Void*
       if @@instance.null?
@@ -306,7 +340,8 @@ module Godot
       @@instance
     end
   end
-  module NativeMenu
+  # Godot `NativeMenu` singleton (NativeMenu).
+  class NativeMenu < Godot::Object
     @@instance : Void* = Pointer(Void).null
     def self.singleton_ptr : Void*
       if @@instance.null?
@@ -315,7 +350,8 @@ module Godot
       @@instance
     end
   end
-  module RenderingServer
+  # Godot `RenderingServer` singleton (RenderingServer).
+  class RenderingServer < Godot::Object
     @@instance : Void* = Pointer(Void).null
     def self.singleton_ptr : Void*
       if @@instance.null?
@@ -324,7 +360,8 @@ module Godot
       @@instance
     end
   end
-  module NavigationServer2D
+  # Godot `NavigationServer2D` singleton (NavigationServer2D).
+  class NavigationServer2D < Godot::Object
     @@instance : Void* = Pointer(Void).null
     def self.singleton_ptr : Void*
       if @@instance.null?
@@ -333,7 +370,8 @@ module Godot
       @@instance
     end
   end
-  module NavigationServer3D
+  # Godot `NavigationServer3D` singleton (NavigationServer3D).
+  class NavigationServer3D < Godot::Object
     @@instance : Void* = Pointer(Void).null
     def self.singleton_ptr : Void*
       if @@instance.null?
@@ -342,7 +380,8 @@ module Godot
       @@instance
     end
   end
-  module PhysicsServer2D
+  # Godot `PhysicsServer2D` singleton (PhysicsServer2D).
+  class PhysicsServer2D < Godot::Object
     @@instance : Void* = Pointer(Void).null
     def self.singleton_ptr : Void*
       if @@instance.null?
@@ -351,7 +390,8 @@ module Godot
       @@instance
     end
   end
-  module PhysicsServer3D
+  # Godot `PhysicsServer3D` singleton (PhysicsServer3D).
+  class PhysicsServer3D < Godot::Object
     @@instance : Void* = Pointer(Void).null
     def self.singleton_ptr : Void*
       if @@instance.null?
@@ -360,7 +400,8 @@ module Godot
       @@instance
     end
   end
-  module XRServer
+  # Godot `XRServer` singleton (XRServer).
+  class XRServer < Godot::Object
     @@instance : Void* = Pointer(Void).null
     def self.singleton_ptr : Void*
       if @@instance.null?
