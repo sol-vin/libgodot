@@ -202,6 +202,11 @@ if (-not $SkipToolTests) {
 
     $uniqueString = "[CRYSTAL_ADDON_VERIFIED_SUCCESS_8A3F1E]"
 
+    # Pre-populate extension_list.cfg so Godot loads GDExtension upfront without in-flight scan races
+    $addonGodotDir = Join-Path $RootDir "template-addon/.godot"
+    if (-not (Test-Path $addonGodotDir)) { New-Item -ItemType Directory -Force -Path $addonGodotDir | Out-Null }
+    Set-Content -Path (Join-Path $addonGodotDir "extension_list.cfg") -Value 'res://addons/crystal_addon/crystal_addon.gdextension' -Force
+
     $onWindows = ($env:OS -eq "Windows_NT" -or [System.IO.Path]::PathSeparator -eq ';')
     $shell = if ($onWindows) { "cmd" } else { "sh" }
     $shellFlag = if ($onWindows) { "/c" } else { "-c" }

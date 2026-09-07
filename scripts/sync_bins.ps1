@@ -77,6 +77,16 @@ foreach ($p in $projects) {
     Set-Content -Path (Join-Path $cfgDir "extension_list.cfg") -Value 'res://addons/crystal_integration/crystal.gdextension' -Force
 }
 
+# Ensure extension_list.cfg for template-addon with its custom addon path
+$addonProj = Join-Path $RootDir "template-addon"
+if (Test-Path $addonProj) {
+    $addonCfgDir = Join-Path $addonProj ".godot"
+    if (-not (Test-Path $addonCfgDir)) {
+        New-Item -ItemType Directory -Force -Path $addonCfgDir | Out-Null
+    }
+    Set-Content -Path (Join-Path $addonCfgDir "extension_list.cfg") -Value 'res://addons/crystal_addon/crystal_addon.gdextension' -Force
+}
+
 # Ensure addons are synchronized to all consumer projects
 $syncAddonsScript = Join-Path $RootDir "scripts/sync_addons.ps1"
 if (Test-Path $syncAddonsScript) {
