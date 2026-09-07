@@ -194,23 +194,35 @@ if ($TestRelease) {
             }
         }
 
+        # Clean up any runtime shadow copies before archiving
+        Get-ChildItem -Path $examplesDist -Filter "*_loaded_*" -Recurse | Remove-Item -Force -ErrorAction SilentlyContinue
+
         $examplesZip = Join-Path $RootDir "examples-windows-x86_64.zip"
         if (Test-Path $examplesZip) { Remove-Item $examplesZip -Force }
         Compress-Archive -Path "$examplesDist/*" -DestinationPath $examplesZip -Force
         Write-Host "  [OK] Created examples-windows-x86_64.zip ($( [math]::Round((Get-Item $examplesZip).Length / 1MB, 2) ) MB)" -ForegroundColor Green
 
-        # Verify archive contains playable executable and game.dll
+        # Verify archive contains game folder with game.exe and game.dll
         Add-Type -AssemblyName System.IO.Compression.FileSystem
         $zipObj = [System.IO.Compression.ZipFile]::OpenRead($examplesZip)
-        $hasExe = ($zipObj.Entries | Where-Object { $_.Name.EndsWith(".exe") }).Count -gt 0
-        $hasGameDll = ($zipObj.Entries | Where-Object { $_.Name -eq "game.dll" }).Count -gt 0
+        $hasExe = ($zipObj.Entries | Where-Object { $_.FullName -like "*basic_demo/game.exe" -or $_.FullName -like "*basic_demo\game.exe" }).Count -gt 0
+        $hasGameDll = ($zipObj.Entries | Where-Object { $_.FullName -like "*basic_demo/game.dll" -or $_.FullName -like "*basic_demo\game.dll" }).Count -gt 0
         $entryCount = $zipObj.Entries.Count
         $zipObj.Dispose()
 
         if (-not $hasExe -or -not $hasGameDll) {
-            throw "examples-windows-x86_64.zip is missing executable or game.dll!"
+            throw "examples-windows-x86_64.zip is missing basic_demo/game.exe or basic_demo/game.dll!"
         }
-        Write-Host "  [OK] Verified examples-windows-x86_64.zip contains $entryCount entries including playable executable and game.dll." -ForegroundColor Green
+        Write-Host "  [OK] Verified examples-windows-x86_64.zip contains $entryCount entries including basic_demo/game.exe and basic_demo/game.dll." -ForegroundColor Green
+
+        # 1b. Package Export Templates (godot-crystal-export-templates-4.8-dev4.zip)
+        Write-Host "[Release] Packaging export templates (godot-crystal-export-templates-4.8-dev4.zip)..." -ForegroundColor Cyan
+        $templatesZip = Join-Path $RootDir "godot-crystal-export-templates-4.8-dev4.zip"
+        & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $RootDir "scripts/ensure_export_templates.ps1") -PackageZip -ZipOutput $templatesZip
+        if (-not (Test-Path $templatesZip)) {
+            throw "Failed to package godot-crystal-export-templates-4.8-dev4.zip!"
+        }
+        Write-Host "  [OK] Created export templates archive: $templatesZip ($( [math]::Round((Get-Item $templatesZip).Length / 1MB, 2) ) MB)" -ForegroundColor Green
 
         # 2. Package Addon/Plugin (godot-crystal-addon.zip)
         Write-Host "[Release] Packaging godot-crystal-addon.zip (addon + bridge DLL)..." -ForegroundColor Cyan
@@ -308,7 +320,9 @@ if ($TestRelease) {
         # 5. Generate Checksums
         Write-Host "[Release] Generating SHA256 checksums..." -ForegroundColor Cyan
         $checksumFile = Join-Path $RootDir "checksums.txt"
-        Get-FileHash -Algorithm SHA256 $examplesZip, $addonZip, $templateZip, $coreZip | Format-Table -AutoSize | Out-String | Set-Content $checksumFile
+        $hashTargets = @($examplesZip, $addonZip, $templateZip, $coreZip)
+        if (Test-Path $templatesZip) { $hashTargets += $templatesZip }
+        Get-FileHash -Algorithm SHA256 $hashTargets | Format-Table -AutoSize | Out-String | Set-Content $checksumFile
         Get-Content $checksumFile | Write-Host
 
     } catch {

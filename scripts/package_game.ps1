@@ -129,60 +129,111 @@ if ($godotExe -and (Test-Path $godotExe)) {
         & chmod +x $binGameExe
     }
 
-    # Also make sure bin/ has copies of project.godot & main.tscn if run from bin
-    if (Test-Path (Join-Path $projFull "project.godot")) {
-        Copy-Item (Join-Path $projFull "project.godot") $binDir -Force
+    # Ensure bin/ does not contain stray project.godot which causes Godot warning
+    if (Test-Path (Join-Path $binDir "project.godot")) {
+        Remove-Item (Join-Path $binDir "project.godot") -Force -ErrorAction SilentlyContinue
     }
-    if (Test-Path (Join-Path $projFull "main.tscn")) {
-        Copy-Item (Join-Path $projFull "main.tscn") $binDir -Force
+    if (Test-Path (Join-Path $binDir "main.tscn")) {
+        Remove-Item (Join-Path $binDir "main.tscn") -Force -ErrorAction SilentlyContinue
     }
 }
 
-# 9. If TargetDir specified (for export/packaging), assemble complete self-contained package
+# 9. If TargetDir specified, assemble/export standalone playable package
 if ($TargetDir) {
-    if (-not (Test-Path $TargetDir)) {
-        New-Item -ItemType Directory -Force -Path $TargetDir | Out-Null
+    $gameDir = if ((Split-Path -Leaf $TargetDir) -eq $Name) { $TargetDir } else { Join-Path $TargetDir $Name }
+    if (-not (Test-Path $gameDir)) {
+        New-Item -ItemType Directory -Force -Path $gameDir | Out-Null
     }
-    Write-Host "[PackageGame] Assembling self-contained package in '$TargetDir'..." -ForegroundColor Cyan
+    Write-Host "[PackageGame] Packaging standalone game into '$gameDir'..." -ForegroundColor Cyan
 
-    # Copy executable
-    if ($godotExe -and (Test-Path $godotExe)) {
-        $targetExe = Join-Path $TargetDir "$Name$exeExt"
-        Copy-Item $godotExe $targetExe -Force
-        if (-not $onWindows -and (Get-Command chmod -ErrorAction SilentlyContinue)) {
-            & chmod +x $targetExe
+    $exportedSuccessfully = $false
+    $presetCfg = Join-Path $projFull "export_presets.cfg"
+    if (-not (Test-Path $presetCfg)) {
+        $templatePresets = Join-Path $rootDir "template/export_presets.cfg"
+        if (Test-Path $templatePresets) {
+            Copy-Item $templatePresets $presetCfg -Force
         }
     }
 
-    # Copy project files & scenes
-    foreach ($item in @("project.godot", "main.tscn", "scenes", "scripts")) {
-        $srcItem = Join-Path $projFull $item
-        if (Test-Path $srcItem) {
-            Copy-Item $srcItem $TargetDir -Recurse -Force
+    # Attempt native Godot standalone export with embedded PCK
+    if ($godotExe -and (Test-Path $godotExe) -and (Test-Path $presetCfg)) {
+        $preset = if ($onWindows) { "Windows Desktop" } else { "Linux" }
+        $destExe = [System.IO.Path]::GetFullPath((Join-Path $gameDir "game$exeExt"))
+        $destDir = Split-Path -Parent $destExe
+        if (-not (Test-Path $destDir)) { New-Item -ItemType Directory -Force -Path $destDir | Out-Null }
+        if (Test-Path $destExe) { Remove-Item $destExe -Force }
+
+        Write-Host "  -> Running Godot standalone export (Preset: $preset) -> $destExe..." -ForegroundColor Cyan
+        $exportProc = Start-Process -FilePath $godotExe -ArgumentList @("--headless", "--path", "`"$projFull`"", "--export-release", "`"$preset`"", "`"$destExe`"") -NoNewWindow -Wait -PassThru
+
+        if ((Test-Path $destExe) -and ((Get-Item $destExe).Length -gt 1000000)) {
+            $exportedSuccessfully = $true
+            if (-not $onWindows -and (Get-Command chmod -ErrorAction SilentlyContinue)) {
+                & chmod +x $destExe
+            }
+
+            # Copy game library and runtime dependencies directly next to game executable
+            if (Test-Path (Join-Path $binDir "game.$soExt")) {
+                Copy-Item (Join-Path $binDir "game.$soExt") $gameDir -Force
+            }
+            if (Test-Path (Join-Path $binDir "crystal_bridge.$soExt")) {
+                Copy-Item (Join-Path $binDir "crystal_bridge.$soExt") $gameDir -Force
+            }
+            if ($onWindows) {
+                foreach ($dll in @("gc.dll", "iconv-2.dll", "pcre2-8.dll", "libgodot.dll")) {
+                    $srcDll = Join-Path $binDir $dll
+                    if (-not (Test-Path $srcDll)) { $srcDll = Join-Path $rootDir "bin/$dll" }
+                    if (Test-Path $srcDll) { Copy-Item $srcDll $gameDir -Force }
+                }
+            } else {
+                if (Test-Path (Join-Path $binDir "libgodot.so")) {
+                    Copy-Item (Join-Path $binDir "libgodot.so") $gameDir -Force
+                }
+            }
+
+            # Remove any temporary shadow-copy dlls, subdirectories, and non-library files
+            Get-ChildItem -Path $gameDir -Directory | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+            Get-ChildItem -Path $gameDir -File | Where-Object {
+                $isExe = ($_.Name -eq "game$exeExt")
+                $isLib = ($_.Name -like "*.dll") -or ($_.Name -like "*.so*")
+                $isShadow = ($_.Name -like "*_loaded_*")
+                (-not $isExe -and -not $isLib) -or $isShadow
+            } | Remove-Item -Force -ErrorAction SilentlyContinue
+
+            Write-Host "  [OK] Standalone Godot export complete in '$gameDir'." -ForegroundColor Green
+        } else {
+            Write-Warning "[PackageGame] Godot export-release did not produce expected standalone binary. Falling back to project runner bundle."
         }
     }
 
-    # Copy .godot/extension_list.cfg
-    $targetGodot = Join-Path $TargetDir ".godot"
-    if (-not (Test-Path $targetGodot)) { New-Item -ItemType Directory -Force -Path $targetGodot | Out-Null }
-    Copy-Item $extListFile (Join-Path $targetGodot "extension_list.cfg") -Force
-
-    # Copy addons/
-    $targetAddons = Join-Path $TargetDir "addons"
-    if (-not (Test-Path $targetAddons)) { New-Item -ItemType Directory -Force -Path $targetAddons | Out-Null }
-    Copy-Item (Join-Path $projFull "addons/*") $targetAddons -Recurse -Force
-
-    # Copy bin/ with all libraries
-    $targetBin = Join-Path $TargetDir "bin"
-    if (-not (Test-Path $targetBin)) { New-Item -ItemType Directory -Force -Path $targetBin | Out-Null }
-    Copy-Item (Join-Path $binDir "/*") $targetBin -Recurse -Force
-
-    # Also place runtime DLLs / SOs at root next to executable for seamless loading
-    foreach ($dll in Get-ChildItem -Path $binDir -File) {
-        Copy-Item $dll.FullName $TargetDir -Force
+    # Fallback to self-contained project bundle if export templates not present
+    if (-not $exportedSuccessfully) {
+        if ($godotExe -and (Test-Path $godotExe)) {
+            $targetExe = Join-Path $gameDir "game$exeExt"
+            Copy-Item $godotExe $targetExe -Force
+            if (-not $onWindows -and (Get-Command chmod -ErrorAction SilentlyContinue)) {
+                & chmod +x $targetExe
+            }
+        }
+        foreach ($item in @("project.godot", "main.tscn", "scenes", "scripts")) {
+            $srcItem = Join-Path $projFull $item
+            if (Test-Path $srcItem) { Copy-Item $srcItem $gameDir -Recurse -Force }
+        }
+        $targetGodot = Join-Path $gameDir ".godot"
+        if (-not (Test-Path $targetGodot)) { New-Item -ItemType Directory -Force -Path $targetGodot | Out-Null }
+        Copy-Item $extListFile (Join-Path $targetGodot "extension_list.cfg") -Force
+        $targetAddons = Join-Path $gameDir "addons"
+        if (-not (Test-Path $targetAddons)) { New-Item -ItemType Directory -Force -Path $targetAddons | Out-Null }
+        Copy-Item (Join-Path $projFull "addons/*") $targetAddons -Recurse -Force
+        $targetBin = Join-Path $gameDir "bin"
+        if (-not (Test-Path $targetBin)) { New-Item -ItemType Directory -Force -Path $targetBin | Out-Null }
+        Copy-Item (Join-Path $binDir "/*") $targetBin -Recurse -Force
+        foreach ($dll in Get-ChildItem -Path $binDir -File) {
+            Copy-Item $dll.FullName $gameDir -Force
+        }
     }
 
-    Write-Host "[PackageGame] Successfully assembled self-contained playable package in '$TargetDir'!" -ForegroundColor Green
+    Write-Host "[PackageGame] Successfully packaged '$Name' in '$gameDir'!" -ForegroundColor Green
 }
 
 Write-Host "[PackageGame] Playable game setup complete for '$Name'." -ForegroundColor Green

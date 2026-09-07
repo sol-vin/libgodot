@@ -164,6 +164,13 @@ if (Test-Path ".\$Name.exe") { & ".\$Name.exe" } else { & "..\..\godot.exe" --pa
 & .\build.ps1
 & "..\..\godot.exe" --editor --path .
 "@ -Force
+
+    # Scaffold export_presets.cfg
+    $presetPath = Join-Path $TargetDir "export_presets.cfg"
+    $templatePresets = Join-Path $Root "template/export_presets.cfg"
+    if (Test-Path $templatePresets) {
+        Copy-Item $templatePresets $presetPath -Force
+    }
 }
 
 # 5. Sync runtime DLLs and addons
