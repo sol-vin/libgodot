@@ -111,34 +111,18 @@ jobs:
           make all RELEASE=1
           make examples_exe RELEASE=1
 
-      - name: Package Windows Examples (examples-windows-x86_64.zip & examples.zip)
+      - name: Package Windows Examples (examples-windows-x86_64.zip)
         shell: pwsh
         run: |
           $examplesDist = "dist/examples_dist"
           if (Test-Path $examplesDist) { Remove-Item $examplesDist -Recurse -Force }
           New-Item -ItemType Directory -Force -Path $examplesDist | Out-Null
 
-          # Collect compiled executables for each example
+          # Package each example as a complete playable Godot game
           if (Test-Path "examples") {
             foreach ($ex in Get-ChildItem -Path "examples" -Directory) {
-              $exeCandidates = @(
-                (Join-Path $ex.FullName "bin/game.exe"),
-                (Join-Path $ex.FullName "bin/$($ex.Name).exe")
-              )
-              foreach ($cand in $exeCandidates) {
-                if (Test-Path $cand) {
-                  $dest = Join-Path $examplesDist "$($ex.Name).exe"
-                  Copy-Item $cand $dest -Force
-                  break
-                }
-              }
-            }
-          }
-
-          # Copy runtime DLLs and bridge needed to run example executables
-          foreach ($dll in @('libgodot.dll', 'crystal_bridge.dll', 'gc.dll', 'iconv-2.dll', 'pcre2-8.dll')) {
-            if (Test-Path "bin/$dll") {
-              Copy-Item "bin/$dll" "$examplesDist/$dll" -Force
+              Write-Host "Packaging playable example for $($ex.Name)..." -ForegroundColor Cyan
+              & powershell -NoProfile -ExecutionPolicy Bypass -File scripts/package_game.ps1 -ProjectPath $ex.FullName -Name $ex.Name -TargetDir $examplesDist -Release 1
             }
           }
 
@@ -274,38 +258,20 @@ jobs:
           make examples_exe RELEASE=1
 
       - name: Package Linux Examples (examples-linux-x86_64.zip)
-        shell: bash
+        shell: pwsh
         run: |
-          EXAMPLES_DIST="dist/examples_linux_dist"
-          rm -rf "$EXAMPLES_DIST"
-          mkdir -p "$EXAMPLES_DIST"
+          $examplesDist = "dist/examples_linux_dist"
+          if (Test-Path $examplesDist) { Remove-Item $examplesDist -Recurse -Force }
+          New-Item -ItemType Directory -Force -Path $examplesDist | Out-Null
 
-          if [ -d "examples" ]; then
-            for ex in examples/*/; do
-              ex_name=$(basename "$ex")
-              if [ -f "$ex/bin/game" ]; then
-                cp "$ex/bin/game" "$EXAMPLES_DIST/$ex_name"
-                chmod +x "$EXAMPLES_DIST/$ex_name"
-              elif [ -f "$ex/bin/$ex_name" ]; then
-                cp "$ex/bin/$ex_name" "$EXAMPLES_DIST/$ex_name"
-                chmod +x "$EXAMPLES_DIST/$ex_name"
-              fi
-              if [ -f "$ex/bin/game.so" ]; then
-                cp "$ex/bin/game.so" "$EXAMPLES_DIST/"
-              fi
-            done
-          fi
+          if (Test-Path "examples") {
+            foreach ($ex in Get-ChildItem -Path "examples" -Directory) {
+              Write-Host "Packaging playable Linux example for $($ex.Name)..." -ForegroundColor Cyan
+              & pwsh -NoProfile -File scripts/package_game.ps1 -ProjectPath $ex.FullName -Name $ex.Name -TargetDir $examplesDist -Release 1
+            }
+          }
 
-          if [ -f "bin/crystal_bridge.so" ]; then
-            cp "bin/crystal_bridge.so" "$EXAMPLES_DIST/"
-          fi
-          if [ -f "bin/libgodot.so" ]; then
-            cp "bin/libgodot.so" "$EXAMPLES_DIST/"
-          fi
-
-          cd "$EXAMPLES_DIST"
-          zip -r "../../examples-linux-x86_64.zip" ./*
-          cd ../..
+          Compress-Archive -Path "$examplesDist/*" -DestinationPath "examples-linux-x86_64.zip" -Force
 
       - name: Package Linux Core LibGodot Distribution
         shell: bash

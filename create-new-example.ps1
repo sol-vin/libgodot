@@ -100,7 +100,7 @@ LINK_FLAGS   = /DLL /ENTRY:_DllMainCRTStartup /EXPORT:crystal_godot_init
 
 .PHONY: all game_dll game_exe deps bridge extension_list addons run editor clean help
 
-all: dirs deps bridge extension_list addons game_dll
+all: dirs deps bridge extension_list addons game_dll game_exe
 	@echo ===================================================================
 	@echo   Example $Name built successfully!
 	@echo ===================================================================
@@ -123,12 +123,10 @@ addons:
 game_dll: dirs deps bridge extension_list addons
 	@echo [$Name] Compiling game.dll from `$(ENTRY)...
 	@powershell -ExecutionPolicy Bypass -File ../../scripts/build_crystal.ps1 -Entry `$(ENTRY) -Output `$(GAME_DLL) -LinkFlags '`$(LINK_FLAGS)' `$(if `$(filter 1,`$(RELEASE)),-Release,) -SourcePath ../../src
-	@powershell -ExecutionPolicy Bypass -Command "if (Test-Path '`$(GAME_DLL)') { Copy-Item '`$(GAME_DLL)' '../../bin/game.dll' -Force -ErrorAction SilentlyContinue }"
 
-game_exe: dirs deps bridge
-	@echo [$Name] Compiling standalone game.exe from `$(ENTRY)...
-	@powershell -ExecutionPolicy Bypass -File ../../scripts/build_crystal.ps1 -Entry `$(ENTRY) -Output `$(GAME_EXE) `$(if `$(filter 1,`$(RELEASE)),-Release,) -SourcePath ../../src
-	@powershell -ExecutionPolicy Bypass -Command "if (Test-Path '`$(GAME_EXE)') { Copy-Item '`$(GAME_EXE)' '../../bin/game.exe' -Force -ErrorAction SilentlyContinue }"
+game_exe: dirs deps bridge extension_list addons game_dll
+	@echo [$Name] Packaging complete playable game executable...
+	@powershell -ExecutionPolicy Bypass -File ../../scripts/package_game.ps1 -ProjectPath . -Name $Name `$(if `$(filter 1,`$(RELEASE)),-Release 1,)
 
 run: all
 	@echo [$Name] Running example with Godot...
@@ -142,6 +140,30 @@ clean:
 	@`$(RM) `$(BIN_DIR)/*
 "@
     Set-Content -Path $makefilePath -Value $makefileContent -Force
+
+    # Generate support scripts for new example
+    $buildScript = Join-Path $TargetDir "build.ps1"
+    Set-Content -Path $buildScript -Value @"
+param([switch]`$Release)
+`$ErrorActionPreference = "Stop"
+`$relArg = if (`$Release) { "1" } else { "" }
+`$packageScript = Join-Path (Resolve-Path "../../scripts/package_game.ps1")
+& powershell -NoProfile -ExecutionPolicy Bypass -File `$packageScript -ProjectPath `$PSScriptRoot -Name "$Name" -Release `$relArg
+"@ -Force
+
+    $runScript = Join-Path $TargetDir "run.ps1"
+    Set-Content -Path $runScript -Value @"
+`$ErrorActionPreference = "Stop"
+& .\build.ps1
+if (Test-Path ".\$Name.exe") { & ".\$Name.exe" } else { & "..\..\godot.exe" --path . }
+"@ -Force
+
+    $runEditorScript = Join-Path $TargetDir "run-editor.ps1"
+    Set-Content -Path $runEditorScript -Value @"
+`$ErrorActionPreference = "Stop"
+& .\build.ps1
+& "..\..\godot.exe" --editor --path .
+"@ -Force
 }
 
 # 5. Sync runtime DLLs and addons

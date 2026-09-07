@@ -41,9 +41,9 @@ endif
 
 .PHONY: all game_dll game_exe deps bridge extension_list addons run editor clean help
 
-all: dirs deps bridge extension_list addons game_dll
+all: dirs deps bridge extension_list addons game_dll game_exe
 	@echo ===================================================================
-	@echo   Template game library built successfully!
+	@echo   Template game library and playable executable built successfully!
 	@echo ===================================================================
 
 dirs:
@@ -65,9 +65,9 @@ game_dll: dirs deps bridge extension_list addons
 	@echo [Template] Compiling game.$(SO_EXT) from $(ENTRY)...
 	@$(PWSH_FILE) ../scripts/build_crystal.ps1 -Entry $(ENTRY) -Output $(GAME_LIB) -LinkFlags '$(LINK_FLAGS)' $(if $(filter 1,$(RELEASE)),-Release,) -SourcePath ../src
 
-game_exe: dirs deps bridge
-	@echo [Template] Compiling standalone game executable from $(ENTRY)...
-	@$(PWSH_FILE) ../scripts/build_crystal.ps1 -Entry $(ENTRY) -Output $(GAME_EXE) $(if $(filter 1,$(RELEASE)),-Release,) -SourcePath ../src
+game_exe: dirs deps bridge extension_list addons game_dll
+	@echo [Template] Packaging complete playable game executable...
+	@$(PWSH_FILE) ../scripts/package_game.ps1 -ProjectPath . -Name game $(if $(filter 1,$(RELEASE)),-Release 1,)
 
 run: all
 	@echo [Template] Running project with Godot...

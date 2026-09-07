@@ -5,10 +5,12 @@ godot.exe
 /examples/*/.godot/
 /examples/*/bin
 /examples/*/addons
+/examples/*/*.exe
 
 /template/.godot/
 /template/bin
 /template/addons
+/template/*.exe
 
 /test/.godot/
 /test/bin

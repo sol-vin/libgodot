@@ -112,4 +112,31 @@ exit $?
     crystal build --link-flags "-shared $extraFlags" src/main.cr -o "bin/game.$soExt"
 }
 
+# Ensure playable Godot game executable is in place
+$godotExe = ""
+$godotCandidates = @(
+    "../godot$exeExt",
+    "../../godot$exeExt",
+    "../godot.exe",
+    $env:GODOT4,
+    $env:GODOT4_BIN
+)
+foreach ($cand in $godotCandidates) {
+    if ($cand -and (Test-Path $cand)) {
+        $godotExe = (Resolve-Path $cand).Path
+        break
+    }
+}
+if (-not $godotExe -and (Get-Command godot -ErrorAction SilentlyContinue)) {
+    $godotExe = (Get-Command godot).Source
+}
+
+if ($godotExe -and (Test-Path $godotExe)) {
+    Copy-Item $godotExe "game$exeExt" -Force
+    Copy-Item $godotExe "bin/game$exeExt" -Force
+    if (Test-Path "project.godot") { Copy-Item "project.godot" "bin/" -Force }
+    Write-Host "[Template] Created playable executable: game$exeExt" -ForegroundColor Green
+}
+
 Write-Host "[Template] Build completed successfully: bin/game.$soExt" -ForegroundColor Green
+

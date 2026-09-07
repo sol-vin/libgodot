@@ -41,9 +41,9 @@ endif
 
 .PHONY: all game_dll game_exe deps bridge extension_list addons run editor clean help
 
-all: dirs deps bridge extension_list addons game_dll
+all: dirs deps bridge extension_list addons game_dll game_exe
 	@echo ===================================================================
-	@echo   Demo game library built successfully!
+	@echo   Demo game library and playable executable built successfully!
 	@echo ===================================================================
 
 dirs:
@@ -66,10 +66,9 @@ game_dll: dirs deps bridge extension_list addons
 	@$(PWSH_FILE) ../../scripts/build_crystal.ps1 -Entry $(ENTRY) -Output $(GAME_LIB) -LinkFlags '$(LINK_FLAGS)' $(if $(filter 1,$(RELEASE)),-Release,) -SourcePath ../../src
 	@$(PWSH_CMD) "if (Test-Path '$(GAME_LIB)') { Copy-Item '$(GAME_LIB)' '../../bin/game.$(SO_EXT)' -Force -ErrorAction SilentlyContinue }"
 
-game_exe: dirs deps bridge
-	@echo [Demo] Compiling standalone game executable from $(ENTRY)...
-	@$(PWSH_FILE) ../../scripts/build_crystal.ps1 -Entry $(ENTRY) -Output $(GAME_EXE) $(if $(filter 1,$(RELEASE)),-Release,) -SourcePath ../../src
-	@$(PWSH_CMD) "if (Test-Path '$(GAME_EXE)') { Copy-Item '$(GAME_EXE)' '../../bin/game$(EXE_EXT)' -Force -ErrorAction SilentlyContinue }"
+game_exe: dirs deps bridge extension_list addons game_dll
+	@echo [Demo] Packaging complete playable game executable...
+	@$(PWSH_FILE) ../../scripts/package_game.ps1 -ProjectPath . -Name basic_demo $(if $(filter 1,$(RELEASE)),-Release 1,)
 
 run: all
 	@echo [Demo] Running demo with Godot...

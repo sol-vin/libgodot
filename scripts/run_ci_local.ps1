@@ -181,47 +181,36 @@ if ($TestRelease) {
         & make examples_exe RELEASE=1
         if ($LASTEXITCODE -ne 0) { throw "make examples_exe RELEASE=1 failed with code $LASTEXITCODE" }
 
-        # 2. Package examples.zip (strictly only .exe files)
-        Write-Host "[Release] Packaging examples.zip (compiled executables only)..." -ForegroundColor Cyan
+        # 2. Package examples-windows-x86_64.zip (complete playable Godot game)
+        Write-Host "[Release] Packaging examples-windows-x86_64.zip (playable Godot game)..." -ForegroundColor Cyan
         $examplesDist = Join-Path $RootDir "dist/examples_dist"
         if (Test-Path $examplesDist) { Remove-Item $examplesDist -Recurse -Force }
         New-Item -ItemType Directory -Force -Path $examplesDist | Out-Null
 
         if (Test-Path "examples") {
             foreach ($ex in Get-ChildItem -Path "examples" -Directory) {
-                $exeCandidates = @(
-                    (Join-Path $ex.FullName "bin/game.exe"),
-                    (Join-Path $ex.FullName "bin/$($ex.Name).exe")
-                )
-                foreach ($cand in $exeCandidates) {
-                    if (Test-Path $cand) {
-                        $dest = Join-Path $examplesDist "$($ex.Name).exe"
-                        Copy-Item $cand $dest -Force
-                        Write-Host "  -> Packaged executable: $($ex.Name).exe"
-                        break
-                    }
-                }
+                Write-Host "  -> Packaging playable example for $($ex.Name)..."
+                & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $RootDir "scripts/package_game.ps1") -ProjectPath $ex.FullName -Name $ex.Name -TargetDir $examplesDist -Release 1
             }
         }
 
-        # Enforce that only .exe files exist in examples package
-        Get-ChildItem -Path $examplesDist -File | Where-Object { $_.Extension -ne ".exe" } | Remove-Item -Force
-        $examplesZip = Join-Path $RootDir "examples.zip"
+        $examplesZip = Join-Path $RootDir "examples-windows-x86_64.zip"
         if (Test-Path $examplesZip) { Remove-Item $examplesZip -Force }
         Compress-Archive -Path "$examplesDist/*" -DestinationPath $examplesZip -Force
-        Write-Host "  [OK] Created examples.zip ($( [math]::Round((Get-Item $examplesZip).Length / 1MB, 2) ) MB)" -ForegroundColor Green
+        Write-Host "  [OK] Created examples-windows-x86_64.zip ($( [math]::Round((Get-Item $examplesZip).Length / 1MB, 2) ) MB)" -ForegroundColor Green
 
-        # Verify archive contains only .exe files
+        # Verify archive contains playable executable and game.dll
         Add-Type -AssemblyName System.IO.Compression.FileSystem
         $zipObj = [System.IO.Compression.ZipFile]::OpenRead($examplesZip)
-        $nonExes = $zipObj.Entries | Where-Object { -not $_.Name.EndsWith(".exe") }
+        $hasExe = ($zipObj.Entries | Where-Object { $_.Name.EndsWith(".exe") }).Count -gt 0
+        $hasGameDll = ($zipObj.Entries | Where-Object { $_.Name -eq "game.dll" }).Count -gt 0
         $entryCount = $zipObj.Entries.Count
         $zipObj.Dispose()
 
-        if ($nonExes.Count -gt 0) {
-            throw "examples.zip contains non-exe files!"
+        if (-not $hasExe -or -not $hasGameDll) {
+            throw "examples-windows-x86_64.zip is missing executable or game.dll!"
         }
-        Write-Host "  [OK] Verified examples.zip contains exactly $entryCount compiled executable(s) and NO extra files." -ForegroundColor Green
+        Write-Host "  [OK] Verified examples-windows-x86_64.zip contains $entryCount entries including playable executable and game.dll." -ForegroundColor Green
 
         # 2. Package Addon/Plugin (godot-crystal-addon.zip)
         Write-Host "[Release] Packaging godot-crystal-addon.zip (addon + bridge DLL)..." -ForegroundColor Cyan
