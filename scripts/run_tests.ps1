@@ -138,8 +138,9 @@ if (-not $SkipToolTests) {
         -EnvironmentVars @{ "GODOT_RUN_TOOL_TESTS" = "1" }
 
     if (Test-Path $failMarker) {
-        Write-Host "::error::In-Editor tool tests reported failures in marker file!" -ForegroundColor Red
-        $FailedSteps.Add("In-Editor Tool Tests (ToolTester2D / ToolTester3D failed)")
+        $failContent = Get-Content $failMarker -Raw
+        Write-Host "::error::In-Editor tool tests reported failures in marker file:`n$failContent" -ForegroundColor Red
+        $FailedSteps.Add("In-Editor Tool Tests (ToolTester2D / ToolTester3D failed: $failContent)")
     } elseif (-not (Test-Path $passMarker) -and (-not $toolResult.Success)) {
         $FailedSteps.Add("In-Editor Tool Tests (Process exited with code $($toolResult.ExitCode))")
     } else {

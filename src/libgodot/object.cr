@@ -245,6 +245,9 @@ module Godot
 
     def name=(val : String)
       @name = val
+      if !@pointer.null?
+        self.call("set_name", val)
+      end
     end
 
     # Returns the SceneTree containing this node.

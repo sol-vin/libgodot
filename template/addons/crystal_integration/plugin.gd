@@ -74,6 +74,7 @@ func _enter_tree():
 	if OS.get_environment("GODOT_RUN_TOOL_TESTS") == "1" or "--run-tool-tests" in OS.get_cmdline_args():
 		call_deferred("_run_in_editor_tool_tests")
 
+func _exit_tree():
 	if compile_button:
 		remove_control_from_container(CONTAINER_TOOLBAR, compile_button)
 		compile_button.queue_free()
@@ -185,9 +186,14 @@ func _run_in_editor_tool_tests():
 	print("[CrystalToolTester] Headless Editor Mode: Tickling @tool Tests...")
 	print("==================================================================")
 	var errors = 0
+	var error_messages = []
 	
-	# Wait for editor frame initialization
-	await get_tree().process_frame
+	# Wait for editor frame initialization and initial filesystem scan
+	for i in range(5):
+		await get_tree().process_frame
+	if EditorInterface.get_resource_filesystem():
+		while EditorInterface.get_resource_filesystem().is_scanning():
+			await get_tree().process_frame
 	
 	# 1. Tickle ToolTester2D
 	print("[CrystalToolTester] Instantiating and executing ToolTester2D...")
@@ -202,14 +208,20 @@ func _run_in_editor_tool_tests():
 				var status_2d = str(tester_2d.get("test_status"))
 				print("[CrystalToolTester] ToolTester2D status: " + status_2d)
 				if status_2d.contains("Failed") or status_2d.contains("Error"):
-					printerr("[CrystalToolTester] ToolTester2D failed: " + status_2d)
+					var msg = "[CrystalToolTester] ToolTester2D failed: " + status_2d
+					printerr(msg)
+					error_messages.append(msg)
 					errors += 1
 			else:
-				printerr("[CrystalToolTester] ToolTester2D node not found in test_tool_2d.tscn")
+				var msg = "[CrystalToolTester] ToolTester2D node not found in test_tool_2d.tscn"
+				printerr(msg)
+				error_messages.append(msg)
 				errors += 1
 			node_2d.free()
 	else:
-		printerr("[CrystalToolTester] Failed to load res://scenes/test_tool_2d.tscn")
+		var msg = "[CrystalToolTester] Failed to load res://scenes/test_tool_2d.tscn"
+		printerr(msg)
+		error_messages.append(msg)
 		errors += 1
 
 	# 2. Tickle ToolTester3D
@@ -225,14 +237,20 @@ func _run_in_editor_tool_tests():
 				var status_3d = str(tester_3d.get("test_status"))
 				print("[CrystalToolTester] ToolTester3D status: " + status_3d)
 				if status_3d.contains("Failed") or status_3d.contains("Error"):
-					printerr("[CrystalToolTester] ToolTester3D failed: " + status_3d)
+					var msg = "[CrystalToolTester] ToolTester3D failed: " + status_3d
+					printerr(msg)
+					error_messages.append(msg)
 					errors += 1
 			else:
-				printerr("[CrystalToolTester] ToolTester3D node not found in test_tool_3d.tscn")
+				var msg = "[CrystalToolTester] ToolTester3D node not found in test_tool_3d.tscn"
+				printerr(msg)
+				error_messages.append(msg)
 				errors += 1
 			node_3d.free()
 	else:
-		printerr("[CrystalToolTester] Failed to load res://scenes/test_tool_3d.tscn")
+		var msg = "[CrystalToolTester] Failed to load res://scenes/test_tool_3d.tscn"
+		printerr(msg)
+		error_messages.append(msg)
 		errors += 1
 
 	print("==================================================================")
@@ -240,7 +258,7 @@ func _run_in_editor_tool_tests():
 		printerr("[CrystalToolTester] IN-EDITOR TOOL TESTS FAILED (%d errors)!" % errors)
 		var f = FileAccess.open("res://.tool_tests_failed", FileAccess.WRITE)
 		if f:
-			f.store_string("FAILED: %d errors\n" % errors)
+			f.store_string("FAILED: %d errors\n%s\n" % [errors, "\n".join(error_messages)])
 			f.close()
 		get_tree().quit(1)
 	else:
