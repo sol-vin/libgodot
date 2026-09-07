@@ -512,6 +512,9 @@ struct GenericExtensionInstance {
 static std::deque<CrystalClassDesc> g_registered_classes;
 static GDExtensionInitializationLevel g_current_init_level = GDEXTENSION_INITIALIZATION_SCENE;
 static std::vector<CrystalClassDesc*> g_deferred_editor_classes;
+static std::vector<std::string> g_registered_editor_class_names;
+static std::vector<std::string> g_registered_scene_class_names;
+static bool is_editor_class(const CrystalClassDesc *desc);
 
 /**
  * Queries whether the Godot Editor is currently running (Engine.is_editor_hint()).
@@ -896,6 +899,12 @@ static void do_classdb_register(CrystalClassDesc *desc) {
     char log_buf[128];
     snprintf(log_buf, sizeof(log_buf), "  [ClassDB] Registered %s < %s", desc->name, desc->parent_name);
     godot_log_print(log_buf);
+
+    if (g_current_init_level == GDEXTENSION_INITIALIZATION_EDITOR || is_editor_class(desc)) {
+        g_registered_editor_class_names.push_back(std::string(desc->name));
+    } else {
+        g_registered_scene_class_names.push_back(std::string(desc->name));
+    }
 
     free_string_name(class_sn);
     free_string_name(parent_sn);
@@ -2430,6 +2439,8 @@ static void initialize_crystal_module(void *p_userdata, GDExtensionInitializatio
     g_current_init_level = p_level;
     if (p_level == GDEXTENSION_INITIALIZATION_SCENE) {
         g_registered_classes.clear();
+        g_registered_editor_class_names.clear();
+        g_registered_scene_class_names.clear();
         g_deferred_editor_classes.clear();
         init_common_method_binds();
         godot_log_print("[CrystalBridge] Initializing generic Crystal GDExtension host...");
@@ -2449,17 +2460,32 @@ static void initialize_crystal_module(void *p_userdata, GDExtensionInitializatio
 /**
  * Callback invoked by Godot during engine shutdown or reload.
  * Unregisters all registered Crystal classes from ClassDB and resets game library handles.
+ * Editor classes are unregistered at EDITOR level before editor types are destroyed;
+ * Scene classes are unregistered at SCENE level.
  */
 static void deinitialize_crystal_module(void *p_userdata, GDExtensionInitializationLevel p_level) {
-    if (p_level == GDEXTENSION_INITIALIZATION_SCENE) {
+    if (p_level == GDEXTENSION_INITIALIZATION_EDITOR) {
+        if (!g_registered_editor_class_names.empty()) {
+            godot_log_print("[CrystalBridge] Unregistering Editor classes at EDITOR level...");
+            if (gd_classdb_unregister_extension_class) {
+                for (int i = (int)g_registered_editor_class_names.size() - 1; i >= 0; i--) {
+                    void *sn = make_string_name(g_registered_editor_class_names[i].c_str());
+                    gd_classdb_unregister_extension_class(g_library, sn);
+                    free_string_name(sn);
+                }
+            }
+            g_registered_editor_class_names.clear();
+        }
+    } else if (p_level == GDEXTENSION_INITIALIZATION_SCENE) {
         godot_log_print("[CrystalBridge] Unregistering Crystal classes...");
         if (gd_classdb_unregister_extension_class) {
-            for (int i = (int)g_registered_classes.size() - 1; i >= 0; i--) {
-                void *sn = make_string_name(g_registered_classes[i].name);
+            for (int i = (int)g_registered_scene_class_names.size() - 1; i >= 0; i--) {
+                void *sn = make_string_name(g_registered_scene_class_names[i].c_str());
                 gd_classdb_unregister_extension_class(g_library, sn);
                 free_string_name(sn);
             }
         }
+        g_registered_scene_class_names.clear();
         g_registered_classes.clear();
         g_deferred_editor_classes.clear();
         g_editor_doc_xmls.clear();
