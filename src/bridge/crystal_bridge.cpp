@@ -1,3 +1,47 @@
+/**
+ * ==============================================================================
+ * LibGodot for Crystal - GDExtension Loader Bridge (crystal_bridge.cpp)
+ * ==============================================================================
+ *
+ * Architecture & Design:
+ * ----------------------
+ * This file implements the native C++ GDExtension loader bridge connecting the
+ * Godot Engine 4.x runtime to dynamically compiled Crystal shared libraries
+ * (game.dll on Windows, game.so on Linux).
+ *
+ * Key Responsibilities:
+ * 1. GDExtension Lifecycle Host:
+ *    Godot loads this shared library at startup (configured via crystal.gdextension).
+ *    This bridge captures Godot's C-API function pointers through the entry point
+ *    `crystal_library_init` and initializes the scene-level GDExtension module.
+ *
+ * 2. Dynamic Crystal Library Loading & Hot-Reloading:
+ *    - Development / Editor Mode:
+ *      When running in the Godot Editor or during development, the bridge creates
+ *      a temporary shadow copy (`game_loaded_<PID>_<timestamp>.dll/so`) before loading.
+ *      This bypasses Windows DLL file locks (`ERROR_SHARING_VIOLATION`) so the Crystal
+ *      compiler can rebuild `game.dll` live while Godot remains open.
+ *    - Release / Production Mode:
+ *      When built with `LIBGODOT_RELEASE` or `NDEBUG`, shadow copying is disabled.
+ *      The bridge directly loads `game.dll` or `game.so` without file copying overhead.
+ *
+ * 3. ClassDB Bridge & Reflection:
+ *    Crystal classes declared with `@register_class` or subclassing Godot nodes
+ *    (e.g. Node, Node3D, CharacterBody3D) are registered dynamically into Godot's
+ *    ClassDB via `gd_classdb_register_extension_class6`.
+ *
+ * 4. Instance & Virtual Method Dispatch:
+ *    Bridges Godot lifecycle callbacks (`_ready`, `_process`, `_physics_process`)
+ *    and property getters/setters between Godot's Object instances and the Crystal
+ *    heap instance wrappers (`GenericExtensionInstance`).
+ *
+ * 5. C-ABI Interface Table (`BridgeAPI`):
+ *    Exposes a stable C function-pointer table to Crystal (`crystal_godot_init`),
+ *    enabling Crystal game code to interact with Godot's engine singletons, node
+ *    trees, signals, RPCs, and PackedScenes with zero C++ header dependencies.
+ * ==============================================================================
+ */
+
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -25,50 +69,140 @@
 
 #include "gdextension_interface.h"
 
-// Cached function pointers from Godot
+// ==============================================================================
+// Cached Function Pointers from Godot Engine (GDExtension Interface)
+// ==============================================================================
+// Populated in crystal_library_init() via p_get_proc_address callback.
+
+/** Master interface symbol resolver supplied by Godot */
 static GDExtensionInterfaceGetProcAddress gd_get_proc_address = nullptr;
+
+/** Creates a Godot StringName instance from a null-terminated UTF-8 C-string */
 static GDExtensionInterfaceStringNameNewWithUtf8Chars gd_string_name_new_with_utf8_chars = nullptr;
+
+/** Creates a Godot String instance from a null-terminated UTF-8 C-string */
 static GDExtensionInterfaceStringNewWithUtf8Chars gd_string_new_with_utf8_chars = nullptr;
+
+/** Destroys a Godot Variant instance and releases its internal refcounts */
 static GDExtensionInterfaceVariantDestroy gd_variant_destroy = nullptr;
+
+/** Instantiates an uninitialized Godot Object of the given ClassDB class name */
 static GDExtensionInterfaceClassdbConstructObject gd_classdb_construct_object = nullptr;
+
+/** Binds a custom extension instance pointer (GenericExtensionInstance) to a Godot Object */
 static GDExtensionInterfaceObjectSetInstance gd_object_set_instance = nullptr;
+
+/** Registers a custom GDExtension class into Godot's ClassDB with lifecycle callbacks */
 static GDExtensionInterfaceClassdbRegisterExtensionClass6 gd_classdb_register_extension_class6 = nullptr;
+
+/** Unregisters a custom GDExtension class from Godot's ClassDB during shutdown */
 static GDExtensionInterfaceClassdbUnregisterExtensionClass gd_classdb_unregister_extension_class = nullptr;
+
+/** Registers an exported property (inspector variable) for a registered extension class */
 static GDExtensionInterfaceClassdbRegisterExtensionClassProperty gd_classdb_register_extension_class_property = nullptr;
+
+/** Registers a custom signal for a registered extension class */
 static GDExtensionInterfaceClassdbRegisterExtensionClassSignal gd_classdb_register_extension_class_signal = nullptr;
+
+/** Registers a custom callable method on an extension class */
 static GDExtensionInterfaceClassdbRegisterExtensionClassMethod gd_classdb_register_extension_class_method = nullptr;
+
+/** Retrieves a cached MethodBind pointer by class name, method name, and method hash */
 static GDExtensionInterfaceClassdbGetMethodBind gd_classdb_get_method_bind = nullptr;
+
+/** Executes a MethodBind via high-performance raw pointer call (ptrcall) */
 static GDExtensionInterfaceObjectMethodBindPtrcall gd_object_method_bind_ptrcall = nullptr;
+
+/** Executes a MethodBind via universal Variant call (supports varargs and dynamic dispatch) */
 static GDExtensionInterfaceObjectMethodBindCall gd_object_method_bind_call = nullptr;
+
+/** Loads XML editor documentation into Godot's in-engine Help system */
 static GDExtensionsInterfaceEditorHelpLoadXmlFromUtf8Chars gd_editor_help_load_xml_from_utf8_chars = nullptr;
+
+/** Retrieves engine global singletons (e.g., Engine, Input, ResourceLoader) by name */
 static GDExtensionInterfaceGlobalGetSingleton gd_global_get_singleton = nullptr;
+
+/** Retrieves a constructor function to box a native C type into a Godot Variant */
 static GDExtensionInterfaceGetVariantFromTypeConstructor gd_get_variant_from_type_constructor = nullptr;
+
+/** Retrieves a constructor function to unbox a Godot Variant into a native C type */
 static GDExtensionInterfaceGetVariantToTypeConstructor gd_get_variant_to_type_constructor = nullptr;
 
-// Godot engine logging interfaces
+// ==============================================================================
+// Godot Engine Diagnostic & Logging Interfaces
+// ==============================================================================
+
+/** Logs an error to Godot's debugger and standard error */
 static GDExtensionInterfacePrintError gd_print_error = nullptr;
+
+/** Logs an error with a detailed message to Godot's debugger */
 static GDExtensionInterfacePrintErrorWithMessage gd_print_error_with_message = nullptr;
+
+/** Logs a warning to Godot's debugger and standard error */
 static GDExtensionInterfacePrintWarning gd_print_warning = nullptr;
+
+/** Logs a warning with a detailed message to Godot's debugger */
 static GDExtensionInterfacePrintWarningWithMessage gd_print_warning_with_message = nullptr;
+
+/** Looks up built-in utility functions (e.g. print, printerr) by name and hash */
 static GDExtensionInterfaceVariantGetPtrUtilityFunction gd_variant_get_ptr_utility_function = nullptr;
+
+/** Looks up the destructor function for a specific Variant type */
 static GDExtensionInterfaceVariantGetPtrDestructor gd_variant_get_ptr_destructor = nullptr;
 
+/** Cached utility function pointer for print() */
 static GDExtensionPtrUtilityFunction gd_util_print = nullptr;
+
+/** Cached utility function pointer for printerr() */
 static GDExtensionPtrUtilityFunction gd_util_printerr = nullptr;
+
+/** Constructor to convert Godot String -> Variant */
 static GDExtensionVariantFromTypeConstructorFunc gd_variant_from_string = nullptr;
+
+/** Destructor for Godot String */
 static GDExtensionPtrDestructor gd_string_destroy = nullptr;
+
+/** Destructor for Godot StringName */
 static GDExtensionPtrDestructor gd_string_name_destroy = nullptr;
+
+/** Queries the GDExtensionVariantType enum of a given Variant */
 static GDExtensionInterfaceVariantGetType gd_variant_get_type = nullptr;
+
+/** Retrieves the 64-bit ObjectID from an Object-type Variant */
 static GDExtensionInterfaceVariantGetObjectInstanceId gd_variant_get_object_instance_id = nullptr;
+
+/** Resolves an Object pointer from a 64-bit ObjectID */
 static GDExtensionInterfaceObjectGetInstanceFromId gd_object_get_instance_from_id = nullptr;
+
+/** Stringifies any Variant into a Godot String */
 static GDExtensionInterfaceVariantStringify gd_variant_stringify = nullptr;
+
+/** Extracts UTF-8 character bytes from a Godot String */
 static GDExtensionInterfaceStringToUtf8Chars gd_string_to_utf8_chars = nullptr;
+
+/** Internal getter function type for accessing raw Object pointers inside Variants */
 typedef GDExtensionVariantGetInternalPtrFunc (*GDExtensionInterfaceVariantGetPtrInternalGetter)(GDExtensionVariantType p_type);
 static GDExtensionVariantGetInternalPtrFunc gd_variant_get_internal_ptr_object = nullptr;
 
+/** Library handle passed to GDExtension at initialization, required for class registration */
 static GDExtensionClassLibraryPtr g_library = nullptr;
 
-// Object extraction helper
+// ==============================================================================
+// Variant & Object Marshaling Helpers
+// ==============================================================================
+
+/**
+ * Extracts a native Godot Object pointer from a Variant buffer.
+ *
+ * Uses three sequential fallback strategies to guarantee robust Object unboxing
+ * across different Godot 4.x minor versions:
+ * 1. Fast Path: variant_get_internal_ptr_object (direct pointer access, fastest).
+ * 2. Standard Path: get_variant_to_type_constructor (official type unboxing).
+ * 3. Fallback Path: get_object_instance_id + get_instance_from_id (safe ID lookup).
+ *
+ * @param variant Pointer to the Godot Variant memory (24 bytes).
+ * @return GDExtensionObjectPtr or nullptr if invalid or null.
+ */
 static GDExtensionObjectPtr bridge_object_from_variant(const void *variant) {
     if (!variant) return nullptr;
     if (gd_variant_get_internal_ptr_object) {
@@ -95,7 +229,13 @@ static GDExtensionObjectPtr bridge_object_from_variant(const void *variant) {
     return nullptr;
 }
 
-// Variant conversion helpers
+/**
+ * Unboxes a Godot Variant into a raw C/Crystal destination buffer based on variant_type.
+ *
+ * @param variant_type The GDExtensionVariantType enum value.
+ * @param dst Pointer to the destination buffer allocated by Crystal.
+ * @param variant Pointer to the source Godot Variant.
+ */
 static void bridge_type_from_variant(int variant_type, void *dst, const void *variant) {
     if (!variant || !dst) return;
     if (variant_type == GDEXTENSION_VARIANT_TYPE_OBJECT) {
@@ -111,6 +251,13 @@ static void bridge_type_from_variant(int variant_type, void *dst, const void *va
     }
 }
 
+/**
+ * Boxes a raw C/Crystal source buffer into a Godot Variant buffer.
+ *
+ * @param variant_type The GDExtensionVariantType enum value.
+ * @param variant Pointer to the target 24-byte Variant buffer.
+ * @param src Pointer to the source raw value (e.g. float, int, Vector3).
+ */
 static void bridge_variant_from_type(int variant_type, void *variant, const void *src) {
     if (gd_get_variant_from_type_constructor && variant && src) {
         GDExtensionVariantFromTypeConstructorFunc conv = gd_get_variant_from_type_constructor((GDExtensionVariantType)variant_type);
@@ -120,11 +267,25 @@ static void bridge_variant_from_type(int variant_type, void *variant, const void
     }
 }
 
-// Method binds for process management
+// ==============================================================================
+// Process Management Method Binds
+// ==============================================================================
+
+/** Cached MethodBind for Node::set_physics_process(bool) */
 static GDExtensionMethodBindPtr mb_set_physics_process = nullptr;
+
+/** Cached MethodBind for Node::set_process(bool) */
 static GDExtensionMethodBindPtr mb_set_process = nullptr;
 
-// Logging helpers
+// ==============================================================================
+// Godot Engine Diagnostic & Console Logging Helpers
+// ==============================================================================
+
+/**
+ * Prints an informational message to stdout and to Godot's engine console.
+ *
+ * @param msg Null-terminated UTF-8 message string.
+ */
 static void godot_log_print(const char *msg) {
     if (!msg) return;
     printf("%s\n", msg);
@@ -145,6 +306,11 @@ static void godot_log_print(const char *msg) {
     }
 }
 
+/**
+ * Prints an error or warning message to stderr and to Godot's engine error output.
+ *
+ * @param msg Null-terminated UTF-8 error string.
+ */
 static void godot_log_printerr(const char *msg) {
     if (!msg) return;
     fprintf(stderr, "%s\n", msg);
@@ -165,6 +331,9 @@ static void godot_log_printerr(const char *msg) {
     }
 }
 
+/**
+ * Reports an error with file, line, and function context through Godot's debugger.
+ */
 static void godot_log_error(const char *desc, const char *msg, const char *func, const char *file, int line) {
     fprintf(stderr, "[ERROR] %s: %s (%s:%d in %s)\n", desc, msg ? msg : "", file, line, func);
     fflush(stderr);
@@ -176,6 +345,9 @@ static void godot_log_error(const char *desc, const char *msg, const char *func,
     }
 }
 
+/**
+ * Reports a warning with file, line, and function context through Godot's debugger.
+ */
 static void godot_log_warning(const char *desc, const char *msg, const char *func, const char *file, int line) {
     fprintf(stderr, "[WARNING] %s: %s (%s:%d in %s)\n", desc, msg ? msg : "", file, line, func);
     fflush(stderr);
@@ -187,13 +359,18 @@ static void godot_log_warning(const char *desc, const char *msg, const char *fun
     }
 }
 
-// Helpers
+// ==============================================================================
+// String & StringName Allocation Helpers
+// ==============================================================================
+
+/** Allocates and initializes a heap-backed Godot StringName instance */
 static void* make_string_name(const char *name) {
     void *sn = malloc(sizeof(void*));
     gd_string_name_new_with_utf8_chars(sn, name);
     return sn;
 }
 
+/** Destroys and frees a heap-backed Godot StringName instance */
 static void free_string_name(void *sn) {
     if (!sn) return;
     if (gd_string_name_destroy) {
@@ -202,12 +379,14 @@ static void free_string_name(void *sn) {
     free(sn);
 }
 
+/** Allocates and initializes a heap-backed Godot String instance */
 static void* make_string(const char *str) {
     void *s = malloc(sizeof(void*));
     gd_string_new_with_utf8_chars(s, str ? str : "");
     return s;
 }
 
+/** Destroys and frees a heap-backed Godot String instance */
 static void free_string(void *s) {
     if (!s) return;
     if (gd_string_destroy) {
@@ -216,69 +395,100 @@ static void free_string(void *s) {
     free(s);
 }
 
-
-
 // ==============================================================================
 // Generic Bridge Registration Data Structures (C-ABI)
 // ==============================================================================
 
+/**
+ * Describes a property exported from a Crystal class to Godot's Inspector.
+ */
 struct CrystalPropertyDesc {
-    const char *name;
-    const char *type_name;
-    int variant_type;
-    uint32_t hint;
-    const char *hint_string;
-    uint32_t usage;
+    const char *name;         /** Property identifier (e.g., "speed", "player_name") */
+    const char *type_name;    /** Godot type name (e.g., "float", "Vector3", "Node3D") */
+    int variant_type;         /** GDExtensionVariantType enum representing the underlying storage */
+    uint32_t hint;            /** PropertyHint enum flags (e.g., PROPERTY_HINT_RANGE) */
+    const char *hint_string;  /** Formatting string for the hint (e.g., "0.0,100.0,0.1") */
+    uint32_t usage;           /** PropertyUsageFlags bitmask (defaults to PROPERTY_USAGE_DEFAULT) */
 };
 
+/**
+ * Describes an argument of a custom Godot signal declared in Crystal.
+ */
 struct CrystalSignalArgDesc {
-    const char *name;
-    int variant_type;
+    const char *name;         /** Argument name */
+    int variant_type;         /** GDExtensionVariantType of the parameter */
 };
 
+/**
+ * Describes a custom Godot signal declared in Crystal.
+ */
 struct CrystalSignalDesc {
-    const char *name;
-    int arg_count;
-    const CrystalSignalArgDesc *args;
+    const char *name;                    /** Signal name (e.g., "health_changed", "goal_scored") */
+    int arg_count;                       /** Number of arguments in the signal signature */
+    const CrystalSignalArgDesc *args;   /** Array of argument descriptors */
 };
 
+/**
+ * Comprehensive metadata describing a Crystal class exposed to Godot's ClassDB.
+ *
+ * Contains inheritance details, lifecycle flags, exported properties, signals,
+ * and C function pointers dishing back into Crystal runtime dispatchers.
+ */
 struct CrystalClassDesc {
-    const char *name;
-    const char *parent_name;
-    const char *icon_path;
-    bool is_virtual;
-    bool is_abstract;
-    bool is_tool;
-    bool has_ready;
-    bool has_process;
-    bool has_physics_process;
+    const char *name;         /** Registered class name (e.g. "MyPlayer", "ToolTester2D") */
+    const char *parent_name;  /** Native or Crystal parent class (e.g. "CharacterBody3D") */
+    const char *icon_path;    /** Optional editor icon path (e.g. "res://icon.svg") */
+    bool is_virtual;          /** True if class is a virtual/interface class */
+    bool is_abstract;         /** True if class cannot be instantiated directly */
+    bool is_tool;             /** True if marked @tool (runs in the Godot Editor) */
+    bool has_ready;           /** True if the class overrides _ready() */
+    bool has_process;         /** True if the class overrides _process(delta) */
+    bool has_physics_process; /** True if the class overrides _physics_process(delta) */
 
     // Crystal Host Callbacks
+    /** Allocates a Crystal class instance on the GC heap and binds it to godot_object */
     void* (*create_instance)(const CrystalClassDesc *desc, void *godot_object);
+
+    /** Invoked by Godot when the native Object is deleted to free the Crystal wrapper */
     void (*free_instance)(void *crystal_instance);
+
+    /** Dispatches a virtual lifecycle call (_ready, _process, _physics_process) to Crystal */
     void (*call_virtual)(void *crystal_instance, const char *method_name, double delta);
+
+    /** Invokes Crystal property setter */
     void (*set_property)(void *crystal_instance, const char *prop_name, const void *val_ptr);
+
+    /** Invokes Crystal property getter */
     void (*get_property)(void *crystal_instance, const char *prop_name, void *ret_ptr);
 
-    int property_count;
-    const CrystalPropertyDesc *properties;
+    int property_count;                     /** Number of exported properties */
+    const CrystalPropertyDesc *properties;  /** Array of property descriptors */
 
-    int signal_count;
-    const CrystalSignalDesc *signals;
+    int signal_count;                       /** Number of custom signals */
+    const CrystalSignalDesc *signals;       /** Array of signal descriptors */
 
-    const CrystalClassDesc *parent_desc;
+    const CrystalClassDesc *parent_desc;    /** Linked parent CrystalClassDesc if parent is also Crystal */
 };
 
-// Generic Instance Wrapper linking Godot Object to Crystal Instance
+/**
+ * Generic instance wrapper linking a native Godot Object to its corresponding
+ * Crystal heap object instance and class metadata.
+ */
 struct GenericExtensionInstance {
-    GDExtensionObjectPtr godot_object;
-    void *crystal_instance;
-    const CrystalClassDesc *desc;
+    GDExtensionObjectPtr godot_object;  /** Native Godot C++ Object pointer */
+    void *crystal_instance;             /** Heap pointer to Crystal object */
+    const CrystalClassDesc *desc;       /** Metadata descriptor for the class */
 };
 
-// Global list of registered classes for unregistration on shutdown (deque ensures pointer stability)
+/** Global list of registered classes for unregistration on shutdown (deque ensures pointer stability) */
 static std::deque<CrystalClassDesc> g_registered_classes;
 
+/**
+ * Queries whether the Godot Editor is currently running (Engine.is_editor_hint()).
+ * Caches the result to prevent repeated singleton and method lookups on every frame.
+ *
+ * @return True if running within the Godot editor, false during standalone game execution.
+ */
 static bool is_editor_active() {
     static int s_cached = -1;
     if (s_cached != -1) return s_cached == 1;
@@ -297,7 +507,22 @@ static bool is_editor_active() {
     return s_cached == 1;
 }
 
-// Generic ClassDB Callbacks
+// ==============================================================================
+// Generic ClassDB Lifecycle & Virtual Callbacks
+// ==============================================================================
+
+/**
+ * Instantiates a new Godot Object for a registered Crystal class.
+ *
+ * Traverses parent descriptors to determine the root native Godot class
+ * (e.g. Node, Node3D, CharacterBody3D), invokes ClassDB to allocate the native
+ * object, wraps it in a GenericExtensionInstance, invokes Crystal's create_instance
+ * constructor callback, and configures automatic physics/idle processing flags.
+ *
+ * @param p_class_userdata Pointer to the CrystalClassDesc descriptor.
+ * @param p_notify_postinitialize Whether to notify post-initialization.
+ * @return Allocated GDExtensionObjectPtr or nullptr on failure.
+ */
 static GDExtensionObjectPtr generic_class_create(void *p_class_userdata, GDExtensionBool p_notify_postinitialize) {
     const CrystalClassDesc *desc = (const CrystalClassDesc*)p_class_userdata;
     if (!desc) return nullptr;
@@ -352,6 +577,10 @@ static GDExtensionObjectPtr generic_class_create(void *p_class_userdata, GDExten
     return obj;
 }
 
+/**
+ * Recreates a Crystal extension instance wrapper on an existing native Godot Object.
+ * Used during scene deserialization, editor reload, or hot-reload recreation.
+ */
 static GDExtensionClassInstancePtr generic_class_recreate(void *p_class_userdata, GDExtensionObjectPtr p_object) {
     const CrystalClassDesc *desc = (const CrystalClassDesc*)p_class_userdata;
     if (!desc) return nullptr;
@@ -383,6 +612,10 @@ static GDExtensionClassInstancePtr generic_class_recreate(void *p_class_userdata
     return (GDExtensionClassInstancePtr)inst;
 }
 
+/**
+ * Frees the Crystal extension instance wrapper and invokes Crystal's free_instance callback.
+ * Called by Godot when the underlying C++ Object is destroyed.
+ */
 static void generic_class_free(void *p_class_userdata, GDExtensionClassInstancePtr p_instance) {
     GenericExtensionInstance *inst = (GenericExtensionInstance*)p_instance;
     if (inst) {
@@ -393,6 +626,7 @@ static void generic_class_free(void *p_class_userdata, GDExtensionClassInstanceP
     }
 }
 
+/** Dispatches Godot's _physics_process(delta) virtual callback into Crystal */
 static void generic_virtual_physics_process(GDExtensionClassInstancePtr p_instance, const GDExtensionConstTypePtr *p_args, GDExtensionTypePtr r_ret) {
     GenericExtensionInstance *inst = (GenericExtensionInstance*)p_instance;
     if (!inst || !inst->desc || !inst->desc->call_virtual || !inst->crystal_instance) return;
@@ -401,6 +635,7 @@ static void generic_virtual_physics_process(GDExtensionClassInstancePtr p_instan
     inst->desc->call_virtual(inst->crystal_instance, "_physics_process", delta);
 }
 
+/** Dispatches Godot's _process(delta) virtual callback into Crystal */
 static void generic_virtual_process(GDExtensionClassInstancePtr p_instance, const GDExtensionConstTypePtr *p_args, GDExtensionTypePtr r_ret) {
     GenericExtensionInstance *inst = (GenericExtensionInstance*)p_instance;
     if (!inst || !inst->desc || !inst->desc->call_virtual || !inst->crystal_instance) return;
@@ -409,6 +644,7 @@ static void generic_virtual_process(GDExtensionClassInstancePtr p_instance, cons
     inst->desc->call_virtual(inst->crystal_instance, "_process", delta);
 }
 
+/** Dispatches Godot's _ready() virtual callback into Crystal */
 static void generic_virtual_ready(GDExtensionClassInstancePtr p_instance, const GDExtensionConstTypePtr *p_args, GDExtensionTypePtr r_ret) {
     GenericExtensionInstance *inst = (GenericExtensionInstance*)p_instance;
     if (!inst || !inst->desc || !inst->desc->call_virtual || !inst->crystal_instance) return;
@@ -416,6 +652,10 @@ static void generic_virtual_ready(GDExtensionClassInstancePtr p_instance, const 
     inst->desc->call_virtual(inst->crystal_instance, "_ready", 0.0);
 }
 
+/**
+ * Maps Godot virtual method StringNames (_ready, _process, _physics_process)
+ * to their respective static C dispatch handlers.
+ */
 static GDExtensionClassCallVirtual generic_class_get_virtual(void *p_class_userdata, GDExtensionConstStringNamePtr p_name, uint32_t p_hash) {
     const CrystalClassDesc *desc = (const CrystalClassDesc*)p_class_userdata;
     if (!desc) return nullptr;
@@ -442,6 +682,14 @@ static GDExtensionClassCallVirtual generic_class_get_virtual(void *p_class_userd
     return nullptr;
 }
 
+/**
+ * Dynamic property setter called by Godot's inspector, animations, or scripts.
+ *
+ * Traverses the class inheritance hierarchy, matches the property name,
+ * unboxes the Variant value into a raw type buffer, and passes it to Crystal.
+ *
+ * @return 1 if the property was handled, 0 otherwise.
+ */
 static GDExtensionBool generic_class_set(GDExtensionClassInstancePtr p_instance, GDExtensionConstStringNamePtr p_name, GDExtensionConstVariantPtr p_value) {
     GenericExtensionInstance *inst = (GenericExtensionInstance*)p_instance;
     if (!inst || !inst->desc || !inst->desc->set_property || !inst->crystal_instance) return 0;
@@ -464,6 +712,14 @@ static GDExtensionBool generic_class_set(GDExtensionClassInstancePtr p_instance,
     return 0;
 }
 
+/**
+ * Dynamic property getter called by Godot's inspector, serialization, or scripts.
+ *
+ * Traverses the class inheritance hierarchy, retrieves the raw value from Crystal,
+ * boxes it into a Godot Variant, and writes to r_ret.
+ *
+ * @return 1 if the property was handled, 0 otherwise.
+ */
 static GDExtensionBool generic_class_get(GDExtensionClassInstancePtr p_instance, GDExtensionConstStringNamePtr p_name, GDExtensionVariantPtr r_ret) {
     GenericExtensionInstance *inst = (GenericExtensionInstance*)p_instance;
     if (!inst || !inst->desc || !inst->desc->get_property || !inst->crystal_instance) return 0;
@@ -486,7 +742,14 @@ static GDExtensionBool generic_class_get(GDExtensionClassInstancePtr p_instance,
     return 0;
 }
 
-// Function to register a class from Crystal
+/**
+ * Registers a Crystal class, all its exported properties, and all its signals with Godot ClassDB.
+ *
+ * Called by Crystal during game library initialization (crystal_godot_init).
+ *
+ * @param p_desc Pointer to the CrystalClassDesc filled out by Crystal's registration macros.
+ * @return 1 on success, 0 on failure.
+ */
 static int bridge_register_class(const CrystalClassDesc *p_desc) {
     if (!p_desc || !g_library) return 0;
 
@@ -576,7 +839,18 @@ static int bridge_register_class(const CrystalClassDesc *p_desc) {
     return 1;
 }
 
-// Method bind lookup helper for Crystal
+// ==============================================================================
+// Method Bind Lookup & Invocation Helpers
+// ==============================================================================
+
+/**
+ * Resolves a Godot MethodBind pointer by class name, method name, and API hash.
+ *
+ * @param class_name The Godot class name (e.g. "Node", "Object", "CharacterBody3D").
+ * @param method_name The method name (e.g. "set_position", "move_and_slide").
+ * @param hash 64-bit API hash generated by Godot's extension API dump.
+ * @return GDExtensionMethodBindPtr or nullptr if unresolved.
+ */
 static GDExtensionMethodBindPtr bridge_get_method_bind(const char *class_name, const char *method_name, int64_t hash) {
     if (!gd_classdb_get_method_bind) return nullptr;
     void *c_sn = make_string_name(class_name);
@@ -586,26 +860,59 @@ static GDExtensionMethodBindPtr bridge_get_method_bind(const char *class_name, c
     return mb;
 }
 
+/**
+ * Invokes a Godot MethodBind via direct pointer call (ptrcall).
+ * Fast path: passes raw pointers without Variant boxing.
+ *
+ * @param method_bind The cached MethodBind pointer.
+ * @param instance The target Godot Object instance pointer.
+ * @param args Array of raw argument pointers.
+ * @param ret Pointer to the return value buffer.
+ */
 static void bridge_method_bind_ptrcall(GDExtensionMethodBindPtr method_bind, GDExtensionObjectPtr instance, const void **args, void *ret) {
     if (gd_object_method_bind_ptrcall && method_bind && instance) {
         gd_object_method_bind_ptrcall(method_bind, instance, args, ret);
     }
 }
 
+/**
+ * Invokes a Godot MethodBind via Variant-based call.
+ * Standard path: supports variable argument counts and dynamic reflection.
+ *
+ * @param method_bind The cached MethodBind pointer.
+ * @param instance The target Godot Object instance pointer.
+ * @param args Array of Variant pointers.
+ * @param arg_count Number of arguments.
+ * @param ret Variant pointer to receive the return value.
+ * @param error Pointer to call error status struct.
+ */
 static void bridge_method_bind_call(GDExtensionMethodBindPtr method_bind, GDExtensionObjectPtr instance, const GDExtensionConstVariantPtr *args, GDExtensionInt arg_count, GDExtensionVariantPtr ret, GDExtensionCallError *error) {
     if (gd_object_method_bind_call && method_bind && instance) {
         gd_object_method_bind_call(method_bind, instance, args, arg_count, ret, error);
     }
 }
 
+// ==============================================================================
+// In-Editor XML Help Documentation
+// ==============================================================================
 
+/** Internal buffer storing raw XML documentation strings until the editor is ready */
 static std::vector<std::string> g_editor_doc_xmls;
 
+/**
+ * Queues an XML documentation string for registration with Godot's Help system.
+ *
+ * @param xml Null-terminated UTF-8 XML documentation string.
+ */
 static void bridge_load_editor_help_xml(const char *xml) {
     if (!xml) return;
     g_editor_doc_xmls.push_back(std::string(xml));
 }
 
+/**
+ * Flushes all queued XML documentation strings into Godot's EditorHelp database.
+ * Invoked during GDEXTENSION_INITIALIZATION_EDITOR level.
+ */
 static void bridge_flush_editor_help() {
     if (!gd_editor_help_load_xml_from_utf8_chars) return;
     for (const auto &xml : g_editor_doc_xmls) {
@@ -613,6 +920,12 @@ static void bridge_flush_editor_help() {
     }
 }
 
+/**
+ * Retrieves a global Godot singleton instance by name (e.g., "Engine", "Input").
+ *
+ * @param name Singleton identifier string.
+ * @return GDExtensionObjectPtr or nullptr if not registered.
+ */
 static GDExtensionObjectPtr bridge_get_singleton(const char *name) {
     if (!gd_global_get_singleton) return nullptr;
     void *sn = make_string_name(name);
@@ -621,13 +934,28 @@ static GDExtensionObjectPtr bridge_get_singleton(const char *name) {
     return s;
 }
 
+// ==============================================================================
+// Dynamic Vararg Invocation & Signal Dispatch
+// ==============================================================================
+
+/**
+ * Interop struct for passing typed arguments across the C boundary to Godot.
+ * Types: 1=bool, 2=int64, 3=double, 4=string, 5=Vector2, 6=Vector3, 7=Object*
+ */
 struct BridgeSignalArg {
-    int type;
-    const void *data;
+    int type;            /** Value type identifier */
+    const void *data;    /** Pointer to raw argument data */
 };
 
 static GDExtensionVariantFromTypeConstructorFunc gd_variant_from_string_name = nullptr;
 
+/**
+ * Universal vararg caller for Object methods taking a StringName first argument
+ * (e.g. emit_signal(signal_name, ...), call(method_name, ...), call_deferred(method_name, ...)).
+ *
+ * Automatically converts up to 16 BridgeSignalArg arguments into Godot Variants,
+ * performs the call, and cleans up all temporary Variant allocations.
+ */
 static void bridge_call_method_vararg(GDExtensionMethodBindPtr mb, GDExtensionObjectPtr instance, const char *first_arg_name, const BridgeSignalArg *args, int arg_count) {
     if (!instance || !first_arg_name || !mb || !gd_object_method_bind_call) return;
 
@@ -699,6 +1027,9 @@ static void bridge_call_method_vararg(GDExtensionMethodBindPtr mb, GDExtensionOb
     free_string_name(sn);
 }
 
+/**
+ * Vararg caller that writes the unboxed return value into a preallocated Variant buffer.
+ */
 static void bridge_call_method_vararg_ret(GDExtensionMethodBindPtr mb, GDExtensionObjectPtr instance, const char *first_arg_name, const BridgeSignalArg *args, int arg_count, void *r_ret_variant) {
     if (!instance || !first_arg_name || !mb || !gd_object_method_bind_call) return;
 
@@ -774,6 +1105,12 @@ static void bridge_call_method_vararg_ret(GDExtensionMethodBindPtr mb, GDExtensi
     free_string_name(sn);
 }
 
+/**
+ * Constructs a native Godot Object by class name via ClassDB.
+ *
+ * @param class_name The name of the native Godot class (e.g. "Timer", "Sprite2D").
+ * @return GDExtensionObjectPtr or nullptr on failure.
+ */
 static GDExtensionObjectPtr bridge_classdb_construct_object(const char *class_name) {
     if (!gd_classdb_construct_object || !class_name) return nullptr;
     void *sn = make_string_name(class_name);
@@ -783,6 +1120,15 @@ static GDExtensionObjectPtr bridge_classdb_construct_object(const char *class_na
 }
 
 static GDExtensionMethodBindPtr mb_object_emit_signal = nullptr;
+
+/**
+ * Emits a Godot signal on a target Object instance.
+ *
+ * @param instance The target Godot Object.
+ * @param signal_name The signal identifier to emit.
+ * @param args Array of typed arguments.
+ * @param arg_count Number of arguments in args.
+ */
 static void bridge_object_emit_signal(GDExtensionObjectPtr instance, const char *signal_name, const BridgeSignalArg *args, int arg_count) {
     if (!instance || !signal_name || !gd_classdb_get_method_bind || !gd_object_method_bind_call) return;
     if (!mb_object_emit_signal) {
@@ -796,6 +1142,15 @@ static void bridge_object_emit_signal(GDExtensionObjectPtr instance, const char 
 }
 
 static GDExtensionMethodBindPtr mb_object_call_deferred = nullptr;
+
+/**
+ * Calls a method on an Object deferred on Godot's main thread message queue.
+ *
+ * @param instance The target Godot Object.
+ * @param method_name The method identifier to call.
+ * @param args Array of typed arguments.
+ * @param arg_count Number of arguments.
+ */
 static void bridge_object_call_deferred(GDExtensionObjectPtr instance, const char *method_name, const BridgeSignalArg *args, int arg_count) {
     if (!instance || !method_name || !gd_classdb_get_method_bind || !gd_object_method_bind_call) return;
     if (!mb_object_call_deferred) {
@@ -809,6 +1164,15 @@ static void bridge_object_call_deferred(GDExtensionObjectPtr instance, const cha
 }
 
 static GDExtensionMethodBindPtr mb_object_call = nullptr;
+
+/**
+ * Synchronously calls a method on an Object via reflection.
+ *
+ * @param instance The target Godot Object.
+ * @param method_name The method identifier to call.
+ * @param args Array of typed arguments.
+ * @param arg_count Number of arguments.
+ */
 static void bridge_object_call(GDExtensionObjectPtr instance, const char *method_name, const BridgeSignalArg *args, int arg_count) {
     if (!instance || !method_name || !gd_classdb_get_method_bind || !gd_object_method_bind_call) return;
     if (!mb_object_call) {
@@ -821,6 +1185,7 @@ static void bridge_object_call(GDExtensionObjectPtr instance, const char *method
     bridge_call_method_vararg(mb_object_call, instance, method_name, args, arg_count);
 }
 
+/** Calls an Object method and unboxes the return value as a Godot Object pointer */
 static GDExtensionObjectPtr bridge_object_call_ret_object(GDExtensionObjectPtr instance, const char *method_name, const BridgeSignalArg *args, int arg_count) {
     if (!instance || !method_name || !gd_classdb_get_method_bind || !gd_object_method_bind_call) return nullptr;
     if (!mb_object_call) {
@@ -839,6 +1204,7 @@ static GDExtensionObjectPtr bridge_object_call_ret_object(GDExtensionObjectPtr i
     return ret_obj;
 }
 
+/** Calls an Object method and unboxes the return value as a 64-bit integer */
 static int64_t bridge_object_call_ret_int(GDExtensionObjectPtr instance, const char *method_name, const BridgeSignalArg *args, int arg_count) {
     if (!instance || !method_name || !gd_classdb_get_method_bind || !gd_object_method_bind_call) return 0;
     if (!mb_object_call) {
@@ -858,6 +1224,7 @@ static int64_t bridge_object_call_ret_int(GDExtensionObjectPtr instance, const c
     return ret_val;
 }
 
+/** Calls an Object method and unboxes the return value as a 64-bit float (double) */
 static double bridge_object_call_ret_float(GDExtensionObjectPtr instance, const char *method_name, const BridgeSignalArg *args, int arg_count) {
     if (!instance || !method_name || !gd_classdb_get_method_bind || !gd_object_method_bind_call) return 0.0;
     if (!mb_object_call) {
@@ -877,6 +1244,7 @@ static double bridge_object_call_ret_float(GDExtensionObjectPtr instance, const 
     return ret_val;
 }
 
+/** Calls an Object method and unboxes the return value as a boolean */
 static bool bridge_object_call_ret_bool(GDExtensionObjectPtr instance, const char *method_name, const BridgeSignalArg *args, int arg_count) {
     if (!instance || !method_name || !gd_classdb_get_method_bind || !gd_object_method_bind_call) return false;
     if (!mb_object_call) {
@@ -896,6 +1264,10 @@ static bool bridge_object_call_ret_bool(GDExtensionObjectPtr instance, const cha
     return ret_val != 0;
 }
 
+/**
+ * Calls an Object method, converts the return value to a string via Stringify,
+ * and returns a thread-local UTF-8 buffer pointer.
+ */
 static const char* bridge_object_call_ret_string(GDExtensionObjectPtr instance, const char *method_name, const BridgeSignalArg *args, int arg_count) {
     static thread_local char s_call_str_buf[1024];
     s_call_str_buf[0] = '\0';
@@ -924,7 +1296,21 @@ static const char* bridge_object_call_ret_string(GDExtensionObjectPtr instance, 
     return s_call_str_buf;
 }
 
+// ==============================================================================
+// High-Level Node Tree, Scene & Resource Helpers
+// ==============================================================================
+
 static GDExtensionMethodBindPtr mb_node_find_child = nullptr;
+
+/**
+ * Searches for a child node by name pattern (e.g. "Player", "Camera*").
+ *
+ * @param node The parent Godot Node to search under.
+ * @param pattern The node name pattern or exact string.
+ * @param recursive If true, recursively searches all descendants.
+ * @param owned If true, only searches nodes owned by the scene root.
+ * @return Found GDExtensionObjectPtr or nullptr if not found.
+ */
 static GDExtensionObjectPtr bridge_node_find_child(GDExtensionObjectPtr node, const char *pattern, bool recursive, bool owned) {
     if (!node || !pattern || !gd_classdb_get_method_bind || !gd_object_method_bind_ptrcall) return nullptr;
     if (!mb_node_find_child) {
@@ -948,6 +1334,15 @@ static GDExtensionObjectPtr bridge_node_find_child(GDExtensionObjectPtr node, co
 }
 
 static GDExtensionMethodBindPtr mb_node_get_node = nullptr;
+
+/**
+ * Resolves a child node relative to a given Node via NodePath.
+ * Uses Node::get_node_or_null to avoid throwing Godot engine errors on missing nodes.
+ *
+ * @param node The base Godot Node.
+ * @param path Relative or absolute NodePath string (e.g. "Sprite2D", "../Enemy").
+ * @return Found GDExtensionObjectPtr or nullptr.
+ */
 static GDExtensionObjectPtr bridge_node_get_node(GDExtensionObjectPtr node, const char *path) {
     if (!node || !path || !gd_classdb_get_method_bind || !gd_object_method_bind_ptrcall) return nullptr;
     if (!mb_node_get_node) {
@@ -982,6 +1377,13 @@ static GDExtensionObjectPtr bridge_node_get_node(GDExtensionObjectPtr node, cons
 }
 
 static GDExtensionMethodBindPtr mb_range_set_value = nullptr;
+
+/**
+ * Fast direct pointer call helper to set value on a Godot Range node (ProgressBar, Slider, etc.).
+ *
+ * @param range_obj The Range object pointer.
+ * @param value Double floating-point value.
+ */
 static void bridge_range_set_value(GDExtensionObjectPtr range_obj, double value) {
     if (!range_obj || !gd_classdb_get_method_bind || !gd_object_method_bind_ptrcall) return;
     if (!mb_range_set_value) {
@@ -997,6 +1399,17 @@ static void bridge_range_set_value(GDExtensionObjectPtr range_obj, double value)
 }
 
 static GDExtensionMethodBindPtr mb_node_rpc_config = nullptr;
+
+/**
+ * Configures a method for multiplayer RPC on a Node.
+ *
+ * @param node The target Node pointer.
+ * @param method The method identifier string.
+ * @param rpc_mode Multiplayer RPC mode.
+ * @param transfer_mode Transfer mode (reliable, unreliable, etc.).
+ * @param call_local Whether to also invoke the method locally.
+ * @param channel Network channel number.
+ */
 static void bridge_node_rpc_config(GDExtensionObjectPtr node, const char *method, int rpc_mode, int transfer_mode, bool call_local, int channel) {
     if (!node || !method || !gd_classdb_get_method_bind || !gd_object_method_bind_ptrcall) return;
     if (!mb_node_rpc_config) {
@@ -1019,6 +1432,16 @@ static void bridge_node_rpc_config(GDExtensionObjectPtr node, const char *method
 }
 
 static GDExtensionMethodBindPtr mb_res_loader_load = nullptr;
+
+/**
+ * Loads a resource (e.g. PackedScene, Mesh, Texture, AudioStream) from the virtual res:// filesystem.
+ * Automatically takes an explicit reference on RefCounted objects to prevent garbage collection.
+ *
+ * @param path Virtual resource path (e.g. "res://scenes/player.tscn").
+ * @param type_hint Optional expected type hint string.
+ * @param cache_mode ResourceLoader CacheMode enum value.
+ * @return GDExtensionObjectPtr to the loaded Resource or nullptr.
+ */
 static GDExtensionObjectPtr bridge_resource_loader_load(const char *path, const char *type_hint, int64_t cache_mode) {
     if (!path || !gd_classdb_get_method_bind || !gd_object_method_bind_call) return nullptr;
     GDExtensionObjectPtr res_loader = bridge_get_singleton("ResourceLoader");
@@ -1080,6 +1503,14 @@ static GDExtensionObjectPtr bridge_resource_loader_load(const char *path, const 
 }
 
 static GDExtensionMethodBindPtr mb_packed_scene_instantiate = nullptr;
+
+/**
+ * Instantiates a PackedScene object into a Node tree hierarchy.
+ *
+ * @param scene The PackedScene object pointer.
+ * @param edit_state PackedScene::GenEditState flag (0 = state disabled, 1 = state instance).
+ * @return Root GDExtensionObjectPtr of the instantiated scene.
+ */
 static GDExtensionObjectPtr bridge_packed_scene_instantiate(GDExtensionObjectPtr scene, int64_t edit_state) {
     if (!scene || !gd_classdb_get_method_bind) return nullptr;
     if (!mb_packed_scene_instantiate) {
@@ -1124,6 +1555,13 @@ static GDExtensionObjectPtr bridge_packed_scene_instantiate(GDExtensionObjectPtr
 }
 
 static GDExtensionMethodBindPtr mb_node_get_name = nullptr;
+
+/**
+ * Retrieves the StringName identifier of a Node as a thread-local UTF-8 C-string.
+ *
+ * @param node The target Godot Node pointer.
+ * @return Null-terminated string or empty string.
+ */
 static const char* bridge_node_get_name(GDExtensionObjectPtr node) {
     if (!node || !gd_classdb_get_method_bind || !gd_object_method_bind_ptrcall) return "";
     if (!mb_node_get_name) {
@@ -1162,7 +1600,14 @@ static const char* bridge_node_get_name(GDExtensionObjectPtr node) {
     return s_name_buf;
 }
 
-// Exported BridgeAPI table provided to Crystal
+// ==============================================================================
+// Master BridgeAPI Table Exposed to Crystal
+// ==============================================================================
+
+/**
+ * Stable C-ABI function pointer table passed to Crystal during initialization.
+ * Crystal mirrors this struct in LibGodot::BridgeAPI.
+ */
 struct BridgeAPI {
     int (*register_class)(const CrystalClassDesc *desc);
     GDExtensionMethodBindPtr (*get_method_bind)(const char *class_name, const char *method_name, int64_t hash);
@@ -1227,7 +1672,11 @@ static BridgeAPI g_bridge_api = {
     bridge_object_call_ret_string
 };
 
-// C API exports
+// ==============================================================================
+// Exported C API Functions
+// ==============================================================================
+// Accessible by dynamic linking or foreign language bindings.
+
 extern "C" {
     GDE_EXPORT void crystal_godot_print(const char *msg) {
         godot_log_print(msg);
@@ -1258,6 +1707,11 @@ extern "C" {
     }
 }
 
+// ==============================================================================
+// Cross-Platform OS, File System & Dynamic Linking Abstractions
+// ==============================================================================
+
+/** Checks if a file exists on disk at the specified path */
 static bool bridge_file_exists(const char *path) {
 #ifdef _WIN32
     return GetFileAttributesA(path) != INVALID_FILE_ATTRIBUTES;
@@ -1266,6 +1720,11 @@ static bool bridge_file_exists(const char *path) {
 #endif
 }
 
+/**
+ * Copies a binary file from src to dst.
+ * Windows: CopyFileA with failIfExists=FALSE.
+ * POSIX: Buffered open/read/write/close.
+ */
 static bool bridge_copy_file(const char *src, const char *dst) {
 #ifdef _WIN32
     return CopyFileA(src, dst, FALSE) != 0;
@@ -1292,6 +1751,7 @@ static bool bridge_copy_file(const char *src, const char *dst) {
 #endif
 }
 
+/** Deletes a file on disk (DeleteFileA / unlink) */
 static void bridge_delete_file(const char *path) {
 #ifdef _WIN32
     DeleteFileA(path);
@@ -1300,6 +1760,7 @@ static void bridge_delete_file(const char *path) {
 #endif
 }
 
+/** Retrieves the OS Process ID */
 static unsigned long bridge_get_pid() {
 #ifdef _WIN32
     return (unsigned long)GetCurrentProcessId();
@@ -1308,6 +1769,7 @@ static unsigned long bridge_get_pid() {
 #endif
 }
 
+/** Retrieves high-resolution monotonic millisecond timestamp */
 static uint64_t bridge_get_tick_count() {
 #ifdef _WIN32
     return GetTickCount64();
@@ -1318,6 +1780,11 @@ static uint64_t bridge_get_tick_count() {
 #endif
 }
 
+/**
+ * Loads a shared dynamic library into the current process address space.
+ * Windows: LoadLibraryExA with LOAD_WITH_ALTERED_SEARCH_PATH.
+ * POSIX: dlopen with RTLD_NOW | RTLD_GLOBAL.
+ */
 static HMODULE bridge_load_library(const char *path) {
 #ifdef _WIN32
     HMODULE h = LoadLibraryExA(path, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
@@ -1328,6 +1795,7 @@ static HMODULE bridge_load_library(const char *path) {
 #endif
 }
 
+/** Resolves an exported symbol address from a loaded shared library */
 static void* bridge_get_proc(HMODULE hMod, const char *proc_name) {
 #ifdef _WIN32
     return (void*)GetProcAddress(hMod, proc_name);
@@ -1336,6 +1804,7 @@ static void* bridge_get_proc(HMODULE hMod, const char *proc_name) {
 #endif
 }
 
+/** Formats the most recent dynamic link error message into out_buf */
 static void bridge_get_last_error(char *out_buf, size_t buf_size) {
 #ifdef _WIN32
     snprintf(out_buf, buf_size, "error code %lu", (unsigned long)GetLastError());
@@ -1345,6 +1814,7 @@ static void bridge_get_last_error(char *out_buf, size_t buf_size) {
 #endif
 }
 
+/** Queries the last modification timestamp of a file on disk */
 static uint64_t get_file_mtime(const char *path) {
 #ifdef _WIN32
     WIN32_FILE_ATTRIBUTE_DATA data;
@@ -1361,15 +1831,23 @@ static uint64_t get_file_mtime(const char *path) {
 #endif
 }
 
+/** Global handle to the currently loaded Crystal game library (game.dll/so) */
 static HMODULE g_hGame = NULL;
 
+/**
+ * Unloads the Crystal game library reference.
+ * Note: FreeLibrary/dlclose is intentionally NOT called. Crystal's Boehm GC
+ * and runtime internals must remain resident in memory across hot-reloads;
+ * subsequent builds are loaded via unique shadow library copies.
+ */
 static void unload_crystal_game_library() {
-    // Note: Do not call FreeLibrary/dlclose(g_hGame). Crystal's Boehm GC and runtime
-    // remain resident across hot-reloads; subsequent builds are loaded via
-    // distinct shadow library copies.
     g_hGame = NULL;
 }
 
+/**
+ * Scans the bridge directory and removes stale temporary shadow copies
+ * (`game_loaded_*.dll/so`) left behind by previous, closed editor sessions.
+ */
 static void cleanup_old_shadow_dlls(const char *dir) {
     if (!dir || dir[0] == '\0') return;
 #ifdef _WIN32
@@ -1401,7 +1879,56 @@ static void cleanup_old_shadow_dlls(const char *dir) {
 #endif
 }
 
-// Loads game shared library compiled from Crystal and invokes crystal_godot_init(&g_bridge_api)
+// ==============================================================================
+// Game Library Loading, Shadow Copying & Hot-Reloading
+// ==============================================================================
+
+/**
+ * Determines whether the bridge should create a temporary shadow copy
+ * (`game_loaded_<PID>_<timestamp>.dll/so`) before loading the Crystal library.
+ *
+ * Rules:
+ * 1. Compile-time release: If compiled with `LIBGODOT_RELEASE` or `NDEBUG`, shadow copying
+ *    is disabled at compile time. The engine directly loads `game.dll` or `game.so`.
+ * 2. Environment overrides: If `LIBGODOT_NO_SHADOW=1`, `LIBGODOT_RELEASE=1`, or
+ *    `LIBGODOT_HOT_RELOAD=0` is set in the environment, shadow copying is disabled.
+ * 3. Default (Development / Editor): Returns true to enable live compilation without
+ *    Windows file lock conflicts.
+ *
+ * @return True to create a shadow copy; false to load directly.
+ */
+static bool bridge_should_use_shadow_copy() {
+#if defined(LIBGODOT_RELEASE) || defined(NDEBUG)
+    return false;
+#else
+    const char *no_shadow = getenv("LIBGODOT_NO_SHADOW");
+    if (no_shadow && (strcmp(no_shadow, "1") == 0 || strcmp(no_shadow, "true") == 0)) {
+        return false;
+    }
+    const char *release_env = getenv("LIBGODOT_RELEASE");
+    if (release_env && (strcmp(release_env, "1") == 0 || strcmp(release_env, "true") == 0)) {
+        return false;
+    }
+    const char *hot_reload = getenv("LIBGODOT_HOT_RELOAD");
+    if (hot_reload && (strcmp(hot_reload, "0") == 0 || strcmp(hot_reload, "false") == 0)) {
+        return false;
+    }
+    return true;
+#endif
+}
+
+/**
+ * Locates, loads, and initializes the Crystal game library (game.dll / game.so).
+ *
+ * Execution Steps:
+ * 1. Unloads any previous library handle reference.
+ * 2. Resolves the directory where `crystal_bridge` resides.
+ * 3. Cleans up any stale `game_loaded_*.dll/so` files from past sessions.
+ * 4. Preloads Windows Crystal runtime dependencies (gc.dll, iconv-2.dll, pcre2-8.dll).
+ * 5. Loads `game.dll` (either directly in release mode or via shadow copy in debug mode).
+ * 6. Searches fallback paths if co-located library was not found.
+ * 7. Resolves the exported `crystal_godot_init` symbol and passes `&g_bridge_api`.
+ */
 static void load_crystal_game_library() {
     unload_crystal_game_library();
 
@@ -1431,6 +1958,7 @@ static void load_crystal_game_library() {
     // Clean up stale shadow copies from previous editor sessions
     cleanup_old_shadow_dlls(bridge_dir);
 
+    bool use_shadow = bridge_should_use_shadow_copy();
     char candidate_path[MAX_PATH] = {0};
     char shadow_path[MAX_PATH] = {0};
 
@@ -1450,10 +1978,12 @@ static void load_crystal_game_library() {
     // 1. Primary candidate: game.dll / game.so sitting directly next to crystal_bridge
     if (bridge_dir[0] != '\0') {
         snprintf(candidate_path, sizeof(candidate_path), "%s%s%s", bridge_dir, path_sep, game_lib_name);
-        do {
-            snprintf(shadow_path, sizeof(shadow_path), "%s%sgame_loaded_%lu_%llu.%s", bridge_dir, path_sep, pid, (unsigned long long)ts, shadow_ext);
-            ts++;
-        } while (bridge_file_exists(shadow_path));
+        if (use_shadow) {
+            do {
+                snprintf(shadow_path, sizeof(shadow_path), "%s%sgame_loaded_%lu_%llu.%s", bridge_dir, path_sep, pid, (unsigned long long)ts, shadow_ext);
+                ts++;
+            } while (bridge_file_exists(shadow_path));
+        }
 #ifdef _WIN32
         SetDllDirectoryA(bridge_dir);
 #endif
@@ -1476,25 +2006,41 @@ static void load_crystal_game_library() {
 
     // Check if the co-located game library exists
     if (candidate_path[0] != '\0' && bridge_file_exists(candidate_path)) {
-        if (!bridge_copy_file(candidate_path, shadow_path)) {
-            char err_buf[256];
-            bridge_get_last_error(err_buf, sizeof(err_buf));
-            char log_buf[512];
-            snprintf(log_buf, sizeof(log_buf), "[CrystalBridge] Copy failed from %s to %s (%s)", candidate_path, shadow_path, err_buf);
-            godot_log_error(log_buf, nullptr, "load_crystal_game_library", __FILE__, __LINE__);
-        }
-        hGame = bridge_load_library(shadow_path);
-        if (hGame) {
-            char buf[512];
-            snprintf(buf, sizeof(buf), "[CrystalBridge] Loaded game library from %s via shadow copy %s", candidate_path, shadow_path);
-            godot_log_print(buf);
-            g_hGame = hGame;
+        if (use_shadow) {
+            if (!bridge_copy_file(candidate_path, shadow_path)) {
+                char err_buf[256];
+                bridge_get_last_error(err_buf, sizeof(err_buf));
+                char log_buf[512];
+                snprintf(log_buf, sizeof(log_buf), "[CrystalBridge] Copy failed from %s to %s (%s)", candidate_path, shadow_path, err_buf);
+                godot_log_error(log_buf, nullptr, "load_crystal_game_library", __FILE__, __LINE__);
+            }
+            hGame = bridge_load_library(shadow_path);
+            if (hGame) {
+                char buf[512];
+                snprintf(buf, sizeof(buf), "[CrystalBridge] Loaded game library from %s via shadow copy %s", candidate_path, shadow_path);
+                godot_log_print(buf);
+                g_hGame = hGame;
+            } else {
+                char err_buf[256];
+                bridge_get_last_error(err_buf, sizeof(err_buf));
+                char log_buf[512];
+                snprintf(log_buf, sizeof(log_buf), "[CrystalBridge] Failed to load library %s (%s)", shadow_path, err_buf);
+                godot_log_warning(log_buf, nullptr, "load_crystal_game_library", __FILE__, __LINE__);
+            }
         } else {
-            char err_buf[256];
-            bridge_get_last_error(err_buf, sizeof(err_buf));
-            char log_buf[512];
-            snprintf(log_buf, sizeof(log_buf), "[CrystalBridge] Failed to load library %s (%s)", shadow_path, err_buf);
-            godot_log_warning(log_buf, nullptr, "load_crystal_game_library", __FILE__, __LINE__);
+            hGame = bridge_load_library(candidate_path);
+            if (hGame) {
+                char buf[512];
+                snprintf(buf, sizeof(buf), "[CrystalBridge] Loaded game library directly from %s", candidate_path);
+                godot_log_print(buf);
+                g_hGame = hGame;
+            } else {
+                char err_buf[256];
+                bridge_get_last_error(err_buf, sizeof(err_buf));
+                char log_buf[512];
+                snprintf(log_buf, sizeof(log_buf), "[CrystalBridge] Failed to load library %s (%s)", candidate_path, err_buf);
+                godot_log_warning(log_buf, nullptr, "load_crystal_game_library", __FILE__, __LINE__);
+            }
         }
     }
 
@@ -1507,24 +2053,35 @@ static void load_crystal_game_library() {
 #endif
         for (int i = 0; i < 3; i++) {
             if (!bridge_file_exists(fallbacks[i])) continue;
-            do {
-                snprintf(shadow_path, sizeof(shadow_path), "%s_loaded_%lu_%llu.%s", fallbacks[i], pid, (unsigned long long)ts, shadow_ext);
-                ts++;
-            } while (bridge_file_exists(shadow_path));
-            if (!bridge_copy_file(fallbacks[i], shadow_path)) {
-                char err_buf[256];
-                bridge_get_last_error(err_buf, sizeof(err_buf));
-                char log_buf[512];
-                snprintf(log_buf, sizeof(log_buf), "[CrystalBridge] Copy failed from %s to %s (%s)", fallbacks[i], shadow_path, err_buf);
-                godot_log_error(log_buf, nullptr, "load_crystal_game_library", __FILE__, __LINE__);
-            }
-            hGame = bridge_load_library(shadow_path);
-            if (hGame) {
-                char buf[512];
-                snprintf(buf, sizeof(buf), "[CrystalBridge] Loaded fallback game library from %s via %s", fallbacks[i], shadow_path);
-                godot_log_print(buf);
-                g_hGame = hGame;
-                break;
+            if (use_shadow) {
+                do {
+                    snprintf(shadow_path, sizeof(shadow_path), "%s_loaded_%lu_%llu.%s", fallbacks[i], pid, (unsigned long long)ts, shadow_ext);
+                    ts++;
+                } while (bridge_file_exists(shadow_path));
+                if (!bridge_copy_file(fallbacks[i], shadow_path)) {
+                    char err_buf[256];
+                    bridge_get_last_error(err_buf, sizeof(err_buf));
+                    char log_buf[512];
+                    snprintf(log_buf, sizeof(log_buf), "[CrystalBridge] Copy failed from %s to %s (%s)", fallbacks[i], shadow_path, err_buf);
+                    godot_log_error(log_buf, nullptr, "load_crystal_game_library", __FILE__, __LINE__);
+                }
+                hGame = bridge_load_library(shadow_path);
+                if (hGame) {
+                    char buf[512];
+                    snprintf(buf, sizeof(buf), "[CrystalBridge] Loaded fallback game library from %s via %s", fallbacks[i], shadow_path);
+                    godot_log_print(buf);
+                    g_hGame = hGame;
+                    break;
+                }
+            } else {
+                hGame = bridge_load_library(fallbacks[i]);
+                if (hGame) {
+                    char buf[512];
+                    snprintf(buf, sizeof(buf), "[CrystalBridge] Loaded fallback game library directly from %s", fallbacks[i]);
+                    godot_log_print(buf);
+                    g_hGame = hGame;
+                    break;
+                }
             }
         }
     }
@@ -1544,6 +2101,9 @@ static void load_crystal_game_library() {
     init_fn(&g_bridge_api);
 }
 
+/**
+ * Pre-caches frequently used Godot engine method binds and utility functions.
+ */
 static void init_common_method_binds() {
     void *sn_node = make_string_name("Node");
     void *sn_spp = make_string_name("set_physics_process");
@@ -1568,7 +2128,14 @@ static void init_common_method_binds() {
     }
 }
 
-// Lifecycle callbacks
+// ==============================================================================
+// GDExtension Module Lifecycle Callbacks
+// ==============================================================================
+
+/**
+ * Callback invoked by Godot at distinct initialization levels (CORE, SERVERS, SCENE, EDITOR).
+ * Initializes common method binds and boots the Crystal runtime at GDEXTENSION_INITIALIZATION_SCENE.
+ */
 static void initialize_crystal_module(void *p_userdata, GDExtensionInitializationLevel p_level) {
     if (p_level == GDEXTENSION_INITIALIZATION_SCENE) {
         g_registered_classes.clear();
@@ -1580,6 +2147,10 @@ static void initialize_crystal_module(void *p_userdata, GDExtensionInitializatio
     }
 }
 
+/**
+ * Callback invoked by Godot during engine shutdown or reload.
+ * Unregisters all registered Crystal classes from ClassDB and resets game library handles.
+ */
 static void deinitialize_crystal_module(void *p_userdata, GDExtensionInitializationLevel p_level) {
     if (p_level == GDEXTENSION_INITIALIZATION_SCENE) {
         godot_log_print("[CrystalBridge] Unregistering Crystal classes...");
@@ -1597,7 +2168,21 @@ static void deinitialize_crystal_module(void *p_userdata, GDExtensionInitializat
     }
 }
 
-// GDExtension Entry Point
+// ==============================================================================
+// GDExtension Library Master Entry Point
+// ==============================================================================
+
+/**
+ * Primary entry point declared in crystal.gdextension (entry_symbol = "crystal_library_init").
+ *
+ * Godot calls this function immediately upon loading the bridge shared library.
+ * Populates all GDExtensionInterface function pointers and registers initialization hooks.
+ *
+ * @param p_get_proc_address Function pointer resolution callback from Godot.
+ * @param p_library The GDExtensionClassLibraryPtr assigned by Godot.
+ * @param r_initialization Struct to receive initialize and deinitialize function pointers.
+ * @return 1 on success, 0 on failure.
+ */
 extern "C" GDE_EXPORT GDExtensionBool crystal_library_init(
     GDExtensionInterfaceGetProcAddress p_get_proc_address,
     GDExtensionClassLibraryPtr p_library,

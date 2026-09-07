@@ -62,6 +62,7 @@ RM           = $(PWSH_CMD) "Remove-Item -Force -ErrorAction SilentlyContinue"
 CRYSTAL_FLAGS =
 ifeq ($(RELEASE), 1)
 	CRYSTAL_FLAGS += --release
+	CXXFLAGS      += -DLIBGODOT_RELEASE=1 -DNDEBUG
 endif
 
 # Output artifacts
