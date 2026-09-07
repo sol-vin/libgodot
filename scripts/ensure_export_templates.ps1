@@ -13,8 +13,8 @@ $onWindows = ($env:OS -eq "Windows_NT" -or [System.IO.Path]::PathSeparator -eq '
 $templateBase = if ($onWindows) {
     Join-Path $env:APPDATA "Godot/export_templates"
 } else {
-    $home = if ($env:HOME) { $env:HOME } else { [System.Environment]::GetFolderPath('UserProfile') }
-    Join-Path $home ".local/share/godot/export_templates"
+    $userHome = if ($env:HOME) { $env:HOME } else { [System.Environment]::GetFolderPath('UserProfile') }
+    Join-Path $userHome ".local/share/godot/export_templates"
 }
 $targetDir = Join-Path $templateBase $Version
 
