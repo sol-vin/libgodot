@@ -15,7 +15,11 @@ param(
 $ErrorActionPreference = "Stop"
 
 $RootDir = Split-Path -Parent $PSScriptRoot
-$projFull = (Resolve-Path (Join-Path $RootDir $ProjectPath)).Path
+$projFull = if ([System.IO.Path]::IsPathRooted($ProjectPath)) {
+    (Resolve-Path $ProjectPath).Path
+} else {
+    (Resolve-Path (Join-Path $RootDir $ProjectPath)).Path
+}
 
 if (-not $Name) {
     $Name = Split-Path -Leaf $projFull
@@ -46,7 +50,7 @@ Write-Host "============================================================" -Foreg
 # 1. Compile Android binaries (libcrystal_bridge.so & libgame.so)
 $buildScript = Join-Path $RootDir "scripts/build_android.ps1"
 $buildArgs = @{
-    ProjectPath = $ProjectPath
+    ProjectPath = $projFull
 }
 if ($Entry) { $buildArgs["Entry"] = $Entry }
 if ($Release) { $buildArgs["Release"] = "1" }
@@ -61,6 +65,28 @@ if (-not (Test-Path $presetCfg)) {
     if (Test-Path $templatePresets) {
         Copy-Item $templatePresets $presetCfg -Force
         Write-Host "  -> Copied export_presets.cfg from template to $projFull" -ForegroundColor Gray
+    }
+}
+
+# Ensure project has icon.svg so Godot Android export doesn't warn/error
+$projIcon = Join-Path $projFull "icon.svg"
+if (-not (Test-Path $projIcon)) {
+    $templateIcon = Join-Path $RootDir "template/icon.svg"
+    $templateImport = Join-Path $RootDir "template/icon.svg.import"
+    if (Test-Path $templateIcon) {
+        Copy-Item $templateIcon $projIcon -Force
+        if (Test-Path $templateImport) {
+            Copy-Item $templateImport (Join-Path $projFull "icon.svg.import") -Force
+        }
+        Write-Host "  -> Copied icon.svg to $projFull" -ForegroundColor Gray
+    }
+}
+$projGodot = Join-Path $projFull "project.godot"
+if (Test-Path $projGodot) {
+    $godotContent = Get-Content $projGodot -Raw
+    if ($godotContent -notmatch 'config/icon\s*=') {
+        $godotContent = $godotContent -replace '(\[application\][\r\n]+)', "`$1config/icon=`"res://icon.svg`"`n"
+        Set-Content -Path $projGodot -Value $godotContent -NoNewline
     }
 }
 

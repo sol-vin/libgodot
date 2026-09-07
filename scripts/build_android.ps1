@@ -10,7 +10,11 @@ param(
 $ErrorActionPreference = "Stop"
 
 $RootDir = Split-Path -Parent $PSScriptRoot
-$projFull = (Resolve-Path (Join-Path $RootDir $ProjectPath)).Path
+$projFull = if ([System.IO.Path]::IsPathRooted($ProjectPath)) {
+    (Resolve-Path $ProjectPath).Path
+} else {
+    (Resolve-Path (Join-Path $RootDir $ProjectPath)).Path
+}
 
 Write-Host "============================================================" -ForegroundColor Cyan
 Write-Host " LibGodot - Android Cross-Compilation ($Abi / API $ApiLevel)" -ForegroundColor Cyan
