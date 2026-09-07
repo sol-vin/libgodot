@@ -334,7 +334,7 @@ node ToolTester2D < Godot::Node2D do
     Godot.print("[ToolTester2D] Executing In-Editor 2D Test Suite...")
     Godot.print("------------------------------------------------------------------")
     
-    results = ::TestFramework::Registry.run_all(self)
+    results = ::TestFramework::Registry.run_category("2D", self)
     passed = results.count(&.passed)
     total = results.size
     
@@ -356,6 +356,7 @@ node ToolTester2D < Godot::Node2D do
       File.write(".tool_tests_failed", "Failed: #{total - passed} test(s) failed.\n")
     end
   end
+
 end
 
 @[Tool]
@@ -389,7 +390,7 @@ node ToolTester3D < Godot::Node3D do
     Godot.print("[ToolTester3D] Executing In-Editor 3D Test Suite...")
     Godot.print("------------------------------------------------------------------")
     
-    results = ::TestFramework::Registry.run_all(self)
+    results = ::TestFramework::Registry.run_category("3D", self)
     passed = results.count(&.passed)
     total = results.size
     
@@ -411,6 +412,7 @@ node ToolTester3D < Godot::Node3D do
       File.write(".tool_tests_failed", "Failed: #{total - passed} test(s) failed.\n")
     end
   end
+
 end
 
 # =============================================================================
@@ -679,6 +681,7 @@ test_3d "CharacterBody3D velocity and is_on_floor" do
   cb.velocity = Godot::Vector3.new(0.0, -9.8, 5.0)
   TestFramework.assert_approx_eq cb.velocity.y, -9.8_f32
   TestFramework.assert_approx_eq cb.velocity.z, 5.0_f32
+  cb.destroy
 end
 
 # =============================================================================
@@ -693,6 +696,9 @@ test_nodes "Godot.create instantiates native engine nodes" do
   n3d = Godot.create(Godot::Node3D)
   TestFramework.assert_not_nil n3d
   TestFramework.assert_false n3d.pointer.null?
+
+  n2d.destroy
+  n3d.destroy
 end
 
 test_nodes "add_child establishes parent-child relationship" do

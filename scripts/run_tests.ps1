@@ -69,7 +69,8 @@ function Invoke-TestCommand {
         [string]$Executable,
         [string[]]$Arguments,
         [string]$WorkingDirectory = $RootDir,
-        [hashtable]$EnvironmentVars = @{}
+        [hashtable]$EnvironmentVars = @{},
+        [switch]$CustomVerification
     )
 
     Write-Host "::group::$Name" -ForegroundColor Yellow
@@ -97,10 +98,10 @@ function Invoke-TestCommand {
     try {
         if (($env:OS -like "*Windows*" -or $IsWindows) -and $Executable.EndsWith(".exe", [System.StringComparison]::OrdinalIgnoreCase)) {
             $argStr = ($Arguments | ForEach-Object { if ($_ -match '\s') { "`"$_`"" } else { $_ } }) -join ' '
-            cmd /c "`"$Executable`" $argStr"
+            cmd /c "`"$Executable`" $argStr" | Out-Host
             $exitCode = $LASTEXITCODE
         } else {
-            & $Executable $Arguments
+            & $Executable $Arguments | Out-Host
             $exitCode = $LASTEXITCODE
         }
     } finally {
@@ -123,12 +124,16 @@ function Invoke-TestCommand {
     }
     $RecordedResults.Add($item)
 
+    if ($CustomVerification) {
+        return $item
+    }
+
     if ($exitCode -eq 0) {
         Write-Host "[PASSED] $Name (Exit Code: $exitCode, ${cmdDuration}s)`n" -ForegroundColor Green
-        return @{ Success = $true; ExitCode = 0; Duration = $cmdDuration }
+        return $item
     } else {
-        Write-Host "::error::$Name failed with exit code $exitCode (${cmdDuration}s)`n" -ForegroundColor Red
-        return @{ Success = $false; ExitCode = $exitCode; Duration = $cmdDuration }
+        Write-Host "[FAILED] $Name (Exit Code: $exitCode, ${cmdDuration}s)`n" -ForegroundColor Yellow
+        return $item
     }
 }
 
@@ -141,14 +146,14 @@ if (-not $SkipSpecs) {
     $specResult1 = Invoke-TestCommand -Name "Crystal Spec: LibGodot Core" `
         -Executable "crystal" `
         -Arguments @("run", "spec/libgodot_spec.cr")
-    if (-not $specResult1.Success) {
+    if (-not $specResult1["Success"]) {
         $FailedSteps.Add("Crystal Spec (libgodot_spec.cr)")
     }
 
     $specResult2 = Invoke-TestCommand -Name "Crystal Spec: Boot Loader" `
         -Executable "crystal" `
         -Arguments @("run", "spec/boot_spec.cr")
-    if (-not $specResult2.Success) {
+    if (-not $specResult2["Success"]) {
         $FailedSteps.Add("Crystal Spec (boot_spec.cr)")
     }
 }
@@ -168,15 +173,21 @@ if (-not $SkipToolTests) {
     $toolResult = Invoke-TestCommand -Name "Headless Editor Tool Tests (ToolTester2D & ToolTester3D)" `
         -Executable $GodotExe `
         -Arguments @("--headless", "--rendering-driver", "opengl3", "--editor", "--path", "test", "--quit-after", "25") `
-        -EnvironmentVars @{ "GODOT_RUN_TOOL_TESTS" = "1" }
+        -EnvironmentVars @{ "GODOT_RUN_TOOL_TESTS" = "1" } `
+        -CustomVerification
 
     if (Test-Path $failMarker) {
         $failContent = Get-Content $failMarker -Raw
         Write-Host "::error::In-Editor tool tests reported failures in marker file:`n$failContent" -ForegroundColor Red
         $FailedSteps.Add("In-Editor Tool Tests (ToolTester2D / ToolTester3D failed: $failContent)")
-    } elseif (-not (Test-Path $passMarker) -and (-not $toolResult.Success)) {
-        $FailedSteps.Add("In-Editor Tool Tests (Process exited with code $($toolResult.ExitCode))")
+        $toolResult["Success"] = $false
+        Write-Host "[FAILED] Headless Editor Tool Tests (ToolTester2D & ToolTester3D)`n" -ForegroundColor Red
+    } elseif (-not (Test-Path $passMarker) -and (-not $toolResult["Success"])) {
+        $FailedSteps.Add("In-Editor Tool Tests (Process exited with code $($toolResult['ExitCode']))")
+        $toolResult["Success"] = $false
+        Write-Host "[FAILED] Headless Editor Tool Tests (ToolTester2D & ToolTester3D) (Exit Code: $($toolResult['ExitCode']))`n" -ForegroundColor Red
     } else {
+        $toolResult["Success"] = $true
         Write-Host "[PASSED] In-Editor Tool Tests verified successfully.`n" -ForegroundColor Green
     }
 
@@ -198,14 +209,18 @@ if (-not $SkipToolTests) {
 
     $addonEditorResult = Invoke-TestCommand -Name "Headless Editor Addon Test (template-addon)" `
         -Executable $shell `
-        -Arguments @($shellFlag, $shellCmd)
+        -Arguments @($shellFlag, $shellCmd) `
+        -CustomVerification
 
     $addonLogContent = if (Test-Path $addonLogFile) { Get-Content $addonLogFile -Raw } else { "" }
     if ($addonLogContent -match [regex]::Escape($uniqueString)) {
+        $addonEditorResult["Success"] = $true
         Write-Host "[PASSED] Compiled Crystal Addon verified in Godot Editor! Found unique string: $uniqueString`n" -ForegroundColor Green
     } else {
+        $addonEditorResult["Success"] = $false
         Write-Host "::error::Compiled Crystal Addon failed to load or did not print unique string '$uniqueString'!`nLog output:`n$addonLogContent" -ForegroundColor Red
         $FailedSteps.Add("Editor Addon Test (Unique string '$uniqueString' not found in editor log)")
+        Write-Host "[FAILED] Headless Editor Addon Test (template-addon)`n" -ForegroundColor Red
     }
 }
 
@@ -226,7 +241,8 @@ if (-not $SkipRuntimeTests) {
     $runtimeResult = Invoke-TestCommand -Name "Runtime Test Runner (main_test_runner.tscn)" `
         -Executable $GodotExe `
         -Arguments @("--headless", "--rendering-driver", "opengl3", "--path", "test", "--quit-after", "15") `
-        -EnvironmentVars @{ "GODOT_TEST_AUTORUN" = "1" }
+        -EnvironmentVars @{ "GODOT_TEST_AUTORUN" = "1" } `
+        -CustomVerification
 
     if (Test-Path $summaryFile) {
         $summary = Get-Content $summaryFile -Raw
@@ -234,11 +250,16 @@ if (-not $SkipRuntimeTests) {
     }
 
     if (Test-Path $runFailMarker) {
+        $runtimeResult["Success"] = $false
         Write-Host "::error::Runtime test suite reported failures!" -ForegroundColor Red
         $FailedSteps.Add("Runtime Test Suite (Failures recorded in $runFailMarker)")
-    } elseif (-not $runtimeResult.Success -and -not (Test-Path $runPassMarker)) {
-        $FailedSteps.Add("Runtime Test Suite (Process exited with code $($runtimeResult.ExitCode))")
+        Write-Host "[FAILED] Runtime Test Runner (main_test_runner.tscn)`n" -ForegroundColor Red
+    } elseif (-not $runtimeResult["Success"] -and -not (Test-Path $runPassMarker)) {
+        $runtimeResult["Success"] = $false
+        $FailedSteps.Add("Runtime Test Suite (Process exited with code $($runtimeResult['ExitCode']))")
+        Write-Host "[FAILED] Runtime Test Runner (main_test_runner.tscn) (Exit Code: $($runtimeResult['ExitCode']))`n" -ForegroundColor Red
     } else {
+        $runtimeResult["Success"] = $true
         Write-Host "[PASSED] All runtime test suites executed and verified.`n" -ForegroundColor Green
     }
 }
@@ -253,7 +274,7 @@ if (-not $SkipSmokeTests) {
         $templateResult = Invoke-TestCommand -Name "Smoke Test: Template Project" `
             -Executable $GodotExe `
             -Arguments @("--headless", "--rendering-driver", "opengl3", "--path", "template", "--quit")
-        if (-not $templateResult.Success) {
+        if (-not $templateResult["Success"]) {
             $FailedSteps.Add("Smoke Test: Template Project")
         }
     }
@@ -263,7 +284,7 @@ if (-not $SkipSmokeTests) {
         $demoResult = Invoke-TestCommand -Name "Smoke Test: Basic Demo Example" `
             -Executable $GodotExe `
             -Arguments @("--headless", "--rendering-driver", "opengl3", "--path", "examples/basic_demo", "--quit")
-        if (-not $demoResult.Success) {
+        if (-not $demoResult["Success"]) {
             $FailedSteps.Add("Smoke Test: Basic Demo")
         }
     }
@@ -311,8 +332,8 @@ if ($runtimeTotal -gt 0) {
 [void]$mdReport.AppendLine("| :---: | :--- | :---: | :---: |")
 
 foreach ($res in $RecordedResults) {
-    $resIcon = if ($res.Success) { "PASSED" } else { "FAILED" }
-    [void]$mdReport.AppendLine("| $resIcon | $($res.Name) | $($res.Duration)s | $($res.ExitCode) |")
+    $resIcon = if ($res["Success"]) { "PASSED" } else { "FAILED" }
+    [void]$mdReport.AppendLine("| $resIcon | $($res['Name']) | $($res['Duration'])s | $($res['ExitCode']) |")
 }
 
 if ($FailedSteps.Count -gt 0) {

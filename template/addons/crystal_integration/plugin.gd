@@ -260,13 +260,22 @@ func _run_in_editor_tool_tests():
 		if f:
 			f.store_string("FAILED: %d errors\n%s\n" % [errors, "\n".join(error_messages)])
 			f.close()
-		get_tree().quit(1)
 	else:
 		print("[CrystalToolTester] ALL IN-EDITOR TOOL TESTS PASSED CLEANLY!")
 		var f = FileAccess.open("res://.tool_tests_passed", FileAccess.WRITE)
 		if f:
 			f.store_string("PASSED\n")
 			f.close()
-		get_tree().quit(0)
+	var has_quit_after = false
+	for arg in OS.get_cmdline_args():
+		if arg == "--quit-after" or arg.begins_with("--quit-after"):
+			has_quit_after = true
+			break
+
+	if not has_quit_after:
+		if errors > 0:
+			get_tree().quit(1)
+		else:
+			get_tree().quit(0)
 
 
