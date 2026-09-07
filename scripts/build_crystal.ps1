@@ -15,7 +15,8 @@ if ([string]::IsNullOrWhiteSpace($SourcePath)) {
 
 # Set CRYSTAL_PATH
 $baseCrystalPath = crystal env CRYSTAL_PATH
-$env:CRYSTAL_PATH = "$SourcePath;$baseCrystalPath"
+$sep = if ($env:OS -eq "Windows_NT" -or [System.IO.Path]::PathSeparator -eq ';') { ";" } else { ":" }
+$env:CRYSTAL_PATH = "$SourcePath$sep$baseCrystalPath"
 
 $buildArgs = [System.Collections.Generic.List[string]]::new()
 $buildArgs.Add("build")

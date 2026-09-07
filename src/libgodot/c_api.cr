@@ -27,39 +27,76 @@ module LibGodot
     @create_instance_fn : CreateFn? = nil
     @destroy_instance_fn : DestroyFn? = nil
 
-    def initialize(dll_path : String = "godot.windows.template_debug.x86_64.dll")
+    def initialize(dll_path : String = {% if flag?(:windows) %} "godot.windows.template_debug.x86_64.dll" {% else %} "libgodot.so" {% end %})
       load(dll_path)
     end
 
-    lib Kernel32
-      fun LoadLibraryA(name : UInt8*) : Void*
-      fun GetProcAddress(module_handle : Void*, proc_name : UInt8*) : Void*
-      fun FreeLibrary(module_handle : Void*) : Int32
-      fun GetLastError : UInt32
-    end
+    {% if flag?(:windows) %}
+      lib Kernel32
+        fun LoadLibraryA(name : UInt8*) : Void*
+        fun GetProcAddress(module_handle : Void*, proc_name : UInt8*) : Void*
+        fun FreeLibrary(module_handle : Void*) : Int32
+        fun GetLastError : UInt32
+      end
+    {% else %}
+      lib LibDl
+        fun dlopen(file : UInt8*, mode : Int32) : Void*
+        fun dlsym(handle : Void*, symbol : UInt8*) : Void*
+        fun dlclose(handle : Void*) : Int32
+        fun dlerror : UInt8*
+      end
+    {% end %}
 
     def load(path : String) : Bool
       @dll_path = path
-      @handle = Kernel32.LoadLibraryA(path.to_unsafe)
-      if @handle.null?
-        # Try alternate names
-        alternates = [
-          "libgodot.dll",
-          "godot.dll",
-          "bin/libgodot.windows.template_debug.x86_64.dll",
-          "bin/godot.windows.template_debug.x86_64.dll",
-          "godot-src/bin/godot.windows.template_debug.x86_64.dll"
-        ]
-        alternates.each do |alt|
-          @handle = Kernel32.LoadLibraryA(alt.to_unsafe)
-          break unless @handle.null?
+      create_proc = Pointer(Void).null
+      destroy_proc = Pointer(Void).null
+
+      {% if flag?(:windows) %}
+        @handle = Kernel32.LoadLibraryA(path.to_unsafe)
+        if @handle.null?
+          # Try alternate names
+          alternates = [
+            "libgodot.dll",
+            "godot.dll",
+            "bin/libgodot.dll",
+            "bin/libgodot.windows.template_debug.x86_64.dll",
+            "bin/godot.windows.template_debug.x86_64.dll",
+            "godot-src/bin/godot.windows.template_debug.x86_64.dll"
+          ]
+          alternates.each do |alt|
+            @handle = Kernel32.LoadLibraryA(alt.to_unsafe)
+            break unless @handle.null?
+          end
         end
-      end
 
-      return false if @handle.null?
+        return false if @handle.null?
 
-      create_proc = Kernel32.GetProcAddress(@handle, "libgodot_create_godot_instance".to_unsafe)
-      destroy_proc = Kernel32.GetProcAddress(@handle, "libgodot_destroy_godot_instance".to_unsafe)
+        create_proc = Kernel32.GetProcAddress(@handle, "libgodot_create_godot_instance".to_unsafe)
+        destroy_proc = Kernel32.GetProcAddress(@handle, "libgodot_destroy_godot_instance".to_unsafe)
+      {% else %}
+        @handle = LibDl.dlopen(path.to_unsafe, 2) # RTLD_NOW = 2
+        if @handle.null?
+          # Try alternate names
+          alternates = [
+            "libgodot.so",
+            "godot.so",
+            "bin/libgodot.so",
+            "bin/libgodot.linux.template_debug.x86_64.so",
+            "bin/godot.linux.template_debug.x86_64.so",
+            "godot-src/bin/godot.linuxbsd.template_debug.x86_64.so"
+          ]
+          alternates.each do |alt|
+            @handle = LibDl.dlopen(alt.to_unsafe, 2)
+            break unless @handle.null?
+          end
+        end
+
+        return false if @handle.null?
+
+        create_proc = LibDl.dlsym(@handle, "libgodot_create_godot_instance".to_unsafe)
+        destroy_proc = LibDl.dlsym(@handle, "libgodot_destroy_godot_instance".to_unsafe)
+      {% end %}
 
       return false if create_proc.null? || destroy_proc.null?
 

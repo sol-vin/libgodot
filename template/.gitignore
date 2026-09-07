@@ -1,0 +1,7 @@
+# Godot engine artifacts
+.godot/
+bin/
+
+# Crystal dependencies
+lib/
+shard.lock

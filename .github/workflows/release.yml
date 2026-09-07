@@ -22,10 +22,14 @@ jobs:
     name: Run Test Suite Gating
     uses: ./.github/workflows/test.yml
 
-  release:
-    name: Build and Publish Release
+  build-windows:
+    name: Build Windows Release Binaries
     needs: [test]
     runs-on: windows-latest
+
+    outputs:
+      tag_name: ${{ steps.meta.outputs.tag_name }}
+      release_title: ${{ steps.meta.outputs.release_title }}
 
     steps:
       - name: Checkout Repository
@@ -51,28 +55,23 @@ jobs:
       - name: Configure Godot Executable
         shell: pwsh
         run: |
-          Write-Host "Raw GODOT4 env: $env:GODOT4"
           $candidate = $env:GODOT4
           if ($candidate) {
             $candidate = $candidate -replace '^/([a-zA-Z])/', '$1:/'
           }
           if ($candidate -and (Test-Path $candidate)) {
             Copy-Item $candidate ./godot.exe -Force
-            Write-Host "Copied $candidate to ./godot.exe"
           } elseif ($env:GODOT4_BIN) {
             $candidate2 = $env:GODOT4_BIN -replace '^/([a-zA-Z])/', '$1:/'
             if (Test-Path $candidate2) {
               Copy-Item $candidate2 ./godot.exe -Force
-              Write-Host "Copied $candidate2 to ./godot.exe"
             }
           } elseif (Get-Command godot -ErrorAction SilentlyContinue) {
             $cmd = (Get-Command godot).Source
             Copy-Item $cmd ./godot.exe -Force
-            Write-Host "Copied $cmd to ./godot.exe"
           }
 
           if (-not (Test-Path ./godot.exe)) {
-            Write-Host "Fallback: Downloading Godot 4.8-dev4 win64..."
             $zipUrl = "https://github.com/godotengine/godot-builds/releases/download/4.8-dev4/Godot_v4.8-dev4_win64.exe.zip"
             Invoke-WebRequest -Uri $zipUrl -OutFile "godot.zip"
             Expand-Archive -Path "godot.zip" -DestinationPath "godot_temp" -Force
@@ -83,12 +82,6 @@ jobs:
             Copy-Item $foundExe ./godot.exe -Force
             Remove-Item "godot.zip", "godot_temp" -Recurse -Force
           }
-
-          if (-not (Test-Path ./godot.exe)) {
-            Write-Error "Failed to locate or download godot.exe"
-            exit 1
-          }
-          Write-Host "Godot binary verified at ./godot.exe"
 
       - name: Compute Release Metadata
         id: meta
@@ -109,20 +102,16 @@ jobs:
             $title = "Latest Build ($refName - ${{ github.sha }})"
           }
 
-          Write-Host "Tag Name: $tag"
-          Write-Host "Release Title: $title"
           Add-Content -Path $env:GITHUB_OUTPUT -Value "tag_name=$tag"
           Add-Content -Path $env:GITHUB_OUTPUT -Value "release_title=$title"
 
       - name: Compile Release Binaries & Examples
         shell: pwsh
         run: |
-          # Build complete project and bridge in release mode
           make all RELEASE=1
-          # Build standalone executables for all examples in release mode
           make examples_exe RELEASE=1
 
-      - name: Package Examples Executables (examples.zip)
+      - name: Package Windows Examples (examples-windows-x86_64.zip & examples.zip)
         shell: pwsh
         run: |
           $examplesDist = "dist/examples_dist"
@@ -136,112 +125,36 @@ jobs:
                 (Join-Path $ex.FullName "bin/game.exe"),
                 (Join-Path $ex.FullName "bin/$($ex.Name).exe")
               )
-              $found = $false
               foreach ($cand in $exeCandidates) {
                 if (Test-Path $cand) {
                   $dest = Join-Path $examplesDist "$($ex.Name).exe"
                   Copy-Item $cand $dest -Force
-                  Write-Host "Packaged example executable: $($ex.Name).exe"
-                  $found = $true
                   break
                 }
-              }
-              if (-not $found) {
-                Write-Warning "No compiled executable found for example $($ex.Name)"
               }
             }
           }
 
-          # Ensure ONLY .exe files exist in the distribution folder
-          Get-ChildItem -Path $examplesDist -File | Where-Object { $_.Extension -ne ".exe" } | Remove-Item -Force
+          # Copy runtime DLLs and bridge needed to run example executables
+          foreach ($dll in @('libgodot.dll', 'crystal_bridge.dll', 'gc.dll', 'iconv-2.dll', 'pcre2-8.dll')) {
+            if (Test-Path "bin/$dll") {
+              Copy-Item "bin/$dll" "$examplesDist/$dll" -Force
+            }
+          }
 
-          # Create examples.zip archive
-          if (Test-Path "examples.zip") { Remove-Item "examples.zip" -Force }
-          Compress-Archive -Path "$examplesDist/*" -DestinationPath "examples.zip" -Force
-          Write-Host "Successfully packaged examples.zip containing only compiled executables:"
-          Get-ChildItem -Path $examplesDist
+          Compress-Archive -Path "$examplesDist/*" -DestinationPath "examples-windows-x86_64.zip" -Force
 
-      - name: Package Addon/Plugin (godot-crystal-addon.zip)
+      - name: Package Windows Core LibGodot Distribution
         shell: pwsh
         run: |
-          $addonDist = "dist/addon_dist"
-          if (Test-Path $addonDist) { Remove-Item $addonDist -Recurse -Force }
-          New-Item -ItemType Directory -Force -Path $addonDist | Out-Null
-
-          $addonDest = Join-Path $addonDist "addons/crystal_integration"
-          New-Item -ItemType Directory -Force -Path (Split-Path $addonDest) | Out-Null
-          Copy-Item -Path "addons/crystal_integration" -Destination (Split-Path $addonDest) -Recurse -Force
-
-          $addonBin = Join-Path $addonDist "bin"
-          New-Item -ItemType Directory -Force -Path $addonBin | Out-Null
-          if (Test-Path "bin/crystal_bridge.dll") {
-            Copy-Item "bin/crystal_bridge.dll" "$addonBin/crystal_bridge.dll" -Force
-          }
-          foreach ($dll in @('gc.dll', 'iconv-2.dll', 'pcre2-8.dll')) {
-            if (Test-Path "bin/$dll") { Copy-Item "bin/$dll" "$addonBin/$dll" -Force }
-          }
-
-          if (Test-Path "godot-crystal-addon.zip") { Remove-Item "godot-crystal-addon.zip" -Force }
-          Compress-Archive -Path "$addonDist/*" -DestinationPath "godot-crystal-addon.zip" -Force
-          Write-Host "Successfully packaged godot-crystal-addon.zip"
-
-      - name: Package Template Project (template-project.zip)
-        shell: pwsh
-        run: |
-          $templateDist = "dist/template_dist"
-          if (Test-Path $templateDist) { Remove-Item $templateDist -Recurse -Force }
-          New-Item -ItemType Directory -Force -Path $templateDist | Out-Null
-
-          Get-ChildItem -Path "template" -Exclude ".godot" | ForEach-Object {
-            Copy-Item -Path $_.FullName -Destination $templateDist -Recurse -Force
-          }
-
-          $templateAddon = Join-Path $templateDist "addons/crystal_integration"
-          if (-not (Test-Path $templateAddon)) {
-            New-Item -ItemType Directory -Force -Path (Split-Path $templateAddon) | Out-Null
-            Copy-Item -Path "addons/crystal_integration" -Destination (Split-Path $templateAddon) -Recurse -Force
-          }
-
-          $templateBin = Join-Path $templateDist "bin"
-          New-Item -ItemType Directory -Force -Path $templateBin | Out-Null
-          if (Test-Path "bin/crystal_bridge.dll") {
-            Copy-Item "bin/crystal_bridge.dll" "$templateBin/crystal_bridge.dll" -Force
-          }
-          if (Test-Path "template/bin/game.dll") {
-            Copy-Item "template/bin/game.dll" "$templateBin/game.dll" -Force
-          }
-          foreach ($dll in @('gc.dll', 'iconv-2.dll', 'pcre2-8.dll')) {
-            if (Test-Path "bin/$dll") { Copy-Item "bin/$dll" "$templateBin/$dll" -Force }
-          }
-          Get-ChildItem -Path $templateDist -Include "*.pdb", "*.exp", "*.lib" -Recurse | Remove-Item -Force -ErrorAction SilentlyContinue
-
-          $bundledLib = Join-Path $templateDist "lib/libgodot"
-          New-Item -ItemType Directory -Force -Path $bundledLib | Out-Null
-          Copy-Item -Path "src" -Destination (Join-Path $bundledLib "src") -Recurse -Force
-          Copy-Item "shard.yml" "$bundledLib/shard.yml" -Force
-          if (Test-Path "README.md") { Copy-Item "README.md" "$bundledLib/README.md" -Force }
-
-          if (Test-Path "template-project.zip") { Remove-Item "template-project.zip" -Force }
-          Compress-Archive -Path "$templateDist/*" -DestinationPath "template-project.zip" -Force
-          Write-Host "Successfully packaged template-project.zip"
-
-      - name: Package Core LibGodot Distribution
-        shell: pwsh
-        run: |
-          $libDist = "dist/libgodot_dist"
+          $libDist = "dist/libgodot_windows_dist"
           if (Test-Path $libDist) { Remove-Item $libDist -Recurse -Force }
           New-Item -ItemType Directory -Force -Path $libDist | Out-Null
 
-          # 1. Library bindings source
           Copy-Item -Path "src" -Destination (Join-Path $libDist "src") -Recurse -Force
-
-          # 2. GDExtension editor addon
           Copy-Item -Path "addons" -Destination (Join-Path $libDist "addons") -Recurse -Force
-
-          # 3. Clean starter template
           Copy-Item -Path "template" -Destination (Join-Path $libDist "template") -Recurse -Force
 
-          # 4. Compiled bridge DLL and runtime dependencies
           $binTarget = Join-Path $libDist "bin"
           New-Item -ItemType Directory -Force -Path $binTarget | Out-Null
           if (Test-Path "bin/crystal_bridge.dll") {
@@ -253,38 +166,343 @@ jobs:
             }
           }
 
-          # 5. Metadata and documentation
           Copy-Item "shard.yml" "$libDist/shard.yml" -Force
           Copy-Item "README.md" "$libDist/README.md" -Force
           if (Test-Path "LICENSE") { Copy-Item "LICENSE" "$libDist/LICENSE" -Force }
 
-          # Determine release tag name
           $tag = "${{ steps.meta.outputs.tag_name }}"
           $archiveName = "libgodot-crystal-windows-x86_64-$tag.zip"
-          if (Test-Path $archiveName) { Remove-Item $archiveName -Force }
           Compress-Archive -Path "$libDist/*" -DestinationPath $archiveName -Force
-          Write-Host "Generated core release archive: $archiveName"
-          Add-Content -Path $env:GITHUB_ENV -Value "CORE_ARCHIVE=$archiveName"
 
-      - name: Generate Checksums
+      - name: Collect Windows Release Artifacts
         shell: pwsh
         run: |
-          Get-FileHash -Algorithm SHA256 "examples.zip", "godot-crystal-addon.zip", "template-project.zip", "$env:CORE_ARCHIVE" | Format-Table -AutoSize | Out-String | Set-Content "checksums.txt"
-          Get-Content "checksums.txt"
+          $staging = "dist/staging_windows"
+          New-Item -ItemType Directory -Force -Path $staging | Out-Null
+          Copy-Item "examples-windows-x86_64.zip" "$staging/" -Force
+          $tag = "${{ steps.meta.outputs.tag_name }}"
+          Copy-Item "libgodot-crystal-windows-x86_64-$tag.zip" "$staging/" -Force
+
+          # Also preserve bridge and runtime DLLs for universal addon and template packaging
+          $binStaging = Join-Path $staging "bin"
+          New-Item -ItemType Directory -Force -Path $binStaging | Out-Null
+          if (Test-Path "bin/crystal_bridge.dll") { Copy-Item "bin/crystal_bridge.dll" "$binStaging/" -Force }
+          if (Test-Path "template/bin/game.dll") { Copy-Item "template/bin/game.dll" "$binStaging/" -Force }
+          foreach ($dll in @('gc.dll', 'iconv-2.dll', 'pcre2-8.dll', 'libgodot.dll')) {
+            if (Test-Path "bin/$dll") { Copy-Item "bin/$dll" "$binStaging/" -Force }
+          }
+
+      - name: Upload Windows Staging Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-windows-artifacts
+          path: dist/staging_windows/
+
+  build-linux:
+    name: Build Linux Release Binaries
+    needs: [test]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install Crystal
+        uses: crystal-lang/install-crystal@v1
+        with:
+          crystal: latest
+
+      - name: Verify Crystal & g++ Toolchain
+        run: |
+          crystal -v
+          g++ --version
+
+      - name: Setup Godot Engine (4.8-dev4)
+        uses: appsinacup/action_setup_godot@main
+        with:
+          repo: godotengine/godot-builds
+          version: 4.8-dev4
+          enable_cache: true
+
+      - name: Configure Godot Executable
+        shell: bash
+        run: |
+          if [ -n "$GODOT4" ] && [ -f "$GODOT4" ]; then
+            cp "$GODOT4" ./godot
+            chmod +x ./godot
+          elif [ -n "$GODOT4_BIN" ] && [ -f "$GODOT4_BIN" ]; then
+            cp "$GODOT4_BIN" ./godot
+            chmod +x ./godot
+          elif command -v godot >/dev/null 2>&1; then
+            cp "$(command -v godot)" ./godot
+            chmod +x ./godot
+          else
+            wget -q https://github.com/godotengine/godot-builds/releases/download/4.8-dev4/Godot_v4.8-dev4_linux.x86_64.zip -O godot.zip
+            unzip -q godot.zip
+            mv Godot_v4.8-dev4_linux.x86_64 ./godot
+            chmod +x ./godot
+            rm godot.zip
+          fi
+          ./godot --version
+
+      - name: Compute Tag
+        id: meta
+        shell: bash
+        run: |
+          INPUT_TAG="${{ github.event.inputs.tag_name }}"
+          REF_TYPE="${{ github.ref_type }}"
+          REF_NAME="${{ github.ref_name }}"
+          if [ -n "$INPUT_TAG" ]; then
+            TAG="$INPUT_TAG"
+          elif [ "$REF_TYPE" = "tag" ]; then
+            TAG="$REF_NAME"
+          else
+            TAG="latest"
+          fi
+          echo "tag_name=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Compile Release Binaries & Examples
+        shell: bash
+        run: |
+          make all RELEASE=1
+          make examples_exe RELEASE=1
+
+      - name: Package Linux Examples (examples-linux-x86_64.zip)
+        shell: bash
+        run: |
+          EXAMPLES_DIST="dist/examples_linux_dist"
+          rm -rf "$EXAMPLES_DIST"
+          mkdir -p "$EXAMPLES_DIST"
+
+          if [ -d "examples" ]; then
+            for ex in examples/*/; do
+              ex_name=$(basename "$ex")
+              if [ -f "$ex/bin/game" ]; then
+                cp "$ex/bin/game" "$EXAMPLES_DIST/$ex_name"
+                chmod +x "$EXAMPLES_DIST/$ex_name"
+              elif [ -f "$ex/bin/$ex_name" ]; then
+                cp "$ex/bin/$ex_name" "$EXAMPLES_DIST/$ex_name"
+                chmod +x "$EXAMPLES_DIST/$ex_name"
+              fi
+              if [ -f "$ex/bin/game.so" ]; then
+                cp "$ex/bin/game.so" "$EXAMPLES_DIST/"
+              fi
+            done
+          fi
+
+          if [ -f "bin/crystal_bridge.so" ]; then
+            cp "bin/crystal_bridge.so" "$EXAMPLES_DIST/"
+          fi
+          if [ -f "bin/libgodot.so" ]; then
+            cp "bin/libgodot.so" "$EXAMPLES_DIST/"
+          fi
+
+          cd "$EXAMPLES_DIST"
+          zip -r "../../examples-linux-x86_64.zip" ./*
+          cd ../..
+
+      - name: Package Linux Core LibGodot Distribution
+        shell: bash
+        run: |
+          LIB_DIST="dist/libgodot_linux_dist"
+          rm -rf "$LIB_DIST"
+          mkdir -p "$LIB_DIST/bin"
+
+          cp -r src "$LIB_DIST/"
+          cp -r addons "$LIB_DIST/"
+          cp -r template "$LIB_DIST/"
+          if [ -f "bin/crystal_bridge.so" ]; then
+            cp "bin/crystal_bridge.so" "$LIB_DIST/bin/"
+          fi
+          if [ -f "bin/libgodot.so" ]; then
+            cp "bin/libgodot.so" "$LIB_DIST/bin/"
+          fi
+
+          cp shard.yml "$LIB_DIST/"
+          cp README.md "$LIB_DIST/"
+          [ -f LICENSE ] && cp LICENSE "$LIB_DIST/"
+
+          TAG="${{ steps.meta.outputs.tag_name }}"
+          ARCHIVE_NAME="libgodot-crystal-linux-x86_64-$TAG.zip"
+          cd "$LIB_DIST"
+          zip -r "../../$ARCHIVE_NAME" ./*
+          cd ../..
+
+      - name: Collect Linux Release Artifacts
+        shell: bash
+        run: |
+          STAGING="dist/staging_linux"
+          mkdir -p "$STAGING/bin"
+          TAG="${{ steps.meta.outputs.tag_name }}"
+          cp "examples-linux-x86_64.zip" "$STAGING/"
+          cp "libgodot-crystal-linux-x86_64-$TAG.zip" "$STAGING/"
+
+          if [ -f "bin/crystal_bridge.so" ]; then cp "bin/crystal_bridge.so" "$STAGING/bin/"; fi
+          if [ -f "template/bin/game.so" ]; then cp "template/bin/game.so" "$STAGING/bin/"; fi
+          if [ -f "bin/libgodot.so" ]; then cp "bin/libgodot.so" "$STAGING/bin/"; fi
+
+      - name: Upload Linux Staging Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-linux-artifacts
+          path: dist/staging_linux/
+
+  publish:
+    name: Package Universal Releases & Publish
+    needs: [build-windows, build-linux]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Download Windows Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: release-windows-artifacts
+          path: staging/windows
+
+      - name: Download Linux Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: release-linux-artifacts
+          path: staging/linux
+
+      - name: Package Universal Addon (godot-crystal-addon.zip)
+        shell: bash
+        run: |
+          ADDON_DIST="dist/addon_dist"
+          rm -rf "$ADDON_DIST"
+          mkdir -p "$ADDON_DIST/addons"
+          mkdir -p "$ADDON_DIST/bin"
+
+          cp -r addons/crystal_integration "$ADDON_DIST/addons/"
+
+          # Copy Windows bridge & runtime DLLs
+          [ -f staging/windows/bin/crystal_bridge.dll ] && cp staging/windows/bin/crystal_bridge.dll "$ADDON_DIST/bin/"
+          for dll in gc.dll iconv-2.dll pcre2-8.dll libgodot.dll; do
+            [ -f "staging/windows/bin/$dll" ] && cp "staging/windows/bin/$dll" "$ADDON_DIST/bin/"
+          done
+
+          # Copy Linux bridge & runtime shared objects
+          [ -f staging/linux/bin/crystal_bridge.so ] && cp staging/linux/bin/crystal_bridge.so "$ADDON_DIST/bin/"
+          [ -f staging/linux/bin/libgodot.so ] && cp staging/linux/bin/libgodot.so "$ADDON_DIST/bin/"
+
+          cd "$ADDON_DIST"
+          zip -r "../../godot-crystal-addon.zip" ./*
+          cd ../..
+
+      - name: Package Universal Starter Template (template-project.zip)
+        shell: bash
+        run: |
+          TEMPLATE_DIST="dist/template_dist"
+          rm -rf "$TEMPLATE_DIST"
+          mkdir -p "$TEMPLATE_DIST/bin"
+
+          # Copy entire template directory including .github workflows and spec tests
+          cp -r template/. "$TEMPLATE_DIST/"
+          rm -rf "$TEMPLATE_DIST/.godot" "$TEMPLATE_DIST/bin"
+          mkdir -p "$TEMPLATE_DIST/bin"
+
+          # Ensure addons are present
+          if [ ! -d "$TEMPLATE_DIST/addons/crystal_integration" ]; then
+            mkdir -p "$TEMPLATE_DIST/addons"
+            cp -r addons/crystal_integration "$TEMPLATE_DIST/addons/"
+          fi
+
+          # Bundle Windows binaries
+          [ -f staging/windows/bin/crystal_bridge.dll ] && cp staging/windows/bin/crystal_bridge.dll "$TEMPLATE_DIST/bin/"
+          [ -f staging/windows/bin/game.dll ] && cp staging/windows/bin/game.dll "$TEMPLATE_DIST/bin/"
+          for dll in gc.dll iconv-2.dll pcre2-8.dll libgodot.dll; do
+            [ -f "staging/windows/bin/$dll" ] && cp "staging/windows/bin/$dll" "$TEMPLATE_DIST/bin/"
+          done
+
+          # Bundle Linux binaries
+          [ -f staging/linux/bin/crystal_bridge.so ] && cp staging/linux/bin/crystal_bridge.so "$TEMPLATE_DIST/bin/"
+          [ -f staging/linux/bin/game.so ] && cp staging/linux/bin/game.so "$TEMPLATE_DIST/bin/"
+          [ -f staging/linux/bin/libgodot.so ] && cp staging/linux/bin/libgodot.so "$TEMPLATE_DIST/bin/"
+
+          # Bundle embedded libgodot source
+          mkdir -p "$TEMPLATE_DIST/lib/libgodot"
+          cp -r src "$TEMPLATE_DIST/lib/libgodot/"
+          cp shard.yml "$TEMPLATE_DIST/lib/libgodot/"
+          [ -f README.md ] && cp README.md "$TEMPLATE_DIST/lib/libgodot/"
+
+          cd "$TEMPLATE_DIST"
+          zip -r "../../template-project.zip" ./*
+          cd ../..
+
+      - name: Prepare Final Release Files & Checksums
+        shell: bash
+        run: |
+          mkdir -p release_assets
+          TAG="${{ needs.build-windows.outputs.tag_name }}"
+
+          # Copy Windows release files
+          cp staging/windows/examples-windows-x86_64.zip release_assets/
+          cp staging/windows/libgodot-crystal-windows-x86_64-$TAG.zip release_assets/
+
+          # Copy Linux release files
+          cp staging/linux/examples-linux-x86_64.zip release_assets/
+          cp staging/linux/libgodot-crystal-linux-x86_64-$TAG.zip release_assets/
+
+          # Copy universal packages
+          cp godot-crystal-addon.zip release_assets/
+          cp template-project.zip release_assets/
+
+          # Generate SHA256 checksums
+          cd release_assets
+          sha256sum * > ../checksums.txt
+          cp ../checksums.txt ./
+          cat checksums.txt
+          cd ..
+
+      - name: Generate Descriptive Release Notes
+        id: notes
+        shell: bash
+        run: |
+          TAG="${{ needs.build-windows.outputs.tag_name }}"
+          cat << 'EOF' > release_body.md
+          ## LibGodot Crystal Release Notes
+
+          ### 📦 Addon & Starter Template
+          - **`godot-crystal-addon.zip`**:
+            The official Godot editor addon (`addons/crystal_integration`) with pre-compiled GDExtension loader bridge binaries for both **Windows** (`crystal_bridge.dll`) and **Linux** (`crystal_bridge.so`). Drop the `addons/` folder directly into your existing Godot 4.8+ project to enable Crystal node authoring, inspector properties, and hot-reload.
+          - **`template-project.zip`**:
+            A clean, ready-to-use Godot project skeleton powered by Crystal. Contains pre-configured scenes, sample 3D nodes (`src/main.cr`), automated specifications (`spec/main_spec.cr`), GDExtension configuration, and pre-wired **GitHub Actions CI/CD workflows** (`.github/workflows/`) for automated testing (`crystal spec`) and multi-platform release deployment.
+
+          ### 📦 Standalone Toolchain Distributions
+          - **`libgodot-crystal-windows-x86_64.zip`**:
+            Complete LibGodot Crystal package for **Windows (x86_64)**. Contains the full Crystal bindings library source (`src/`), GDExtension bridge DLL (`crystal_bridge.dll`), and Windows runtime dependencies (`libgodot.dll`, `gc.dll`, `iconv-2.dll`, `pcre2-8.dll`).
+          - **`libgodot-crystal-linux-x86_64.zip`**:
+            Complete LibGodot Crystal package for **Linux (x86_64)**. Contains the full Crystal bindings library source (`src/`), GDExtension bridge shared object (`crystal_bridge.so`), and Linux GDExtension configurations for native Linux exports and development.
+
+          ### 🎮 Pre-Compiled Example Games
+          - **`examples-windows-x86_64.zip`**:
+            Standalone compiled game executables for all examples on **Windows (x86_64)**, bundled with all required runtime DLLs (`libgodot.dll`, `crystal_bridge.dll`, `gc.dll`, `iconv-2.dll`, `pcre2-8.dll`). Ready to extract and run immediately without needing compiler setup.
+          - **`examples-linux-x86_64.zip`**:
+            Standalone compiled game executables and shared libraries for all examples on **Linux (x86_64)**. Ready to extract and execute on Linux distributions.
+
+          ### 🔒 Integrity
+          - **`checksums.txt`**:
+            SHA-256 cryptographic hashes for each release archive to verify download integrity.
+          EOF
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.meta.outputs.tag_name }}
-          name: ${{ steps.meta.outputs.release_title }}
+          tag_name: ${{ needs.build-windows.outputs.tag_name }}
+          name: ${{ needs.build-windows.outputs.release_title }}
+          body_path: release_body.md
           files: |
-            examples.zip
-            godot-crystal-addon.zip
-            template-project.zip
-            ${{ env.CORE_ARCHIVE }}
-            checksums.txt
-          generate_release_notes: true
+            release_assets/godot-crystal-addon.zip
+            release_assets/template-project.zip
+            release_assets/libgodot-crystal-windows-x86_64-${{ needs.build-windows.outputs.tag_name }}.zip
+            release_assets/libgodot-crystal-linux-x86_64-${{ needs.build-windows.outputs.tag_name }}.zip
+            release_assets/examples-windows-x86_64.zip
+            release_assets/examples-linux-x86_64.zip
+            release_assets/checksums.txt
+          generate_release_notes: false
           draft: false
           prerelease: false
           make_latest: true
-

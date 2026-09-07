@@ -663,11 +663,11 @@ lib LibCrystalMain
   fun __crystal_main(argc : Int32, argv : UInt8**) : Void
 end
 
-# C ABI Entry point called by crystal_bridge.dll when game.dll is loaded
+# C ABI Entry point called by crystal_bridge when game library is loaded
 fun crystal_godot_init(api : Godot::LibBridge::BridgeAPI*) : Void
   GC.init
   Crystal.init_runtime
-  dummy_arg = "game.dll".to_unsafe
+  dummy_arg = "game".to_unsafe
   dummy_argv = pointerof(dummy_arg)
   LibCrystalMain.__crystal_main(1, dummy_argv)
   Godot::Bridge.init(api)

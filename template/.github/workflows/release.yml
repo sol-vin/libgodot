@@ -1,0 +1,131 @@
+name: Release Game
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Release Tag Name (e.g. v1.0.0)'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    name: Run Specification Checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install Crystal
+        uses: crystal-lang/install-crystal@v1
+        with:
+          crystal: latest
+
+      - name: Install Shards
+        run: |
+          shards install || true
+
+      - name: Run Specs
+        run: |
+          crystal spec
+
+  build-release:
+    name: Build & Package Game
+    needs: [test]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            platform: windows-x86_64
+          - os: ubuntu-latest
+            platform: linux-x86_64
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install Crystal
+        uses: crystal-lang/install-crystal@v1
+        with:
+          crystal: latest
+
+      - name: Determine Tag Name
+        id: meta
+        shell: bash
+        run: |
+          TAG="${{ github.event.inputs.tag_name }}"
+          if [ -z "$TAG" ]; then
+            TAG="${GITHUB_REF_NAME}"
+          fi
+          if [ -z "$TAG" ]; then
+            TAG="v1.0.0"
+          fi
+          echo "tag_name=${TAG}" >> "$GITHUB_OUTPUT"
+
+      - name: Build Game in Release Mode (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          make all RELEASE=1
+
+      - name: Build Game in Release Mode (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          make all RELEASE=1
+
+      - name: Package Game Release Archive (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $pkgDir = "dist/game_release_windows"
+          if (Test-Path $pkgDir) { Remove-Item $pkgDir -Recurse -Force }
+          New-Item -ItemType Directory -Force -Path $pkgDir | Out-Null
+
+          # Copy project runtime assets and binaries (exclude dev/source folders)
+          Copy-Item "project.godot" "$pkgDir/" -Force
+          if (Test-Path "scenes") { Copy-Item "scenes" "$pkgDir/scenes" -Recurse -Force }
+          if (Test-Path "addons") { Copy-Item "addons" "$pkgDir/addons" -Recurse -Force }
+          if (Test-Path "bin") { Copy-Item "bin" "$pkgDir/bin" -Recurse -Force }
+
+          # Remove debug/build artifacts
+          Get-ChildItem -Path $pkgDir -Include "*.pdb", "*.exp", "*.lib", "*.obj" -Recurse | Remove-Item -Force -ErrorAction SilentlyContinue
+
+          $archiveName = "game-windows-x86_64-${{ steps.meta.outputs.tag_name }}.zip"
+          Compress-Archive -Path "$pkgDir/*" -DestinationPath $archiveName -Force
+          Add-Content -Path $env:GITHUB_ENV -Value "RELEASE_ARCHIVE=$archiveName"
+
+      - name: Package Game Release Archive (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          PKG_DIR="dist/game_release_linux"
+          rm -rf "$PKG_DIR"
+          mkdir -p "$PKG_DIR"
+
+          cp project.godot "$PKG_DIR/"
+          [ -d scenes ] && cp -r scenes "$PKG_DIR/"
+          [ -d addons ] && cp -r addons "$PKG_DIR/"
+          [ -d bin ] && cp -r bin "$PKG_DIR/"
+
+          ARCHIVE_NAME="game-linux-x86_64-${{ steps.meta.outputs.tag_name }}.zip"
+          cd "$PKG_DIR" && zip -r "../../$ARCHIVE_NAME" ./* && cd ../..
+          echo "RELEASE_ARCHIVE=$ARCHIVE_NAME" >> "$GITHUB_ENV"
+
+      - name: Upload Release Artifact
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.meta.outputs.tag_name }}
+          name: Release ${{ steps.meta.outputs.tag_name }}
+          files: ${{ env.RELEASE_ARCHIVE }}
+          generate_release_notes: true
+          draft: false
+          prerelease: false

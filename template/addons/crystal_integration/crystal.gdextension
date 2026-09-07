@@ -4,5 +4,7 @@ compatibility_minimum = "4.1"
 reloadable = true
 
 [libraries]
+linux.debug.x86_64 = "res://bin/crystal_bridge.so"
+linux.release.x86_64 = "res://bin/crystal_bridge.so"
 windows.debug.x86_64 = "res://bin/crystal_bridge.dll"
 windows.release.x86_64 = "res://bin/crystal_bridge.dll"

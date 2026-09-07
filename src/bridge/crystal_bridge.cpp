@@ -1,4 +1,21 @@
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#define GDE_EXPORT __declspec(dllexport)
+#else
+#include <dlfcn.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <dirent.h>
+#include <time.h>
+#include <fcntl.h>
+#define GDE_EXPORT __attribute__((visibility("default")))
+#define HMODULE void*
+#ifndef MAX_PATH
+#define MAX_PATH 4096
+#endif
+#endif
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -7,8 +24,6 @@
 #include <string>
 
 #include "gdextension_interface.h"
-
-#define GDE_EXPORT __declspec(dllexport)
 
 // Cached function pointers from Godot
 static GDExtensionInterfaceGetProcAddress gd_get_proc_address = nullptr;
@@ -1243,25 +1258,121 @@ extern "C" {
     }
 }
 
+static bool bridge_file_exists(const char *path) {
+#ifdef _WIN32
+    return GetFileAttributesA(path) != INVALID_FILE_ATTRIBUTES;
+#else
+    return access(path, F_OK) == 0;
+#endif
+}
+
+static bool bridge_copy_file(const char *src, const char *dst) {
+#ifdef _WIN32
+    return CopyFileA(src, dst, FALSE) != 0;
+#else
+    int in_fd = open(src, O_RDONLY);
+    if (in_fd < 0) return false;
+    int out_fd = open(dst, O_WRONLY | O_CREAT | O_TRUNC, 0755);
+    if (out_fd < 0) {
+        close(in_fd);
+        return false;
+    }
+    char buf[8192];
+    ssize_t bytes;
+    bool success = true;
+    while ((bytes = read(in_fd, buf, sizeof(buf))) > 0) {
+        if (write(out_fd, buf, bytes) != bytes) {
+            success = false;
+            break;
+        }
+    }
+    close(in_fd);
+    close(out_fd);
+    return success && (bytes >= 0);
+#endif
+}
+
+static void bridge_delete_file(const char *path) {
+#ifdef _WIN32
+    DeleteFileA(path);
+#else
+    unlink(path);
+#endif
+}
+
+static unsigned long bridge_get_pid() {
+#ifdef _WIN32
+    return (unsigned long)GetCurrentProcessId();
+#else
+    return (unsigned long)getpid();
+#endif
+}
+
+static uint64_t bridge_get_tick_count() {
+#ifdef _WIN32
+    return GetTickCount64();
+#else
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return ((uint64_t)ts.tv_sec * 1000ULL) + ((uint64_t)ts.tv_nsec / 1000000ULL);
+#endif
+}
+
+static HMODULE bridge_load_library(const char *path) {
+#ifdef _WIN32
+    HMODULE h = LoadLibraryExA(path, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
+    if (!h) h = LoadLibraryA(path);
+    return h;
+#else
+    return dlopen(path, RTLD_NOW | RTLD_GLOBAL);
+#endif
+}
+
+static void* bridge_get_proc(HMODULE hMod, const char *proc_name) {
+#ifdef _WIN32
+    return (void*)GetProcAddress(hMod, proc_name);
+#else
+    return dlsym(hMod, proc_name);
+#endif
+}
+
+static void bridge_get_last_error(char *out_buf, size_t buf_size) {
+#ifdef _WIN32
+    snprintf(out_buf, buf_size, "error code %lu", (unsigned long)GetLastError());
+#else
+    const char *err = dlerror();
+    snprintf(out_buf, buf_size, "%s", err ? err : "unknown dl error");
+#endif
+}
+
 static uint64_t get_file_mtime(const char *path) {
+#ifdef _WIN32
     WIN32_FILE_ATTRIBUTE_DATA data;
     if (GetFileAttributesExA(path, GetFileExInfoStandard, &data)) {
         return ((uint64_t)data.ftLastWriteTime.dwHighDateTime << 32) | data.ftLastWriteTime.dwLowDateTime;
     }
     return 0;
+#else
+    struct stat st;
+    if (stat(path, &st) == 0) {
+        return (uint64_t)st.st_mtime;
+    }
+    return 0;
+#endif
 }
 
 static HMODULE g_hGame = NULL;
 
 static void unload_crystal_game_library() {
-    // Note: Do not call FreeLibrary(g_hGame). Crystal's Boehm GC and runtime
+    // Note: Do not call FreeLibrary/dlclose(g_hGame). Crystal's Boehm GC and runtime
     // remain resident across hot-reloads; subsequent builds are loaded via
-    // distinct shadow DLL copies (game_loaded_<pid>_<count>.dll).
+    // distinct shadow library copies.
     g_hGame = NULL;
 }
 
 static void cleanup_old_shadow_dlls(const char *dir) {
     if (!dir || dir[0] == '\0') return;
+#ifdef _WIN32
     char search_pattern[MAX_PATH];
     snprintf(search_pattern, sizeof(search_pattern), "%s\\game_loaded_*.dll", dir);
 
@@ -1271,18 +1382,31 @@ static void cleanup_old_shadow_dlls(const char *dir) {
         do {
             char file_path[MAX_PATH];
             snprintf(file_path, sizeof(file_path), "%s\\%s", dir, fd.cFileName);
-            // DeleteFileA automatically fails silently if the DLL is currently locked by a running process
             DeleteFileA(file_path);
         } while (FindNextFileA(hFind, &fd));
         FindClose(hFind);
     }
+#else
+    DIR *d = opendir(dir);
+    if (!d) return;
+    struct dirent *entry;
+    while ((entry = readdir(d)) != nullptr) {
+        if (strncmp(entry->d_name, "game_loaded_", 12) == 0) {
+            char file_path[MAX_PATH];
+            snprintf(file_path, sizeof(file_path), "%s/%s", dir, entry->d_name);
+            unlink(file_path);
+        }
+    }
+    closedir(d);
+#endif
 }
 
-// Loads game.dll compiled from Crystal and invokes crystal_godot_init(&g_bridge_api)
+// Loads game shared library compiled from Crystal and invokes crystal_godot_init(&g_bridge_api)
 static void load_crystal_game_library() {
     unload_crystal_game_library();
 
     char bridge_dir[MAX_PATH] = {0};
+#ifdef _WIN32
     HMODULE hBridge = NULL;
     if (GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, (LPCSTR)&load_crystal_game_library, &hBridge)) {
         if (GetModuleFileNameA(hBridge, bridge_dir, sizeof(bridge_dir))) {
@@ -1293,6 +1417,16 @@ static void load_crystal_game_library() {
             }
         }
     }
+#else
+    Dl_info dlinfo;
+    if (dladdr((void*)&load_crystal_game_library, &dlinfo) && dlinfo.dli_fname) {
+        strncpy(bridge_dir, dlinfo.dli_fname, sizeof(bridge_dir) - 1);
+        char *last_slash = strrchr(bridge_dir, '/');
+        if (last_slash) {
+            *last_slash = '\0';
+        }
+    }
+#endif
 
     // Clean up stale shadow copies from previous editor sessions
     cleanup_old_shadow_dlls(bridge_dir);
@@ -1300,20 +1434,33 @@ static void load_crystal_game_library() {
     char candidate_path[MAX_PATH] = {0};
     char shadow_path[MAX_PATH] = {0};
 
-    // Use GetTickCount64() + verification loop so every reload creates a guaranteed unique filename
-    uint64_t ts = GetTickCount64();
+    uint64_t ts = bridge_get_tick_count();
+    unsigned long pid = bridge_get_pid();
 
-    // 1. Primary candidate: game.dll sitting directly next to crystal_bridge.dll
+#ifdef _WIN32
+    const char *game_lib_name = "game.dll";
+    const char *path_sep = "\\";
+    const char *shadow_ext = "dll";
+#else
+    const char *game_lib_name = "game.so";
+    const char *path_sep = "/";
+    const char *shadow_ext = "so";
+#endif
+
+    // 1. Primary candidate: game.dll / game.so sitting directly next to crystal_bridge
     if (bridge_dir[0] != '\0') {
-        snprintf(candidate_path, sizeof(candidate_path), "%s\\game.dll", bridge_dir);
+        snprintf(candidate_path, sizeof(candidate_path), "%s%s%s", bridge_dir, path_sep, game_lib_name);
         do {
-            snprintf(shadow_path, sizeof(shadow_path), "%s\\game_loaded_%lu_%llu.dll", bridge_dir, (unsigned long)GetCurrentProcessId(), (unsigned long long)ts);
+            snprintf(shadow_path, sizeof(shadow_path), "%s%sgame_loaded_%lu_%llu.%s", bridge_dir, path_sep, pid, (unsigned long long)ts, shadow_ext);
             ts++;
-        } while (GetFileAttributesA(shadow_path) != INVALID_FILE_ATTRIBUTES);
+        } while (bridge_file_exists(shadow_path));
+#ifdef _WIN32
         SetDllDirectoryA(bridge_dir);
+#endif
     }
 
-    // Preload runtime dependencies if present
+#ifdef _WIN32
+    // Preload runtime dependencies on Windows if present
     const char *runtime_deps[] = { "gc.dll", "iconv-2.dll", "pcre2-8.dll" };
     for (int r = 0; r < 3; r++) {
         char dep_path[MAX_PATH];
@@ -1323,53 +1470,55 @@ static void load_crystal_game_library() {
         }
         LoadLibraryA(runtime_deps[r]);
     }
+#endif
 
     HMODULE hGame = NULL;
 
-    // Check if the co-located game.dll exists
-    if (candidate_path[0] != '\0' && GetFileAttributesA(candidate_path) != INVALID_FILE_ATTRIBUTES) {
-        if (!CopyFileA(candidate_path, shadow_path, FALSE)) {
-            DWORD err = GetLastError();
+    // Check if the co-located game library exists
+    if (candidate_path[0] != '\0' && bridge_file_exists(candidate_path)) {
+        if (!bridge_copy_file(candidate_path, shadow_path)) {
             char err_buf[256];
-            snprintf(err_buf, sizeof(err_buf), "[CrystalBridge] CopyFile failed from %s to %s (error code %lu)", candidate_path, shadow_path, err);
-            godot_log_error(err_buf, nullptr, "load_crystal_game_library", __FILE__, __LINE__);
+            bridge_get_last_error(err_buf, sizeof(err_buf));
+            char log_buf[512];
+            snprintf(log_buf, sizeof(log_buf), "[CrystalBridge] Copy failed from %s to %s (%s)", candidate_path, shadow_path, err_buf);
+            godot_log_error(log_buf, nullptr, "load_crystal_game_library", __FILE__, __LINE__);
         }
-        hGame = LoadLibraryExA(shadow_path, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
-        if (!hGame) {
-            hGame = LoadLibraryA(shadow_path);
-        }
+        hGame = bridge_load_library(shadow_path);
         if (hGame) {
             char buf[512];
             snprintf(buf, sizeof(buf), "[CrystalBridge] Loaded game library from %s via shadow copy %s", candidate_path, shadow_path);
             godot_log_print(buf);
             g_hGame = hGame;
         } else {
-            DWORD err = GetLastError();
             char err_buf[256];
-            snprintf(err_buf, sizeof(err_buf), "[CrystalBridge] Failed to LoadLibrary %s (error code %lu)", shadow_path, err);
-            godot_log_warning(err_buf, nullptr, "load_crystal_game_library", __FILE__, __LINE__);
+            bridge_get_last_error(err_buf, sizeof(err_buf));
+            char log_buf[512];
+            snprintf(log_buf, sizeof(log_buf), "[CrystalBridge] Failed to load library %s (%s)", shadow_path, err_buf);
+            godot_log_warning(log_buf, nullptr, "load_crystal_game_library", __FILE__, __LINE__);
         }
     }
 
     // Fallback search paths if co-located wasn't found
     if (!hGame) {
+#ifdef _WIN32
         const char *fallbacks[] = { "demo/bin/game.dll", "bin/game.dll", "game.dll" };
+#else
+        const char *fallbacks[] = { "demo/bin/game.so", "bin/game.so", "game.so" };
+#endif
         for (int i = 0; i < 3; i++) {
-            if (GetFileAttributesA(fallbacks[i]) == INVALID_FILE_ATTRIBUTES) continue;
+            if (!bridge_file_exists(fallbacks[i])) continue;
             do {
-                snprintf(shadow_path, sizeof(shadow_path), "%s_loaded_%lu_%llu.dll", fallbacks[i], (unsigned long)GetCurrentProcessId(), (unsigned long long)ts);
+                snprintf(shadow_path, sizeof(shadow_path), "%s_loaded_%lu_%llu.%s", fallbacks[i], pid, (unsigned long long)ts, shadow_ext);
                 ts++;
-            } while (GetFileAttributesA(shadow_path) != INVALID_FILE_ATTRIBUTES);
-            if (!CopyFileA(fallbacks[i], shadow_path, FALSE)) {
-                DWORD err = GetLastError();
+            } while (bridge_file_exists(shadow_path));
+            if (!bridge_copy_file(fallbacks[i], shadow_path)) {
                 char err_buf[256];
-                snprintf(err_buf, sizeof(err_buf), "[CrystalBridge] CopyFile failed from %s to %s (error code %lu)", fallbacks[i], shadow_path, err);
-                godot_log_error(err_buf, nullptr, "load_crystal_game_library", __FILE__, __LINE__);
+                bridge_get_last_error(err_buf, sizeof(err_buf));
+                char log_buf[512];
+                snprintf(log_buf, sizeof(log_buf), "[CrystalBridge] Copy failed from %s to %s (%s)", fallbacks[i], shadow_path, err_buf);
+                godot_log_error(log_buf, nullptr, "load_crystal_game_library", __FILE__, __LINE__);
             }
-            hGame = LoadLibraryExA(shadow_path, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
-            if (!hGame) {
-                hGame = LoadLibraryA(shadow_path);
-            }
+            hGame = bridge_load_library(shadow_path);
             if (hGame) {
                 char buf[512];
                 snprintf(buf, sizeof(buf), "[CrystalBridge] Loaded fallback game library from %s via %s", fallbacks[i], shadow_path);
@@ -1381,14 +1530,14 @@ static void load_crystal_game_library() {
     }
 
     if (!hGame) {
-        godot_log_print("[CrystalBridge] No game.dll found yet. Click 'Build Crystal' in the editor to compile your project.");
+        godot_log_print("[CrystalBridge] No game library found yet. Click 'Build Crystal' in the editor to compile your project.");
         return;
     }
 
     typedef void (*CrystalInitFn)(const BridgeAPI *api);
-    CrystalInitFn init_fn = (CrystalInitFn)GetProcAddress(hGame, "crystal_godot_init");
+    CrystalInitFn init_fn = (CrystalInitFn)bridge_get_proc(hGame, "crystal_godot_init");
     if (!init_fn) {
-        godot_log_error("Failed to find 'crystal_godot_init' in game.dll", nullptr, "load_crystal_game_library", __FILE__, __LINE__);
+        godot_log_error("Failed to find 'crystal_godot_init' in game library", nullptr, "load_crystal_game_library", __FILE__, __LINE__);
         return;
     }
 

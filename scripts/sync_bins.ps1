@@ -18,9 +18,9 @@ foreach ($dir in $targetDirs) {
     if (-not (Test-Path $dir)) {
         New-Item -ItemType Directory -Force -Path $dir | Out-Null
     }
-    foreach ($dll in @('crystal_bridge.dll', 'gc.dll', 'iconv-2.dll', 'pcre2-8.dll', 'libgodot.dll', 'libgodot.lib')) {
-        $src = Join-Path $binDir $dll
-        $dst = Join-Path $dir $dll
+    foreach ($binFile in @('crystal_bridge.dll', 'crystal_bridge.so', 'gc.dll', 'iconv-2.dll', 'pcre2-8.dll', 'libgodot.dll', 'libgodot.so', 'libgodot.lib')) {
+        $src = Join-Path $binDir $binFile
+        $dst = Join-Path $dir $binFile
         if (Test-Path $src) {
             Copy-Item $src $dst -Force -ErrorAction SilentlyContinue
         }
@@ -28,13 +28,11 @@ foreach ($dir in $targetDirs) {
 }
 
 # Sync test binaries back to root bin
-$testGameDll = Join-Path $testBinDir "game.dll"
-if (Test-Path $testGameDll) {
-    Copy-Item $testGameDll (Join-Path $binDir "game.dll") -Force -ErrorAction SilentlyContinue
-}
-$testGameExe = Join-Path $testBinDir "game.exe"
-if (Test-Path $testGameExe) {
-    Copy-Item $testGameExe (Join-Path $binDir "game.exe") -Force -ErrorAction SilentlyContinue
+foreach ($targetName in @("game.dll", "game.so", "game.exe", "game")) {
+    $testTarget = Join-Path $testBinDir $targetName
+    if (Test-Path $testTarget) {
+        Copy-Item $testTarget (Join-Path $binDir $targetName) -Force -ErrorAction SilentlyContinue
+    }
 }
 
 # Ensure extension_list.cfg in all consumer projects

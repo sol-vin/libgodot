@@ -1,0 +1,78 @@
+name: Game CI
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Run Crystal Specs & Game Verification
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+
+    steps:
+      - name: Checkout Game Repository
+        uses: actions/checkout@v4
+
+      - name: Install Crystal
+        uses: crystal-lang/install-crystal@v1
+        with:
+          crystal: latest
+
+      - name: Verify Toolchain
+        run: |
+          crystal -v
+
+      - name: Install Shards
+        run: |
+          shards install || true
+
+      - name: Run Crystal Specs
+        run: |
+          crystal spec
+
+      - name: Setup Godot Engine (4.8-dev4)
+        uses: appsinacup/action_setup_godot@main
+        with:
+          repo: godotengine/godot-builds
+          version: 4.8-dev4
+          enable_cache: true
+
+      - name: Build Game Project (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          if [ -n "$GODOT4" ] && [ -f "$GODOT4" ]; then
+            cp "$GODOT4" ./godot
+            chmod +x ./godot
+          fi
+          make all
+
+      - name: Build Game Project (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $candidate = $env:GODOT4
+          if ($candidate) { $candidate = $candidate -replace '^/([a-zA-Z])/', '$1:/' }
+          if ($candidate -and (Test-Path $candidate)) {
+            Copy-Item $candidate ./godot.exe -Force
+          }
+          make all
+
+      - name: Run Godot Headless Smoke Test (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          ./godot --headless --rendering-driver opengl3 --path . --quit
+
+      - name: Run Godot Headless Smoke Test (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          ./godot.exe --headless --rendering-driver opengl3 --path . --quit

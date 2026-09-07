@@ -39,6 +39,8 @@ if (-not [string]::IsNullOrWhiteSpace($GodotPath) -and (Test-Path $GodotPath)) {
     $GodotExe = (Resolve-Path $normGodot).Path
 } elseif (Test-Path (Join-Path $RootDir "godot.exe")) {
     $GodotExe = Join-Path $RootDir "godot.exe"
+} elseif (Test-Path (Join-Path $RootDir "godot")) {
+    $GodotExe = Join-Path $RootDir "godot"
 } elseif (Get-Command godot -ErrorAction SilentlyContinue) {
     $GodotExe = (Get-Command godot).Source
 }

@@ -62,4 +62,21 @@ if (Test-Path $binLibgodot) {
         }
     }
 }
+
+$godotSrcSo = Join-Path $RootDir "godot-src/bin/godot.linuxbsd.template_debug.x86_64.so"
+$binLibgodotSo = Join-Path $RootDir "bin/libgodot.so"
+if ((Test-Path $godotSrcSo) -and (-not (Test-Path $binLibgodotSo))) {
+    Copy-Item $godotSrcSo $binLibgodotSo -Force -ErrorAction SilentlyContinue
+}
+
+if (Test-Path $binLibgodotSo) {
+    foreach ($d in $binDirs) {
+        if (Test-Path $d) {
+            $dst = Join-Path $d "libgodot.so"
+            if (-not (Test-Path $dst)) {
+                Copy-Item $binLibgodotSo $dst -Force -ErrorAction SilentlyContinue
+            }
+        }
+    }
+}
 exit 0

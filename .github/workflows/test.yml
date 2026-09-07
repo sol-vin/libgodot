@@ -86,7 +86,72 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-results
+          name: test-results-windows
+          path: |
+            test/.runtime_test_results.txt
+            test/.tool_tests_passed
+            test/.tool_tests_failed
+            test/.runtime_tests_passed
+            test/.runtime_tests_failed
+          if-no-files-found: ignore
+
+  test-linux:
+    name: Run Test Suite (Linux)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install Crystal
+        uses: crystal-lang/install-crystal@v1
+        with:
+          crystal: latest
+
+      - name: Verify Crystal & g++ Toolchain
+        run: |
+          crystal -v
+          g++ --version
+
+      - name: Setup Godot Engine (4.8-dev4)
+        uses: appsinacup/action_setup_godot@main
+        with:
+          repo: godotengine/godot-builds
+          version: 4.8-dev4
+          enable_cache: true
+
+      - name: Configure Godot Executable
+        shell: bash
+        run: |
+          if [ -n "$GODOT4" ] && [ -f "$GODOT4" ]; then
+            cp "$GODOT4" ./godot
+            chmod +x ./godot
+          elif [ -n "$GODOT4_BIN" ] && [ -f "$GODOT4_BIN" ]; then
+            cp "$GODOT4_BIN" ./godot
+            chmod +x ./godot
+          elif command -v godot >/dev/null 2>&1; then
+            cp "$(command -v godot)" ./godot
+            chmod +x ./godot
+          else
+            echo "Fallback: Downloading Godot 4.8-dev4 linux.x86_64..."
+            wget -q https://github.com/godotengine/godot-builds/releases/download/4.8-dev4/Godot_v4.8-dev4_linux.x86_64.zip -O godot.zip
+            unzip -q godot.zip
+            mv Godot_v4.8-dev4_linux.x86_64 ./godot
+            chmod +x ./godot
+            rm godot.zip
+          fi
+          ./godot --version
+
+      - name: Build and Run LibGodot Test Suite
+        shell: bash
+        run: |
+          make all
+
+      - name: Upload Test Summary Artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-linux
           path: |
             test/.runtime_test_results.txt
             test/.tool_tests_passed

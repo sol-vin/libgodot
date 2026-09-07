@@ -8,14 +8,20 @@ This directory provides a clean, minimal starter skeleton for creating new Godot
 
 ```
 template/
-├── project.godot       # Godot project configuration
-├── scenes/             # Godot scene files
+├── .github/
+│   └── workflows/
+│       ├── ci.yml          # Automated CI: Crystal specs + build on push/PR
+│       └── release.yml     # Automated releases: multi-platform build & tag release
+├── project.godot           # Godot project configuration
+├── scenes/                 # Godot scene files
+├── spec/
+│   └── main_spec.cr        # Automated Crystal node specifications
 ├── src/
-│   └── main.cr         # Game entry point and root custom nodes
-├── Makefile            # Build configuration
-├── build.ps1           # PowerShell build script
-├── run.ps1             # PowerShell run script
-└── run-editor.ps1      # PowerShell editor launcher script
+│   └── main.cr             # Game entry point and custom nodes
+├── Makefile                # Cross-platform build configuration (Windows & Linux)
+├── build.ps1               # PowerShell build script
+├── run.ps1                 # PowerShell run script
+└── run-editor.ps1          # PowerShell editor launcher script
 ```
 
 ---
@@ -58,11 +64,18 @@ node MainNode < Node3D do
 end
 ```
 
-### 3. Build & Run
+### 3. Run Automated Tests
+Run Crystal specifications:
+
+```bash
+crystal spec
+```
+
+### 4. Build & Run
 Run with Make:
 
 ```bash
-make          # Build game.dll
+make          # Build game library (game.dll on Windows, game.so on Linux)
 make run      # Launch with Godot
 make editor   # Open in Godot Editor
 ```
@@ -73,3 +86,11 @@ Or run via PowerShell scripts:
 .\build.ps1
 .\run.ps1
 ```
+
+---
+
+## Automated CI/CD (GitHub Actions)
+
+The template comes pre-configured with out-of-the-box GitHub Actions in `.github/workflows/`:
+- **`ci.yml`**: Runs `crystal spec`, builds the game, and runs a headless Godot smoke test on every push and pull request.
+- **`release.yml`**: Automatically packages Windows and Linux game release archives and publishes a GitHub Release when you push a version tag (e.g. `git tag v1.0.0 && git push --tags`).

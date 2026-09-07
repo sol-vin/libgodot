@@ -673,7 +673,7 @@ macro node(decl, &block)
           {% v_name = item[0] %}
           {% v_type = item[1] %}
           {% v_path = item[2] %}
-          if n = get_node({{v_path}})
+          if n = get_node?({{v_path}})
             self.{{v_name.id}} = {{v_type}}.new(n.pointer)
           end
         {% end %}
