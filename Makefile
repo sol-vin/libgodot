@@ -166,7 +166,7 @@ tests: test
 # Generate offline HTML documentation
 docs:
 	@echo Generating Crystal HTML documentation in docs/...
-	$(CRYSTAL) docs src/libgodot.cr
+	$(CRYSTAL) docs
 	@echo Documentation generated at docs/index.html
 
 # Launch test project using Godot

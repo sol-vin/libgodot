@@ -5,11 +5,8 @@ on:
     branches:
       - master
       - main
-    paths:
-      - 'src/**'
-      - 'shard.yml'
-      - 'README.md'
-      - '.github/workflows/pages.yml'
+  release:
+    types: [published]
   workflow_dispatch:
 
 # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
@@ -41,7 +38,7 @@ jobs:
 
       - name: Generate Crystal Docs
         run: |
-          crystal docs src/libgodot.cr
+          crystal docs
           # Place .nojekyll so GitHub Pages does not ignore files with leading underscores or custom assets
           touch docs/.nojekyll
 

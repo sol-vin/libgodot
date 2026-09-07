@@ -221,7 +221,7 @@ jobs:
         run: |
           crystal -v
           g++ --version
-          lld --version
+          ld.lld --version
 
       - name: Setup Godot Engine (4.8-dev4)
         uses: appsinacup/action_setup_godot@main

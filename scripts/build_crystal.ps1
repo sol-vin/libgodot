@@ -47,7 +47,7 @@ if (-not $onWindows -and ($Output -match '\.so$' -or $LinkFlags -match '-shared'
             Set-Content -Path $symFile -Value "{`n  global:`n    crystal_godot_init;`n  local:`n    *;`n};`n" -Force
         }
         $extraFlags = "-Wl,--exclude-libs,ALL -Wl,--no-export-dynamic -Wl,--version-script=$symFile"
-        if (Get-Command lld -ErrorAction SilentlyContinue) {
+        if (Get-Command ld.lld -ErrorAction SilentlyContinue -or Get-Command lld -ErrorAction SilentlyContinue) {
             $extraFlags = "-fuse-ld=lld $extraFlags"
         }
         $LinkFlags = if ([string]::IsNullOrWhiteSpace($LinkFlags)) { "-shared $extraFlags" } else { "$LinkFlags $extraFlags" }
