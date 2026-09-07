@@ -1898,7 +1898,7 @@ static void cleanup_old_shadow_dlls(const char *dir) {
  * @return True to create a shadow copy; false to load directly.
  */
 static bool bridge_should_use_shadow_copy() {
-#if defined(LIBGODOT_RELEASE) || defined(NDEBUG)
+#if defined(LIBGODOT_RELEASE) || defined(NDEBUG) || defined(__ANDROID__) || defined(ANDROID)
     return false;
 #else
     const char *no_shadow = getenv("LIBGODOT_NO_SHADOW");
@@ -1918,14 +1918,14 @@ static bool bridge_should_use_shadow_copy() {
 }
 
 /**
- * Locates, loads, and initializes the Crystal game library (game.dll / game.so).
+ * Locates, loads, and initializes the Crystal game library (game.dll / game.so / libgame.so).
  *
  * Execution Steps:
  * 1. Unloads any previous library handle reference.
  * 2. Resolves the directory where `crystal_bridge` resides.
  * 3. Cleans up any stale `game_loaded_*.dll/so` files from past sessions.
  * 4. Preloads Windows Crystal runtime dependencies (gc.dll, iconv-2.dll, pcre2-8.dll).
- * 5. Loads `game.dll` (either directly in release mode or via shadow copy in debug mode).
+ * 5. Loads `game.dll` / `game.so` / `libgame.so`.
  * 6. Searches fallback paths if co-located library was not found.
  * 7. Resolves the exported `crystal_godot_init` symbol and passes `&g_bridge_api`.
  */
@@ -1969,13 +1969,17 @@ static void load_crystal_game_library() {
     const char *game_lib_name = "game.dll";
     const char *path_sep = "\\";
     const char *shadow_ext = "dll";
+#elif defined(__ANDROID__) || defined(ANDROID)
+    const char *game_lib_name = "libgame.so";
+    const char *path_sep = "/";
+    const char *shadow_ext = "so";
 #else
     const char *game_lib_name = "game.so";
     const char *path_sep = "/";
     const char *shadow_ext = "so";
 #endif
 
-    // 1. Primary candidate: game.dll / game.so sitting directly next to crystal_bridge
+    // 1. Primary candidate: game library sitting directly next to crystal_bridge
     if (bridge_dir[0] != '\0') {
         snprintf(candidate_path, sizeof(candidate_path), "%s%s%s", bridge_dir, path_sep, game_lib_name);
         if (use_shadow) {
@@ -2048,6 +2052,8 @@ static void load_crystal_game_library() {
     if (!hGame) {
 #ifdef _WIN32
         const char *fallbacks[] = { "demo/bin/game.dll", "bin/game.dll", "game.dll" };
+#elif defined(__ANDROID__) || defined(ANDROID)
+        const char *fallbacks[] = { "libgame.so", "bin/android/arm64-v8a/libgame.so", "game.so" };
 #else
         const char *fallbacks[] = { "demo/bin/game.so", "bin/game.so", "game.so" };
 #endif
@@ -2085,6 +2091,17 @@ static void load_crystal_game_library() {
             }
         }
     }
+
+#if defined(__ANDROID__) || defined(ANDROID)
+    // On Android, if not found on filesystem, try loading directly via linker search path
+    if (!hGame) {
+        hGame = bridge_load_library("libgame.so");
+        if (hGame) {
+            godot_log_print("[CrystalBridge] Loaded game library via system dlopen('libgame.so')");
+            g_hGame = hGame;
+        }
+    }
+#endif
 
     if (!hGame) {
         godot_log_print("[CrystalBridge] No game library found yet. Click 'Build Crystal' in the editor to compile your project.");

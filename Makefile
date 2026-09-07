@@ -80,7 +80,7 @@ BRIDGE_DLL       = $(BRIDGE_LIB)
 GAME_DLL         = $(GAME_LIB)
 LIBGODOT_DLL     = $(LIBGODOT_LIB)
 
-.PHONY: all bridge test_project examples examples_exe template game_dll game_exe generate dump_api deps addons sync engine test tests docs run editor clean help
+.PHONY: all bridge test_project examples examples_exe template game_dll game_exe android package_android generate dump_api deps addons sync engine test tests docs run editor clean help
 
 # Default target: compile bridge, test project, examples, template, sync DLLs, and run test suite
 all: dirs deps bridge addons test_project examples template sync test
@@ -131,6 +131,17 @@ game_exe: dirs deps bridge
 	@echo [Standalone] Compiling standalone game executable from $(ENTRY)...
 	@$(PWSH_FILE) scripts/build_crystal.ps1 -Entry $(ENTRY) -Output $(GAME_EXE) $(if $(filter 1,$(RELEASE)),-Release,)
 	@$(PWSH_CMD) "Copy-Item '$(GAME_EXE)' '$(TEST_BIN_DIR)/game$(EXE_EXT)' -Force -ErrorAction SilentlyContinue"
+
+# Cross-compile for Android (libcrystal_bridge.so and libgame.so)
+android: dirs
+	@echo [Android] Cross-compiling LibGodot for Android arm64-v8a...
+	@$(PWSH_FILE) scripts/build_android.ps1 -Release "$(RELEASE)" $(if $(ENTRY),-Entry $(ENTRY),)
+
+# Package Android APK
+package_android: dirs android
+	@echo [Android] Packaging Android APK...
+	@$(PWSH_FILE) scripts/package_android.ps1 $(if $(filter 1,$(RELEASE)),-Release,) $(if $(ENTRY),-Entry $(ENTRY),)
+
 
 # Generate Crystal bindings from Godot extension_api.json
 dump_api:

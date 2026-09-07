@@ -2,11 +2,12 @@ name: Test Suite
 
 on:
   push:
-    branches: [master, main]
+    branches-ignore:
+      - master
+      - main
   pull_request:
     branches: [master, main]
   workflow_dispatch:
-  workflow_call:
 
 jobs:
   test:
@@ -92,12 +93,14 @@ jobs:
           # Per AGENTS.md, agents and CI must execute 'make all'
           make all
 
-      - name: Upload Test Summary Artifact
+      - name: Upload Test Status Report & Artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-results-windows
+          name: test-status-report-windows
           path: |
+            test/test_report.md
+            test/test_report.json
             test/.runtime_test_results.txt
             test/.tool_tests_passed
             test/.tool_tests_failed
@@ -163,15 +166,141 @@ jobs:
         run: |
           make all
 
-      - name: Upload Test Summary Artifact
+      - name: Upload Test Status Report & Artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-results-linux
+          name: test-status-report-linux
           path: |
+            test/test_report.md
+            test/test_report.json
             test/.runtime_test_results.txt
             test/.tool_tests_passed
             test/.tool_tests_failed
             test/.runtime_tests_passed
             test/.runtime_tests_failed
           if-no-files-found: ignore
+
+  test-android:
+    name: Build & Verify Android Target (arm64-v8a)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install Crystal
+        uses: crystal-lang/install-crystal@v1
+        with:
+          crystal: latest
+
+      - name: Setup Java (for apksigner & keytool)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Godot Engine (4.8-dev4)
+        uses: appsinacup/action_setup_godot@main
+        with:
+          repo: godotengine/godot-builds
+          version: 4.8-dev4
+          enable_cache: true
+
+      - name: Configure Godot & Android SDK Environment
+        shell: bash
+        run: |
+          if [ -n "$GODOT4" ] && [ -f "$GODOT4" ]; then
+            cp "$GODOT4" ./godot
+            chmod +x ./godot
+          elif [ -n "$GODOT4_BIN" ] && [ -f "$GODOT4_BIN" ]; then
+            cp "$GODOT4_BIN" ./godot
+            chmod +x ./godot
+          elif command -v godot >/dev/null 2>&1; then
+            cp "$(command -v godot)" ./godot
+            chmod +x ./godot
+          else
+            echo "Fallback: Downloading Godot 4.8-dev4 linux.x86_64..."
+            wget -q https://github.com/godotengine/godot-builds/releases/download/4.8-dev4/Godot_v4.8-dev4_linux.x86_64.zip -O godot.zip
+            unzip -q godot.zip
+            mv Godot_v4.8-dev4_linux.x86_64 ./godot
+            chmod +x ./godot
+            rm godot.zip
+          fi
+          ./godot --version
+
+          mkdir -p ~/.android
+          if [ ! -f ~/.android/debug.keystore ]; then
+            keytool -keyalg RSA -genkeypair -alias androiddebugkey -keypass android -keystore ~/.android/debug.keystore -storepass android -dname "CN=Android Debug,O=Android,C=US" -validity 9999
+          fi
+
+          if [ -d "$ANDROID_HOME/cmake" ]; then
+            first_cmake=$(ls -1 "$ANDROID_HOME/cmake" 2>/dev/null | head -n 1)
+            if [ -n "$first_cmake" ] && [ ! -d "$ANDROID_HOME/cmake/3.22.1" ]; then
+              ln -s "$ANDROID_HOME/cmake/$first_cmake" "$ANDROID_HOME/cmake/3.22.1" || true
+            fi
+          fi
+
+      - name: Ensure Godot Export Templates
+        shell: pwsh
+        run: |
+          & pwsh -NoProfile -File scripts/ensure_export_templates.ps1
+
+      - name: Cross-Compile Android Native Libraries (arm64-v8a)
+        shell: pwsh
+        run: |
+          & pwsh -NoProfile -File scripts/build_android.ps1 -ProjectPath template
+
+      - name: Verify Android Shared Object Symbols
+        shell: bash
+        run: |
+          NM_CMD=$(find $ANDROID_HOME/ndk -name "llvm-nm" 2>/dev/null | head -n 1)
+          if [ -z "$NM_CMD" ]; then NM_CMD="nm"; fi
+          echo "Using NM: $NM_CMD"
+
+          echo "Checking libcrystal_bridge.so symbols..."
+          $NM_CMD -D bin/android/arm64-v8a/libcrystal_bridge.so | grep "crystal_library_init"
+
+          echo "Checking libgame.so symbols..."
+          $NM_CMD -D bin/android/arm64-v8a/libgame.so | grep "crystal_godot_init"
+
+      - name: Package Android Starter Template APK
+        shell: pwsh
+        run: |
+          & pwsh -NoProfile -File scripts/package_android.ps1 -ProjectPath template -Name template
+
+      - name: Package Android Example APK (basic_demo)
+        shell: pwsh
+        run: |
+          & pwsh -NoProfile -File scripts/package_android.ps1 -ProjectPath examples/basic_demo -Name basic_demo
+
+      - name: Verify APK Architecture & Contents
+        shell: bash
+        run: |
+          echo "Inspecting bin/android/template.apk..."
+          unzip -l bin/android/template.apk | grep "lib/arm64-v8a/libcrystal_bridge.so"
+          unzip -l bin/android/template.apk | grep "lib/arm64-v8a/libgame.so"
+
+          echo "Inspecting bin/android/basic_demo.apk..."
+          unzip -l bin/android/basic_demo.apk | grep "lib/arm64-v8a/libcrystal_bridge.so"
+          unzip -l bin/android/basic_demo.apk | grep "lib/arm64-v8a/libgame.so"
+
+      - name: Generate Android Status Report
+        if: always()
+        shell: pwsh
+        run: |
+          & pwsh -NoProfile -File scripts/report_android.ps1
+
+      - name: Upload Android Status Report & APKs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-status-report-android
+          path: |
+            bin/android/test_report.md
+            bin/android/test_report.json
+            bin/android/android_audit_report.txt
+            bin/android/*.apk
+            bin/android/*.idsig
+          if-no-files-found: ignore
+

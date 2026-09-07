@@ -51,6 +51,7 @@ if (-not $GodotExe -or -not (Test-Path $GodotExe)) {
 }
 
 $FailedSteps = [System.Collections.Generic.List[string]]::new()
+$RecordedResults = [System.Collections.Generic.List[hashtable]]::new()
 $StartTime = Get-Date
 
 Write-Host "=================================================================" -ForegroundColor Cyan
@@ -64,6 +65,7 @@ Write-Host ""
 function Invoke-TestCommand {
     param(
         [string]$Name,
+        [string]$Category,
         [string]$Executable,
         [string[]]$Arguments,
         [string]$WorkingDirectory = $RootDir,
@@ -79,6 +81,7 @@ function Invoke-TestCommand {
         [System.Environment]::SetEnvironmentVariable($k, $EnvironmentVars[$k])
     }
 
+    $cmdStart = Get-Date
     # Ensure working directory bin and root bin are in PATH for DLL resolution
     $oldPath = $env:PATH
     $binCandidates = @(
@@ -102,14 +105,24 @@ function Invoke-TestCommand {
         }
     }
 
+    $cmdDuration = [math]::Round(((Get-Date) - $cmdStart).TotalSeconds, 2)
     Write-Host "::endgroup::"
 
+    $item = @{
+        Name = $Name
+        Category = $Category
+        Success = ($exitCode -eq 0)
+        ExitCode = $exitCode
+        Duration = $cmdDuration
+    }
+    $RecordedResults.Add($item)
+
     if ($exitCode -eq 0) {
-        Write-Host "[PASSED] $Name (Exit Code: $exitCode)`n" -ForegroundColor Green
-        return @{ Success = $true; ExitCode = 0 }
+        Write-Host "[PASSED] $Name (Exit Code: $exitCode, ${cmdDuration}s)`n" -ForegroundColor Green
+        return @{ Success = $true; ExitCode = 0; Duration = $cmdDuration }
     } else {
-        Write-Host "::error::$Name failed with exit code $exitCode`n" -ForegroundColor Red
-        return @{ Success = $false; ExitCode = $exitCode }
+        Write-Host "::error::$Name failed with exit code $exitCode (${cmdDuration}s)`n" -ForegroundColor Red
+        return @{ Success = $false; ExitCode = $exitCode; Duration = $cmdDuration }
     }
 }
 
@@ -223,9 +236,96 @@ if (-not $SkipSmokeTests) {
 }
 
 # -----------------------------------------------------------------------------
-# Final Summary & Exit
+# Generate Custom Status Report (Markdown & JSON)
 # -----------------------------------------------------------------------------
 $Duration = [math]::Round(((Get-Date) - $StartTime).TotalSeconds, 2)
+$onWindows = ($env:OS -eq "Windows_NT" -or [System.IO.Path]::PathSeparator -eq ';')
+$platformName = if ($onWindows) { "Windows (x86_64)" } else { "Linux (x86_64)" }
+$crystalVer = (crystal -v 2>$null | Select-Object -First 1)
+$godotVer = (& $GodotExe --version 2>$null | Select-Object -First 1)
+
+$runtimeTotal = 0
+$runtimePassed = 0
+$runtimeFailed = 0
+$summaryFile = Join-Path $TestDir ".runtime_test_results.txt"
+if (Test-Path $summaryFile) {
+    $rawSummary = Get-Content $summaryFile -Raw
+    if ($rawSummary -match 'TOTAL=(\d+)') { $runtimeTotal = [int]$matches[1] }
+    if ($rawSummary -match 'PASSED=(\d+)') { $runtimePassed = [int]$matches[1] }
+    if ($rawSummary -match 'FAILED=(\d+)') { $runtimeFailed = [int]$matches[1] }
+}
+
+$statusBadge = if ($FailedSteps.Count -eq 0) { "**SUCCESS (All Passed)**" } else { "**FAILED ($($FailedSteps.Count) failed)**" }
+
+$mdReport = [System.Text.StringBuilder]::new()
+[void]$mdReport.AppendLine("## LibGodot Test Suite Status Report ($platformName)")
+[void]$mdReport.AppendLine("")
+[void]$mdReport.AppendLine("| Metric | Value |")
+[void]$mdReport.AppendLine("| :--- | :--- |")
+[void]$mdReport.AppendLine("| **Overall Status** | $statusBadge |")
+[void]$mdReport.AppendLine("| **Platform** | $platformName |")
+[void]$mdReport.AppendLine("| **Crystal Version** | $crystalVer |")
+[void]$mdReport.AppendLine("| **Godot Version** | $godotVer |")
+[void]$mdReport.AppendLine("| **Total Duration** | ${Duration}s |")
+if ($runtimeTotal -gt 0) {
+    [void]$mdReport.AppendLine("| **Runtime Assertions** | $runtimePassed / $runtimeTotal passed |")
+}
+[void]$mdReport.AppendLine("")
+[void]$mdReport.AppendLine("### Executed Test Steps")
+[void]$mdReport.AppendLine("")
+[void]$mdReport.AppendLine("| Status | Phase / Test Step | Duration | Exit Code |")
+[void]$mdReport.AppendLine("| :---: | :--- | :---: | :---: |")
+
+foreach ($res in $RecordedResults) {
+    $resIcon = if ($res.Success) { "PASSED" } else { "FAILED" }
+    [void]$mdReport.AppendLine("| $resIcon | $($res.Name) | $($res.Duration)s | $($res.ExitCode) |")
+}
+
+if ($FailedSteps.Count -gt 0) {
+    [void]$mdReport.AppendLine("")
+    [void]$mdReport.AppendLine("### Failures Detected ($($FailedSteps.Count))")
+    foreach ($f in $FailedSteps) {
+        [void]$mdReport.AppendLine("- FAIL: $f")
+    }
+}
+
+$reportMdContent = $mdReport.ToString()
+$reportMdPath = Join-Path $TestDir "test_report.md"
+Set-Content -Path $reportMdPath -Value $reportMdContent -Force
+
+# Generate JSON report
+$jsonReport = @{
+    platform = $platformName
+    crystal_version = $crystalVer
+    godot_version = $godotVer
+    duration_seconds = $Duration
+    overall_success = ($FailedSteps.Count -eq 0)
+    failed_steps_count = $FailedSteps.Count
+    failed_steps = $FailedSteps
+    runtime_summary = @{
+        total = $runtimeTotal
+        passed = $runtimePassed
+        failed = $runtimeFailed
+    }
+    steps = $RecordedResults
+    timestamp = (Get-Date -Format "o")
+} | ConvertTo-Json -Depth 5
+$reportJsonPath = Join-Path $TestDir "test_report.json"
+Set-Content -Path $reportJsonPath -Value $jsonReport -Force
+
+# Append to GITHUB_STEP_SUMMARY if running in GitHub Actions
+if ($env:GITHUB_STEP_SUMMARY) {
+    try {
+        [System.IO.File]::AppendAllText($env:GITHUB_STEP_SUMMARY, "`n$reportMdContent`n")
+        Write-Host "  -> Published test report to GitHub Step Summary." -ForegroundColor Green
+    } catch {
+        Write-Warning "Could not write to GITHUB_STEP_SUMMARY: $_"
+    }
+}
+
+# -----------------------------------------------------------------------------
+# Final Summary & Exit
+# -----------------------------------------------------------------------------
 Write-Host "=================================================================" -ForegroundColor Cyan
 if ($FailedSteps.Count -eq 0) {
     Write-Host "  SUCCESS: All LibGodot test suites passed! ($Duration seconds)   " -ForegroundColor Green

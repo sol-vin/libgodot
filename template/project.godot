@@ -17,3 +17,8 @@ config/features=PackedStringArray("4.8")
 [editor_plugins]
 
 enabled=PackedStringArray("res://addons/crystal_integration/plugin.cfg")
+
+[rendering]
+
+textures/vram_compression/import_etc2_astc=true
+

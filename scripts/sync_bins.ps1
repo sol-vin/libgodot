@@ -25,7 +25,22 @@ foreach ($dir in $targetDirs) {
             Copy-Item $src $dst -Force -ErrorAction SilentlyContinue
         }
     }
+    $androidSrc = Join-Path $binDir "android"
+    if (Test-Path $androidSrc) {
+        $androidDst = Join-Path $dir "android"
+        if (-not (Test-Path $androidDst)) {
+            New-Item -ItemType Directory -Force -Path $androidDst | Out-Null
+        }
+        Get-ChildItem -Path $androidSrc -Directory | ForEach-Object {
+            $destAbi = Join-Path $androidDst $_.Name
+            if (-not (Test-Path $destAbi)) {
+                New-Item -ItemType Directory -Force -Path $destAbi | Out-Null
+            }
+            Copy-Item -Path (Join-Path $_.FullName "*") -Destination $destAbi -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    }
 }
+
 
 # Sync test binaries back to root bin
 foreach ($targetName in @("game.dll", "game.so", "game.exe", "game")) {

@@ -10,6 +10,7 @@ require "./libgodot/instance"
 require "./libgodot/generated/global_enums"
 require "./libgodot/generated/classes/all_classes"
 require "./libgodot/generated/singletons"
+require "./libgodot/docs"
 
 module Godot
   class PackedScene < Resource

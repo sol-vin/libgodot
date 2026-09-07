@@ -8,3 +8,10 @@ linux.debug.x86_64 = "res://bin/crystal_bridge.so"
 linux.release.x86_64 = "res://bin/crystal_bridge.so"
 windows.debug.x86_64 = "res://bin/crystal_bridge.dll"
 windows.release.x86_64 = "res://bin/crystal_bridge.dll"
+android.debug.arm64 = "res://bin/android/arm64-v8a/libcrystal_bridge.so"
+android.release.arm64 = "res://bin/android/arm64-v8a/libcrystal_bridge.so"
+
+[dependencies]
+android.debug.arm64 = { "res://bin/android/arm64-v8a/libgame.so": "" }
+android.release.arm64 = { "res://bin/android/arm64-v8a/libgame.so": "" }
+
