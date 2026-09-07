@@ -34,7 +34,7 @@ test_concurrency "Cooperative Fiber scheduling with spawn and Fiber.yield" do
 end
 
 test_concurrency "Channel message passing between background worker Thread and main thread" do
-  ch = Channel(String).new
+  ch = Channel(String).new(1)
   worker_payload = "WorkerResult_48A"
 
   worker = Thread.new do
@@ -44,8 +44,8 @@ test_concurrency "Channel message passing between background worker Thread and m
     ch.send("#{worker_payload}_#{sum}")
   end
 
-  received = ch.receive
   worker.join
+  received = ch.receive
 
   TestFramework.assert_true received.starts_with?("WorkerResult_48A_"), "Received message must match payload"
   TestFramework.assert_eq received, "WorkerResult_48A_499500"
@@ -66,14 +66,15 @@ test_concurrency "Multi-producer channel contention across parallel worker threa
     end
   end
 
+  # Wait for all workers to finish putting items into the channel
+  workers.each(&.join)
+
   # Drain the channel from the main thread
   received_counts = Hash(Int32, Int32).new(0)
   total_items.times do
     val = ch.receive
     received_counts[val] += 1
   end
-
-  workers.each(&.join)
 
   worker_count.times do |worker_id|
     TestFramework.assert_eq received_counts[worker_id], items_per_worker, "Worker #{worker_id} items mismatch"
@@ -225,8 +226,8 @@ test_concurrency "Cross-thread object validity and dead-pointer safety" do
   node_to_destroy.destroy
   TestFramework.assert_true node_to_destroy.destroyed?
 
-  dead_detected_by_thread = ch_done.receive
   checker.join
+  dead_detected_by_thread = ch_done.receive
 
   TestFramework.assert_true dead_detected_by_thread, "Background thread must observe ObjectDB invalidation after main thread destroy"
 

@@ -158,7 +158,8 @@ Godot's runtime is fundamentally single-threaded for scene graph operations. Age
 4. **Use `Channel(T)` for Background Worker Processing (Actor Pattern)**:
    - Offload heavy computation, pathfinding, or procedural generation to background OS threads (`Thread.new`).
    - Workers send immutable data back via `Channel(T)`.
-   - The main thread drains the channel non-blockingly during `_process(delta)` using `select ... when ... else`.
+   - **Always use buffered channels (`Channel(T).new(capacity)`) across OS threads.** In Crystal 1.20+, unbuffered channels (`Channel(T).new`) suspend the calling fiber when no receiver is ready; on raw OS threads (`Thread.new`), `Fiber#execution_context` is `nil`, so suspending raises `NilAssertionError: Fiber#execution_context cannot be nil`.
+   - The main thread drains the channel non-blockingly during `_process(delta)` using `select ... when ... else` or after `thread.join`.
 5. **Cross-Thread Dispatch via `call_deferred`**:
    - When background threads need to notify Godot nodes, use `node.call_deferred("method_name", *args)`. Godot buffers these into its thread-safe `MessageQueue` for dispatch on the main thread.
 6. **Protect Shared Crystal Collections with `::Thread::Mutex`**:

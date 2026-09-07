@@ -31,7 +31,9 @@ This skill provides patterns and architectural rules for working safely with con
   - *Fix*: Use `Crystal::System::Thread.sleep(duration)` for genuine OS thread sleeps.
 
 ### 4. Use `Channel(T)` for Background Workers (Actor Pattern)
-Offload heavy math, pathfinding grids, procedural generation, or HTTP requests to background OS threads, and communicate back to the Main Thread via `Channel(T)`:
+Offload heavy math, pathfinding grids, procedural generation, or HTTP requests to background OS threads, and communicate back to the Main Thread via `Channel(T)`.
+**Always use buffered channels (`Channel(T).new(capacity)`) across OS threads.** In Crystal 1.20+, unbuffered channels (`Channel(T).new`) suspend the calling fiber when no receiver is ready; on raw OS threads (`Thread.new`), `Fiber#execution_context` is `nil`, so suspending raises `NilAssertionError: Fiber#execution_context cannot be nil`.
+
 
 ```crystal
 class ProceduralTerrain < Godot::Node3D
