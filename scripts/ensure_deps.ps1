@@ -7,6 +7,7 @@ $binDirs = [System.Collections.Generic.List[string]]::new()
 $binDirs.Add((Join-Path $RootDir "bin"))
 $binDirs.Add((Join-Path $RootDir "test/bin"))
 $binDirs.Add((Join-Path $RootDir "template/bin"))
+$binDirs.Add((Join-Path $RootDir "template-addon/addons/crystal_addon/bin"))
 
 if (-not [string]::IsNullOrWhiteSpace($TargetBin)) {
     $resolved = (Resolve-Path $TargetBin -ErrorAction SilentlyContinue)

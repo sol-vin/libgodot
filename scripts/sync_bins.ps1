@@ -2,15 +2,24 @@ $RootDir = Split-Path -Parent $PSScriptRoot
 $binDir = Join-Path $RootDir "bin"
 $testBinDir = Join-Path $RootDir "test/bin"
 $templateBinDir = Join-Path $RootDir "template/bin"
+$templateAddonBinDir = Join-Path $RootDir "template-addon/addons/crystal_addon/bin"
 $examplesDir = Join-Path $RootDir "examples"
 
 $targetDirs = [System.Collections.Generic.List[string]]::new()
 $targetDirs.Add($testBinDir)
 $targetDirs.Add($templateBinDir)
+$targetDirs.Add($templateAddonBinDir)
 
 if (Test-Path $examplesDir) {
     foreach ($ex in Get-ChildItem -Path $examplesDir -Directory) {
         $targetDirs.Add((Join-Path $ex.FullName "bin"))
+        # Also sync to any addon bin folders in examples
+        $exAddons = Join-Path $ex.FullName "addons"
+        if (Test-Path $exAddons) {
+            foreach ($addon in Get-ChildItem -Path $exAddons -Directory) {
+                $targetDirs.Add((Join-Path $addon.FullName "bin"))
+            }
+        }
     }
 }
 

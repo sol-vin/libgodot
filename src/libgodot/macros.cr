@@ -277,6 +277,8 @@ module Godot
       property has_ready : Bool
       property has_process : Bool
       property has_physics_process : Bool
+      property has_enter_tree : Bool
+      property has_exit_tree : Bool
       property properties : Array(PropertyInfo)
       property signals : Array(SignalInfo)
       property icon_path : String
@@ -291,6 +293,8 @@ module Godot
         @has_ready : Bool = false,
         @has_process : Bool = false,
         @has_physics_process : Bool = false,
+        @has_enter_tree : Bool = false,
+        @has_exit_tree : Bool = false,
         @properties : Array(PropertyInfo) = [] of PropertyInfo,
         @signals : Array(SignalInfo) = [] of SignalInfo,
         @icon_path : String = "",
@@ -308,6 +312,8 @@ module Godot
         entry.has_ready ||= parent.has_ready
         entry.has_process ||= parent.has_process
         entry.has_physics_process ||= parent.has_physics_process
+        entry.has_enter_tree ||= parent.has_enter_tree
+        entry.has_exit_tree ||= parent.has_exit_tree
       end
       @@entries << entry
     end
@@ -351,7 +357,9 @@ macro node(decl, &block)
     has_ready = false
     has_process = false
     has_physics_process = false
-    is_tool_class = false
+    has_enter_tree = false
+    has_exit_tree = false
+    is_tool_class = (base_godot_name == "EditorPlugin" || parent_name.stringify.includes?("EditorPlugin"))
     is_abstract_class = false
     is_static_unload = false
     class_icon_path = ""
@@ -437,6 +445,10 @@ macro node(decl, &block)
         {% comment_accum = "" %}
       {% end %}
     {% end %}
+  {% end %}
+
+  {% if base_godot_name == "EditorPlugin" || parent_name.stringify.includes?("EditorPlugin") %}
+    {% is_tool_class = true %}
   {% end %}
 
   {% for stmt in stmts %}
@@ -549,6 +561,10 @@ macro node(decl, &block)
         {% has_process = true %}
       {% elsif stmt.name.stringify == "_physics_process" %}
         {% has_physics_process = true %}
+      {% elsif stmt.name.stringify == "_enter_tree" %}
+        {% has_enter_tree = true %}
+      {% elsif stmt.name.stringify == "_exit_tree" %}
+        {% has_exit_tree = true %}
       {% end %}
       {% if last_anno && last_anno.name.stringify == "RPC" %}
         {%
@@ -690,6 +706,14 @@ macro node(decl, &block)
 
     def _godot_call_virtual(method_name : String, delta : Float64) : Void
       case method_name
+      {% if has_enter_tree %}
+      when "_enter_tree"
+        _enter_tree if responds_to?(:_enter_tree)
+      {% end %}
+      {% if has_exit_tree %}
+      when "_exit_tree"
+        _exit_tree if responds_to?(:_exit_tree)
+      {% end %}
       {% if has_ready %}
       when "_ready"
         {% if onready_props.size > 0 %}
@@ -1123,6 +1147,8 @@ macro node(decl, &block)
       {{has_ready}},
       {{has_process}},
       {{has_physics_process}},
+      {{has_enter_tree}},
+      {{has_exit_tree}},
       properties_{{class_name}},
       signals_{{class_name}},
       {{class_icon_path}},

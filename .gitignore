@@ -12,6 +12,10 @@ godot.exe
 /template/addons
 /template/*.exe
 
+/template-addon/.godot/
+/template-addon/addons/*/bin
+/template-addon/dist/
+
 /test/.godot/
 /test/bin
 /test/addons

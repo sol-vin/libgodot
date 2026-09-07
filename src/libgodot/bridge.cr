@@ -30,6 +30,8 @@ module Godot
       has_ready : Bool
       has_process : Bool
       has_physics_process : Bool
+      has_enter_tree : Bool
+      has_exit_tree : Bool
 
       create_instance : (CrystalClassDesc*, Void* -> Void*)
       free_instance : (Void* -> Void)
@@ -235,6 +237,8 @@ module Godot
         desc.has_ready = entry.has_ready
         desc.has_process = entry.has_process
         desc.has_physics_process = entry.has_physics_process
+        desc.has_enter_tree = entry.has_enter_tree
+        desc.has_exit_tree = entry.has_exit_tree
 
         desc.create_instance = create_fn
         desc.free_instance = free_fn

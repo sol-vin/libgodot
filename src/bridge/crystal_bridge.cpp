@@ -444,6 +444,8 @@ struct CrystalClassDesc {
     bool has_ready;           /** True if the class overrides _ready() */
     bool has_process;         /** True if the class overrides _process(delta) */
     bool has_physics_process; /** True if the class overrides _physics_process(delta) */
+    bool has_enter_tree;      /** True if the class overrides _enter_tree() */
+    bool has_exit_tree;       /** True if the class overrides _exit_tree() */
 
     // Crystal Host Callbacks
     /** Allocates a Crystal class instance on the GC heap and binds it to godot_object */
@@ -482,6 +484,8 @@ struct GenericExtensionInstance {
 
 /** Global list of registered classes for unregistration on shutdown (deque ensures pointer stability) */
 static std::deque<CrystalClassDesc> g_registered_classes;
+static GDExtensionInitializationLevel g_current_init_level = GDEXTENSION_INITIALIZATION_SCENE;
+static std::vector<CrystalClassDesc*> g_deferred_editor_classes;
 
 /**
  * Queries whether the Godot Editor is currently running (Engine.is_editor_hint()).
@@ -510,6 +514,22 @@ static bool is_editor_active() {
 // ==============================================================================
 // Generic ClassDB Lifecycle & Virtual Callbacks
 // ==============================================================================
+
+static bool is_editor_class_name(const char *name) {
+    if (!name) return false;
+    return (strncmp(name, "Editor", 6) == 0);
+}
+
+static bool is_tool_desc(const CrystalClassDesc *desc) {
+    if (!desc) return false;
+    if (desc->is_tool) return true;
+    const CrystalClassDesc *curr = desc;
+    while (curr) {
+        if (curr->is_tool || is_editor_class_name(curr->parent_name)) return true;
+        curr = curr->parent_desc;
+    }
+    return false;
+}
 
 /**
  * Instantiates a new Godot Object for a registered Crystal class.
@@ -557,7 +577,7 @@ static GDExtensionObjectPtr generic_class_create(void *p_class_userdata, GDExten
 
     gd_object_set_instance(obj, class_sn, (GDExtensionClassInstancePtr)inst);
 
-    bool allow_processing = !is_editor_active() || desc->is_tool;
+    bool allow_processing = !is_editor_active() || is_tool_desc(desc);
 
     // Auto-enable physics process if requested
     if (desc->has_physics_process && mb_set_physics_process && allow_processing) {
@@ -594,7 +614,7 @@ static GDExtensionClassInstancePtr generic_class_recreate(void *p_class_userdata
         inst->crystal_instance = nullptr;
     }
 
-    bool allow_processing = !is_editor_active() || desc->is_tool;
+    bool allow_processing = !is_editor_active() || is_tool_desc(desc);
 
     // Auto-enable physics process if requested
     if (desc->has_physics_process && mb_set_physics_process && allow_processing) {
@@ -630,7 +650,7 @@ static void generic_class_free(void *p_class_userdata, GDExtensionClassInstanceP
 static void generic_virtual_physics_process(GDExtensionClassInstancePtr p_instance, const GDExtensionConstTypePtr *p_args, GDExtensionTypePtr r_ret) {
     GenericExtensionInstance *inst = (GenericExtensionInstance*)p_instance;
     if (!inst || !inst->desc || !inst->desc->call_virtual || !inst->crystal_instance) return;
-    if (is_editor_active() && !inst->desc->is_tool) return;
+    if (is_editor_active() && !is_tool_desc(inst->desc)) return;
     double delta = (p_args && p_args[0]) ? *(const double*)p_args[0] : 0.016666666666666666;
     inst->desc->call_virtual(inst->crystal_instance, "_physics_process", delta);
 }
@@ -639,7 +659,7 @@ static void generic_virtual_physics_process(GDExtensionClassInstancePtr p_instan
 static void generic_virtual_process(GDExtensionClassInstancePtr p_instance, const GDExtensionConstTypePtr *p_args, GDExtensionTypePtr r_ret) {
     GenericExtensionInstance *inst = (GenericExtensionInstance*)p_instance;
     if (!inst || !inst->desc || !inst->desc->call_virtual || !inst->crystal_instance) return;
-    if (is_editor_active() && !inst->desc->is_tool) return;
+    if (is_editor_active() && !is_tool_desc(inst->desc)) return;
     double delta = (p_args && p_args[0]) ? *(const double*)p_args[0] : 0.016666666666666666;
     inst->desc->call_virtual(inst->crystal_instance, "_process", delta);
 }
@@ -648,12 +668,28 @@ static void generic_virtual_process(GDExtensionClassInstancePtr p_instance, cons
 static void generic_virtual_ready(GDExtensionClassInstancePtr p_instance, const GDExtensionConstTypePtr *p_args, GDExtensionTypePtr r_ret) {
     GenericExtensionInstance *inst = (GenericExtensionInstance*)p_instance;
     if (!inst || !inst->desc || !inst->desc->call_virtual || !inst->crystal_instance) return;
-    if (is_editor_active() && !inst->desc->is_tool) return;
+    if (is_editor_active() && !is_tool_desc(inst->desc)) return;
     inst->desc->call_virtual(inst->crystal_instance, "_ready", 0.0);
 }
 
+/** Dispatches Godot's _enter_tree() virtual callback into Crystal */
+static void generic_virtual_enter_tree(GDExtensionClassInstancePtr p_instance, const GDExtensionConstTypePtr *p_args, GDExtensionTypePtr r_ret) {
+    GenericExtensionInstance *inst = (GenericExtensionInstance*)p_instance;
+    if (!inst || !inst->desc || !inst->desc->call_virtual || !inst->crystal_instance) return;
+    if (is_editor_active() && !is_tool_desc(inst->desc)) return;
+    inst->desc->call_virtual(inst->crystal_instance, "_enter_tree", 0.0);
+}
+
+/** Dispatches Godot's _exit_tree() virtual callback into Crystal */
+static void generic_virtual_exit_tree(GDExtensionClassInstancePtr p_instance, const GDExtensionConstTypePtr *p_args, GDExtensionTypePtr r_ret) {
+    GenericExtensionInstance *inst = (GenericExtensionInstance*)p_instance;
+    if (!inst || !inst->desc || !inst->desc->call_virtual || !inst->crystal_instance) return;
+    if (is_editor_active() && !is_tool_desc(inst->desc)) return;
+    inst->desc->call_virtual(inst->crystal_instance, "_exit_tree", 0.0);
+}
+
 /**
- * Maps Godot virtual method StringNames (_ready, _process, _physics_process)
+ * Maps Godot virtual method StringNames (_ready, _process, _physics_process, _enter_tree, _exit_tree)
  * to their respective static C dispatch handlers.
  */
 static GDExtensionClassCallVirtual generic_class_get_virtual(void *p_class_userdata, GDExtensionConstStringNamePtr p_name, uint32_t p_hash) {
@@ -663,10 +699,14 @@ static GDExtensionClassCallVirtual generic_class_get_virtual(void *p_class_userd
     static void *sn_pp = nullptr;
     static void *sn_p = nullptr;
     static void *sn_r = nullptr;
+    static void *sn_et = nullptr;
+    static void *sn_xt = nullptr;
     if (!sn_pp) {
         sn_pp = make_string_name("_physics_process");
         sn_p = make_string_name("_process");
         sn_r = make_string_name("_ready");
+        sn_et = make_string_name("_enter_tree");
+        sn_xt = make_string_name("_exit_tree");
     }
 
     if (desc->has_physics_process && memcmp(p_name, sn_pp, sizeof(void*)) == 0) {
@@ -677,6 +717,12 @@ static GDExtensionClassCallVirtual generic_class_get_virtual(void *p_class_userd
     }
     if (desc->has_ready && memcmp(p_name, sn_r, sizeof(void*)) == 0) {
         return generic_virtual_ready;
+    }
+    if (desc->has_enter_tree && memcmp(p_name, sn_et, sizeof(void*)) == 0) {
+        return generic_virtual_enter_tree;
+    }
+    if (desc->has_exit_tree && memcmp(p_name, sn_xt, sizeof(void*)) == 0) {
+        return generic_virtual_exit_tree;
     }
 
     return nullptr;
@@ -750,20 +796,11 @@ static GDExtensionBool generic_class_get(GDExtensionClassInstancePtr p_instance,
  * @param p_desc Pointer to the CrystalClassDesc filled out by Crystal's registration macros.
  * @return 1 on success, 0 on failure.
  */
-static int bridge_register_class(const CrystalClassDesc *p_desc) {
-    if (!p_desc || !g_library) return 0;
-
-    g_registered_classes.push_back(*p_desc);
-    CrystalClassDesc *desc = &g_registered_classes.back();
-
-    // Link parent_desc if parent is also a registered Crystal class
-    desc->parent_desc = nullptr;
-    for (size_t i = 0; i < g_registered_classes.size() - 1; i++) {
-        if (strcmp(g_registered_classes[i].name, desc->parent_name) == 0) {
-            desc->parent_desc = &g_registered_classes[i];
-            break;
-        }
-    }
+/**
+ * Internal helper that executes ClassDB registration with Godot.
+ */
+static void do_classdb_register(CrystalClassDesc *desc) {
+    if (!desc || !g_library) return;
 
     void *class_sn = make_string_name(desc->name);
     void *parent_sn = make_string_name(desc->parent_name);
@@ -836,6 +873,48 @@ static int bridge_register_class(const CrystalClassDesc *p_desc) {
 
     free_string_name(class_sn);
     free_string_name(parent_sn);
+}
+
+static bool is_editor_class(const CrystalClassDesc *desc) {
+    if (!desc || !desc->parent_name) return false;
+    if (strncmp(desc->parent_name, "Editor", 6) == 0) return true;
+    if (desc->parent_desc) return is_editor_class(desc->parent_desc);
+    return false;
+}
+
+/**
+ * Registers a Crystal class, all its exported properties, and all its signals with Godot ClassDB.
+ *
+ * Called by Crystal during game library initialization (crystal_godot_init).
+ *
+ * @param p_desc Pointer to the CrystalClassDesc filled out by Crystal's registration macros.
+ * @return 1 on success, 0 on failure.
+ */
+static int bridge_register_class(const CrystalClassDesc *p_desc) {
+    if (!p_desc || !g_library) return 0;
+
+    g_registered_classes.push_back(*p_desc);
+    CrystalClassDesc *desc = &g_registered_classes.back();
+
+    // Link parent_desc if parent is also a registered Crystal class
+    desc->parent_desc = nullptr;
+    for (size_t i = 0; i < g_registered_classes.size() - 1; i++) {
+        if (strcmp(g_registered_classes[i].name, desc->parent_name) == 0) {
+            desc->parent_desc = &g_registered_classes[i];
+            break;
+        }
+    }
+
+    // Defer editor-specific classes if Godot is still at SCENE initialization level
+    if (g_current_init_level < GDEXTENSION_INITIALIZATION_EDITOR && is_editor_class(desc)) {
+        char log_buf[128];
+        snprintf(log_buf, sizeof(log_buf), "  [ClassDB] Deferring editor class %s < %s to EDITOR level", desc->name, desc->parent_name);
+        godot_log_print(log_buf);
+        g_deferred_editor_classes.push_back(desc);
+        return 1;
+    }
+
+    do_classdb_register(desc);
     return 1;
 }
 
@@ -1966,31 +2045,38 @@ static void load_crystal_game_library() {
     unsigned long pid = bridge_get_pid();
 
 #ifdef _WIN32
-    const char *game_lib_name = "game.dll";
+    const char *candidate_names[] = { "game.dll", "plugin.dll", "crystal_addon.dll" };
     const char *path_sep = "\\";
     const char *shadow_ext = "dll";
 #elif defined(__ANDROID__) || defined(ANDROID)
-    const char *game_lib_name = "libgame.so";
+    const char *candidate_names[] = { "libgame.so", "libplugin.so", "libcrystal_addon.so" };
     const char *path_sep = "/";
     const char *shadow_ext = "so";
 #else
-    const char *game_lib_name = "game.so";
+    const char *candidate_names[] = { "game.so", "plugin.so", "crystal_addon.so" };
     const char *path_sep = "/";
     const char *shadow_ext = "so";
 #endif
 
-    // 1. Primary candidate: game library sitting directly next to crystal_bridge
+    // 1. Primary candidate: game, plugin, or addon library sitting directly next to crystal_bridge
     if (bridge_dir[0] != '\0') {
-        snprintf(candidate_path, sizeof(candidate_path), "%s%s%s", bridge_dir, path_sep, game_lib_name);
-        if (use_shadow) {
-            do {
-                snprintf(shadow_path, sizeof(shadow_path), "%s%sgame_loaded_%lu_%llu.%s", bridge_dir, path_sep, pid, (unsigned long long)ts, shadow_ext);
-                ts++;
-            } while (bridge_file_exists(shadow_path));
-        }
 #ifdef _WIN32
         SetDllDirectoryA(bridge_dir);
 #endif
+        for (size_t c = 0; c < sizeof(candidate_names) / sizeof(candidate_names[0]); c++) {
+            char test_path[MAX_PATH] = {0};
+            snprintf(test_path, sizeof(test_path), "%s%s%s", bridge_dir, path_sep, candidate_names[c]);
+            if (bridge_file_exists(test_path)) {
+                snprintf(candidate_path, sizeof(candidate_path), "%s", test_path);
+                if (use_shadow) {
+                    do {
+                        snprintf(shadow_path, sizeof(shadow_path), "%s%s%s_loaded_%lu_%llu.%s", bridge_dir, path_sep, candidate_names[c], pid, (unsigned long long)ts, shadow_ext);
+                        ts++;
+                    } while (bridge_file_exists(shadow_path));
+                }
+                break;
+            }
+        }
     }
 
 #ifdef _WIN32
@@ -2154,12 +2240,21 @@ static void init_common_method_binds() {
  * Initializes common method binds and boots the Crystal runtime at GDEXTENSION_INITIALIZATION_SCENE.
  */
 static void initialize_crystal_module(void *p_userdata, GDExtensionInitializationLevel p_level) {
+    g_current_init_level = p_level;
     if (p_level == GDEXTENSION_INITIALIZATION_SCENE) {
         g_registered_classes.clear();
+        g_deferred_editor_classes.clear();
         init_common_method_binds();
         godot_log_print("[CrystalBridge] Initializing generic Crystal GDExtension host...");
         load_crystal_game_library();
     } else if (p_level == GDEXTENSION_INITIALIZATION_EDITOR) {
+        if (!g_deferred_editor_classes.empty()) {
+            godot_log_print("[CrystalBridge] Registering deferred Editor classes at EDITOR level...");
+            for (auto *desc : g_deferred_editor_classes) {
+                do_classdb_register(desc);
+            }
+            g_deferred_editor_classes.clear();
+        }
         bridge_flush_editor_help();
     }
 }
@@ -2179,6 +2274,7 @@ static void deinitialize_crystal_module(void *p_userdata, GDExtensionInitializat
             }
         }
         g_registered_classes.clear();
+        g_deferred_editor_classes.clear();
         g_editor_doc_xmls.clear();
         unload_crystal_game_library();
         godot_log_print("[CrystalBridge] Crystal module deinitialized.");

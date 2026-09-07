@@ -80,10 +80,10 @@ BRIDGE_DLL       = $(BRIDGE_LIB)
 GAME_DLL         = $(GAME_LIB)
 LIBGODOT_DLL     = $(LIBGODOT_LIB)
 
-.PHONY: all bridge test_project examples examples_exe template game_dll game_exe android package_android generate dump_api deps addons sync engine test tests docs run editor clean help
+.PHONY: all bridge test_project examples examples_exe template template_addon game_dll game_exe android package_android generate dump_api deps addons sync engine test tests docs run editor clean help
 
-# Default target: compile bridge, test project, examples, template, sync DLLs, and run test suite
-all: dirs deps bridge addons test_project examples template sync test
+# Default target: compile bridge, test project, examples, template, template_addon, sync DLLs, and run test suite
+all: dirs deps bridge addons test_project examples template template_addon sync test
 	@echo ===================================================================
 	@echo   LibGodot Crystal library build completed successfully!
 	@echo   Run 'make run' to launch test runner or 'make editor' for editor.
@@ -122,8 +122,12 @@ template: dirs deps bridge addons
 	@echo [Template] Building template project...
 	$(MAKE) -C template RELEASE=$(RELEASE)
 
+template_addon: dirs deps bridge
+	@echo [TemplateAddon] Building template-addon project...
+	$(MAKE) -C template-addon RELEASE=$(RELEASE)
+
 # Compile game_dll for all consumers and synchronize
-game_dll: dirs deps bridge addons test_project examples template sync
+game_dll: dirs deps bridge addons test_project examples template template_addon sync
 	@echo [Build] All game library targets compiled and synced!
 
 # Compile standalone game executable for LibGodot host paradigm

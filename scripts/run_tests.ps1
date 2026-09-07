@@ -173,6 +173,29 @@ if (-not $SkipToolTests) {
     } else {
         Write-Host "[PASSED] In-Editor Tool Tests verified successfully.`n" -ForegroundColor Green
     }
+
+    # -------------------------------------------------------------------------
+    # Editor Addon Verification: Load compiled Crystal EditorPlugin and verify unique string
+    # -------------------------------------------------------------------------
+    Write-Host "[Editor Addon Test] Verifying compiled Crystal Addon loads in Godot Editor..." -ForegroundColor Cyan
+    $scratchDir = Join-Path $RootDir "scratch"
+    if (-not (Test-Path $scratchDir)) { New-Item -ItemType Directory -Force -Path $scratchDir | Out-Null }
+    $addonLogFile = Join-Path $scratchDir "addon_editor_test.log"
+    if (Test-Path $addonLogFile) { Remove-Item $addonLogFile -Force }
+
+    $uniqueString = "[CRYSTAL_ADDON_VERIFIED_SUCCESS_8A3F1E]"
+
+    $addonEditorResult = Invoke-TestCommand -Name "Headless Editor Addon Test (template-addon)" `
+        -Executable "cmd" `
+        -Arguments @("/c", "`"$GodotExe`" --headless --rendering-driver opengl3 --editor --path template-addon --quit-after 25 > `"$addonLogFile`" 2>&1")
+
+    $addonLogContent = if (Test-Path $addonLogFile) { Get-Content $addonLogFile -Raw } else { "" }
+    if ($addonLogContent -match [regex]::Escape($uniqueString)) {
+        Write-Host "[PASSED] Compiled Crystal Addon verified in Godot Editor! Found unique string: $uniqueString`n" -ForegroundColor Green
+    } else {
+        Write-Host "::error::Compiled Crystal Addon failed to load or did not print unique string '$uniqueString'!`nLog output:`n$addonLogContent" -ForegroundColor Red
+        $FailedSteps.Add("Editor Addon Test (Unique string '$uniqueString' not found in editor log)")
+    }
 }
 
 # -----------------------------------------------------------------------------
