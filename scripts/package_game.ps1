@@ -12,9 +12,9 @@ if (-not $Name) {
     $Name = Split-Path -Leaf $projFull
 }
 
-$isWindows = ($env:OS -eq "Windows_NT" -or [System.IO.Path]::PathSeparator -eq ';')
-$exeExt = if ($isWindows) { ".exe" } else { "" }
-$soExt = if ($isWindows) { "dll" } else { "so" }
+$onWindows = ($env:OS -eq "Windows_NT" -or [System.IO.Path]::PathSeparator -eq ';')
+$exeExt = if ($onWindows) { ".exe" } else { "" }
+$soExt = if ($onWindows) { "dll" } else { "so" }
 
 Write-Host "[PackageGame] Packaging playable Godot game for '$Name' in '$projFull'..." -ForegroundColor Cyan
 
@@ -39,6 +39,7 @@ $godotCandidates = @(
     (Join-Path $projFull "godot$exeExt"),
     (Join-Path $rootDir "godot$exeExt"),
     (Join-Path $rootDir "godot.exe"),
+    (Join-Path $rootDir "godot"),
     $env:GODOT4,
     $env:GODOT4_BIN
 )
@@ -80,14 +81,14 @@ $addonDest = Join-Path $projFull "addons"
 if (Test-Path $addonSrc) {
     $syncScript = Join-Path $rootDir "scripts/sync_addons.ps1"
     if (Test-Path $syncScript) {
-        & powershell -NoProfile -ExecutionPolicy Bypass -File $syncScript -Source $addonSrc -Destinations $addonDest
+        & $syncScript -Source $addonSrc -Destinations $addonDest
     }
 }
 
 # 6. Ensure runtime DLLs and crystal_bridge are in bin/
 $depsScript = Join-Path $rootDir "scripts/ensure_deps.ps1"
 if (Test-Path $depsScript) {
-    & powershell -NoProfile -ExecutionPolicy Bypass -File $depsScript -TargetBin $binDir
+    & $depsScript -TargetBin $binDir
 }
 
 $bridgeSrc = Join-Path $rootDir "bin/crystal_bridge.$soExt"
@@ -100,20 +101,15 @@ $mainCr = Join-Path $projFull "src/main.cr"
 if (Test-Path $mainCr) {
     $buildScript = Join-Path $rootDir "scripts/build_crystal.ps1"
     $gameLib = Join-Path $binDir "game.$soExt"
-    $linkFlags = if ($isWindows) { "/DLL /ENTRY:_DllMainCRTStartup /EXPORT:crystal_godot_init" } else { "-shared" }
+    $linkFlags = if ($onWindows) { "/DLL /ENTRY:_DllMainCRTStartup /EXPORT:crystal_godot_init" } else { "-shared" }
     $srcPath = Join-Path $rootDir "src"
     
-    $argsList = @(
-        "-Entry", $mainCr,
-        "-Output", $gameLib,
-        "-LinkFlags", $linkFlags,
-        "-SourcePath", $srcPath
-    )
-    if ($Release -eq "1") {
-        $argsList += "-Release"
-    }
     Write-Host "[PackageGame] Compiling game.$soExt..." -ForegroundColor Cyan
-    & powershell -NoProfile -ExecutionPolicy Bypass -File $buildScript @argsList
+    if ($Release -eq "1") {
+        & $buildScript -Entry $mainCr -Output $gameLib -LinkFlags $linkFlags -SourcePath $srcPath -Release
+    } else {
+        & $buildScript -Entry $mainCr -Output $gameLib -LinkFlags $linkFlags -SourcePath $srcPath
+    }
 }
 
 # 8. Create playable Godot game executable
@@ -121,11 +117,17 @@ if ($godotExe -and (Test-Path $godotExe)) {
     # Place runner at project root as <Name>.exe (e.g. basic_demo.exe)
     $rootGameExe = Join-Path $projFull "$Name$exeExt"
     Copy-Item $godotExe $rootGameExe -Force
+    if (-not $onWindows -and (Get-Command chmod -ErrorAction SilentlyContinue)) {
+        & chmod +x $rootGameExe
+    }
     Write-Host "  -> Created playable executable: $rootGameExe" -ForegroundColor Green
 
     # Also place runner in bin/game.exe for toolchain consistency
     $binGameExe = Join-Path $binDir "game$exeExt"
     Copy-Item $godotExe $binGameExe -Force
+    if (-not $onWindows -and (Get-Command chmod -ErrorAction SilentlyContinue)) {
+        & chmod +x $binGameExe
+    }
 
     # Also make sure bin/ has copies of project.godot & main.tscn if run from bin
     if (Test-Path (Join-Path $projFull "project.godot")) {
@@ -145,7 +147,11 @@ if ($TargetDir) {
 
     # Copy executable
     if ($godotExe -and (Test-Path $godotExe)) {
-        Copy-Item $godotExe (Join-Path $TargetDir "$Name$exeExt") -Force
+        $targetExe = Join-Path $TargetDir "$Name$exeExt"
+        Copy-Item $godotExe $targetExe -Force
+        if (-not $onWindows -and (Get-Command chmod -ErrorAction SilentlyContinue)) {
+            & chmod +x $targetExe
+        }
     }
 
     # Copy project files & scenes

@@ -3,8 +3,8 @@ $ErrorActionPreference = "Stop"
 
 & .\build.ps1
 
-$isWindows = ($env:OS -eq "Windows_NT" -or [System.IO.Path]::PathSeparator -eq ';')
-$exeExt = if ($isWindows) { ".exe" } else { "" }
+$onWindows = ($env:OS -eq "Windows_NT" -or [System.IO.Path]::PathSeparator -eq ';')
+$exeExt = if ($onWindows) { ".exe" } else { "" }
 
 if (Test-Path ".\basic_demo$exeExt") {
     Write-Host "[Demo] Launching basic_demo$exeExt..." -ForegroundColor Cyan

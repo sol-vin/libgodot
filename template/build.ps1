@@ -134,6 +134,10 @@ if (-not $godotExe -and (Get-Command godot -ErrorAction SilentlyContinue)) {
 if ($godotExe -and (Test-Path $godotExe)) {
     Copy-Item $godotExe "game$exeExt" -Force
     Copy-Item $godotExe "bin/game$exeExt" -Force
+    if (-not $onWindows -and (Get-Command chmod -ErrorAction SilentlyContinue)) {
+        & chmod +x "game$exeExt"
+        & chmod +x "bin/game$exeExt"
+    }
     if (Test-Path "project.godot") { Copy-Item "project.godot" "bin/" -Force }
     Write-Host "[Template] Created playable executable: game$exeExt" -ForegroundColor Green
 }
