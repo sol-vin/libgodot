@@ -179,7 +179,7 @@ if ($TestRelease) {
 
         # 2. Package examples-windows-x86_64.zip (complete playable Godot game)
         Write-Host "[Release] Packaging examples-windows-x86_64.zip (playable Godot game)..." -ForegroundColor Cyan
-        $examplesDist = Join-Path $RootDir "dist/examples_dist"
+        $examplesDist = Join-Path $RootDir "bin/windows/examples"
         if (Test-Path $examplesDist) { Remove-Item $examplesDist -Recurse -Force }
         New-Item -ItemType Directory -Force -Path $examplesDist | Out-Null
 
@@ -193,7 +193,7 @@ if ($TestRelease) {
         # Clean up any runtime shadow copies before archiving
         Get-ChildItem -Path $examplesDist -Filter "*_loaded_*" -Recurse | Remove-Item -Force -ErrorAction SilentlyContinue
 
-        $examplesZip = Join-Path $RootDir "examples-windows-x86_64.zip"
+        $examplesZip = Join-Path $RootDir "bin/windows/examples-windows-x86_64.zip"
         if (Test-Path $examplesZip) { Remove-Item $examplesZip -Force }
         Compress-Archive -Path "$examplesDist/*" -DestinationPath $examplesZip -Force
         Write-Host "  [OK] Created examples-windows-x86_64.zip ($( [math]::Round((Get-Item $examplesZip).Length / 1MB, 2) ) MB)" -ForegroundColor Green
@@ -213,7 +213,7 @@ if ($TestRelease) {
 
         # 1b. Package Export Templates (godot-crystal-export-templates-4.8-dev4.zip)
         Write-Host "[Release] Packaging export templates (godot-crystal-export-templates-4.8-dev4.zip)..." -ForegroundColor Cyan
-        $templatesZip = Join-Path $RootDir "godot-crystal-export-templates-4.8-dev4.zip"
+        $templatesZip = Join-Path $RootDir "bin/windows/godot-crystal-export-templates-4.8-dev4.zip"
         & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $RootDir "scripts/ensure_export_templates.ps1") -PackageZip -ZipOutput $templatesZip
         if (-not (Test-Path $templatesZip)) {
             throw "Failed to package godot-crystal-export-templates-4.8-dev4.zip!"
@@ -222,7 +222,7 @@ if ($TestRelease) {
 
         # 2. Package Addon/Plugin (godot-crystal-addon.zip)
         Write-Host "[Release] Packaging godot-crystal-addon.zip (addon + bridge DLL)..." -ForegroundColor Cyan
-        $addonDist = Join-Path $RootDir "dist/addon_dist"
+        $addonDist = Join-Path $RootDir "bin/windows/addon_pkg"
         if (Test-Path $addonDist) { Remove-Item $addonDist -Recurse -Force }
         New-Item -ItemType Directory -Force -Path $addonDist | Out-Null
 
@@ -239,14 +239,14 @@ if ($TestRelease) {
             if (Test-Path "bin/$dll") { Copy-Item "bin/$dll" "$addonBin/$dll" -Force }
         }
 
-        $addonZip = Join-Path $RootDir "godot-crystal-addon.zip"
+        $addonZip = Join-Path $RootDir "bin/windows/godot-crystal-addon.zip"
         if (Test-Path $addonZip) { Remove-Item $addonZip -Force }
         Compress-Archive -Path "$addonDist/*" -DestinationPath $addonZip -Force
         Write-Host "  [OK] Created addon archive: $addonZip ($( [math]::Round((Get-Item $addonZip).Length / 1MB, 2) ) MB)" -ForegroundColor Green
 
         # 3. Package Template Project (template-project.zip) with addon preinstalled
         Write-Host "[Release] Packaging template-project.zip (addon preinstalled)..." -ForegroundColor Cyan
-        $templateDist = Join-Path $RootDir "dist/template_dist"
+        $templateDist = Join-Path $RootDir "bin/windows/template_pkg"
         if (Test-Path $templateDist) { Remove-Item $templateDist -Recurse -Force }
         New-Item -ItemType Directory -Force -Path $templateDist | Out-Null
 
@@ -279,14 +279,14 @@ if ($TestRelease) {
         Copy-Item "shard.yml" "$bundledLib/shard.yml" -Force
         if (Test-Path "README.md") { Copy-Item "README.md" "$bundledLib/README.md" -Force }
 
-        $templateZip = Join-Path $RootDir "template-project.zip"
+        $templateZip = Join-Path $RootDir "bin/windows/template-project.zip"
         if (Test-Path $templateZip) { Remove-Item $templateZip -Force }
         Compress-Archive -Path "$templateDist/*" -DestinationPath $templateZip -Force
         Write-Host "  [OK] Created template archive: $templateZip ($( [math]::Round((Get-Item $templateZip).Length / 1MB, 2) ) MB)" -ForegroundColor Green
 
         # 4. Package Core LibGodot Distribution
         Write-Host "[Release] Packaging core LibGodot distribution zip..." -ForegroundColor Cyan
-        $libDist = Join-Path $RootDir "dist/libgodot_dist"
+        $libDist = Join-Path $RootDir "bin/windows/libgodot_pkg"
         if (Test-Path $libDist) { Remove-Item $libDist -Recurse -Force }
         New-Item -ItemType Directory -Force -Path $libDist | Out-Null
 
@@ -308,14 +308,14 @@ if ($TestRelease) {
         if (Test-Path "LICENSE") { Copy-Item "LICENSE" "$libDist/LICENSE" -Force }
 
         $tag = $env:GITHUB_REF_NAME
-        $coreZip = Join-Path $RootDir "libgodot-crystal-windows-x86_64-$tag.zip"
+        $coreZip = Join-Path $RootDir "bin/windows/libgodot-crystal-windows-x86_64-$tag.zip"
         if (Test-Path $coreZip) { Remove-Item $coreZip -Force }
         Compress-Archive -Path "$libDist/*" -DestinationPath $coreZip -Force
         Write-Host "  [OK] Created core archive: $coreZip ($( [math]::Round((Get-Item $coreZip).Length / 1MB, 2) ) MB)" -ForegroundColor Green
 
         # 5. Generate Checksums
         Write-Host "[Release] Generating SHA256 checksums..." -ForegroundColor Cyan
-        $checksumFile = Join-Path $RootDir "checksums.txt"
+        $checksumFile = Join-Path $RootDir "bin/windows/checksums.txt"
         $hashTargets = @($examplesZip, $addonZip, $templateZip, $coreZip)
         if (Test-Path $templatesZip) { $hashTargets += $templatesZip }
         Get-FileHash -Algorithm SHA256 $hashTargets | Format-Table -AutoSize | Out-String | Set-Content $checksumFile

@@ -2,7 +2,7 @@ param(
     [string]$Version = "4.8.dev4",
     [string]$DownloadUrl = "https://github.com/godotengine/godot-builds/releases/download/4.8-dev4/Godot_v4.8-dev4_export_templates.tpz",
     [switch]$PackageZip,
-    [string]$ZipOutput = "dist/godot-crystal-export-templates-4.8-dev4.zip"
+    [string]$ZipOutput = "bin/windows/godot-crystal-export-templates-4.8-dev4.zip"
 )
 
 $ErrorActionPreference = "Stop"

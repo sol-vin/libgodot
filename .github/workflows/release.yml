@@ -118,7 +118,9 @@ jobs:
       - name: Ensure Godot Export Templates
         shell: pwsh
         run: |
-          & pwsh -NoProfile -File scripts/ensure_export_templates.ps1 -PackageZip -ZipOutput dist/staging_windows/godot-crystal-export-templates-4.8-dev4.zip
+          $winBin = "bin/windows"
+          if (-not (Test-Path $winBin)) { New-Item -ItemType Directory -Force -Path $winBin | Out-Null }
+          & pwsh -NoProfile -File scripts/ensure_export_templates.ps1 -PackageZip -ZipOutput "$winBin/godot-crystal-export-templates-4.8-dev4.zip"
 
       - name: Compile Release Binaries & Run Test Suite
         shell: pwsh
@@ -143,32 +145,32 @@ jobs:
       - name: Package Windows Examples (examples-windows-x86_64.zip)
         shell: pwsh
         run: |
-          $examplesDist = "dist/examples_dist"
-          if (Test-Path $examplesDist) { Remove-Item $examplesDist -Recurse -Force }
-          New-Item -ItemType Directory -Force -Path $examplesDist | Out-Null
+          $examplesDir = "bin/windows/examples"
+          if (Test-Path $examplesDir) { Remove-Item $examplesDir -Recurse -Force }
+          New-Item -ItemType Directory -Force -Path $examplesDir | Out-Null
 
           if (Test-Path "examples") {
             foreach ($ex in Get-ChildItem -Path "examples" -Directory) {
               Write-Host "Packaging standalone playable example for $($ex.Name)..." -ForegroundColor Cyan
-              & pwsh -NoProfile -File scripts/package_game.ps1 -ProjectPath $ex.FullName -Name $ex.Name -TargetDir $examplesDist -Release 1
+              & pwsh -NoProfile -File scripts/package_game.ps1 -ProjectPath $ex.FullName -Name $ex.Name -TargetDir $examplesDir -Release 1
             }
           }
 
-          Get-ChildItem -Path $examplesDist -Filter "*_loaded_*" -Recurse | Remove-Item -Force -ErrorAction SilentlyContinue
-          Compress-Archive -Path "$examplesDist/*" -DestinationPath "examples-windows-x86_64.zip" -Force
+          Get-ChildItem -Path $examplesDir -Filter "*_loaded_*" -Recurse | Remove-Item -Force -ErrorAction SilentlyContinue
+          Compress-Archive -Path "$examplesDir/*" -DestinationPath "bin/windows/examples-windows-x86_64.zip" -Force
 
       - name: Package Windows Core LibGodot Distribution
         shell: pwsh
         run: |
-          $libDist = "dist/libgodot_windows_dist"
-          if (Test-Path $libDist) { Remove-Item $libDist -Recurse -Force }
-          New-Item -ItemType Directory -Force -Path $libDist | Out-Null
+          $libDir = "bin/windows/libgodot_windows"
+          if (Test-Path $libDir) { Remove-Item $libDir -Recurse -Force }
+          New-Item -ItemType Directory -Force -Path $libDir | Out-Null
 
-          Copy-Item -Path "src" -Destination (Join-Path $libDist "src") -Recurse -Force
-          Copy-Item -Path "addons" -Destination (Join-Path $libDist "addons") -Recurse -Force
-          Copy-Item -Path "template" -Destination (Join-Path $libDist "template") -Recurse -Force
+          Copy-Item -Path "src" -Destination (Join-Path $libDir "src") -Recurse -Force
+          Copy-Item -Path "addons" -Destination (Join-Path $libDir "addons") -Recurse -Force
+          Copy-Item -Path "template" -Destination (Join-Path $libDir "template") -Recurse -Force
 
-          $binTarget = Join-Path $libDist "bin"
+          $binTarget = Join-Path $libDir "bin"
           New-Item -ItemType Directory -Force -Path $binTarget | Out-Null
           if (Test-Path "bin/crystal_bridge.dll") {
             Copy-Item "bin/crystal_bridge.dll" "$binTarget/crystal_bridge.dll" -Force
@@ -179,29 +181,23 @@ jobs:
             }
           }
 
-          Copy-Item "shard.yml" "$libDist/shard.yml" -Force
-          Copy-Item "README.md" "$libDist/README.md" -Force
-          if (Test-Path "LICENSE") { Copy-Item "LICENSE" "$libDist/LICENSE" -Force }
+          Copy-Item "shard.yml" "$libDir/shard.yml" -Force
+          Copy-Item "README.md" "$libDir/README.md" -Force
+          if (Test-Path "LICENSE") { Copy-Item "LICENSE" "$libDir/LICENSE" -Force }
 
           $tag = "${{ needs.init-release.outputs.tag_name }}"
-          $archiveName = "libgodot-crystal-windows-x86_64-$tag.zip"
-          Compress-Archive -Path "$libDist/*" -DestinationPath $archiveName -Force
+          $archiveName = "bin/windows/libgodot-crystal-windows-x86_64-$tag.zip"
+          Compress-Archive -Path "$libDir/*" -DestinationPath $archiveName -Force
 
       - name: Collect Windows Staging Artifacts
         shell: pwsh
         run: |
-          $staging = "dist/staging_windows"
-          New-Item -ItemType Directory -Force -Path $staging | Out-Null
-          Copy-Item "examples-windows-x86_64.zip" "$staging/" -Force
-          $tag = "${{ needs.init-release.outputs.tag_name }}"
-          Copy-Item "libgodot-crystal-windows-x86_64-$tag.zip" "$staging/" -Force
-
-          $binStaging = Join-Path $staging "bin"
-          New-Item -ItemType Directory -Force -Path $binStaging | Out-Null
-          if (Test-Path "bin/crystal_bridge.dll") { Copy-Item "bin/crystal_bridge.dll" "$binStaging/" -Force }
-          if (Test-Path "template/bin/game.dll") { Copy-Item "template/bin/game.dll" "$binStaging/" -Force }
+          $winBin = "bin/windows"
+          if (-not (Test-Path $winBin)) { New-Item -ItemType Directory -Force -Path $winBin | Out-Null }
+          if (Test-Path "bin/crystal_bridge.dll") { Copy-Item "bin/crystal_bridge.dll" "$winBin/" -Force }
+          if (Test-Path "template/bin/game.dll") { Copy-Item "template/bin/game.dll" "$winBin/" -Force }
           foreach ($dll in @('gc.dll', 'iconv-2.dll', 'pcre2-8.dll', 'libgodot.dll')) {
-            if (Test-Path "bin/$dll") { Copy-Item "bin/$dll" "$binStaging/" -Force }
+            if (Test-Path "bin/$dll") { Copy-Item "bin/$dll" "$winBin/" -Force }
           }
 
       - name: Publish Windows Assets to Release
@@ -210,16 +206,16 @@ jobs:
           tag_name: ${{ needs.init-release.outputs.tag_name }}
           name: ${{ needs.init-release.outputs.release_title }}
           files: |
-            examples-windows-x86_64.zip
-            libgodot-crystal-windows-x86_64-${{ needs.init-release.outputs.tag_name }}.zip
-            dist/staging_windows/godot-crystal-export-templates-4.8-dev4.zip
+            bin/windows/examples-windows-x86_64.zip
+            bin/windows/libgodot-crystal-windows-x86_64-${{ needs.init-release.outputs.tag_name }}.zip
+            bin/windows/godot-crystal-export-templates-4.8-dev4.zip
           fail_on_unmatched_files: false
 
       - name: Upload Windows Staging Artifact
         uses: actions/upload-artifact@v4
         with:
           name: release-windows-artifacts
-          path: dist/staging_windows/
+          path: bin/windows/
 
   build-linux:
     name: Build & Release Linux (x86_64)
@@ -302,59 +298,56 @@ jobs:
       - name: Package Linux Examples (examples-linux-x86_64.zip)
         shell: pwsh
         run: |
-          $examplesDist = "dist/examples_linux_dist"
-          if (Test-Path $examplesDist) { Remove-Item $examplesDist -Recurse -Force }
-          New-Item -ItemType Directory -Force -Path $examplesDist | Out-Null
+          $examplesDir = "bin/linux/examples"
+          if (Test-Path $examplesDir) { Remove-Item $examplesDir -Recurse -Force }
+          New-Item -ItemType Directory -Force -Path $examplesDir | Out-Null
 
           if (Test-Path "examples") {
             foreach ($ex in Get-ChildItem -Path "examples" -Directory) {
               Write-Host "Packaging standalone playable Linux example for $($ex.Name)..." -ForegroundColor Cyan
-              & pwsh -NoProfile -File scripts/package_game.ps1 -ProjectPath $ex.FullName -Name $ex.Name -TargetDir $examplesDist -Release 1
+              & pwsh -NoProfile -File scripts/package_game.ps1 -ProjectPath $ex.FullName -Name $ex.Name -TargetDir $examplesDir -Release 1
             }
           }
 
-          Get-ChildItem -Path $examplesDist -Filter "*_loaded_*" -Recurse | Remove-Item -Force -ErrorAction SilentlyContinue
-          Compress-Archive -Path "$examplesDist/*" -DestinationPath "examples-linux-x86_64.zip" -Force
+          Get-ChildItem -Path $examplesDir -Filter "*_loaded_*" -Recurse | Remove-Item -Force -ErrorAction SilentlyContinue
+          Compress-Archive -Path "$examplesDir/*" -DestinationPath "bin/linux/examples-linux-x86_64.zip" -Force
 
       - name: Package Linux Core LibGodot Distribution
         shell: bash
         run: |
-          LIB_DIST="dist/libgodot_linux_dist"
-          rm -rf "$LIB_DIST"
-          mkdir -p "$LIB_DIST/bin"
+          LIB_DIR="bin/linux/libgodot_linux"
+          rm -rf "$LIB_DIR"
+          mkdir -p "$LIB_DIR/bin"
 
-          cp -r src "$LIB_DIST/"
-          cp -r addons "$LIB_DIST/"
-          cp -r template "$LIB_DIST/"
+          cp -r src "$LIB_DIR/"
+          cp -r addons "$LIB_DIR/"
+          cp -r template "$LIB_DIR/"
           if [ -f "bin/crystal_bridge.so" ]; then
-            cp "bin/crystal_bridge.so" "$LIB_DIST/bin/"
+            cp "bin/crystal_bridge.so" "$LIB_DIR/bin/"
           fi
           if [ -f "bin/libgodot.so" ]; then
-            cp "bin/libgodot.so" "$LIB_DIST/bin/"
+            cp "bin/libgodot.so" "$LIB_DIR/bin/"
           fi
 
-          cp shard.yml "$LIB_DIST/"
-          cp README.md "$LIB_DIST/"
-          [ -f LICENSE ] && cp LICENSE "$LIB_DIST/"
+          cp shard.yml "$LIB_DIR/"
+          cp README.md "$LIB_DIR/"
+          [ -f LICENSE ] && cp LICENSE "$LIB_DIR/"
 
           TAG="${{ needs.init-release.outputs.tag_name }}"
-          ARCHIVE_NAME="libgodot-crystal-linux-x86_64-$TAG.zip"
-          cd "$LIB_DIST"
+          ARCHIVE_NAME="bin/linux/libgodot-crystal-linux-x86_64-$TAG.zip"
+          cd "$LIB_DIR"
           zip -r "../../$ARCHIVE_NAME" ./*
           cd ../..
 
       - name: Collect Linux Staging Artifacts
         shell: bash
         run: |
-          STAGING="dist/staging_linux"
-          mkdir -p "$STAGING/bin"
-          TAG="${{ needs.init-release.outputs.tag_name }}"
-          cp "examples-linux-x86_64.zip" "$STAGING/"
-          cp "libgodot-crystal-linux-x86_64-$TAG.zip" "$STAGING/"
+          LINUX_BIN="bin/linux"
+          mkdir -p "$LINUX_BIN"
 
-          if [ -f "bin/crystal_bridge.so" ]; then cp "bin/crystal_bridge.so" "$STAGING/bin/"; fi
-          if [ -f "template/bin/game.so" ]; then cp "template/bin/game.so" "$STAGING/bin/"; fi
-          if [ -f "bin/libgodot.so" ]; then cp "bin/libgodot.so" "$STAGING/bin/"; fi
+          if [ -f "bin/crystal_bridge.so" ]; then cp "bin/crystal_bridge.so" "$LINUX_BIN/"; fi
+          if [ -f "template/bin/game.so" ]; then cp "template/bin/game.so" "$LINUX_BIN/"; fi
+          if [ -f "bin/libgodot.so" ]; then cp "bin/libgodot.so" "$LINUX_BIN/"; fi
 
       - name: Publish Linux Assets to Release
         uses: softprops/action-gh-release@v2
@@ -362,15 +355,15 @@ jobs:
           tag_name: ${{ needs.init-release.outputs.tag_name }}
           name: ${{ needs.init-release.outputs.release_title }}
           files: |
-            examples-linux-x86_64.zip
-            libgodot-crystal-linux-x86_64-${{ needs.init-release.outputs.tag_name }}.zip
+            bin/linux/examples-linux-x86_64.zip
+            bin/linux/libgodot-crystal-linux-x86_64-${{ needs.init-release.outputs.tag_name }}.zip
           fail_on_unmatched_files: false
 
       - name: Upload Linux Staging Artifact
         uses: actions/upload-artifact@v4
         with:
           name: release-linux-artifacts
-          path: dist/staging_linux/
+          path: bin/linux/
 
   build-android:
     name: Build & Release Android (arm64-v8a)
@@ -446,19 +439,14 @@ jobs:
       - name: Package Android Examples to APKs
         shell: pwsh
         run: |
-          $examplesAndroidDist = "dist/examples_android_dist"
-          if (Test-Path $examplesAndroidDist) { Remove-Item $examplesAndroidDist -Recurse -Force }
-          New-Item -ItemType Directory -Force -Path $examplesAndroidDist | Out-Null
-
           if (Test-Path "examples") {
             foreach ($ex in Get-ChildItem -Path "examples" -Directory) {
               Write-Host "Packaging Android APK for $($ex.Name)..." -ForegroundColor Cyan
-              $apkOut = Join-Path $examplesAndroidDist "$($ex.Name).apk"
-              & pwsh -NoProfile -File scripts/package_android.ps1 -ProjectPath $ex.FullName -Name $ex.Name -Output $apkOut -Release
+              & pwsh -NoProfile -File scripts/package_android.ps1 -ProjectPath $ex.FullName -Name $ex.Name -Release
             }
           }
 
-          Compress-Archive -Path "$examplesAndroidDist/*" -DestinationPath "examples-android-arm64.zip" -Force
+          Compress-Archive -Path "bin/android/*.apk" -DestinationPath "bin/android/examples-android-arm64.zip" -Force
 
       - name: Generate Android Status Report
         if: always()
@@ -479,39 +467,21 @@ jobs:
             bin/android/*.idsig
           if-no-files-found: ignore
 
-      - name: Collect Android Staging Artifacts
-        shell: bash
-        run: |
-          STAGING="dist/staging_android"
-          mkdir -p "$STAGING/bin/android/arm64-v8a"
-          mkdir -p "$STAGING/apks"
-
-          cp "examples-android-arm64.zip" "$STAGING/"
-          [ -f bin/android/template.apk ] && cp bin/android/template.apk "$STAGING/apks/"
-          cp dist/examples_android_dist/*.apk "$STAGING/apks/" || true
-
-          if [ -f "bin/android/arm64-v8a/libcrystal_bridge.so" ]; then
-            cp "bin/android/arm64-v8a/libcrystal_bridge.so" "$STAGING/bin/android/arm64-v8a/"
-          fi
-          if [ -f "bin/android/arm64-v8a/libgame.so" ]; then
-            cp "bin/android/arm64-v8a/libgame.so" "$STAGING/bin/android/arm64-v8a/"
-          fi
-
       - name: Publish Android Assets to Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ needs.init-release.outputs.tag_name }}
           name: ${{ needs.init-release.outputs.release_title }}
           files: |
-            examples-android-arm64.zip
-            dist/staging_android/apks/*.apk
+            bin/android/examples-android-arm64.zip
+            bin/android/*.apk
           fail_on_unmatched_files: false
 
       - name: Upload Android Staging Artifact
         uses: actions/upload-artifact@v4
         with:
           name: release-android-artifacts
-          path: dist/staging_android/
+          path: bin/android/
 
   finalize-release:
     name: Finalize Universal Packages & Release Notes
@@ -547,41 +517,47 @@ jobs:
       - name: Package Universal Addon (godot-crystal-addon.zip)
         shell: bash
         run: |
-          ADDON_DIST="dist/addon_dist"
+          ADDON_DIST="bin/addon_dist"
           rm -rf "$ADDON_DIST"
           mkdir -p "$ADDON_DIST/addons"
           mkdir -p "$ADDON_DIST/bin"
 
           cp -r addons/crystal_integration "$ADDON_DIST/addons/"
 
-          # Copy Windows bridge & runtime DLLs if available
-          if [ -f staging/windows/bin/crystal_bridge.dll ]; then
-            cp staging/windows/bin/crystal_bridge.dll "$ADDON_DIST/bin/"
+          # Locate Windows DLLs
+          WIN_DIR="staging/windows"
+          [ -d "staging/windows/bin" ] && WIN_DIR="staging/windows/bin"
+          if [ -f "$WIN_DIR/crystal_bridge.dll" ]; then
+            cp "$WIN_DIR/crystal_bridge.dll" "$ADDON_DIST/bin/"
             for dll in gc.dll iconv-2.dll pcre2-8.dll libgodot.dll; do
-              [ -f "staging/windows/bin/$dll" ] && cp "staging/windows/bin/$dll" "$ADDON_DIST/bin/"
+              [ -f "$WIN_DIR/$dll" ] && cp "$WIN_DIR/$dll" "$ADDON_DIST/bin/"
             done
           fi
 
-          # Copy Linux bridge & runtime shared objects if available
-          if [ -f staging/linux/bin/crystal_bridge.so ]; then
-            cp staging/linux/bin/crystal_bridge.so "$ADDON_DIST/bin/"
-            [ -f staging/linux/bin/libgodot.so ] && cp staging/linux/bin/libgodot.so "$ADDON_DIST/bin/"
+          # Locate Linux shared objects
+          LINUX_DIR="staging/linux"
+          [ -d "staging/linux/bin" ] && LINUX_DIR="staging/linux/bin"
+          if [ -f "$LINUX_DIR/crystal_bridge.so" ]; then
+            cp "$LINUX_DIR/crystal_bridge.so" "$ADDON_DIST/bin/"
+            [ -f "$LINUX_DIR/libgodot.so" ] && cp "$LINUX_DIR/libgodot.so" "$ADDON_DIST/bin/"
           fi
 
-          # Copy Android bridge & runtime shared objects if available
-          if [ -d "staging/android/bin/android" ]; then
-            mkdir -p "$ADDON_DIST/bin/android"
-            cp -r staging/android/bin/android/* "$ADDON_DIST/bin/android/"
+          # Locate Android shared objects
+          ANDROID_ARM="staging/android/arm64-v8a"
+          [ -d "staging/android/bin/android/arm64-v8a" ] && ANDROID_ARM="staging/android/bin/android/arm64-v8a"
+          if [ -d "$ANDROID_ARM" ]; then
+            mkdir -p "$ADDON_DIST/bin/android/arm64-v8a"
+            cp -r "$ANDROID_ARM"/* "$ADDON_DIST/bin/android/arm64-v8a/"
           fi
 
           cd "$ADDON_DIST"
-          zip -r "../../godot-crystal-addon.zip" ./*
+          zip -r "../../bin/godot-crystal-addon.zip" ./*
           cd ../..
 
       - name: Package Universal Starter Template (template-project.zip)
         shell: bash
         run: |
-          TEMPLATE_DIST="dist/template_dist"
+          TEMPLATE_DIST="bin/template_dist"
           rm -rf "$TEMPLATE_DIST"
           mkdir -p "$TEMPLATE_DIST/bin"
 
@@ -595,25 +571,31 @@ jobs:
           fi
 
           # Bundle Windows binaries if available
-          if [ -f staging/windows/bin/crystal_bridge.dll ]; then
-            cp staging/windows/bin/crystal_bridge.dll "$TEMPLATE_DIST/bin/"
-            [ -f staging/windows/bin/game.dll ] && cp staging/windows/bin/game.dll "$TEMPLATE_DIST/bin/"
+          WIN_DIR="staging/windows"
+          [ -d "staging/windows/bin" ] && WIN_DIR="staging/windows/bin"
+          if [ -f "$WIN_DIR/crystal_bridge.dll" ]; then
+            cp "$WIN_DIR/crystal_bridge.dll" "$TEMPLATE_DIST/bin/"
+            [ -f "$WIN_DIR/game.dll" ] && cp "$WIN_DIR/game.dll" "$TEMPLATE_DIST/bin/"
             for dll in gc.dll iconv-2.dll pcre2-8.dll libgodot.dll; do
-              [ -f "staging/windows/bin/$dll" ] && cp "staging/windows/bin/$dll" "$TEMPLATE_DIST/bin/"
+              [ -f "$WIN_DIR/$dll" ] && cp "$WIN_DIR/$dll" "$TEMPLATE_DIST/bin/"
             done
           fi
 
           # Bundle Linux binaries if available
-          if [ -f staging/linux/bin/crystal_bridge.so ]; then
-            cp staging/linux/bin/crystal_bridge.so "$TEMPLATE_DIST/bin/"
-            [ -f staging/linux/bin/game.so ] && cp staging/linux/bin/game.so "$TEMPLATE_DIST/bin/"
-            [ -f staging/linux/bin/libgodot.so ] && cp staging/linux/bin/libgodot.so "$TEMPLATE_DIST/bin/"
+          LINUX_DIR="staging/linux"
+          [ -d "staging/linux/bin" ] && LINUX_DIR="staging/linux/bin"
+          if [ -f "$LINUX_DIR/crystal_bridge.so" ]; then
+            cp "$LINUX_DIR/crystal_bridge.so" "$TEMPLATE_DIST/bin/"
+            [ -f "$LINUX_DIR/game.so" ] && cp "$LINUX_DIR/game.so" "$TEMPLATE_DIST/bin/"
+            [ -f "$LINUX_DIR/libgodot.so" ] && cp "$LINUX_DIR/libgodot.so" "$TEMPLATE_DIST/bin/"
           fi
 
           # Bundle Android binaries if available
-          if [ -d "staging/android/bin/android" ]; then
-            mkdir -p "$TEMPLATE_DIST/bin/android"
-            cp -r staging/android/bin/android/* "$TEMPLATE_DIST/bin/android/"
+          ANDROID_ARM="staging/android/arm64-v8a"
+          [ -d "staging/android/bin/android/arm64-v8a" ] && ANDROID_ARM="staging/android/bin/android/arm64-v8a"
+          if [ -d "$ANDROID_ARM" ]; then
+            mkdir -p "$TEMPLATE_DIST/bin/android/arm64-v8a"
+            cp -r "$ANDROID_ARM"/* "$TEMPLATE_DIST/bin/android/arm64-v8a/"
           fi
 
           mkdir -p "$TEMPLATE_DIST/lib/libgodot"
@@ -622,23 +604,23 @@ jobs:
           [ -f README.md ] && cp README.md "$TEMPLATE_DIST/lib/libgodot/"
 
           cd "$TEMPLATE_DIST"
-          zip -r "../../template-project.zip" ./*
+          zip -r "../../bin/template-project.zip" ./*
           cd ../..
 
       - name: Prepare Final Universal Assets & Checksums
         shell: bash
         run: |
-          mkdir -p release_assets
+          mkdir -p bin/release_assets
           TAG="${{ needs.init-release.outputs.tag_name }}"
 
-          [ -f godot-crystal-addon.zip ] && cp godot-crystal-addon.zip release_assets/
-          [ -f template-project.zip ] && cp template-project.zip release_assets/
+          [ -f bin/godot-crystal-addon.zip ] && cp bin/godot-crystal-addon.zip bin/release_assets/
+          [ -f bin/template-project.zip ] && cp bin/template-project.zip bin/release_assets/
 
-          cd release_assets
+          cd bin/release_assets
           sha256sum * > ../checksums.txt
           cp ../checksums.txt ./
           cat checksums.txt
-          cd ..
+          cd ../..
 
       - name: Generate Descriptive Release Notes
         id: notes
@@ -686,9 +668,9 @@ jobs:
           name: ${{ needs.init-release.outputs.release_title }}
           body_path: release_body.md
           files: |
-            release_assets/godot-crystal-addon.zip
-            release_assets/template-project.zip
-            release_assets/checksums.txt
+            bin/release_assets/godot-crystal-addon.zip
+            bin/release_assets/template-project.zip
+            bin/release_assets/checksums.txt
           generate_release_notes: false
           draft: false
           prerelease: false
