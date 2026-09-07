@@ -79,12 +79,24 @@ function Invoke-TestCommand {
         [System.Environment]::SetEnvironmentVariable($k, $EnvironmentVars[$k])
     }
 
+    # Ensure working directory bin and root bin are in PATH for DLL resolution
+    $oldPath = $env:PATH
+    $binCandidates = @(
+        (Join-Path $WorkingDirectory "bin"),
+        (Join-Path $RootDir "bin"),
+        (Join-Path $RootDir "test/bin")
+    ) | Where-Object { Test-Path $_ }
+    if ($binCandidates) {
+        $env:PATH = ($binCandidates -join [System.IO.Path]::PathSeparator) + [System.IO.Path]::PathSeparator + $env:PATH
+    }
+
     Push-Location $WorkingDirectory
     try {
         & $Executable $Arguments
         $exitCode = $LASTEXITCODE
     } finally {
         Pop-Location
+        $env:PATH = $oldPath
         foreach ($k in $EnvironmentVars.Keys) {
             [System.Environment]::SetEnvironmentVariable($k, $null)
         }

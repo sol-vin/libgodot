@@ -42,7 +42,7 @@ ifeq ($(OS),Windows_NT)
 	GODOT           ?= ./godot.exe
 	PWSH_CMD        ?= powershell -NoProfile -ExecutionPolicy Bypass -Command
 	PWSH_FILE       ?= powershell -NoProfile -ExecutionPolicy Bypass -File
-	CXXFLAGS        ?= -std=c++17 -O2 -I rsrc
+	CXXFLAGS        ?= -std=c++17 -O2 -I rsrc -static -static-libgcc -static-libstdc++
 	LINK_FLAGS      ?= /DLL /ENTRY:_DllMainCRTStartup /EXPORT:crystal_godot_init
 else
 	PLATFORM        = linux
