@@ -138,9 +138,16 @@ android: dirs
 	@$(PWSH_FILE) scripts/build_android.ps1 -Release "$(RELEASE)" $(if $(ENTRY),-Entry $(ENTRY),)
 
 # Package Android APK
-package_android: dirs android
+package_android: dirs bridge android
 	@echo [Android] Packaging Android APK...
 	@$(PWSH_FILE) scripts/package_android.ps1 $(if $(filter 1,$(RELEASE)),-Release,) $(if $(ENTRY),-Entry $(ENTRY),)
+
+# Create or inspect Android keystores
+keystore: dirs
+	@$(PWSH_FILE) scripts/manage_keystore.ps1
+
+keystore_decode: dirs
+	@$(PWSH_FILE) scripts/manage_keystore.ps1 -Decode $(if $(KEYSTORE),-Path $(KEYSTORE),)
 
 
 # Generate Crystal bindings from Godot extension_api.json

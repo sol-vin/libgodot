@@ -190,7 +190,7 @@ puts "  ✓ 64-bit float precision preserved in virtual dispatch!"
 # -------------------------------------------------------------
 puts "[Spec 5] Defensive Null-Pointer Checks & Robustness..."
 
-null_node = Node2D.new
+null_node = Godot::Node2D.new
 # Position, rotation, scale on unattached / null pointer should not crash
 null_node.position = Vector2.new(10.0, 20.0)
 abort "Failed: Node2D position fallback" unless null_node.position.x == 10.0_f32
@@ -199,7 +199,7 @@ abort "Failed: Node2D rotation fallback" unless null_node.rotation == 1.57_f32
 null_node.scale = Vector2.new(2.0, 2.0)
 abort "Failed: Node2D scale fallback" unless null_node.scale.x == 2.0_f32
 
-null_3d = CharacterBody3D.new
+null_3d = Godot::CharacterBody3D.new
 abort "Failed: is_on_floor fallback" unless null_3d.is_on_floor == false
 null_3d.velocity = Vector3.new(0.0, 5.0, 0.0)
 abort "Failed: move_and_slide fallback" unless null_3d.move_and_slide == false

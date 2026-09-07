@@ -221,7 +221,7 @@ module Godot
   VERSION = "0.1.0"
 end
 
-# Top-level type aliases for developer ergonomics
+# Core math and transform value-type aliases
 alias Vector2 = Godot::Vector2
 alias Vector2i = Godot::Vector2i
 alias Vector3 = Godot::Vector3
@@ -230,18 +230,6 @@ alias Rect2 = Godot::Rect2
 alias Color = Godot::Color
 alias Basis = Godot::Basis
 alias Transform3D = Godot::Transform3D
-alias Node = Godot::Node
-alias Node2D = Godot::Node2D
-alias Node3D = Godot::Node3D
-alias CharacterBody2D = Godot::CharacterBody2D
-alias CharacterBody3D = Godot::CharacterBody3D
-alias Control = Godot::Control
-alias GodotRange = Godot::Range
-alias ProgressBar = Godot::ProgressBar
-alias PackedScene = Godot::PackedScene
-alias Texture = Godot::Texture
-alias Texture2D = Godot::Texture2D
-alias AudioStream = Godot::AudioStream
-alias NodePath = Godot::NodePath
-alias Input = Godot::Input
+
+
 
