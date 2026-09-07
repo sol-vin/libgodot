@@ -66,6 +66,12 @@ module Godot
     def initialize(@x : Int32 = 0, @y : Int32 = 0)
     end
 
+    def initialize(pointer : Void*)
+      ptr = pointerof(pointer).as(Int32*)
+      @x = ptr[0]
+      @y = ptr[1]
+    end
+
     def self.new(x : Number, y : Number)
       new(x.to_i32, y.to_i32)
     end
@@ -169,6 +175,13 @@ module Godot
     def initialize(@x : Int32 = 0, @y : Int32 = 0, @z : Int32 = 0)
     end
 
+    def initialize(pointer : Void*)
+      ptr = pointerof(pointer).as(Int32*)
+      @x = ptr[0]
+      @y = ptr[1]
+      @z = 0
+    end
+
     def self.new(x : Number, y : Number, z : Number)
       new(x.to_i32, y.to_i32, z.to_i32)
     end
@@ -200,6 +213,11 @@ module Godot
     property size : Vector2
 
     def initialize(@position : Vector2 = Vector2.new, @size : Vector2 = Vector2.new)
+    end
+
+    def initialize(pointer : Void*)
+      @position = Vector2.new
+      @size = Vector2.new
     end
 
     def initialize(x : Number, y : Number, width : Number, height : Number)

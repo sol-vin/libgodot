@@ -96,12 +96,82 @@ module Godot
     T.new(ptr)
   end
 
+  # Raised when an operation is attempted on a Godot Object that has been deleted or freed.
+  class DisposedObjectError < Exception
+    getter instance_id : UInt64
+    def initialize(@instance_id : UInt64 = 0_u64, msg : String? = nil)
+      message = msg || "Attempted to operate on a deleted or freed Godot Object (instance ID: #{@instance_id})"
+      super(message)
+    end
+  end
+
   # Base class for all Godot engine objects and extension classes.
   # Provides identity, lifecycle dispatch hooks, and signal emission functionality.
   class Object
     property pointer : Void* = Pointer(Void).null
+    getter instance_id : UInt64 = 0_u64
+    getter? destroyed : Bool = false
 
     def initialize(@pointer : Void* = Pointer(Void).null)
+      if !@pointer.null?
+        @instance_id = Bridge.object_get_instance_id(@pointer)
+      end
+    end
+
+    def pointer=(val : Void*)
+      @pointer = val
+      if !@pointer.null?
+        @instance_id = Bridge.object_get_instance_id(@pointer)
+      else
+        @instance_id = 0_u64
+      end
+    end
+
+    # Returns true if this object instance is still alive and valid in Godot's ObjectDB
+    def alive? : Bool
+      return false if @destroyed
+      if @instance_id > 0
+        Bridge.is_instance_valid(@instance_id)
+      else
+        !@pointer.null?
+      end
+    end
+
+    def is_valid? : Bool
+      alive?
+    end
+
+    def destroyed? : Bool
+      @destroyed || !alive?
+    end
+
+    # Validates that the underlying engine object is still alive before executing bridge calls.
+    # Raises `DisposedObjectError` if the object was destroyed by GDScript, engine, or Crystal.
+    def check_alive! : Void
+      if @destroyed || (@instance_id > 0 && !Bridge.is_instance_valid(@instance_id))
+        @pointer = Pointer(Void).null
+        raise DisposedObjectError.new(@instance_id)
+      end
+    end
+
+    # Destroys this Object in the Godot engine and invalidates the Crystal pointer.
+    def destroy : Void
+      @destroyed = true
+      if !@pointer.null?
+        target_ptr = @pointer
+        @pointer = Pointer(Void).null
+        Bridge.object_destroy(target_ptr)
+      end
+    end
+
+    # Destroys this Object in the Godot engine (alias to #destroy).
+    def free : Void
+      destroy
+    end
+
+    # Checks if a 64-bit instance ID is currently valid in Godot's ObjectDB
+    def self.is_instance_id_valid(id : Int | UInt64) : Bool
+      Bridge.is_instance_valid(id.to_u64)
     end
 
     # Virtual method and property dispatch hooks overridden by class registration macros.
@@ -119,55 +189,65 @@ module Godot
 
     # Emits a parameterless signal on this Godot object.
     def emit_signal(name : String) : Void
+      check_alive!
       Bridge.emit_signal(@pointer, name)
     end
 
     # Emits a signal with variable arguments on this Godot object.
     def emit_signal(name : String, *args) : Void
+      check_alive!
       Bridge.emit_signal(@pointer, name, *args)
     end
 
     # Calls the named method on the object during idle time.
     def call_deferred(method : String, *args) : Void*
+      check_alive!
       Bridge.object_call_deferred(@pointer, method, *args)
       Pointer(Void).null
     end
 
     # Calls the named method on the object with variable arguments.
     def call(method : String, *args) : Void*
+      check_alive!
       Bridge.object_call(@pointer, method, *args)
       Pointer(Void).null
     end
 
     # Calls the named method and returns an Object/Node (or nil if null)
     def call_obj(method : String, *args) : Node?
+      check_alive!
       ptr = Bridge.object_call_ret_object(@pointer, method, *args)
       ptr.null? ? nil : Node.new(ptr)
     end
 
     # Calls the named method and returns the result cast to T (or nil if null)
     def call_obj_as(type : T.class, method : String, *args) : T? forall T
+      check_alive!
       ptr = Bridge.object_call_ret_object(@pointer, method, *args)
       ptr.null? ? nil : T.new(ptr)
     end
 
     # Calls the named method and returns the result as Int64
     def call_i64(method : String, *args) : Int64
+      check_alive!
       Bridge.object_call_ret_int(@pointer, method, *args)
     end
 
     # Calls the named method and returns the result as Float64
     def call_f64(method : String, *args) : Float64
+      check_alive!
       Bridge.object_call_ret_float(@pointer, method, *args)
     end
 
     # Calls the named method and returns the result as Bool
     def call_bool(method : String, *args) : Bool
+      check_alive!
       Bridge.object_call_ret_bool(@pointer, method, *args)
     end
 
     # Calls the named method and returns the result as String
     def call_str(method : String, *args) : String
+      check_alive!
       Bridge.object_call_ret_string(@pointer, method, *args)
     end
 
@@ -192,12 +272,56 @@ module Godot
     end
 
     def to_s(io : IO) : Void
-      io << "<Godot::" << self.class.name << " @" << @pointer << ">"
+      io << "<Godot::" << self.class.name << " #" << @instance_id << " @" << @pointer << ">"
     end
   end
 
   # Base class for reference-counted engine objects.
   class RefCounted < Object
+    @@mb_ref_init_ref : Void* = Pointer(Void).null
+    @@mb_ref_reference : Void* = Pointer(Void).null
+    @@mb_ref_unreference : Void* = Pointer(Void).null
+    @@mb_ref_get_reference_count : Void* = Pointer(Void).null
+
+    def init_ref : Bool
+      check_alive!
+      if @@mb_ref_init_ref.null?
+        @@mb_ref_init_ref = Bridge.get_method_bind("RefCounted", "init_ref", 2240911060_i64)
+      end
+      ret = 0_u8
+      Bridge.ptrcall(@@mb_ref_init_ref, @pointer, Pointer(Pointer(Void)).null, pointerof(ret).as(Void*))
+      ret != 0_u8
+    end
+
+    def reference : Bool
+      check_alive!
+      if @@mb_ref_reference.null?
+        @@mb_ref_reference = Bridge.get_method_bind("RefCounted", "reference", 2240911060_i64)
+      end
+      ret = 0_u8
+      Bridge.ptrcall(@@mb_ref_reference, @pointer, Pointer(Pointer(Void)).null, pointerof(ret).as(Void*))
+      ret != 0_u8
+    end
+
+    def unreference : Bool
+      return false if !alive?
+      if @@mb_ref_unreference.null?
+        @@mb_ref_unreference = Bridge.get_method_bind("RefCounted", "unreference", 2240911060_i64)
+      end
+      ret = 0_u8
+      Bridge.ptrcall(@@mb_ref_unreference, @pointer, Pointer(Pointer(Void)).null, pointerof(ret).as(Void*))
+      ret != 0_u8
+    end
+
+    def get_reference_count : Int64
+      check_alive!
+      if @@mb_ref_get_reference_count.null?
+        @@mb_ref_get_reference_count = Bridge.get_method_bind("RefCounted", "get_reference_count", 3905245786_i64)
+      end
+      ret = 0_i64
+      Bridge.ptrcall(@@mb_ref_get_reference_count, @pointer, Pointer(Pointer(Void)).null, pointerof(ret).as(Void*))
+      ret
+    end
   end
 
   class Resource < RefCounted
@@ -606,6 +730,10 @@ module Godot
     property path : String
 
     def initialize(@path : String = "")
+    end
+
+    def initialize(pointer : Void*)
+      @path = ""
     end
   end
 end

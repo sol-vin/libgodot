@@ -25,6 +25,9 @@ module Godot
   # **Note:** In a boolean context, an `Object` will evaluate to `false` if it is equal to `null` or it has been freed. Otherwise, an `Object` will always evaluate to `true`. See also [method @GlobalScope.is_instance_valid].
   class Object
     def initialize(@pointer : Void* = Pointer(Void).null)
+      if !@pointer.null?
+        @instance_id = Bridge.object_get_instance_id(@pointer)
+      end
     end
     enum ConnectFlags : Int64
       ConnectDeferred = 1_i64

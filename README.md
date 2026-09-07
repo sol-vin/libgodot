@@ -253,6 +253,66 @@ Build operations are orchestrated through the root `Makefile`.
 
 ---
 
+## Memory Safety, Object Lifecycle & Dead-Pointer Protection
+
+Developing with a garbage-collected language like Crystal embedded inside a native C++ engine like Godot introduces a dual memory model hazard:
+- **Crystal Boehm GC**: Manages Crystal heap objects and node wrappers (`Godot::Object`).
+- **Godot ObjectDB & Reference Counting**: Manages native C++ engine nodes and refcounted resources.
+
+### The Dangling Pointer Hazard in Cross-Language Bindings
+When an object is freed on the Godot engine side or via GDScript (e.g. `queue_free()` or `target.free()`), standard C-API bindings retain a raw C++ pointer to dead memory. Subsequent operations (e.g. `target.position = new_pos`) dereference the unmapped address, triggering an immediate, fatal **segmentation fault (`ACCESS_VIOLATION / SIGSEGV`)** that crashes the game process with no traceback.
+
+```
+[ Crystal Runtime ]                          [ Godot Engine / GDScript ]
+  enemy = get_node("Enemy")
+  enemy.@pointer = 0x7FFE_1234  -------->     Node instance at 0x7FFE_1234
+                                                  |
+                                                  | GDScript: enemy.queue_free()
+                                                  v
+                                               ObjectDB destroys Node & frees memory!
+                                               0x7FFE_1234 is now DEAD / UNMAPPED!
+  enemy.position = Vector2.new(...)
+        |
+        v
+  [ LibGodot check_alive! ]
+        |
+        +---> Query ObjectDB for 64-bit instance ID: ID is INVALID!
+        |
+        +---> Marks wrapper dead (@pointer = null)
+        |
+        +---> Raises Godot::DisposedObjectError (Clean, catchable Crystal exception!)
+              [ ZERO NATIVE CRASHES! ]
+```
+
+### How LibGodot Guarantees Dead-Pointer Safety
+1. **Monotonic 64-bit Instance ID Tracking**:
+   Every `Godot::Object` wrapper tracks its engine-assigned `instance_id`. Because Godot's `ObjectDB` generates monotonic 64-bit IDs, newly allocated heap objects will never collide with previously freed IDs.
+2. **Pre-Dispatch Liveness Check (`#check_alive!`)**:
+   Before executing method dispatches or reflection calls, LibGodot queries Godot's ObjectDB in O(1) time (`Bridge.is_instance_valid(instance_id)`).
+3. **Graceful `DisposedObjectError` Exception**:
+   If an object was destroyed by GDScript, the engine, or Crystal, LibGodot marks the pointer null and immediately raises `Godot::DisposedObjectError`:
+   ```crystal
+   begin
+     enemy.position = Vector2.new(10.0, 20.0)
+   rescue ex : Godot::DisposedObjectError
+     Godot.print_warn "Attempted operation on dead node (ID: #{ex.instance_id})"
+   end
+   ```
+4. **Defensive Inspection with `#alive?` and `#destroyed?`**:
+   Game logic can check entity liveness before issuing operations:
+   ```crystal
+   if target.alive?
+     target.apply_damage(50)
+   else
+     active_targets.delete(target)
+   end
+   ```
+
+### Quantitative Zero-Leak Verification
+LibGodot's test suite integrates Godot's `Performance` singleton monitors (`OBJECT_COUNT`, `OBJECT_NODE_COUNT`, `MEMORY_STATIC`) and Crystal's `GC.collect` to mathematically verify that creating, reparenting, and destroying nodes across hundreds of iterations leaves **zero memory leaks** in both Godot's ObjectDB and Crystal's heap.
+
+---
+
 ## Repository Structure
 
 ```

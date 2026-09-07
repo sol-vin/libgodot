@@ -53,3 +53,16 @@ func fire_gd_ping(val: int) -> void:
 func run_await_sequence() -> String:
 	await get_tree().process_frame
 	return "Awaited Frame Successfully"
+
+func destroy_node_from_gdscript(target: Node) -> bool:
+	if target == null:
+		return false
+	target.free()
+	return true
+
+func queue_free_node_from_gdscript(target: Node) -> bool:
+	if target == null:
+		return false
+	target.queue_free()
+	return true
+

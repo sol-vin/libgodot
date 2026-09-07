@@ -89,6 +89,12 @@ static GDExtensionInterfaceVariantDestroy gd_variant_destroy = nullptr;
 /** Instantiates an uninitialized Godot Object of the given ClassDB class name */
 static GDExtensionInterfaceClassdbConstructObject gd_classdb_construct_object = nullptr;
 
+/** Destroys an Object via GDExtension interface */
+static GDExtensionInterfaceObjectDestroy gd_object_destroy = nullptr;
+
+/** Retrieves the 64-bit instance ID of an Object */
+static GDExtensionInterfaceObjectGetInstanceId gd_object_get_instance_id = nullptr;
+
 /** Binds a custom extension instance pointer (GenericExtensionInstance) to a Godot Object */
 static GDExtensionInterfaceObjectSetInstance gd_object_set_instance = nullptr;
 
@@ -1198,6 +1204,103 @@ static GDExtensionObjectPtr bridge_classdb_construct_object(const char *class_na
     return obj;
 }
 
+static GDExtensionMethodBindPtr mb_object_get_instance_id = nullptr;
+static GDExtensionPtrUtilityFunction gd_util_is_instance_id_valid = nullptr;
+static GDExtensionPtrUtilityFunction gd_util_instance_from_id = nullptr;
+
+/** Destroys an Object via Godot GDExtension interface */
+static void bridge_object_destroy(GDExtensionObjectPtr p_o) {
+    if (!p_o) return;
+    if (gd_object_destroy) {
+        gd_object_destroy(p_o);
+    }
+}
+
+static int64_t bridge_object_call_ret_int(GDExtensionObjectPtr instance, const char *method_name, const BridgeSignalArg *args, int arg_count);
+
+/** Returns the 64-bit instance ID of an Object */
+static uint64_t bridge_object_get_instance_id(GDExtensionConstObjectPtr p_o) {
+    if (!p_o) return 0;
+    uint64_t id = 0;
+    if (gd_object_get_instance_id) {
+        id = (uint64_t)gd_object_get_instance_id(p_o);
+    }
+    if (id != 0) return id;
+
+    // Strategy 2: Extract instance ID from Variant representation
+    if (gd_variant_get_object_instance_id && gd_get_variant_from_type_constructor) {
+        alignas(void*) char var_obj[24] = {0};
+        GDExtensionObjectPtr obj_ptr = (GDExtensionObjectPtr)p_o;
+        bridge_variant_from_type(GDEXTENSION_VARIANT_TYPE_OBJECT, var_obj, &obj_ptr);
+        id = (uint64_t)gd_variant_get_object_instance_id(var_obj);
+        if (gd_variant_destroy) gd_variant_destroy(var_obj);
+    }
+    if (id != 0) return id;
+
+    // Strategy 3: Fast ptrcall
+    if (gd_classdb_get_method_bind && gd_object_method_bind_ptrcall) {
+        if (!mb_object_get_instance_id) {
+            void *sn_obj = make_string_name("Object");
+            void *sn_gid = make_string_name("get_instance_id");
+            mb_object_get_instance_id = gd_classdb_get_method_bind(sn_obj, sn_gid, 3905245786ULL);
+            free_string_name(sn_obj); free_string_name(sn_gid);
+        }
+        if (mb_object_get_instance_id) {
+            int64_t ret_id = 0;
+            gd_object_method_bind_ptrcall(mb_object_get_instance_id, (GDExtensionObjectPtr)p_o, nullptr, &ret_id);
+            id = (uint64_t)ret_id;
+        }
+    }
+    if (id != 0) return id;
+
+    // Strategy 4: Dynamic Object::call("get_instance_id")
+    id = (uint64_t)bridge_object_call_ret_int((GDExtensionObjectPtr)p_o, "get_instance_id", nullptr, 0);
+    return id;
+}
+
+/** Looks up a living Object pointer from its instance ID, or nullptr if dead */
+static GDExtensionObjectPtr bridge_object_get_instance_from_id(uint64_t id) {
+    if (id == 0) return nullptr;
+    if (gd_object_get_instance_from_id) {
+        GDExtensionObjectPtr ptr = gd_object_get_instance_from_id((GDObjectInstanceID)id);
+        if (ptr) return ptr;
+    }
+    if (!gd_util_instance_from_id && gd_variant_get_ptr_utility_function && gd_string_name_new_with_utf8_chars) {
+        void *sn_ifi = make_string_name("instance_from_id");
+        gd_util_instance_from_id = gd_variant_get_ptr_utility_function(sn_ifi, 1156694636ULL);
+        free_string_name(sn_ifi);
+    }
+    if (gd_util_instance_from_id) {
+        GDExtensionObjectPtr ret_obj = nullptr;
+        int64_t id_i64 = (int64_t)id;
+        const void *args[1] = { &id_i64 };
+        gd_util_instance_from_id(&ret_obj, (const GDExtensionConstTypePtr*)args, 1);
+        return ret_obj;
+    }
+    return nullptr;
+}
+
+/** Fast boolean check whether an Object instance ID is still alive in ObjectDB */
+static uint8_t bridge_is_instance_valid(uint64_t id) {
+    if (id == 0) return 0;
+    if (gd_object_get_instance_from_id && gd_object_get_instance_from_id((GDObjectInstanceID)id) != nullptr) {
+        return 1;
+    }
+    if (!gd_util_is_instance_id_valid && gd_variant_get_ptr_utility_function && gd_string_name_new_with_utf8_chars) {
+        void *sn_iiiv = make_string_name("is_instance_id_valid");
+        gd_util_is_instance_id_valid = gd_variant_get_ptr_utility_function(sn_iiiv, 2232439758ULL);
+        free_string_name(sn_iiiv);
+    }
+    if (gd_util_is_instance_id_valid) {
+        uint8_t is_valid = 0;
+        int64_t id_i64 = (int64_t)id;
+        const void *args[1] = { &id_i64 };
+        gd_util_is_instance_id_valid(&is_valid, (const GDExtensionConstTypePtr*)args, 1);
+        return is_valid != 0 ? 1 : 0;
+    }
+    return 0;
+}
+
 static GDExtensionMethodBindPtr mb_object_emit_signal = nullptr;
 
 /**
@@ -1717,6 +1820,10 @@ struct BridgeAPI {
     double (*object_call_ret_float)(GDExtensionObjectPtr instance, const char *method_name, const BridgeSignalArg *args, int arg_count);
     bool (*object_call_ret_bool)(GDExtensionObjectPtr instance, const char *method_name, const BridgeSignalArg *args, int arg_count);
     const char* (*object_call_ret_string)(GDExtensionObjectPtr instance, const char *method_name, const BridgeSignalArg *args, int arg_count);
+    void (*object_destroy)(GDExtensionObjectPtr p_o);
+    uint64_t (*object_get_instance_id)(GDExtensionConstObjectPtr p_o);
+    GDExtensionObjectPtr (*object_get_instance_from_id)(uint64_t id);
+    uint8_t (*is_instance_valid)(uint64_t id);
 };
 
 static BridgeAPI g_bridge_api = {
@@ -1748,7 +1855,11 @@ static BridgeAPI g_bridge_api = {
     bridge_object_call_ret_int,
     bridge_object_call_ret_float,
     bridge_object_call_ret_bool,
-    bridge_object_call_ret_string
+    bridge_object_call_ret_string,
+    bridge_object_destroy,
+    bridge_object_get_instance_id,
+    bridge_object_get_instance_from_id,
+    bridge_is_instance_valid
 };
 
 // ==============================================================================
@@ -2225,7 +2336,23 @@ static void init_common_method_binds() {
         void *sn_perr = make_string_name("printerr");
         gd_util_printerr = gd_variant_get_ptr_utility_function(sn_perr, 2648703342ULL);
         free_string_name(sn_perr);
+
+        void *sn_iiiv = make_string_name("is_instance_id_valid");
+        gd_util_is_instance_id_valid = gd_variant_get_ptr_utility_function(sn_iiiv, 2232439758ULL);
+        free_string_name(sn_iiiv);
+
+        void *sn_ifi = make_string_name("instance_from_id");
+        gd_util_instance_from_id = gd_variant_get_ptr_utility_function(sn_ifi, 1156694636ULL);
+        free_string_name(sn_ifi);
     }
+
+    if (gd_classdb_get_method_bind) {
+        void *sn_obj = make_string_name("Object");
+        void *sn_gid = make_string_name("get_instance_id");
+        mb_object_get_instance_id = gd_classdb_get_method_bind(sn_obj, sn_gid, 3905245786ULL);
+        free_string_name(sn_obj); free_string_name(sn_gid);
+    }
+
     if (gd_get_variant_from_type_constructor) {
         gd_variant_from_string = gd_get_variant_from_type_constructor(GDEXTENSION_VARIANT_TYPE_STRING);
     }
@@ -2324,6 +2451,8 @@ extern "C" GDE_EXPORT GDExtensionBool crystal_library_init(
     gd_variant_get_type = (GDExtensionInterfaceVariantGetType)p_get_proc_address("variant_get_type");
     gd_variant_get_object_instance_id = (GDExtensionInterfaceVariantGetObjectInstanceId)p_get_proc_address("variant_get_object_instance_id");
     gd_object_get_instance_from_id = (GDExtensionInterfaceObjectGetInstanceFromId)p_get_proc_address("object_get_instance_from_id");
+    gd_object_destroy = (GDExtensionInterfaceObjectDestroy)p_get_proc_address("object_destroy");
+    gd_object_get_instance_id = (GDExtensionInterfaceObjectGetInstanceId)p_get_proc_address("object_get_instance_id");
     gd_variant_stringify = (GDExtensionInterfaceVariantStringify)p_get_proc_address("variant_stringify");
     gd_string_to_utf8_chars = (GDExtensionInterfaceStringToUtf8Chars)p_get_proc_address("string_to_utf8_chars");
 

@@ -502,6 +502,11 @@ node RunTesterPanel < Godot::Control do
     hook_button("MarginContainer/VBox/ButtonBox/BtnRunMesh") { run_and_display_category("Mesh") }
     hook_button("MarginContainer/VBox/ButtonBox/BtnRunPhysics") { run_and_display_category("Physics") }
     hook_button("MarginContainer/VBox/ButtonBox/BtnRunStress") { run_and_display_category("Stress") }
+    hook_button("MarginContainer/VBox/ButtonBox/BtnRunUI") { run_and_display_category("UI") }
+    hook_button("MarginContainer/VBox/ButtonBox/BtnRunAudioAnim") { run_and_display_category("AudioAnim") }
+    hook_button("MarginContainer/VBox/ButtonBox/BtnRunResources") { run_and_display_category("Resources") }
+    hook_button("MarginContainer/VBox/ButtonBox/BtnRunLifecycle") { run_and_display_category("Lifecycle") }
+    hook_button("MarginContainer/VBox/ButtonBox/BtnRunClassDB") { run_and_display_category("ClassDB") }
 
     # Automatically execute all tests on startup
     run_and_display_all
@@ -1389,3 +1394,18 @@ test_prop "Signal registration and type-safe emission" do
 
   target.emit_test_event_fired(100)
 end
+
+# =============================================================================
+# Modular Test Suites (Exhaustive Coverage Across Extension API)
+# =============================================================================
+
+require "./suites/test_2d_nodes"
+require "./suites/test_3d_nodes"
+require "./suites/test_control_nodes"
+require "./suites/test_meshes_materials"
+require "./suites/test_physics_shapes"
+require "./suites/test_audio_animation"
+require "./suites/test_resources_utilities"
+require "./suites/test_lifecycle_destruction"
+require "./suites/test_classdb_coverage"
+

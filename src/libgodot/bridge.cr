@@ -83,6 +83,10 @@ module Godot
       object_call_ret_float : (Void*, LibC::Char*, CrystalSignalArg*, Int32 -> Float64)
       object_call_ret_bool : (Void*, LibC::Char*, CrystalSignalArg*, Int32 -> Bool)
       object_call_ret_string : (Void*, LibC::Char*, CrystalSignalArg*, Int32 -> LibC::Char*)
+      object_destroy : (Void* -> Void)
+      object_get_instance_id : (Void* -> UInt64)
+      object_get_instance_from_id : (UInt64 -> Void*)
+      is_instance_valid : (UInt64 -> UInt8)
     end
   end
 
@@ -658,6 +662,26 @@ module Godot
         ptr = @@api.value.object_call_ret_string.call(godot_obj, method_name.to_unsafe, c_args, count)
         ptr.null? ? "" : String.new(ptr)
       end
+    end
+
+    def self.object_destroy(godot_obj : Void*) : Void
+      return if godot_obj.null? || @@api.null? || @@api.value.object_destroy.pointer.null?
+      @@api.value.object_destroy.call(godot_obj)
+    end
+
+    def self.object_get_instance_id(godot_obj : Void*) : UInt64
+      return 0_u64 if godot_obj.null? || @@api.null? || @@api.value.object_get_instance_id.pointer.null?
+      @@api.value.object_get_instance_id.call(godot_obj)
+    end
+
+    def self.object_get_instance_from_id(id : UInt64) : Void*
+      return Pointer(Void).null if id == 0 || @@api.null? || @@api.value.object_get_instance_from_id.pointer.null?
+      @@api.value.object_get_instance_from_id.call(id)
+    end
+
+    def self.is_instance_valid(id : UInt64) : Bool
+      return false if id == 0 || @@api.null? || @@api.value.is_instance_valid.pointer.null?
+      @@api.value.is_instance_valid.call(id) != 0_u8
     end
   end
 end

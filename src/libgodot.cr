@@ -40,7 +40,8 @@ module Godot
 
     # Adds a child node with optional force_readable_name and internal mode flags
     def add_child(node : Node, force_readable_name : Bool = false, internal : Int64 = 0_i64) : Void
-      return if @pointer.null? || node.pointer.null?
+      check_alive!
+      node.check_alive!
       if @@mb_node_add_child.null?
         @@mb_node_add_child = Bridge.get_method_bind("Node", "add_child", 3863233950_i64)
       end
@@ -56,7 +57,8 @@ module Godot
 
     # Removes a child node from this node without freeing it
     def remove_child(node : Node) : Void
-      return if @pointer.null? || node.pointer.null?
+      check_alive!
+      node.check_alive!
       if @@mb_node_remove_child.null?
         @@mb_node_remove_child = Bridge.get_method_bind("Node", "remove_child", 1078189570_i64)
       end
@@ -68,7 +70,8 @@ module Godot
 
     # Changes the parent of this Node to new_parent
     def reparent(new_parent : Node, keep_global_transform : Bool = true) : Void
-      return if @pointer.null? || new_parent.pointer.null?
+      check_alive!
+      new_parent.check_alive!
       if @@mb_node_reparent.null?
         @@mb_node_reparent = Bridge.get_method_bind("Node", "reparent", 3685795103_i64)
       end
@@ -82,7 +85,7 @@ module Godot
 
     # Returns the parent Node
     def get_parent : Node
-      return Node.new if @pointer.null?
+      check_alive!
       if @@mb_node_get_parent.null?
         @@mb_node_get_parent = Bridge.get_method_bind("Node", "get_parent", 3160264692_i64)
       end
@@ -93,13 +96,14 @@ module Godot
 
     # Returns the parent Node, or nil if orphan
     def get_parent? : Node?
+      return nil unless alive?
       p = get_parent
       p.pointer.null? ? nil : p
     end
 
     # Returns the count of children belonging to this node
     def get_child_count(include_internal : Bool = false) : Int64
-      return 0_i64 if @pointer.null?
+      check_alive!
       if @@mb_node_get_child_count.null?
         @@mb_node_get_child_count = Bridge.get_method_bind("Node", "get_child_count", 894402480_i64)
       end
@@ -113,7 +117,7 @@ module Godot
 
     # Retrieves child at specified index
     def get_child(idx : Int, include_internal : Bool = false) : Node
-      return Node.new if @pointer.null?
+      check_alive!
       if @@mb_node_get_child.null?
         @@mb_node_get_child = Bridge.get_method_bind("Node", "get_child", 541253412_i64)
       end
@@ -129,13 +133,14 @@ module Godot
 
     # Retrieves child at specified index, or nil if not found
     def get_child?(idx : Int, include_internal : Bool = false) : Node?
+      return nil unless alive?
       c = get_child(idx, include_internal)
       c.pointer.null? ? nil : c
     end
 
     # Queues this node for deletion at the end of the current frame
     def queue_free : Void
-      return if @pointer.null?
+      return unless alive?
       if @@mb_node_queue_free.null?
         @@mb_node_queue_free = Bridge.get_method_bind("Node", "queue_free", 3218959716_i64)
       end
@@ -144,7 +149,7 @@ module Godot
 
     # Checks if this node is queued for deletion
     def is_queued_for_deletion : Bool
-      return false if @pointer.null?
+      return false unless alive?
       if @@mb_node_is_queued_for_deletion.null?
         @@mb_node_is_queued_for_deletion = Bridge.get_method_bind("Object", "is_queued_for_deletion", 36873697_i64)
       end
@@ -155,7 +160,7 @@ module Godot
 
     # Returns true if the node is currently inside the active scene tree
     def is_inside_tree : Bool
-      return false if @pointer.null?
+      return false unless alive?
       if @@mb_node_is_inside_tree.null?
         @@mb_node_is_inside_tree = Bridge.get_method_bind("Node", "is_inside_tree", 36873697_i64)
       end
