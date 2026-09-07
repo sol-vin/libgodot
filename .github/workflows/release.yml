@@ -2,12 +2,15 @@ name: Release
 
 on:
   push:
+    branches:
+      - master
+      - main
     tags:
       - 'v*'
   workflow_dispatch:
     inputs:
       tag_name:
-        description: 'Release Tag Name (e.g. v0.1.0)'
+        description: 'Release Tag Name (e.g. v0.1.0 or latest)'
         required: false
         default: ''
 
@@ -87,6 +90,30 @@ jobs:
           }
           Write-Host "Godot binary verified at ./godot.exe"
 
+      - name: Compute Release Metadata
+        id: meta
+        shell: pwsh
+        run: |
+          $inputTag = "${{ github.event.inputs.tag_name }}"
+          $refType = "${{ github.ref_type }}"
+          $refName = "${{ github.ref_name }}"
+
+          if ($inputTag -ne "") {
+            $tag = $inputTag
+            $title = "Release $tag"
+          } elseif ($refType -eq "tag") {
+            $tag = $refName
+            $title = "Release $tag"
+          } else {
+            $tag = "latest"
+            $title = "Latest Build ($refName - ${{ github.sha }})"
+          }
+
+          Write-Host "Tag Name: $tag"
+          Write-Host "Release Title: $title"
+          Add-Content -Path $env:GITHUB_OUTPUT -Value "tag_name=$tag"
+          Add-Content -Path $env:GITHUB_OUTPUT -Value "release_title=$title"
+
       - name: Compile Release Binaries & Examples
         shell: pwsh
         run: |
@@ -129,9 +156,74 @@ jobs:
           Get-ChildItem -Path $examplesDist -File | Where-Object { $_.Extension -ne ".exe" } | Remove-Item -Force
 
           # Create examples.zip archive
+          if (Test-Path "examples.zip") { Remove-Item "examples.zip" -Force }
           Compress-Archive -Path "$examplesDist/*" -DestinationPath "examples.zip" -Force
           Write-Host "Successfully packaged examples.zip containing only compiled executables:"
           Get-ChildItem -Path $examplesDist
+
+      - name: Package Addon/Plugin (godot-crystal-addon.zip)
+        shell: pwsh
+        run: |
+          $addonDist = "dist/addon_dist"
+          if (Test-Path $addonDist) { Remove-Item $addonDist -Recurse -Force }
+          New-Item -ItemType Directory -Force -Path $addonDist | Out-Null
+
+          $addonDest = Join-Path $addonDist "addons/crystal_integration"
+          New-Item -ItemType Directory -Force -Path (Split-Path $addonDest) | Out-Null
+          Copy-Item -Path "addons/crystal_integration" -Destination (Split-Path $addonDest) -Recurse -Force
+
+          $addonBin = Join-Path $addonDist "bin"
+          New-Item -ItemType Directory -Force -Path $addonBin | Out-Null
+          if (Test-Path "bin/crystal_bridge.dll") {
+            Copy-Item "bin/crystal_bridge.dll" "$addonBin/crystal_bridge.dll" -Force
+          }
+          foreach ($dll in @('gc.dll', 'iconv-2.dll', 'pcre2-8.dll')) {
+            if (Test-Path "bin/$dll") { Copy-Item "bin/$dll" "$addonBin/$dll" -Force }
+          }
+
+          if (Test-Path "godot-crystal-addon.zip") { Remove-Item "godot-crystal-addon.zip" -Force }
+          Compress-Archive -Path "$addonDist/*" -DestinationPath "godot-crystal-addon.zip" -Force
+          Write-Host "Successfully packaged godot-crystal-addon.zip"
+
+      - name: Package Template Project (template-project.zip)
+        shell: pwsh
+        run: |
+          $templateDist = "dist/template_dist"
+          if (Test-Path $templateDist) { Remove-Item $templateDist -Recurse -Force }
+          New-Item -ItemType Directory -Force -Path $templateDist | Out-Null
+
+          Get-ChildItem -Path "template" -Exclude ".godot" | ForEach-Object {
+            Copy-Item -Path $_.FullName -Destination $templateDist -Recurse -Force
+          }
+
+          $templateAddon = Join-Path $templateDist "addons/crystal_integration"
+          if (-not (Test-Path $templateAddon)) {
+            New-Item -ItemType Directory -Force -Path (Split-Path $templateAddon) | Out-Null
+            Copy-Item -Path "addons/crystal_integration" -Destination (Split-Path $templateAddon) -Recurse -Force
+          }
+
+          $templateBin = Join-Path $templateDist "bin"
+          New-Item -ItemType Directory -Force -Path $templateBin | Out-Null
+          if (Test-Path "bin/crystal_bridge.dll") {
+            Copy-Item "bin/crystal_bridge.dll" "$templateBin/crystal_bridge.dll" -Force
+          }
+          if (Test-Path "template/bin/game.dll") {
+            Copy-Item "template/bin/game.dll" "$templateBin/game.dll" -Force
+          }
+          foreach ($dll in @('gc.dll', 'iconv-2.dll', 'pcre2-8.dll')) {
+            if (Test-Path "bin/$dll") { Copy-Item "bin/$dll" "$templateBin/$dll" -Force }
+          }
+          Get-ChildItem -Path $templateDist -Include "*.pdb", "*.exp", "*.lib" -Recurse | Remove-Item -Force -ErrorAction SilentlyContinue
+
+          $bundledLib = Join-Path $templateDist "lib/libgodot"
+          New-Item -ItemType Directory -Force -Path $bundledLib | Out-Null
+          Copy-Item -Path "src" -Destination (Join-Path $bundledLib "src") -Recurse -Force
+          Copy-Item "shard.yml" "$bundledLib/shard.yml" -Force
+          if (Test-Path "README.md") { Copy-Item "README.md" "$bundledLib/README.md" -Force }
+
+          if (Test-Path "template-project.zip") { Remove-Item "template-project.zip" -Force }
+          Compress-Archive -Path "$templateDist/*" -DestinationPath "template-project.zip" -Force
+          Write-Host "Successfully packaged template-project.zip"
 
       - name: Package Core LibGodot Distribution
         shell: pwsh
@@ -167,8 +259,9 @@ jobs:
           if (Test-Path "LICENSE") { Copy-Item "LICENSE" "$libDist/LICENSE" -Force }
 
           # Determine release tag name
-          $tag = if ($env:GITHUB_REF_NAME) { $env:GITHUB_REF_NAME } else { "latest" }
+          $tag = "${{ steps.meta.outputs.tag_name }}"
           $archiveName = "libgodot-crystal-windows-x86_64-$tag.zip"
+          if (Test-Path $archiveName) { Remove-Item $archiveName -Force }
           Compress-Archive -Path "$libDist/*" -DestinationPath $archiveName -Force
           Write-Host "Generated core release archive: $archiveName"
           Add-Content -Path $env:GITHUB_ENV -Value "CORE_ARCHIVE=$archiveName"
@@ -176,17 +269,22 @@ jobs:
       - name: Generate Checksums
         shell: pwsh
         run: |
-          Get-FileHash -Algorithm SHA256 "examples.zip", "$env:CORE_ARCHIVE" | Format-Table -AutoSize | Out-String | Set-Content "checksums.txt"
+          Get-FileHash -Algorithm SHA256 "examples.zip", "godot-crystal-addon.zip", "template-project.zip", "$env:CORE_ARCHIVE" | Format-Table -AutoSize | Out-String | Set-Content "checksums.txt"
           Get-Content "checksums.txt"
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.event.inputs.tag_name || github.ref_name }}
+          tag_name: ${{ steps.meta.outputs.tag_name }}
+          name: ${{ steps.meta.outputs.release_title }}
           files: |
             examples.zip
+            godot-crystal-addon.zip
+            template-project.zip
             ${{ env.CORE_ARCHIVE }}
             checksums.txt
           generate_release_notes: true
           draft: false
           prerelease: false
+          make_latest: true
+

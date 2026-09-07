@@ -223,7 +223,71 @@ if ($TestRelease) {
         }
         Write-Host "  [OK] Verified examples.zip contains exactly $entryCount compiled executable(s) and NO extra files." -ForegroundColor Green
 
-        # 3. Package Core LibGodot Distribution
+        # 2. Package Addon/Plugin (godot-crystal-addon.zip)
+        Write-Host "[Release] Packaging godot-crystal-addon.zip (addon + bridge DLL)..." -ForegroundColor Cyan
+        $addonDist = Join-Path $RootDir "dist/addon_dist"
+        if (Test-Path $addonDist) { Remove-Item $addonDist -Recurse -Force }
+        New-Item -ItemType Directory -Force -Path $addonDist | Out-Null
+
+        $addonDest = Join-Path $addonDist "addons/crystal_integration"
+        New-Item -ItemType Directory -Force -Path (Split-Path $addonDest) | Out-Null
+        Copy-Item -Path "addons/crystal_integration" -Destination (Split-Path $addonDest) -Recurse -Force
+
+        $addonBin = Join-Path $addonDist "bin"
+        New-Item -ItemType Directory -Force -Path $addonBin | Out-Null
+        if (Test-Path "bin/crystal_bridge.dll") {
+            Copy-Item "bin/crystal_bridge.dll" "$addonBin/crystal_bridge.dll" -Force
+        }
+        foreach ($dll in @('gc.dll', 'iconv-2.dll', 'pcre2-8.dll')) {
+            if (Test-Path "bin/$dll") { Copy-Item "bin/$dll" "$addonBin/$dll" -Force }
+        }
+
+        $addonZip = Join-Path $RootDir "godot-crystal-addon.zip"
+        if (Test-Path $addonZip) { Remove-Item $addonZip -Force }
+        Compress-Archive -Path "$addonDist/*" -DestinationPath $addonZip -Force
+        Write-Host "  [OK] Created addon archive: $addonZip ($( [math]::Round((Get-Item $addonZip).Length / 1MB, 2) ) MB)" -ForegroundColor Green
+
+        # 3. Package Template Project (template-project.zip) with addon preinstalled
+        Write-Host "[Release] Packaging template-project.zip (addon preinstalled)..." -ForegroundColor Cyan
+        $templateDist = Join-Path $RootDir "dist/template_dist"
+        if (Test-Path $templateDist) { Remove-Item $templateDist -Recurse -Force }
+        New-Item -ItemType Directory -Force -Path $templateDist | Out-Null
+
+        Get-ChildItem -Path "template" -Exclude ".godot" | ForEach-Object {
+            Copy-Item -Path $_.FullName -Destination $templateDist -Recurse -Force
+        }
+
+        $templateAddon = Join-Path $templateDist "addons/crystal_integration"
+        if (-not (Test-Path $templateAddon)) {
+            New-Item -ItemType Directory -Force -Path (Split-Path $templateAddon) | Out-Null
+            Copy-Item -Path "addons/crystal_integration" -Destination (Split-Path $templateAddon) -Recurse -Force
+        }
+
+        $templateBin = Join-Path $templateDist "bin"
+        New-Item -ItemType Directory -Force -Path $templateBin | Out-Null
+        if (Test-Path "bin/crystal_bridge.dll") {
+            Copy-Item "bin/crystal_bridge.dll" "$templateBin/crystal_bridge.dll" -Force
+        }
+        if (Test-Path "template/bin/game.dll") {
+            Copy-Item "template/bin/game.dll" "$templateBin/game.dll" -Force
+        }
+        foreach ($dll in @('gc.dll', 'iconv-2.dll', 'pcre2-8.dll')) {
+            if (Test-Path "bin/$dll") { Copy-Item "bin/$dll" "$templateBin/$dll" -Force }
+        }
+        Get-ChildItem -Path $templateDist -Include "*.pdb", "*.exp", "*.lib" -Recurse | Remove-Item -Force -ErrorAction SilentlyContinue
+
+        $bundledLib = Join-Path $templateDist "lib/libgodot"
+        New-Item -ItemType Directory -Force -Path $bundledLib | Out-Null
+        Copy-Item -Path "src" -Destination (Join-Path $bundledLib "src") -Recurse -Force
+        Copy-Item "shard.yml" "$bundledLib/shard.yml" -Force
+        if (Test-Path "README.md") { Copy-Item "README.md" "$bundledLib/README.md" -Force }
+
+        $templateZip = Join-Path $RootDir "template-project.zip"
+        if (Test-Path $templateZip) { Remove-Item $templateZip -Force }
+        Compress-Archive -Path "$templateDist/*" -DestinationPath $templateZip -Force
+        Write-Host "  [OK] Created template archive: $templateZip ($( [math]::Round((Get-Item $templateZip).Length / 1MB, 2) ) MB)" -ForegroundColor Green
+
+        # 4. Package Core LibGodot Distribution
         Write-Host "[Release] Packaging core LibGodot distribution zip..." -ForegroundColor Cyan
         $libDist = Join-Path $RootDir "dist/libgodot_dist"
         if (Test-Path $libDist) { Remove-Item $libDist -Recurse -Force }
@@ -252,10 +316,10 @@ if ($TestRelease) {
         Compress-Archive -Path "$libDist/*" -DestinationPath $coreZip -Force
         Write-Host "  [OK] Created core archive: $coreZip ($( [math]::Round((Get-Item $coreZip).Length / 1MB, 2) ) MB)" -ForegroundColor Green
 
-        # 4. Generate Checksums
+        # 5. Generate Checksums
         Write-Host "[Release] Generating SHA256 checksums..." -ForegroundColor Cyan
         $checksumFile = Join-Path $RootDir "checksums.txt"
-        Get-FileHash -Algorithm SHA256 $examplesZip, $coreZip | Format-Table -AutoSize | Out-String | Set-Content $checksumFile
+        Get-FileHash -Algorithm SHA256 $examplesZip, $addonZip, $templateZip, $coreZip | Format-Table -AutoSize | Out-String | Set-Content $checksumFile
         Get-Content $checksumFile | Write-Host
 
     } catch {

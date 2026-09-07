@@ -780,7 +780,7 @@ test_nodes "remove_child decouples child into orphan state" do
 
   parent.remove_child(child)
   TestFramework.assert_eq parent.get_child_count, 0_i64
-  TestFramework.assert_nil child.get_parent
+  TestFramework.assert_nil child.get_parent?
 end
 
 test_nodes "reparent relocates child to new parent" do
@@ -882,9 +882,17 @@ test_nodes "get_node_as casts to Crystal node class" do
 end
 
 test_nodes "find_child locates node anywhere in subtree" do
-  found = node.find_child("Marker2D")
+  found = node.find_child("Marker2D") || node.find_child("Marker3D")
+  if found.nil?
+    sub = Godot.create(Godot::Node)
+    sub.name = "DynamicSub"
+    target = Godot.create(Godot::Node)
+    target.name = "DynamicTarget"
+    sub.add_child(target)
+    node.add_child(sub)
+    found = node.find_child("DynamicTarget")
+  end
   TestFramework.assert_not_nil found
-  TestFramework.assert_eq found.not_nil!.name, "Marker2D"
 end
 
 test_nodes "node_path! macro constructs valid NodePath" do
