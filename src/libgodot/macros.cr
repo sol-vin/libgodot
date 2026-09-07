@@ -178,6 +178,15 @@ annotation StaticUnload; end
 # ```
 annotation OnReady; end
 
+# Assigns the node to one or more scene tree groups upon `_ready`.
+#
+# ```crystal
+# @[Group("enemies", "flammable")]
+# class Enemy < Godot::Node2D
+# end
+# ```
+annotation Group; end
+
 # Configures Remote Procedure Call (RPC) network replication for a method.
 # Accepts mode, sync, transfer_mode, and channel parameters.
 #
@@ -368,6 +377,7 @@ macro node(decl, &block)
     methods_doc = [] of Nil
     onready_props = [] of Nil
     rpc_methods = [] of Nil
+    node_groups = [] of Nil
     class_doc = ""
     stmts = block.body.is_a?(Expressions) ? block.body.expressions : [block.body]
     last_anno = nil
@@ -467,6 +477,10 @@ macro node(decl, &block)
       {% elsif anno_name == "ExportCategory" %}
         {% cat_name = stmt.args[0].is_a?(StringLiteral) ? stmt.args[0] : stmt.args[0].id.stringify %}
         {% props << {:category, cat_name, ""} %}
+      {% elsif anno_name == "Group" %}
+        {% for g in stmt.args %}
+          {% node_groups << (g.is_a?(StringLiteral) ? g : g.id.stringify) %}
+        {% end %}
       {% elsif anno_name == "ExportGroup" %}
         {% grp_name = stmt.args[0].is_a?(StringLiteral) ? stmt.args[0] : stmt.args[0].id.stringify %}
         {% pfx = "" %}
@@ -539,6 +553,10 @@ macro node(decl, &block)
         {% pfx = stmt.args[1].is_a?(StringLiteral) ? stmt.args[1] : stmt.args[1].id.stringify %}
       {% end %}
       {% props << {:subgroup, sub_name, pfx} %}
+    {% elsif stmt.is_a?(Call) && (stmt.name.stringify == "group" || stmt.name.stringify == "groups") %}
+      {% for g in stmt.args %}
+        {% node_groups << (g.is_a?(StringLiteral) ? g : g.id.stringify) %}
+      {% end %}
     {% elsif stmt.is_a?(Call) && stmt.name.stringify == "onready" %}
       {% o_decl = stmt.args[0] %}
       {% if o_decl.is_a?(TypeDeclaration) %}
@@ -714,8 +732,13 @@ macro node(decl, &block)
       when "_exit_tree"
         _exit_tree if responds_to?(:_exit_tree)
       {% end %}
-      {% if has_ready %}
+      {% if has_ready || node_groups.size > 0 %}
       when "_ready"
+        {% if node_groups.size > 0 %}
+          {% for grp in node_groups %}
+            add_to_group({{grp}})
+          {% end %}
+        {% end %}
         {% if onready_props.size > 0 %}
           _godot_init_onready_properties
         {% end %}
@@ -1288,10 +1311,105 @@ macro signal(sig_decl)
     ::Godot::BoundSignal.new(self, "{{sig_name.id}}")
   end
 
+  {% emit_args = [] of Nil %}
+  {% emit_pass_args = [] of Nil %}
+  {% for arg in sig_args %}
+    {% if arg.is_a?(TypeDeclaration) %}
+      {% emit_args << "#{arg.var} : #{arg.type}".id %}
+      {% emit_pass_args << arg.var %}
+    {% else %}
+      {% emit_args << arg %}
+      {% emit_pass_args << arg %}
+    {% end %}
+  {% end %}
+
   # Type-safe emission helper
-  def emit_{{sig_name.id}}({% for arg, i in sig_args %}{% if arg.is_a?(TypeDeclaration) %}{{arg.var}} : {{arg.type}}{% else %}{{arg}}{% end %}{% if i < sig_args.size - 1 %}, {% end %}{% end %}) : Void
-    emit_signal("{{sig_name.id}}"{% for arg in sig_args %}, {% if arg.is_a?(TypeDeclaration) %}{{arg.var}}{% else %}{{arg}}{% end %}{% end %})
+  def emit_{{sig_name.id}}({{emit_args.splat}}) : Void
+    emit_signal("{{sig_name.id}}"{% if emit_pass_args.size > 0 %}, {{emit_pass_args.splat}}{% end %})
   end
+
+  {% if sig_args.size == 0 %}
+    # Type-safe signal listener
+    def on_{{sig_name.id}}(&block : -> Void) : ::Godot::SignalSubscription
+      {{sig_name.id}}.connect do |_raw_args|
+        block.call
+      end
+    end
+
+    # One-shot type-safe signal listener that automatically disconnects after firing once
+    def on_{{sig_name.id}}_once(&block : -> Void) : ::Godot::SignalSubscription
+      {{sig_name.id}}.connect_one_shot do |_raw_args|
+        block.call
+      end
+    end
+  {% else %}
+    {% param_types = [] of Nil %}
+    {% for arg in sig_args %}
+      {% if arg.is_a?(TypeDeclaration) %}
+        {% param_types << arg.type %}
+      {% else %}
+        {% param_types << "String".id %}
+      {% end %}
+    {% end %}
+
+    # Type-safe signal listener with automatically converted typed parameters
+    def on_{{sig_name.id}}(&block : ({{param_types.splat}}) -> Void) : ::Godot::SignalSubscription
+      {{sig_name.id}}.connect do |raw_args|
+        {% call_args = [] of Nil %}
+        {% for arg, i in sig_args %}
+          {% if arg.is_a?(TypeDeclaration) %}
+            {% if arg.type.stringify == "Int32" %}
+              {% call_args << "(raw_args[#{i}]?.try(&.to_i32) || 0)".id %}
+            {% elsif arg.type.stringify == "Int64" %}
+              {% call_args << "(raw_args[#{i}]?.try(&.to_i64) || 0_i64)".id %}
+            {% elsif arg.type.stringify == "Float32" %}
+              {% call_args << "(raw_args[#{i}]?.try(&.to_f32) || 0.0_f32)".id %}
+            {% elsif arg.type.stringify == "Float64" %}
+              {% call_args << "(raw_args[#{i}]?.try(&.to_f64) || 0.0_f64)".id %}
+            {% elsif arg.type.stringify == "Bool" %}
+              {% call_args << "(raw_args[#{i}]? == \"true\")".id %}
+            {% elsif arg.type.stringify == "String" %}
+              {% call_args << "(raw_args[#{i}]? || \"\")".id %}
+            {% else %}
+              {% call_args << "raw_args[#{i}]?".id %}
+            {% end %}
+          {% else %}
+            {% call_args << "(raw_args[#{i}]? || \"\")".id %}
+          {% end %}
+        {% end %}
+        block.call({{call_args.splat}})
+      end
+    end
+
+    # One-shot type-safe signal listener with automatically converted typed parameters
+    def on_{{sig_name.id}}_once(&block : ({{param_types.splat}}) -> Void) : ::Godot::SignalSubscription
+      {{sig_name.id}}.connect_one_shot do |raw_args|
+        {% call_args = [] of Nil %}
+        {% for arg, i in sig_args %}
+          {% if arg.is_a?(TypeDeclaration) %}
+            {% if arg.type.stringify == "Int32" %}
+              {% call_args << "(raw_args[#{i}]?.try(&.to_i32) || 0)".id %}
+            {% elsif arg.type.stringify == "Int64" %}
+              {% call_args << "(raw_args[#{i}]?.try(&.to_i64) || 0_i64)".id %}
+            {% elsif arg.type.stringify == "Float32" %}
+              {% call_args << "(raw_args[#{i}]?.try(&.to_f32) || 0.0_f32)".id %}
+            {% elsif arg.type.stringify == "Float64" %}
+              {% call_args << "(raw_args[#{i}]?.try(&.to_f64) || 0.0_f64)".id %}
+            {% elsif arg.type.stringify == "Bool" %}
+              {% call_args << "(raw_args[#{i}]? == \"true\")".id %}
+            {% elsif arg.type.stringify == "String" %}
+              {% call_args << "(raw_args[#{i}]? || \"\")".id %}
+            {% else %}
+              {% call_args << "raw_args[#{i}]?".id %}
+            {% end %}
+          {% else %}
+            {% call_args << "(raw_args[#{i}]? || \"\")".id %}
+          {% end %}
+        {% end %}
+        block.call({{call_args.splat}})
+      end
+    end
+  {% end %}
 end
 
 # Creates a compile-time verified Godot::NodePath
@@ -1299,11 +1417,55 @@ macro node_path!(path)
   ::Godot::NodePath.new({{path}})
 end
 
-# Declares a lazy-cached node property matching Godot's `@onready` pattern
-macro onready(name, type, path)
+# Declares a lazy-cached node property matching Godot's `@onready` pattern.
+#
+# Supports:
+# 1. Auto-inferred path: `onready sprite_2d, Sprite2D` (fetches "Sprite2D")
+# 2. Scene Unique Node: `onready camera, Camera2D, "%MainCamera"`
+# 3. Explicit path: `onready sprite, Sprite2D, "Visuals/Sprite2D"`
+macro onready(name, type, path = nil)
   @{{name.id}} : {{type.id}}? = nil
   def {{name.id}} : {{type.id}}
-    @{{name.id}} ||= get_node_as({{type.id}}, {{path}})
+    {% if path %}
+      @{{name.id}} ||= get_node_as({{type.id}}, {{path}})
+    {% else %}
+      @{{name.id}} ||= get_node_as({{type.id}}, {{name.id.stringify.camelcase}})
+    {% end %}
   end
 end
+
+# Declares a lazy-cached Scene Unique Node property (Godot 4 `%Node` syntax).
+#
+# Examples:
+# ```crystal
+# unique_node health_bar, ProgressBar # fetches "%HealthBar"
+# unique_node main_hud, CanvasLayer, "HUD" # fetches "%HUD"
+# ```
+macro unique_node(name, type, unique_name = nil)
+  @{{name.id}} : {{type.id}}? = nil
+  def {{name.id}} : {{type.id}}
+    {% if unique_name %}
+      @{{name.id}} ||= get_node_as({{type.id}}, "%" + {{unique_name}})
+    {% else %}
+      @{{name.id}} ||= get_node_as({{type.id}}, "%" + {{name.id.stringify.camelcase}})
+    {% end %}
+  end
+end
+
+# Declaratively assigns the node to one or more scene tree groups upon `_ready`.
+#
+# ```crystal
+# node Player < CharacterBody3D do
+#   group "players", "flammable"
+# end
+# ```
+macro group(*group_names)
+  # Declarative registration is extracted by the `node` macro
+end
+
+# Alias for `group`
+macro groups(*group_names)
+  # Declarative registration is extracted by the `node` macro
+end
+
 

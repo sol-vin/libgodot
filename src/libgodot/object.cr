@@ -270,6 +270,27 @@ module Godot
       @target.connect(@name, &block)
     end
 
+    # Connects a one-shot callback block that automatically disconnects after firing once
+    def connect_one_shot(&block : Array(String) -> Void) : SignalSubscription
+      sub : SignalSubscription? = nil
+      actual_sub = connect do |args|
+        begin
+          block.call(args)
+        ensure
+          sub.try { |s| Godot.unsubscribe_signal(s) }
+        end
+      end
+      sub = actual_sub
+      actual_sub
+    end
+
+    # Connects this signal to a method call on a target object by symbol name
+    def connect(listener_target : Godot::Object, method_name : Symbol) : SignalSubscription
+      connect do |_args|
+        listener_target.call(method_name.to_s)
+      end
+    end
+
     # Disconnects all active subscriptions for this signal on the target
     def disconnect : Void
       @target.disconnect(@name)
@@ -488,11 +509,47 @@ module Godot
       Godot.subscribe_signal(signal_target_id, signal_name, block)
     end
 
+    # Connects a one-shot callback block to the named signal.
+    def connect_one_shot(signal_name : String, &block : Array(String) -> Void) : SignalSubscription
+      signal(signal_name).connect_one_shot(&block)
+    end
+
+    # Connects the named signal to a method call on a listener target by symbol name.
+    def connect(signal_name : String, listener_target : Godot::Object, method_name : Symbol) : SignalSubscription
+      signal(signal_name).connect(listener_target, method_name)
+    end
+
     # Disconnects all signal subscriptions for the named signal on this object.
     def disconnect(signal_name : String) : Void
       key = {signal_target_id, signal_name}
       Godot.signal_subs_mutex.synchronize do
         Godot.signal_subs.delete(key)
+      end
+    end
+
+    # Returns true if this object or its registered class defines the given signal.
+    def has_signal?(signal_name : String) : Bool
+      check_alive!
+      class_name = self.class.name.split("::").last
+      if entry = Godot::ClassRegistry.find(class_name)
+        return true if entry.signals.any? { |s| s.name == signal_name }
+      end
+      key = {signal_target_id, signal_name}
+      Godot.signal_subs_mutex.synchronize do
+        return true if Godot.signal_subs.has_key?(key)
+      end
+      false
+    end
+
+    # Returns the count of active subscriptions for the given signal on this object.
+    def signal_connection_count(signal_name : String) : Int32
+      key = {signal_target_id, signal_name}
+      Godot.signal_subs_mutex.synchronize do
+        if list = Godot.signal_subs[key]?
+          list.size
+        else
+          0
+        end
       end
     end
 

@@ -143,6 +143,7 @@ end
   {:test_stress, "Stress"},
   {:test_scenes, "Scenes"},
   {:test_concurrency, "Concurrency"},
+  {:test_macros_dsl, "MacrosDSL"},
 ] %}
   macro {{pair[0].id}}(name, &block)
     ::TestFramework::Registry.register({{pair[1]}}, \{{name}}) do |node|
@@ -1336,4 +1337,5 @@ require "./suites/test_resources_utilities"
 require "./suites/test_lifecycle_destruction"
 require "./suites/test_classdb_coverage"
 require "./suites/test_concurrency"
+require "./suites/test_macros_dsl"
 

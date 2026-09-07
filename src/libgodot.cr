@@ -14,9 +14,15 @@ require "./libgodot/docs"
 
 module Godot
   class PackedScene < Resource
-    # Convenience instantiate defaulting edit_state to 0
+    # Convenience zero-argument instantiate defaulting edit_state to 0
     def instantiate : Node
       instantiate(0_i64)
+    end
+
+    # Instantiates the scene and downcasts directly to type T
+    def instantiate_as(type : T.class, edit_state : Int64 = 0_i64) : T forall T
+      node = instantiate(edit_state)
+      node.as(T)
     end
   end
 
@@ -40,6 +46,42 @@ module Godot
   end
 
   class Node < Object
+    getter local_groups : Set(String) = Set(String).new
+
+    # Adds this node to the specified group (with default non-persistent flag)
+    def add_to_group(group : String) : Void
+      @local_groups.add(group)
+      return if @pointer.null?
+      add_to_group(group, false)
+    end
+
+    # Returns true if this node is in the specified group
+    def in_group?(group_name : String) : Bool
+      return true if @local_groups.includes?(group_name)
+      return false if @pointer.null?
+      is_in_group(group_name)
+    end
+
+    # Returns the parent node cast to T, or nil if parent is not of type T or is null
+    def get_parent_as(type : T.class) : T? forall T
+      parent = get_parent?
+      return nil if parent.nil? || parent.pointer.null?
+      parent.as?(T)
+    end
+
+    # Finds child node matching pattern and casts to T, returning nil if not found
+    def find_child_as(type : T.class, pattern : String, recursive : Bool = true, owned : Bool = false) : T? forall T
+      child = find_child(pattern, recursive, owned)
+      return nil if child.nil? || child.pointer.null?
+      child.as?(T)
+    end
+
+    # Returns the scene unique node with name `%unique_name` cast to T
+    def get_unique_node_as(type : T.class, unique_name : String) : T? forall T
+      path = unique_name.starts_with?("%") ? unique_name : "%#{unique_name}"
+      get_node_as(type, path)
+    end
+
     # Reliable GDExtension bridge implementation of find_child with default parameters
     def find_child(pattern : String, recursive : Bool = true, owned : Bool = false) : Node?
       ptr = Bridge.node_find_child(@pointer, pattern, recursive, owned)
@@ -275,6 +317,120 @@ macro await(target, signal_name = nil, timeout_sec = nil)
     ::Godot.await({{target}})
   {% end %}
 end
+
+module Godot
+  {% for s in ["Performance", "Engine", "ProjectSettings", "OS", "Time", "ClassDB", "Input", "InputMap", "DisplayServer", "AudioServer", "RenderingServer", "PhysicsServer2D", "PhysicsServer3D", "NavigationServer2D", "NavigationServer3D", "ResourceLoader", "ResourceSaver"] %}
+    class {{s.id}} < Godot::Object
+      @@typed_instance : {{s.id}}? = nil
+      def self.instance : {{s.id}}
+        @@typed_instance ||= {{s.id}}.new(singleton_ptr)
+      end
+    end
+  {% end %}
+
+  # Singleton accessors
+  def self.input : Input
+    Input.instance
+  end
+
+  def self.engine : Engine
+    Engine.instance
+  end
+
+  def self.os : OS
+    OS.instance
+  end
+
+  def self.project_settings : ProjectSettings
+    ProjectSettings.instance
+  end
+
+  def self.display_server : DisplayServer
+    DisplayServer.instance
+  end
+
+  def self.audio_server : AudioServer
+    AudioServer.instance
+  end
+
+  def self.performance : Performance
+    Performance.instance
+  end
+
+  # Resource and Scene loading helpers
+  def self.load(path : String, type_hint : String = "", cache_mode : Int64 = 1_i64) : Resource
+    ResourceLoader.instance.load(path, type_hint, cache_mode)
+  end
+
+  def self.load_scene(path : String) : PackedScene
+    res = load(path)
+    res.as(PackedScene)
+  end
+
+  def self.instantiate_scene(path : String, type : T.class) : T forall T
+    scene = load_scene(path)
+    scene.instantiate_as(type)
+  end
+end
+
+module Godot
+  class Input < Godot::Object
+    def action_pressed?(action : String, exact_match : Bool = false) : Bool
+      return false if @pointer.null?
+      is_action_pressed(action, exact_match)
+    end
+
+    def action_just_pressed?(action : String, exact_match : Bool = false) : Bool
+      return false if @pointer.null?
+      is_action_just_pressed(action, exact_match)
+    end
+
+    def action_just_released?(action : String, exact_match : Bool = false) : Bool
+      return false if @pointer.null?
+      is_action_just_released(action, exact_match)
+    end
+
+    def axis(negative_action : String, positive_action : String) : Float32
+      return 0.0_f32 if @pointer.null?
+      get_axis(negative_action, positive_action).to_f32
+    end
+
+    def self.action_pressed?(action : String, exact_match : Bool = false) : Bool
+      instance.action_pressed?(action, exact_match)
+    end
+
+    def self.action_just_pressed?(action : String, exact_match : Bool = false) : Bool
+      instance.action_just_pressed?(action, exact_match)
+    end
+
+    def self.action_just_released?(action : String, exact_match : Bool = false) : Bool
+      instance.action_just_released?(action, exact_match)
+    end
+
+    def self.axis(negative_action : String, positive_action : String) : Float32
+      instance.axis(negative_action, positive_action)
+    end
+  end
+
+  class SceneTree < MainLoop
+    def get_first_node_in_group_as(type : T.class, group_name : String) : T? forall T
+      return nil if @pointer.null?
+      node = get_first_node_in_group(group_name)
+      return nil if node.nil? || node.pointer.null?
+      node.as?(T)
+    end
+  end
+end
+
+# Top-level math constructors
+def vec2(x : Number, y : Number) : Vector2
+  Vector2.new(x.to_f32, y.to_f32)
+end
+
+def vec3(x : Number, y : Number, z : Number) : Vector3
+  Vector3.new(x.to_f32, y.to_f32, z.to_f32)
+end
+
 
 
 
