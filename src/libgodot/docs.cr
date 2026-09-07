@@ -1364,6 +1364,141 @@ module Docs
   # end
   # ```
   #
+  # ---
+  #
+  # ### 7. Awaiting Signals and Timers: The `await` Pattern
+  #
+  # In Godot, asynchronous sequencing for cutscenes, dialogue, animations, and cooldowns
+  # is customarily performed using GDScript's `await` keyword.
+  #
+  # LibGodot provides a first-class, type-safe **`await`** system designed for Crystal's
+  # cooperative fibers. It provides two fully supported signal awaiting styles:
+  # 1. **First-Class Bound Signals (`await(enemy.died)` or `enemy.died.await`)**:
+  #    Synthesized automatically by the `signal` macro and `Godot::Object#signal`. Provides compile-time checking,
+  #    IDE auto-completion, and direct `.connect` / `.emit` methods.
+  # 2. **Classic Target & String Identifier (`await(enemy, "died")` or `enemy.await_signal("died")`)**:
+  #    The traditional Godot pattern. Indispensable when signal names are computed dynamically at runtime
+  #    (e.g., from network RPC packets, configuration files, or GDScript dynamic events).
+  # 3. **SceneTreeTimers (`await(timer.timeout)` or `await(timer)`)**.
+  # 4. **Cooperative Durations (`await(2.5)` or `await(3.seconds)`)**.
+  #
+  # #### Comparison: GDScript vs. LibGodot Crystal
+  #
+  # <table>
+  #   <thead>
+  #     <tr>
+  #       <th>Operation</th>
+  #       <th>GDScript</th>
+  #       <th>LibGodot Crystal</th>
+  #     </tr>
+  #   </thead>
+  #   <tbody>
+  #     <tr>
+  #       <td><strong>Await Signal (Bound)</strong></td>
+  #       <td><code>await target.died</code></td>
+  #       <td><code>await(target.died)</code> or <code>target.died.await</code></td>
+  #     </tr>
+  #     <tr>
+  #       <td><strong>Await Signal (Classic String)</strong></td>
+  #       <td><code>await target.died</code></td>
+  #       <td><code>await(target, "died")</code> or <code>target.await_signal("died")</code></td>
+  #     </tr>
+  #     <tr>
+  #       <td><strong>Await with Arguments</strong></td>
+  #       <td><code>var health = await player.health_changed</code></td>
+  #       <td><code>args = await(player.health_changed)</code> or <code>await(player, "health_changed")</code></td>
+  #     </tr>
+  #     <tr>
+  #       <td><strong>Await Timer</strong></td>
+  #       <td><code>await get_tree().create_timer(2.0).timeout</code></td>
+  #       <td><code>await(get_tree.create_timer(2.0).timeout)</code> or <code>await(timer)</code></td>
+  #     </tr>
+  #     <tr>
+  #       <td><strong>Await Duration</strong></td>
+  #       <td><code>await get_tree().create_timer(1.5).timeout</code></td>
+  #       <td><code>await(1.5)</code> or <code>await(1.5.seconds)</code></td>
+  #     </tr>
+  #     <tr>
+  #       <td><strong>Await with Timeout</strong></td>
+  #       <td>Manual timer racing</td>
+  #       <td><code>await(target.died, timeout_sec: 5.0)</code> or <code>await(target, "event", timeout_sec: 5.0)</code></td>
+  #     </tr>
+  #     <tr>
+  #       <td><strong>Connect Directly</strong></td>
+  #       <td><code>target.died.connect(...)</code></td>
+  #       <td><code>target.died.connect { |args| ... }</code> or <code>target.connect("died", callback)</code></td>
+  #     </tr>
+  #   </tbody>
+  # </table>
+  #
+  # ---
+  #
+  # #### Comprehensive Cutscene & Gameplay Example
+  #
+  # The following example demonstrates a Boss battle cinematic sequence authoring
+  # cooperative fibers, signal emissions, timer awaits, and dead-pointer safety:
+  #
+  # ```crystal
+  # node BossFightController < Godot::Node do
+  #   @[Export]
+  #   property cutscene_speed : Float32 = 1.0_f32
+  #
+  #   signal battle_started
+  #   signal battle_won
+  #
+  #   def _ready : Void
+  #     # Launch cutscene sequence in a cooperative fiber
+  #     spawn do
+  #       run_intro_cinematic
+  #     end
+  #   end
+  #
+  #   def _process(delta : Float64) : Void
+  #     # CRITICAL: Cooperatively yield execution slices each frame to advance awaiting fibers!
+  #     Fiber.yield
+  #   end
+  #
+  #   private def run_intro_cinematic : Void
+  #     Godot.print("Cinematic starting: Camera pan...")
+  #     # 1. Non-blocking delay: wait 2.0 seconds for camera transition
+  #     await(2.0)
+  #
+  #     Godot.print("Spawn Boss entity...")
+  #     boss = get_node_as(Godot::CharacterBody3D, "Boss")
+  #
+  #     # 2. Await a SceneTreeTimer via .timeout bound signal
+  #     await(get_tree.create_timer(1.5).timeout)
+  #     Godot.print("Boss roaring animation finished!")
+  #
+  #     emit_battle_started
+  #
+  #     # 3. Await custom signal on boss using first-class BoundSignal syntax
+  #     begin
+  #       Godot.print("Awaiting boss defeat signal...")
+  #       # Returns Array(String) of signal arguments (e.g. loot drop ID, score)
+  #       args = await(boss.boss_defeated, timeout_sec: 120.0)
+  #       Godot.print("Victory! Boss dropped rewards: #{args}")
+  #       emit_battle_won
+  #     rescue ex : Godot::DisposedObjectError
+  #       Godot.print_warn("Boss was prematurely destroyed: #{ex.message}")
+  #     end
+  #   end
+  # end
+  # ```
+  #
+  # ---
+  #
+  # #### Dead-Pointer Safety During `await`
+  #
+  # In dynamic multi-language games, an entity being awaited could be freed prematurely
+  # by GDScript (e.g. `enemy.queue_free()`) or engine level unloading.
+  #
+  # LibGodot's `await` validates `#alive?` on every frame slice:
+  # - If the target is destroyed while a fiber is awaiting its signal, `await` immediately raises
+  #   `Godot::DisposedObjectError.new(target.instance_id)`.
+  # - This guarantees that awaiting fibers **never hang indefinitely** on dead objects and cannot
+  #   trigger native segmentation faults.
+  #
   #
   module I_CONCURRENCY_FIBERS_AND_THREAD_SAFETY
     def self.best_practices : Array(String)

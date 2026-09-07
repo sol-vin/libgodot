@@ -116,6 +116,195 @@ module Godot
     end
   end
 
+  # Represents an active signal subscription or awaiter
+  class SignalSubscription
+    getter target_id : UInt64
+    getter signal_name : String
+    getter? completed : Bool = false
+    getter args : Array(String) = Array(String).new
+    getter callback : Proc(Array(String), Void)?
+
+    def initialize(@target_id : UInt64, @signal_name : String, @callback : Proc(Array(String), Void)? = nil)
+    end
+
+    def trigger(signal_args : Array(String)) : Void
+      @completed = true
+      @args = signal_args
+      @callback.try(&.call(signal_args))
+    end
+  end
+
+  class_getter signal_subs = Hash(Tuple(UInt64, String), Array(SignalSubscription)).new
+  class_getter signal_subs_mutex = ::Thread::Mutex.new
+
+  # Subscribes an awaiter or callback to a signal on a target object instance ID
+  def self.subscribe_signal(target_id : UInt64, signal_name : String, callback : Proc(Array(String), Void)? = nil) : SignalSubscription
+    sub = SignalSubscription.new(target_id, signal_name, callback)
+    key = {target_id, signal_name}
+    signal_subs_mutex.synchronize do
+      list = signal_subs[key] ||= Array(SignalSubscription).new
+      list << sub
+    end
+    sub
+  end
+
+  # Unsubscribes a signal subscription
+  def self.unsubscribe_signal(sub : SignalSubscription) : Void
+    key = {sub.target_id, sub.signal_name}
+    signal_subs_mutex.synchronize do
+      if list = signal_subs[key]?
+        list.delete(sub)
+        signal_subs.delete(key) if list.empty?
+      end
+    end
+  end
+
+  # Cleans up all signal subscriptions associated with a target instance ID
+  def self.clear_signal_subscriptions(target_id : UInt64) : Void
+    return if target_id == 0
+    signal_subs_mutex.synchronize do
+      signal_subs.reject! { |(tid, _), _| tid == target_id }
+    end
+  end
+
+  # Notifies active subscribers that a signal has fired on an object
+  def self.notify_signal(target_id : UInt64, signal_name : String, args : Array(String)) : Void
+    return if target_id == 0
+    key = {target_id, signal_name}
+    subs_to_notify = nil
+    signal_subs_mutex.synchronize do
+      if list = signal_subs[key]?
+        subs_to_notify = list.dup
+      end
+    end
+    subs_to_notify.try(&.each(&.trigger(args)))
+  end
+
+  # Cooperatively awaits until the named signal is emitted on the target object.
+  # Returns the emitted arguments as an Array(String).
+  # If the target object is freed while awaiting, raises Godot::DisposedObjectError.
+  def self.await(target : Godot::Object, signal_name : String, timeout_sec : Float64? = nil) : Array(String)
+    target.check_alive!
+    target_id = target.signal_target_id
+    sub = subscribe_signal(target_id, signal_name)
+    start_time = ::Time.instant
+    begin
+      while !sub.completed?
+        # Dead-pointer validation: fail fast if target was destroyed
+        if !target.alive?
+          raise DisposedObjectError.new(target_id, "Target object was destroyed while awaiting signal '#{signal_name}'")
+        end
+        if timeout = timeout_sec
+          if (::Time.instant - start_time).total_seconds >= timeout
+            break
+          end
+        end
+        Fiber.yield
+      end
+      sub.args
+    ensure
+      unsubscribe_signal(sub)
+    end
+  end
+
+  # Cooperatively pauses execution for the given duration in seconds.
+  # Safe for use in cooperative fibers without blocking the Godot main loop.
+  def self.await(seconds : Number) : Void
+    start_time = ::Time.instant
+    target_sec = seconds.to_f64
+    while (::Time.instant - start_time).total_seconds < target_sec
+      Fiber.yield
+    end
+  end
+
+  # Cooperatively pauses execution for the given Time::Span duration.
+  def self.await(span : ::Time::Span) : Void
+    await(span.total_seconds)
+  end
+
+  # Represents a signal bound to a specific Godot object instance.
+  # Enables first-class signal handling, inspection, connection, emission, and non-blocking `await`.
+  #
+  # Examples:
+  # ```crystal
+  # await(enemy.died)
+  # await(enemy.died, timeout_sec: 2.0)
+  # enemy.died.await
+  # enemy.health_changed.connect { |args| puts "Health: #{args}" }
+  # ```
+  class BoundSignal
+    getter target : Godot::Object
+    getter name : String
+
+    def initialize(@target : Godot::Object, @name : String)
+    end
+
+    # Returns the target's 64-bit instance ID (or Crystal object_id for unparented Crystal nodes)
+    def target_id : UInt64
+      @target.signal_target_id
+    end
+
+    # Returns true if the bound object is still alive in ObjectDB
+    def alive? : Bool
+      @target.alive?
+    end
+
+    # Cooperatively awaits this signal without blocking the engine main loop.
+    # Returns the emitted arguments as an Array(String).
+    def await(timeout_sec : Float64? = nil) : Array(String)
+      Godot.await(@target, @name, timeout_sec)
+    end
+
+    # Cooperatively awaits this signal with timeout in seconds
+    def await(timeout_sec : Number) : Array(String)
+      Godot.await(@target, @name, timeout_sec.to_f64)
+    end
+
+    # Connects a callback proc to this signal
+    def connect(callback : Proc(Array(String), Void)) : SignalSubscription
+      @target.connect(@name, callback)
+    end
+
+    # Connects a callback block to this signal
+    def connect(&block : Array(String) -> Void) : SignalSubscription
+      @target.connect(@name, &block)
+    end
+
+    # Disconnects all active subscriptions for this signal on the target
+    def disconnect : Void
+      @target.disconnect(@name)
+    end
+
+    # Emits this signal on the target object
+    def emit(*args) : Void
+      @target.emit_signal(@name, *args)
+    end
+
+    def to_s(io : IO) : Void
+      io << "#<Godot::BoundSignal @" << @name << " on " << @target.class.name << " (id: " << target_id << ")>"
+    end
+  end
+
+  alias Signal = BoundSignal
+
+  # Cooperatively awaits a bound signal.
+  # Usage:
+  #   args = Godot.await(enemy.died)
+  #   args = Godot.await(enemy.died, timeout_sec: 3.0)
+  def self.await(signal : Godot::BoundSignal, timeout_sec : Float64? = nil) : Array(String)
+    signal.await(timeout_sec)
+  end
+
+  # Cooperatively awaits a bound signal with timeout.
+  def self.await(signal : Godot::BoundSignal, timeout_sec : Number) : Array(String)
+    signal.await(timeout_sec.to_f64)
+  end
+
+  # Cooperatively awaits a signal on a target object with numeric timeout.
+  def self.await(target : Godot::Object, signal_name : String, timeout_sec : Number) : Array(String)
+    await(target, signal_name, timeout_sec.to_f64)
+  end
+
   # Base class for all Godot engine objects and extension classes.
   # Provides identity, lifecycle dispatch hooks, and signal emission functionality.
   class Object
@@ -138,13 +327,18 @@ module Godot
       end
     end
 
+    # Identifier used for signal routing and lifecycle tracking (engine instance ID or Crystal object_id)
+    def signal_target_id : UInt64
+      @instance_id > 0 ? @instance_id : object_id
+    end
+
     # Returns true if this object instance is still alive and valid in Godot's ObjectDB
     def alive? : Bool
       return false if @destroyed
       if @instance_id > 0
         Bridge.is_instance_valid(@instance_id)
       else
-        !@pointer.null?
+        !@destroyed
       end
     end
 
@@ -173,6 +367,7 @@ module Godot
     # Destroys this Object in the Godot engine and invalidates the Crystal pointer.
     def destroy : Void
       @destroyed = true
+      Godot.clear_signal_subscriptions(signal_target_id)
       if !@pointer.null?
         target_ptr = @pointer
         @pointer = Pointer(Void).null
@@ -206,13 +401,27 @@ module Godot
     # Emits a parameterless signal on this Godot object.
     def emit_signal(name : String) : Void
       check_alive!
-      Bridge.emit_signal(@pointer, name)
+      Godot.notify_signal(signal_target_id, name, [] of String)
+      Bridge.emit_signal(@pointer, name) unless @pointer.null?
     end
 
     # Emits a signal with variable arguments on this Godot object.
     def emit_signal(name : String, *args) : Void
       check_alive!
-      Bridge.emit_signal(@pointer, name, *args)
+      str_args = args.map(&.to_s).to_a
+      Godot.notify_signal(signal_target_id, name, str_args)
+      Bridge.emit_signal(@pointer, name, *args) unless @pointer.null?
+    end
+
+    # Cooperatively awaits a signal emitted on this object.
+    def await_signal(signal_name : String, timeout_sec : Float64? = nil) : Array(String)
+      Godot.await(self, signal_name, timeout_sec)
+    end
+
+    # Returns a bound signal representation for the named signal.
+    # Enables idiomatic usage: `enemy.signal("died").await` or `button.signal("pressed").connect { ... }`.
+    def signal(name : String) : Godot::BoundSignal
+      Godot::BoundSignal.new(self, name)
     end
 
     # Calls the named method on the object during idle time.
@@ -268,8 +477,23 @@ module Godot
     end
 
     # Connects a callback proc to the named signal.
-    def connect(signal_name : String, callback : Proc) : Void
-      # Connects callback to named signal
+    def connect(signal_name : String, callback : Proc(Array(String), Void)) : SignalSubscription
+      check_alive!
+      Godot.subscribe_signal(signal_target_id, signal_name, callback)
+    end
+
+    # Connects a callback block to the named signal.
+    def connect(signal_name : String, &block : Array(String) -> Void) : SignalSubscription
+      check_alive!
+      Godot.subscribe_signal(signal_target_id, signal_name, block)
+    end
+
+    # Disconnects all signal subscriptions for the named signal on this object.
+    def disconnect(signal_name : String) : Void
+      key = {signal_target_id, signal_name}
+      Godot.signal_subs_mutex.synchronize do
+        Godot.signal_subs.delete(key)
+      end
     end
 
     # Prints a message to Godot's debug console.

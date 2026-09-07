@@ -240,3 +240,164 @@ test_concurrency "Cross-thread object validity and dead-pointer safety" do
   end
   TestFramework.assert_true caught, "DisposedObjectError raised on dead pointer access"
 end
+
+test_concurrency "Cooperative fiber awaiting custom signal with arguments" do
+  target = PropertyTestTarget.new
+  received_args = Array(String).new
+  fiber_completed = false
+
+  spawn do
+    args = await(target, "test_event_fired")
+    received_args = args
+    fiber_completed = true
+  end
+
+  # Fiber should initially be waiting
+  Fiber.yield
+  TestFramework.assert_false fiber_completed, "Fiber should be suspended awaiting signal"
+
+  # Emit signal from another fiber / main thread
+  target.emit_test_event_fired(777)
+
+  # Cooperatively advance fiber
+  start = ::Time.instant
+  while !fiber_completed && (::Time.instant - start).total_seconds < 0.2
+    Fiber.yield
+  end
+
+  TestFramework.assert_true fiber_completed, "Fiber should resume after signal emission"
+  TestFramework.assert_eq received_args.size, 1
+  TestFramework.assert_eq received_args.first, "777"
+end
+
+test_concurrency "Cooperative fiber awaiting duration (non-blocking sleep alternative)" do
+  elapsed = false
+
+  spawn do
+    await(0.02) # 20 milliseconds cooperative pause
+    elapsed = true
+  end
+
+  # Allow cooperative yielding slices
+  start = ::Time.instant
+  while !elapsed && (::Time.instant - start).total_seconds < 0.2
+    Fiber.yield
+  end
+
+  TestFramework.assert_true elapsed, "Awaiting duration should complete without blocking main loop"
+end
+
+test_concurrency "Awaiting signal with timeout expires cleanly" do
+  target = PropertyTestTarget.new
+  timeout_completed = false
+
+  spawn do
+    # Await a signal that will never be emitted, with 0.02s timeout
+    await(target, "non_existent_signal", timeout_sec: 0.02)
+    timeout_completed = true
+  end
+
+  start = ::Time.instant
+  while !timeout_completed && (::Time.instant - start).total_seconds < 0.2
+    Fiber.yield
+  end
+
+  TestFramework.assert_true timeout_completed, "Await with timeout should exit cleanly when time expires"
+end
+
+test_concurrency "Awaiting signal on destroyed object raises DisposedObjectError" do
+  target = Godot.create(Godot::Node2D)
+  error_caught = false
+
+  spawn do
+    begin
+      await(target, "some_signal")
+    rescue ex : Godot::DisposedObjectError
+      error_caught = true
+    end
+  end
+
+  Fiber.yield # Start fiber and begin await
+  target.destroy # Destroy while awaiting
+
+  start = ::Time.instant
+  while !error_caught && (::Time.instant - start).total_seconds < 0.2
+    Fiber.yield
+  end
+  TestFramework.assert_true error_caught, "Awaiting a signal on a destroyed object must raise DisposedObjectError"
+end
+
+test_concurrency "BoundSignal await syntax: await(target.test_event_fired)" do
+  target = PropertyTestTarget.new
+  received_args = Array(String).new
+  fiber_completed = false
+
+  # target.test_event_fired returns a Godot::BoundSignal
+  bound_sig = target.test_event_fired
+  TestFramework.assert_true bound_sig.is_a?(Godot::BoundSignal)
+  TestFramework.assert_eq bound_sig.name, "test_event_fired"
+
+  spawn do
+    # Idiomatic syntax: await(target.test_event_fired)
+    args = await(target.test_event_fired)
+    received_args = args
+    fiber_completed = true
+  end
+
+  Fiber.yield
+  TestFramework.assert_false fiber_completed, "Fiber should be suspended awaiting bound signal"
+
+  target.emit_test_event_fired(999)
+
+  start = ::Time.instant
+  while !fiber_completed && (::Time.instant - start).total_seconds < 0.2
+    Fiber.yield
+  end
+
+  TestFramework.assert_true fiber_completed, "Fiber should resume after bound signal emission"
+  TestFramework.assert_eq received_args.first?, "999"
+end
+
+test_concurrency "BoundSignal connect and emit: sig.connect and sig.emit" do
+  target = PropertyTestTarget.new
+  connected_called = false
+  connected_arg = ""
+
+  target.test_event_fired.connect do |args|
+    connected_called = true
+    connected_arg = args.first? || ""
+  end
+
+  target.test_event_fired.emit(123)
+
+  TestFramework.assert_true connected_called, "BoundSignal#connect callback should fire on emit"
+  TestFramework.assert_eq connected_arg, "123"
+
+  target.test_event_fired.disconnect
+end
+
+test_concurrency "Classic Object#await_signal instance method with string name" do
+  target = PropertyTestTarget.new
+  received_args = Array(String).new
+  completed = false
+
+  spawn do
+    # Classic instance method: target.await_signal("signal_name")
+    args = target.await_signal("test_event_fired")
+    received_args = args
+    completed = true
+  end
+
+  Fiber.yield
+  TestFramework.assert_false completed, "Fiber should be suspended awaiting signal via await_signal"
+
+  target.emit_test_event_fired(555)
+
+  start = ::Time.instant
+  while !completed && (::Time.instant - start).total_seconds < 0.2
+    Fiber.yield
+  end
+
+  TestFramework.assert_true completed, "Fiber should resume after await_signal"
+  TestFramework.assert_eq received_args.first?, "555"
+end

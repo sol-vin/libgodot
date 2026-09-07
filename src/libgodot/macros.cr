@@ -1283,6 +1283,11 @@ macro signal(sig_decl)
     {% sig_args = [] of Nil %}
   {% end %}
 
+  # Bound signal accessor for idiomatic `await(node.{{sig_name.id}})` or `node.{{sig_name.id}}.connect { ... }`
+  def {{sig_name.id}} : ::Godot::BoundSignal
+    ::Godot::BoundSignal.new(self, "{{sig_name.id}}")
+  end
+
   # Type-safe emission helper
   def emit_{{sig_name.id}}({% for arg, i in sig_args %}{% if arg.is_a?(TypeDeclaration) %}{{arg.var}} : {{arg.type}}{% else %}{{arg}}{% end %}{% if i < sig_args.size - 1 %}, {% end %}{% end %}) : Void
     emit_signal("{{sig_name.id}}"{% for arg in sig_args %}, {% if arg.is_a?(TypeDeclaration) %}{{arg.var}}{% else %}{{arg}}{% end %}{% end %})

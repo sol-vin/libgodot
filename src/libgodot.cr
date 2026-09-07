@@ -20,6 +20,25 @@ module Godot
     end
   end
 
+  class SceneTreeTimer < RefCounted
+    # Convenience time_left accessor
+    def time_left : Float64
+      get_time_left
+    end
+
+    # Bound signal accessor for `await(timer.timeout)` or `timer.timeout.await`
+    def timeout : BoundSignal
+      signal("timeout")
+    end
+  end
+
+  # Cooperatively awaits a SceneTreeTimer until its countdown expires
+  def self.await(timer : SceneTreeTimer) : Void
+    while timer.alive? && timer.get_time_left > 0.0
+      Fiber.yield
+    end
+  end
+
   class Node < Object
     # Reliable GDExtension bridge implementation of find_child with default parameters
     def find_child(pattern : String, recursive : Bool = true, owned : Bool = false) : Node?
@@ -234,6 +253,28 @@ alias Rect2 = Godot::Rect2
 alias Color = Godot::Color
 alias Basis = Godot::Basis
 alias Transform3D = Godot::Transform3D
+
+# Top-level await macro for intuitive GDScript-like calling syntax
+# Usage:
+#   await(enemy.died)
+#   await(enemy.died, timeout_sec: 2.0)
+#   await(enemy, "died")
+#   await(enemy, "died", timeout_sec: 2.0)
+#   await(timer.timeout)
+#   await(timer)
+#   await(1.5)
+#   await(2.seconds)
+macro await(target, signal_name = nil, timeout_sec = nil)
+  {% if signal_name != nil && timeout_sec != nil %}
+    ::Godot.await({{target}}, {{signal_name}}, timeout_sec: {{timeout_sec}})
+  {% elsif signal_name != nil %}
+    ::Godot.await({{target}}, {{signal_name}})
+  {% elsif timeout_sec != nil %}
+    ::Godot.await({{target}}, timeout_sec: {{timeout_sec}})
+  {% else %}
+    ::Godot.await({{target}})
+  {% end %}
+end
 
 
 

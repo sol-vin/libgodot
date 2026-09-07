@@ -163,6 +163,13 @@ Godot's runtime is fundamentally single-threaded for scene graph operations. Age
    - When background threads need to notify Godot nodes, use `node.call_deferred("method_name", *args)`. Godot buffers these into its thread-safe `MessageQueue` for dispatch on the main thread.
 6. **Protect Shared Crystal Collections with `::Thread::Mutex`**:
    - Standard Crystal `Hash` and `Array` are not thread-safe. When caching state across threads, wrap access in `::Thread::Mutex.new`.
+7. **Awaiting Signals & Timers via `await`**:
+   - LibGodot supports two complementary signal awaiting paradigms:
+     - **First-Class Bound Signals**: `await(enemy.died)` or `enemy.died.await` (compile-time checked, auto-generated from `signal` declarations).
+     - **Classic Target & String Identifier**: `await(enemy, "died")` or `enemy.await_signal("died")` (ideal for dynamic runtime strings, RPC events, or GDScript interop).
+   - Both approaches support optional timeout arguments (`timeout_sec: 5.0`).
+   - Use `await(timer.timeout)`, `await(timer)`, or `await(duration_seconds)` for non-blocking delays without halting the engine main loop.
+   - Awaiting fibers validate `#alive?` on every frame slice, raising `Godot::DisposedObjectError` if the target object is freed before the signal arrives.
 
 ---
 

@@ -65,6 +65,39 @@ Thread.new do
 end
 ```
 
+### 6. Awaiting Signals and Timers (`await`)
+Inside cooperative gameplay fibers (`spawn do ... end`), use `await` instead of blocking sleeps:
+```crystal
+spawn do
+  # 1. Await duration (cooperative non-blocking delay)
+  await(2.0) # Or: await(2.seconds)
+
+  # 2. Await SceneTreeTimer or timer timeout
+  timer = get_tree.create_timer(1.5)
+  await(timer.timeout) # Or: await(timer)
+
+  # 3. Style A: First-Class BoundSignal (auto-generated from `signal died`)
+  enemy = get_node_as(Enemy, "Boss")
+  args = await(enemy.died) # Or: enemy.died.await
+  # With timeout: await(enemy.died, timeout_sec: 5.0)
+
+  # 4. Style B: Classic Target + Signal String (ideal for dynamic/runtime signal names)
+  signal_name = "died"
+  args = await(enemy, signal_name) # Or: enemy.await_signal(signal_name)
+  # With timeout: await(enemy, "died", timeout_sec: 5.0)
+
+  # 5. Await engine signals via node.signal("name")
+  button = get_node_as(Godot::Button, "StartButton")
+  await(button.signal("pressed")) # Or: button.signal("pressed").await
+
+  # 6. Connect and emit directly on bound signals
+  enemy.health_changed.connect { |args| Godot.print("Health: #{args}") }
+
+  Godot.print("Boss died, reward: #{args}")
+end
+```
+Ensure `_process(delta)` calls `Fiber.yield` each frame to grant execution slices to awaiting fibers.
+
 ---
 
 ## Dead-Pointer & Object Liveness Patterns
