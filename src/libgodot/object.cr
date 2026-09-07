@@ -66,6 +66,17 @@ module Godot
     end
   end
 
+  # Returns true if the code is currently executing inside the Godot Editor
+  def self.editor_hint? : Bool
+    engine = Bridge.get_singleton("Engine")
+    return false if engine.null?
+    mb = Bridge.get_method_bind("Engine", "is_editor_hint", 36873697_i64)
+    return false if mb.null?
+    ret = 0_u8
+    Bridge.ptrcall(mb, engine, Pointer(Pointer(Void)).null, pointerof(ret).as(Void*))
+    ret != 0_u8
+  end
+
   # Loads a resource from the given path (e.g. "res://scenes/my_scene.tscn")
   def self.load(path : String, type_hint : String = "", cache_mode : Int64 = 0_i64) : Resource
     ptr = Bridge.resource_loader_load(path, type_hint, cache_mode)
@@ -143,6 +154,11 @@ module Godot
 
     def destroyed? : Bool
       @destroyed || !alive?
+    end
+
+    # Returns true if running inside the Godot Editor
+    def editor_hint? : Bool
+      Godot.editor_hint?
     end
 
     # Validates that the underlying engine object is still alive before executing bridge calls.

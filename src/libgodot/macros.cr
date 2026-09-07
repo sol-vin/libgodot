@@ -1231,9 +1231,9 @@ macro node(decl, &block)
         io << {{sig_doc}}
       {% end %}
       io << "</description>\n"
-      {% for a in sig_args %}
+      {% for a, a_idx in sig_args %}
         {% if a.is_a?(TypeDeclaration) %}
-          io << "      <param index=\"0\" name=\"{{a.var.id}}\" type=\"{{a.type.id}}\" />\n"
+          io << "      <param index=\"" << {{a_idx}} << "\" name=\"{{a.var.id}}\" type=\"{{a.type.id}}\" />\n"
         {% end %}
       {% end %}
       io << "    </signal>\n"

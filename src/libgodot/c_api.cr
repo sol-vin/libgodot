@@ -27,7 +27,7 @@ module LibGodot
     @create_instance_fn : CreateFn? = nil
     @destroy_instance_fn : DestroyFn? = nil
 
-    def initialize(dll_path : String = {% if flag?(:windows) %} "godot.windows.template_debug.x86_64.dll" {% else %} "libgodot.so" {% end %})
+    def initialize(dll_path : String = {% if flag?(:windows) %} "libgodot.dll" {% else %} "libgodot.so" {% end %})
       load(dll_path)
     end
 

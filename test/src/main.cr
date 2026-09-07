@@ -128,90 +128,29 @@ module TestFramework
   end
 end
 
-# Declarative DSL Macros for Simple Test Authoring
-macro test_core(name, &block)
-  ::TestFramework::Registry.register("Core", {{name}}) do |node|
-    root = node
-    {{block.body}}
+# Declarative DSL Macros for Modular Test Suite Authoring
+{% for pair in [
+  {:test_core, "Core"},
+  {:test_2d, "2D"},
+  {:test_3d, "3D"},
+  {:test_prop, "Properties"},
+  {:test_nodes, "Nodes"},
+  {:test_deferred, "Deferred"},
+  {:test_signals, "Signals"},
+  {:test_gdscript, "GDScript"},
+  {:test_mesh, "Mesh"},
+  {:test_physics, "Physics"},
+  {:test_stress, "Stress"},
+  {:test_scenes, "Scenes"},
+  {:test_concurrency, "Concurrency"},
+] %}
+  macro {{pair[0].id}}(name, &block)
+    ::TestFramework::Registry.register({{pair[1]}}, \{{name}}) do |node|
+      root = node
+      \{{block.body}}
+    end
   end
-end
-
-macro test_2d(name, &block)
-  ::TestFramework::Registry.register("2D", {{name}}) do |node|
-    root = node
-    {{block.body}}
-  end
-end
-
-macro test_3d(name, &block)
-  ::TestFramework::Registry.register("3D", {{name}}) do |node|
-    root = node
-    {{block.body}}
-  end
-end
-
-macro test_prop(name, &block)
-  ::TestFramework::Registry.register("Properties", {{name}}) do |node|
-    root = node
-    {{block.body}}
-  end
-end
-
-macro test_nodes(name, &block)
-  ::TestFramework::Registry.register("Nodes", {{name}}) do |node|
-    root = node
-    {{block.body}}
-  end
-end
-
-macro test_deferred(name, &block)
-  ::TestFramework::Registry.register("Deferred", {{name}}) do |node|
-    root = node
-    {{block.body}}
-  end
-end
-
-macro test_signals(name, &block)
-  ::TestFramework::Registry.register("Signals", {{name}}) do |node|
-    root = node
-    {{block.body}}
-  end
-end
-
-macro test_gdscript(name, &block)
-  ::TestFramework::Registry.register("GDScript", {{name}}) do |node|
-    root = node
-    {{block.body}}
-  end
-end
-
-macro test_mesh(name, &block)
-  ::TestFramework::Registry.register("Mesh", {{name}}) do |node|
-    root = node
-    {{block.body}}
-  end
-end
-
-macro test_physics(name, &block)
-  ::TestFramework::Registry.register("Physics", {{name}}) do |node|
-    root = node
-    {{block.body}}
-  end
-end
-
-macro test_stress(name, &block)
-  ::TestFramework::Registry.register("Stress", {{name}}) do |node|
-    root = node
-    {{block.body}}
-  end
-end
-
-macro test_scenes(name, &block)
-  ::TestFramework::Registry.register("Scenes", {{name}}) do |node|
-    root = node
-    {{block.body}}
-  end
-end
+{% end %}
 
 # =============================================================================
 # Custom Property & Annotation Test Target Node
@@ -370,13 +309,7 @@ node ToolTester2D < Godot::Node2D do
   property test_status : String = "Ready"
 
   def is_editor_environment : Bool
-    engine = Godot::Bridge.get_singleton("Engine")
-    return false if engine.null?
-    mb = Godot::Bridge.get_method_bind("Engine", "is_editor_hint", 36873697_i64)
-    return false if mb.null?
-    ret = 0_u8
-    Godot::Bridge.ptrcall(mb, engine, Pointer(Pointer(Void)).null, pointerof(ret).as(Void*))
-    ret != 0_u8
+    Godot.editor_hint?
   end
 
   def _ready
@@ -430,13 +363,7 @@ node ToolTester3D < Godot::Node3D do
   property test_status : String = "Ready"
 
   def is_editor_environment : Bool
-    engine = Godot::Bridge.get_singleton("Engine")
-    return false if engine.null?
-    mb = Godot::Bridge.get_method_bind("Engine", "is_editor_hint", 36873697_i64)
-    return false if mb.null?
-    ret = 0_u8
-    Godot::Bridge.ptrcall(mb, engine, Pointer(Pointer(Void)).null, pointerof(ret).as(Void*))
-    ret != 0_u8
+    Godot.editor_hint?
   end
 
   def _ready

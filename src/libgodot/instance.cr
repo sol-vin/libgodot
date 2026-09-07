@@ -9,7 +9,7 @@ module Godot
     @loader : LibGodot::DynamicLoader
     @instance_ptr : LibGodot::GDExtensionObjectPtr = Pointer(Void).null
 
-    def initialize(dll_path : String = {% if flag?(:windows) %} "godot.windows.template_debug.x86_64.dll" {% else %} "libgodot.so" {% end %})
+    def initialize(dll_path : String = {% if flag?(:windows) %} "libgodot.dll" {% else %} "libgodot.so" {% end %})
       @loader = LibGodot::DynamicLoader.new(dll_path)
     end
 

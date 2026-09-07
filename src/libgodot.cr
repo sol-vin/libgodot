@@ -15,14 +15,13 @@ require "./libgodot/docs"
 module Godot
   class PackedScene < Resource
     # Convenience instantiate defaulting edit_state to 0
-    def instantiate(edit_state : Int64 = 0_i64) : Node
-      ptr = Bridge.packed_scene_instantiate(@pointer, edit_state)
-      Node.new(ptr)
+    def instantiate : Node
+      instantiate(0_i64)
     end
   end
 
   class Node < Object
-    # Reliable GDExtension bridge implementation of find_child
+    # Reliable GDExtension bridge implementation of find_child with default parameters
     def find_child(pattern : String, recursive : Bool = true, owned : Bool = false) : Node?
       ptr = Bridge.node_find_child(@pointer, pattern, recursive, owned)
       ptr.null? ? nil : Node.new(ptr)

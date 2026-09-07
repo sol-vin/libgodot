@@ -182,6 +182,14 @@ LibGodot features an extensive in-code documentation suite under the `Docs` modu
       <td><a href="src/libgodot/docs.cr"><code>Docs::G_CAVEATS_AND_INTERNALS</code></a></td>
       <td>Boehm GC vs Godot memory lifecycles, threading rules, method bind caching, and Windows toolchains.</td>
     </tr>
+    <tr>
+      <td><a href="src/libgodot/docs.cr"><code>Docs::H_LIFECYCLE_MEMORY_AND_DEAD_POINTER_SAFETY</code></a></td>
+      <td>Dead-pointer prevention, monotonic 64-bit instance IDs, O(1) liveness checks, and zero-crash <code>DisposedObjectError</code>.</td>
+    </tr>
+    <tr>
+      <td><a href="src/libgodot/docs.cr"><code>Docs::I_CONCURRENCY_FIBERS_AND_THREAD_SAFETY</code></a></td>
+      <td>Crystal fibers, background OS threads, actor channel message passing, mutexes, and main-thread SceneTree affinity.</td>
+    </tr>
   </tbody>
 </table>
 

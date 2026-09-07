@@ -2,12 +2,6 @@
 # LibGodot Test Suite: Concurrency, Fibers, Channels, GC & Thread-Safety
 # =============================================================================
 
-macro test_concurrency(name, &block)
-  ::TestFramework::Registry.register("Concurrency", {{name}}) do |node|
-    root = node
-    {{block.body}}
-  end
-end
 
 test_concurrency "Cooperative Fiber scheduling with spawn and Fiber.yield" do
   completed_fibers = 0
