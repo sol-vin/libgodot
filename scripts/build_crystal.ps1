@@ -25,10 +25,10 @@ if ($Release) {
     $buildArgs.Add("--release")
 }
 
-# On Linux, shared library linking with GNU ld requires a version script
-# to avoid "version node not found for symbol" errors on Crystal's mangled names containing '@'.
-$isWindows = ($env:OS -eq "Windows_NT" -or [System.IO.Path]::PathSeparator -eq ';')
-if (-not $isWindows -and ($Output -match '\.so$' -or $LinkFlags -match '-shared')) {
+# On Linux, shared library linking requires hiding static runtime symbols
+# and using a version script to avoid "version node not found for symbol" errors on mangled names containing '@'.
+$onWindows = ($env:OS -eq "Windows_NT" -or [System.IO.Path]::PathSeparator -eq ';')
+if (-not $onWindows -and ($Output -match '\.so$' -or $LinkFlags -match '-shared')) {
     if ($LinkFlags -notmatch '--version-script') {
         $candidates = @(
             (Join-Path $RootDir "src/bridge/crystal_game.sym"),
@@ -46,7 +46,11 @@ if (-not $isWindows -and ($Output -match '\.so$' -or $LinkFlags -match '-shared'
             $symFile = Join-Path ([System.IO.Path]::GetTempPath()) "crystal_game.sym"
             Set-Content -Path $symFile -Value "{`n  global:`n    crystal_godot_init;`n  local:`n    *;`n};`n" -Force
         }
-        $LinkFlags = if ([string]::IsNullOrWhiteSpace($LinkFlags)) { "-shared -Wl,--version-script=$symFile" } else { "$LinkFlags -Wl,--version-script=$symFile" }
+        $extraFlags = "-Wl,--exclude-libs,ALL -Wl,--no-export-dynamic -Wl,--version-script=$symFile"
+        if (Get-Command lld -ErrorAction SilentlyContinue) {
+            $extraFlags = "-fuse-ld=lld $extraFlags"
+        }
+        $LinkFlags = if ([string]::IsNullOrWhiteSpace($LinkFlags)) { "-shared $extraFlags" } else { "$LinkFlags $extraFlags" }
     }
 }
 

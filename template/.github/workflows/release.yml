@@ -31,6 +31,16 @@ jobs:
         run: |
           shards install || true
 
+      - name: Install Linux Build Dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lld
+
+      - name: Verify Toolchain
+        run: |
+          crystal -v
+
       - name: Run Specs
         run: |
           crystal spec
@@ -56,6 +66,12 @@ jobs:
         uses: crystal-lang/install-crystal@v1
         with:
           crystal: latest
+
+      - name: Install Linux Build Dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lld
 
       - name: Determine Tag Name
         id: meta

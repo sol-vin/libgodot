@@ -108,10 +108,16 @@ jobs:
         with:
           crystal: latest
 
-      - name: Verify Crystal & g++ Toolchain
+      - name: Install Linux Build Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lld
+
+      - name: Verify Crystal & Toolchain
         run: |
           crystal -v
           g++ --version
+          lld --version
 
       - name: Setup Godot Engine (4.8-dev4)
         uses: appsinacup/action_setup_godot@main

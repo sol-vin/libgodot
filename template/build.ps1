@@ -36,16 +36,16 @@ if (Test-Path "../bin/libgodot.dll") {
     Copy-Item "../bin/libgodot.dll" "bin/" -Force
 }
 
-$isWindows = ($env:OS -eq "Windows_NT" -or [System.IO.Path]::PathSeparator -eq ';')
-$sep = if ($isWindows) { ";" } else { ":" }
-$soExt = if ($isWindows) { "dll" } else { "so" }
+$onWindows = ($env:OS -eq "Windows_NT" -or [System.IO.Path]::PathSeparator -eq ';')
+$sep = if ($onWindows) { ";" } else { ":" }
+$soExt = if ($onWindows) { "dll" } else { "so" }
 
 # Set CRYSTAL_PATH so require "libgodot" finds ../src/libgodot.cr
 $origPath = crystal env CRYSTAL_PATH
 $env:CRYSTAL_PATH = "../src$sep$origPath"
 
 # Compile Crystal source
-if ($isWindows) {
+if ($onWindows) {
     crystal build --link-flags "/DLL /ENTRY:_DllMainCRTStartup /EXPORT:crystal_godot_init" src/main.cr -o "bin/game.$soExt"
 } else {
     $symFile = "addons/crystal_integration/crystal_game.sym"
@@ -53,7 +53,11 @@ if ($isWindows) {
         $symFile = Join-Path ([System.IO.Path]::GetTempPath()) "crystal_game.sym"
         Set-Content -Path $symFile -Value "{`n  global:`n    crystal_godot_init;`n  local:`n    *;`n};`n" -Force
     }
-    crystal build --link-flags "-shared -Wl,--version-script=$symFile" src/main.cr -o "bin/game.$soExt"
+    $extraFlags = "-Wl,--exclude-libs,ALL -Wl,--no-export-dynamic -Wl,--version-script=$symFile"
+    if (Get-Command lld -ErrorAction SilentlyContinue) {
+        $extraFlags = "-fuse-ld=lld $extraFlags"
+    }
+    crystal build --link-flags "-shared $extraFlags" src/main.cr -o "bin/game.$soExt"
 }
 
 Write-Host "[Template] Build completed successfully: bin/game.$soExt" -ForegroundColor Green
