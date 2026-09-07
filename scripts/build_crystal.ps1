@@ -37,18 +37,47 @@ if (-not $onWindows -and ($Output -match '\.so$' -or $LinkFlags -match '-shared'
     $wrapperPath = ""
     if (Test-Path $wrapperCandidate) {
         $wrapperPath = (Resolve-Path $wrapperCandidate).Path
-    } else {
-        $wrapperPath = Join-Path ([System.IO.Path]::GetTempPath()) "crystal_cc_wrapper.sh"
         $scriptContent = @'
-#!/bin/sh
+#!/usr/bin/env bash
+is_shared=0
 for arg in "$@"; do
-    if [ "$arg" != "-rdynamic" ]; then
-        set -- "$@" "$arg"
+    if [ "$arg" = "-shared" ]; then
+        is_shared=1
+        break
     fi
-    shift
 done
+
 target_cc="${REAL_CC:-cc}"
-exec "$target_cc" "$@"
+if [ "$is_shared" -eq 0 ]; then
+    exec "$target_cc" "$@"
+fi
+
+objs=()
+flags=()
+for arg in "$@"; do
+    if [ "$arg" = "-rdynamic" ]; then
+        continue
+    elif [ -f "$arg" ] && [[ "$arg" == *.o || "$arg" == *.o.* || "$arg" == *.obj ]]; then
+        objs+=("$arg")
+    else
+        flags+=("$arg")
+    fi
+done
+
+if [ ${#objs[@]} -eq 0 ]; then
+    exec "$target_cc" "$@"
+fi
+
+tmp_dir="${TMPDIR:-/tmp}"
+combined="$tmp_dir/crystal_comb_$$.o"
+localized="$tmp_dir/crystal_loc_$$.o"
+cleanup() { rm -f "$combined" "$localized"; }
+trap cleanup EXIT INT TERM
+
+ld -r "${objs[@]}" -o "$combined" || exit $?
+objcopy --keep-global-symbol=crystal_godot_init "$combined" "$localized" || exit $?
+"$target_cc" "$localized" "${flags[@]}"
+exit $?
 '@
         Set-Content -Path $wrapperPath -Value $scriptContent -NoNewline -Force
     }
