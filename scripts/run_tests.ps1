@@ -185,9 +185,14 @@ if (-not $SkipToolTests) {
 
     $uniqueString = "[CRYSTAL_ADDON_VERIFIED_SUCCESS_8A3F1E]"
 
+    $onWindows = ($env:OS -eq "Windows_NT" -or [System.IO.Path]::PathSeparator -eq ';')
+    $shell = if ($onWindows) { "cmd" } else { "sh" }
+    $shellFlag = if ($onWindows) { "/c" } else { "-c" }
+    $shellCmd = "`"$GodotExe`" --headless --rendering-driver opengl3 --editor --path template-addon --quit-after 25 > `"$addonLogFile`" 2>&1"
+
     $addonEditorResult = Invoke-TestCommand -Name "Headless Editor Addon Test (template-addon)" `
-        -Executable "cmd" `
-        -Arguments @("/c", "`"$GodotExe`" --headless --rendering-driver opengl3 --editor --path template-addon --quit-after 25 > `"$addonLogFile`" 2>&1")
+        -Executable $shell `
+        -Arguments @($shellFlag, $shellCmd)
 
     $addonLogContent = if (Test-Path $addonLogFile) { Get-Content $addonLogFile -Raw } else { "" }
     if ($addonLogContent -match [regex]::Escape($uniqueString)) {
