@@ -48,6 +48,27 @@ $env:CRYSTAL_PATH = "../src$sep$origPath"
 if ($onWindows) {
     crystal build --link-flags "/DLL /ENTRY:_DllMainCRTStartup /EXPORT:crystal_godot_init" src/main.cr -o "bin/game.$soExt"
 } else {
+    $wrapperPath = Join-Path ([System.IO.Path]::GetTempPath()) "crystal_cc_wrapper.sh"
+    $scriptContent = @'
+#!/bin/sh
+for arg in "$@"; do
+    if [ "$arg" != "-rdynamic" ]; then
+        set -- "$@" "$arg"
+    fi
+    shift
+done
+target_cc="${REAL_CC:-cc}"
+exec "$target_cc" "$@"
+'@
+    Set-Content -Path $wrapperPath -Value $scriptContent -NoNewline -Force
+    if (Get-Command chmod -ErrorAction SilentlyContinue) {
+        & chmod +x $wrapperPath
+    }
+    if (-not [string]::IsNullOrWhiteSpace($env:CC) -and $env:CC -ne $wrapperPath) {
+        $env:REAL_CC = $env:CC
+    }
+    $env:CC = $wrapperPath
+
     $symFile = "addons/crystal_integration/crystal_game.sym"
     if (-not (Test-Path $symFile)) {
         $symFile = Join-Path ([System.IO.Path]::GetTempPath()) "crystal_game.sym"
