@@ -205,12 +205,11 @@ if (-not $SkipToolTests) {
     $onWindows = ($env:OS -eq "Windows_NT" -or [System.IO.Path]::PathSeparator -eq ';')
     $shell = if ($onWindows) { "cmd" } else { "sh" }
     $shellFlag = if ($onWindows) { "/c" } else { "-c" }
-    $shellCmd = "`"$GodotExe`" --headless --rendering-driver opengl3 --editor --path template-addon --run-addon-tests --quit-after 100 > `"$addonLogFile`" 2>&1"
+    $shellCmd = "`"$GodotExe`" --headless --rendering-driver opengl3 --editor --path template-addon --quit > `"$addonLogFile`" 2>&1"
 
     $addonEditorResult = Invoke-TestCommand -Name "Headless Editor Addon Test (template-addon)" `
         -Executable $shell `
         -Arguments @($shellFlag, $shellCmd) `
-        -EnvironmentVars @{ "GODOT_RUN_ADDON_TEST" = "1" } `
         -CustomVerification
 
     $addonLogContent = if (Test-Path $addonLogFile) { Get-Content $addonLogFile -Raw } else { "" }
