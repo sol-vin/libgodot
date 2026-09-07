@@ -2,6 +2,12 @@ require "../src/libgodot"
 
 puts "=== Verifying LibGodot DLL Loading ==="
 
+if !File.exists?("bin/libgodot.dll")
+  puts "INFO: bin/libgodot.dll is not present (requires 'make engine' from godot-src or prebuilt binary)."
+  puts "INFO: Skipping in-memory LibGodot DLL dynamic loader verification."
+  exit 0
+end
+
 loader = LibGodot::DynamicLoader.new("bin/libgodot.dll")
 if loader.loaded?
   puts "SUCCESS: bin/libgodot.dll loaded successfully!"

@@ -28,12 +28,15 @@ $ExamplesDir = Join-Path $RootDir "examples"
 
 # Resolve Godot executable path
 $GodotExe = $null
+$normGodot4 = if ($env:GODOT4) { $env:GODOT4 -replace '^/([a-zA-Z])/', '$1:/' } else { $null }
+$normGodot = if ($env:GODOT) { $env:GODOT -replace '^/([a-zA-Z])/', '$1:/' } else { $null }
+
 if (-not [string]::IsNullOrWhiteSpace($GodotPath) -and (Test-Path $GodotPath)) {
     $GodotExe = (Resolve-Path $GodotPath).Path
-} elseif (-not [string]::IsNullOrWhiteSpace($env:GODOT4) -and (Test-Path $env:GODOT4)) {
-    $GodotExe = (Resolve-Path $env:GODOT4).Path
-} elseif (-not [string]::IsNullOrWhiteSpace($env:GODOT) -and (Test-Path $env:GODOT)) {
-    $GodotExe = (Resolve-Path $env:GODOT).Path
+} elseif (-not [string]::IsNullOrWhiteSpace($normGodot4) -and (Test-Path $normGodot4)) {
+    $GodotExe = (Resolve-Path $normGodot4).Path
+} elseif (-not [string]::IsNullOrWhiteSpace($normGodot) -and (Test-Path $normGodot)) {
+    $GodotExe = (Resolve-Path $normGodot).Path
 } elseif (Test-Path (Join-Path $RootDir "godot.exe")) {
     $GodotExe = Join-Path $RootDir "godot.exe"
 } elseif (Get-Command godot -ErrorAction SilentlyContinue) {
@@ -131,7 +134,7 @@ if (-not $SkipToolTests) {
 
     $toolResult = Invoke-TestCommand -Name "Headless Editor Tool Tests (ToolTester2D & ToolTester3D)" `
         -Executable $GodotExe `
-        -Arguments @("--headless", "--editor", "--path", "test", "--quit-after", "25") `
+        -Arguments @("--headless", "--rendering-driver", "opengl3", "--editor", "--path", "test", "--quit-after", "25") `
         -EnvironmentVars @{ "GODOT_RUN_TOOL_TESTS" = "1" }
 
     if (Test-Path $failMarker) {
@@ -160,7 +163,7 @@ if (-not $SkipRuntimeTests) {
 
     $runtimeResult = Invoke-TestCommand -Name "Runtime Test Runner (main_test_runner.tscn)" `
         -Executable $GodotExe `
-        -Arguments @("--headless", "--path", "test", "--quit-after", "15") `
+        -Arguments @("--headless", "--rendering-driver", "opengl3", "--path", "test", "--quit-after", "15") `
         -EnvironmentVars @{ "GODOT_TEST_AUTORUN" = "1" }
 
     if (Test-Path $summaryFile) {
@@ -187,7 +190,7 @@ if (-not $SkipSmokeTests) {
     if (Test-Path $TemplateDir) {
         $templateResult = Invoke-TestCommand -Name "Smoke Test: Template Project" `
             -Executable $GodotExe `
-            -Arguments @("--headless", "--path", "template", "--quit")
+            -Arguments @("--headless", "--rendering-driver", "opengl3", "--path", "template", "--quit")
         if (-not $templateResult.Success) {
             $FailedSteps.Add("Smoke Test: Template Project")
         }
@@ -197,7 +200,7 @@ if (-not $SkipSmokeTests) {
     if (Test-Path $basicDemoDir) {
         $demoResult = Invoke-TestCommand -Name "Smoke Test: Basic Demo Example" `
             -Executable $GodotExe `
-            -Arguments @("--headless", "--path", "examples/basic_demo", "--quit")
+            -Arguments @("--headless", "--rendering-driver", "opengl3", "--path", "examples/basic_demo", "--quit")
         if (-not $demoResult.Success) {
             $FailedSteps.Add("Smoke Test: Basic Demo")
         }
