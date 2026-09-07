@@ -32,3 +32,11 @@
 - When compiling binaries, output artifacts are generated and synchronized into `bin/`, `test/bin/`, `template/bin/`, and `examples/*/bin/`.
 - Automated specifications and unit tests reside in `spec/`.
 
+## 4. Documentation Guidelines
+
+- **Add extra custom docs to `Docs` module as a dummy class**:
+  - All extended architectural documentation, guides, caveats, and topic explanations must be added inside `module Docs` in `src/libgodot/docs.cr` as a dummy class or module (e.g. `module I_CONCURRENCY_FIBERS_AND_THREAD_SAFETY`). This ensures docs are harvested into Godot's offline EditorHelp XML database and compiled into the static docs site.
+- **Do not use markdown tables in docs, instead use an HTML table**:
+  - Never use Markdown pipe table syntax (`| Header | ... |`) in doc comments or documentation files. Always use standard HTML tables (`<table>`, `<thead>`, `<tr>`, `<th>`, `<tbody>`, `<td>`) to guarantee clean, error-free rendering across Crystal docs generators, browsers, and Godot's XML documentation parser.
+
+

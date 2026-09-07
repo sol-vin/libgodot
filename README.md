@@ -2,6 +2,7 @@
 
 [![Crystal](https://img.shields.io/badge/Crystal-1.14+-black.svg?style=flat&logo=crystal)](https://crystal-lang.org)
 [![Godot](https://img.shields.io/badge/Godot-4.8--dev4-blue.svg?style=flat&logo=godotengine)](https://godotengine.org)
+[![Docs](https://img.shields.io/badge/Docs-Online-blueviolet.svg?style=flat)](https://sol-vin.github.io/libgodot/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 **LibGodot for Crystal** provides high-performance Crystal bindings and a bidirectional runtime integration for **Godot Engine 4.8+**. It empowers game developers to write Godot games with native machine speed, complete compile-time type safety, and Ruby-like elegance.
@@ -52,6 +53,15 @@ graph TD
 - **GDScript Interoperability**: Call GDScript methods, static functions, and properties directly via `bind_gdscript_methods`.
 - **Engine Reflection & Global Singletons**: First-class access to singletons like `Godot.input`, `Godot.engine`, `Godot.audio_server`, and generated Godot classes.
 - **Strict Decoupling**: Clean separation between reusable library (`src/`), test suite (`test/`), and examples (`examples/`).
+
+---
+
+## Documentation
+
+- **Official Online Documentation Site**: [https://sol-vin.github.io/libgodot/](https://sol-vin.github.io/libgodot/)
+- **Architecture & Guides in `Docs` Module**: Complete guides covering architecture, build toolchains, memory management, and concurrency are contained in [`Docs`](src/libgodot/docs.cr) (such as [`Docs::I_CONCURRENCY_FIBERS_AND_THREAD_SAFETY`](src/libgodot/docs.cr)).
+- **Offline HTML API Documentation**: Generate complete API documentation locally with `make docs` (output at `docs/index.html`).
+- **In-Editor Help**: Class and method descriptions are harvested at compile time and accessible directly inside Godot via `F1` or Inspector tooltips.
 
 ---
 

@@ -1408,4 +1408,5 @@ require "./suites/test_audio_animation"
 require "./suites/test_resources_utilities"
 require "./suites/test_lifecycle_destruction"
 require "./suites/test_classdb_coverage"
+require "./suites/test_concurrency"
 

@@ -109,10 +109,39 @@ module Godot
     @@registered_descs = Array(LibBridge::CrystalClassDesc).new
     # Active instance table rooting living Crystal nodes to protect against premature Boehm GC deallocation
     @@alive_instances = Hash(Void*, Godot::Object).new
+    @@alive_mutex = ::Thread::Mutex.new
 
     # Retrieves the active Crystal instance root table for testing and diagnostics
     def self.alive_instances : Hash(Void*, Godot::Object)
       @@alive_instances
+    end
+
+    def self.alive_mutex : ::Thread::Mutex
+      @@alive_mutex
+    end
+
+    def self.register_alive_instance(boxed : Void*, inst : Godot::Object) : Void
+      @@alive_mutex.synchronize do
+        @@alive_instances[boxed] = inst
+      end
+    end
+
+    def self.unregister_alive_instance(boxed : Void*) : Void
+      @@alive_mutex.synchronize do
+        @@alive_instances.delete(boxed)
+      end
+    end
+
+    def self.has_alive_instance?(boxed : Void*) : Bool
+      @@alive_mutex.synchronize do
+        @@alive_instances.has_key?(boxed)
+      end
+    end
+
+    def self.alive_instance_count : Int32
+      @@alive_mutex.synchronize do
+        @@alive_instances.size
+      end
     end
 
     def self.api : LibBridge::BridgeAPI*
@@ -161,7 +190,9 @@ module Godot
           inst = entry.create_proc.call(godot_obj)
           inst.pointer = godot_obj
           boxed = Box(Godot::Object).box(inst)
-          @@alive_instances[boxed] = inst
+          @@alive_mutex.synchronize do
+            @@alive_instances[boxed] = inst
+          end
           return boxed
         end
         Pointer(Void).null
@@ -169,7 +200,9 @@ module Godot
 
       free_fn = ->(crystal_inst : Void*) {
         if !crystal_inst.null?
-          @@alive_instances.delete(crystal_inst)
+          @@alive_mutex.synchronize do
+            @@alive_instances.delete(crystal_inst)
+          end
         end
       }
 
