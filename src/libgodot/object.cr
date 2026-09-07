@@ -681,7 +681,6 @@ module Godot
     def get_node(path : String) : Node
       ptr = Bridge.node_get_node(@pointer, path)
       if ptr.null?
-        Godot.printerr("Node not found: '#{path}' (relative to '#{self.name}')")
         raise "Node not found: '#{path}' (relative to '#{self.name}')"
       end
       Node.new(ptr)

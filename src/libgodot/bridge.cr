@@ -104,6 +104,8 @@ module Godot
     @@mb_input_is_physical_key_pressed : Void* = Pointer(Void).null
     @@mb_input_is_action_just_pressed : Void* = Pointer(Void).null
     @@mb_input_is_action_pressed : Void* = Pointer(Void).null
+    @@mb_input_is_action_just_released : Void* = Pointer(Void).null
+    @@mb_input_get_axis : Void* = Pointer(Void).null
 
     # Retain descriptions so their C strings and descriptors stay alive in memory
     @@registered_descs = Array(LibBridge::CrystalClassDesc).new
@@ -181,6 +183,10 @@ module Godot
         print "[CrystalBridge]   is_action_just_pressed: #{@@mb_input_is_action_just_pressed}"
         @@mb_input_is_action_pressed = api.value.get_method_bind.call("Input".to_unsafe, "is_action_pressed".to_unsafe, 1558498928_i64)
         print "[CrystalBridge]   is_action_pressed: #{@@mb_input_is_action_pressed}"
+        @@mb_input_is_action_just_released = api.value.get_method_bind.call("Input".to_unsafe, "is_action_just_released".to_unsafe, 1558498928_i64)
+        print "[CrystalBridge]   is_action_just_released: #{@@mb_input_is_action_just_released}"
+        @@mb_input_get_axis = api.value.get_method_bind.call("Input".to_unsafe, "get_axis".to_unsafe, 1958752504_i64)
+        print "[CrystalBridge]   get_axis: #{@@mb_input_get_axis}"
       end
 
       # Callbacks for C host
@@ -407,10 +413,10 @@ module Godot
       ret != 0_u8
     end
 
-    def self.is_action_just_pressed(action : String) : Bool
+    def self.is_action_just_pressed(action : String, exact_match : Bool = false) : Bool
       return false if @@singleton_input.null? || @@mb_input_is_action_just_pressed.null? || @@api.null?
       sn = @@api.value.make_string_name.call(action.to_unsafe)
-      exact = 0_u8
+      exact = exact_match ? 1_u8 : 0_u8
       arg0 = sn
       arg1 = pointerof(exact).as(Void*)
       args = [arg0, arg1]
@@ -420,10 +426,10 @@ module Godot
       ret != 0_u8
     end
 
-    def self.is_action_pressed(action : String) : Bool
+    def self.is_action_pressed(action : String, exact_match : Bool = false) : Bool
       return false if @@singleton_input.null? || @@mb_input_is_action_pressed.null? || @@api.null?
       sn = @@api.value.make_string_name.call(action.to_unsafe)
-      exact = 0_u8
+      exact = exact_match ? 1_u8 : 0_u8
       arg0 = sn
       arg1 = pointerof(exact).as(Void*)
       args = [arg0, arg1]
@@ -431,6 +437,33 @@ module Godot
       @@api.value.method_bind_ptrcall.call(@@mb_input_is_action_pressed, @@singleton_input, args.to_unsafe, pointerof(ret).as(Void*))
       @@api.value.free_string_name.call(sn)
       ret != 0_u8
+    end
+
+    def self.is_action_just_released(action : String, exact_match : Bool = false) : Bool
+      return false if @@singleton_input.null? || @@mb_input_is_action_just_released.null? || @@api.null?
+      sn = @@api.value.make_string_name.call(action.to_unsafe)
+      exact = exact_match ? 1_u8 : 0_u8
+      arg0 = sn
+      arg1 = pointerof(exact).as(Void*)
+      args = [arg0, arg1]
+      ret = 0_u8
+      @@api.value.method_bind_ptrcall.call(@@mb_input_is_action_just_released, @@singleton_input, args.to_unsafe, pointerof(ret).as(Void*))
+      @@api.value.free_string_name.call(sn)
+      ret != 0_u8
+    end
+
+    def self.get_axis(negative_action : String, positive_action : String) : Float32
+      return 0.0_f32 if @@singleton_input.null? || @@mb_input_get_axis.null? || @@api.null?
+      sn_neg = @@api.value.make_string_name.call(negative_action.to_unsafe)
+      sn_pos = @@api.value.make_string_name.call(positive_action.to_unsafe)
+      arg0 = sn_neg
+      arg1 = sn_pos
+      args = [arg0, arg1]
+      ret = 0.0_f64
+      @@api.value.method_bind_ptrcall.call(@@mb_input_get_axis, @@singleton_input, args.to_unsafe, pointerof(ret).as(Void*))
+      @@api.value.free_string_name.call(sn_neg)
+      @@api.value.free_string_name.call(sn_pos)
+      ret.to_f32
     end
 
     def self.emit_signal(godot_obj : Void*, signal_name : String) : Void

@@ -378,6 +378,7 @@ macro node(decl, &block)
     onready_props = [] of Nil
     rpc_methods = [] of Nil
     node_groups = [] of Nil
+    user_methods = [] of Nil
     class_doc = ""
     stmts = block.body.is_a?(Expressions) ? block.body.expressions : [block.body]
     last_anno = nil
@@ -583,6 +584,8 @@ macro node(decl, &block)
         {% has_enter_tree = true %}
       {% elsif stmt.name.stringify == "_exit_tree" %}
         {% has_exit_tree = true %}
+      {% elsif !stmt.name.stringify.starts_with?("_") && stmt.args.size == 0 %}
+        {% user_methods << stmt.name %}
       {% end %}
       {% if last_anno && last_anno.name.stringify == "RPC" %}
         {%
@@ -761,6 +764,20 @@ macro node(decl, &block)
         super
       end
     end
+
+    {% if user_methods.size > 0 %}
+    def call(method : String, *args) : Void*
+      case method
+      {% for m in user_methods %}
+      when {{m.stringify}}
+        {{m.id}}
+        Pointer(Void).null
+      {% end %}
+      else
+        super
+      end
+    end
+    {% end %}
 
     def _godot_set_property(prop_name : String, val_ptr : Void*) : Void
       case prop_name

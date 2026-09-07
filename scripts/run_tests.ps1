@@ -95,8 +95,14 @@ function Invoke-TestCommand {
 
     Push-Location $WorkingDirectory
     try {
-        & $Executable $Arguments
-        $exitCode = $LASTEXITCODE
+        if (($env:OS -like "*Windows*" -or $IsWindows) -and $Executable.EndsWith(".exe", [System.StringComparison]::OrdinalIgnoreCase)) {
+            $argStr = ($Arguments | ForEach-Object { if ($_ -match '\s') { "`"$_`"" } else { $_ } }) -join ' '
+            cmd /c "`"$Executable`" $argStr"
+            $exitCode = $LASTEXITCODE
+        } else {
+            & $Executable $Arguments
+            $exitCode = $LASTEXITCODE
+        }
     } finally {
         Pop-Location
         $env:PATH = $oldPath

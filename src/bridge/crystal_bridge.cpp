@@ -153,8 +153,20 @@ static GDExtensionInterfacePrintWarningWithMessage gd_print_warning_with_message
 /** Looks up built-in utility functions (e.g. print, printerr) by name and hash */
 static GDExtensionInterfaceVariantGetPtrUtilityFunction gd_variant_get_ptr_utility_function = nullptr;
 
+/** Looks up the constructor function for a specific Variant type */
+static GDExtensionInterfaceVariantGetPtrConstructor gd_variant_get_ptr_constructor = nullptr;
+
 /** Looks up the destructor function for a specific Variant type */
 static GDExtensionInterfaceVariantGetPtrDestructor gd_variant_get_ptr_destructor = nullptr;
+
+/** Cached constructor for NodePath(const String &) */
+static GDExtensionPtrConstructor gd_nodepath_from_string = nullptr;
+
+/** Cached destructor for NodePath */
+static GDExtensionPtrDestructor gd_nodepath_destroy = nullptr;
+
+/** Cached constructor for String(const StringName &) */
+static GDExtensionPtrConstructor gd_string_from_string_name = nullptr;
 
 /** Cached utility function pointer for print() */
 static GDExtensionPtrUtilityFunction gd_util_print = nullptr;
@@ -341,13 +353,17 @@ static void godot_log_printerr(const char *msg) {
  * Reports an error with file, line, and function context through Godot's debugger.
  */
 static void godot_log_error(const char *desc, const char *msg, const char *func, const char *file, int line) {
-    fprintf(stderr, "[ERROR] %s: %s (%s:%d in %s)\n", desc, msg ? msg : "", file, line, func);
+    const char *safe_func = (func && func[0] != '\0') ? func : "libgodot";
+    const char *safe_file = (file && file[0] != '\0') ? file : "libgodot.cr";
+    const char *safe_desc = desc ? desc : "Unknown error";
+
+    fprintf(stderr, "[ERROR] %s: %s (%s:%d in %s)\n", safe_desc, msg ? msg : "", safe_file, line, safe_func);
     fflush(stderr);
 
-    if (gd_print_error_with_message && msg) {
-        gd_print_error_with_message(desc, msg, func, file, line, 1);
+    if (gd_print_error_with_message && msg && msg[0] != '\0') {
+        gd_print_error_with_message(safe_desc, msg, safe_func, safe_file, line, 0);
     } else if (gd_print_error) {
-        gd_print_error(desc, func, file, line, 1);
+        gd_print_error(safe_desc, safe_func, safe_file, line, 0);
     }
 }
 
@@ -355,13 +371,17 @@ static void godot_log_error(const char *desc, const char *msg, const char *func,
  * Reports a warning with file, line, and function context through Godot's debugger.
  */
 static void godot_log_warning(const char *desc, const char *msg, const char *func, const char *file, int line) {
-    fprintf(stderr, "[WARNING] %s: %s (%s:%d in %s)\n", desc, msg ? msg : "", file, line, func);
+    const char *safe_func = (func && func[0] != '\0') ? func : "libgodot";
+    const char *safe_file = (file && file[0] != '\0') ? file : "libgodot.cr";
+    const char *safe_desc = desc ? desc : "Unknown warning";
+
+    fprintf(stderr, "[WARNING] %s: %s (%s:%d in %s)\n", safe_desc, msg ? msg : "", safe_file, line, safe_func);
     fflush(stderr);
 
-    if (gd_print_warning_with_message && msg) {
-        gd_print_warning_with_message(desc, msg, func, file, line, 1);
+    if (gd_print_warning_with_message && msg && msg[0] != '\0') {
+        gd_print_warning_with_message(safe_desc, msg, safe_func, safe_file, line, 0);
     } else if (gd_print_warning) {
-        gd_print_warning(desc, func, file, line, 1);
+        gd_print_warning(safe_desc, safe_func, safe_file, line, 0);
     }
 }
 
@@ -1526,7 +1546,7 @@ static GDExtensionMethodBindPtr mb_node_get_node = nullptr;
  * @return Found GDExtensionObjectPtr or nullptr.
  */
 static GDExtensionObjectPtr bridge_node_get_node(GDExtensionObjectPtr node, const char *path) {
-    if (!node || !path || !gd_classdb_get_method_bind || !gd_object_method_bind_ptrcall) return nullptr;
+    if (!node || !path || !gd_classdb_get_method_bind) return nullptr;
     if (!mb_node_get_node) {
         void *sn_node = make_string_name("Node");
         void *sn_gn = make_string_name("get_node_or_null");
@@ -1535,27 +1555,51 @@ static GDExtensionObjectPtr bridge_node_get_node(GDExtensionObjectPtr node, cons
     }
     if (!mb_node_get_node) return nullptr;
 
-    void *gd_str = make_string(path);
-    alignas(void*) char var_str[24];
-    memset(var_str, 0, sizeof(var_str));
-    if (gd_variant_from_string) gd_variant_from_string(var_str, gd_str);
-
-    alignas(void*) char np_buf[8];
-    memset(np_buf, 0, sizeof(np_buf));
-    bridge_type_from_variant(GDEXTENSION_VARIANT_TYPE_NODE_PATH, np_buf, var_str);
-
-    const void *args[1] = { np_buf };
-    GDExtensionObjectPtr ret_node = nullptr;
-    gd_object_method_bind_ptrcall(mb_node_get_node, node, args, &ret_node);
-
-    if (gd_variant_get_ptr_destructor) {
-        GDExtensionPtrDestructor np_des = gd_variant_get_ptr_destructor(GDEXTENSION_VARIANT_TYPE_NODE_PATH);
-        if (np_des) np_des(np_buf);
+    if (!gd_nodepath_from_string && gd_variant_get_ptr_constructor) {
+        gd_nodepath_from_string = gd_variant_get_ptr_constructor(GDEXTENSION_VARIANT_TYPE_NODE_PATH, 2);
     }
-    if (gd_variant_destroy) gd_variant_destroy(var_str);
-    free_string(gd_str);
+    if (!gd_nodepath_destroy && gd_variant_get_ptr_destructor) {
+        gd_nodepath_destroy = gd_variant_get_ptr_destructor(GDEXTENSION_VARIANT_TYPE_NODE_PATH);
+    }
 
-    return ret_node;
+    if (gd_nodepath_from_string && gd_object_method_bind_ptrcall) {
+        void *gd_str = make_string(path);
+        alignas(void*) char np_buf[8] = {};
+        const GDExtensionConstTypePtr cargs[1] = { gd_str };
+        gd_nodepath_from_string(np_buf, cargs);
+
+        const void *args[1] = { np_buf };
+        GDExtensionObjectPtr ret_node = nullptr;
+        gd_object_method_bind_ptrcall(mb_node_get_node, node, args, &ret_node);
+
+        if (gd_nodepath_destroy) {
+            gd_nodepath_destroy(np_buf);
+        }
+        free_string(gd_str);
+        return ret_node;
+    }
+
+    if (gd_object_method_bind_call && gd_variant_from_string) {
+        void *gd_str = make_string(path);
+        alignas(void*) char var_str[24] = {};
+        alignas(void*) char var_ret[24] = {};
+        gd_variant_from_string(var_str, gd_str);
+
+        const void *call_args[1] = { var_str };
+        GDExtensionCallError call_err;
+        gd_object_method_bind_call(mb_node_get_node, node, (const GDExtensionConstVariantPtr*)call_args, 1, var_ret, &call_err);
+
+        GDExtensionObjectPtr ret_node = bridge_object_from_variant(var_ret);
+
+        if (gd_variant_destroy) {
+            gd_variant_destroy(var_str);
+            gd_variant_destroy(var_ret);
+        }
+        free_string(gd_str);
+        return ret_node;
+    }
+
+    return nullptr;
 }
 
 static GDExtensionMethodBindPtr mb_range_set_value = nullptr;
@@ -1704,7 +1748,8 @@ static GDExtensionObjectPtr bridge_packed_scene_instantiate(GDExtensionObjectPtr
     if (!mb_packed_scene_instantiate) return nullptr;
 
     if (gd_object_method_bind_ptrcall) {
-        const void *args[1] = { &edit_state };
+        int32_t state_i32 = (int32_t)edit_state;
+        const void *args[1] = { &state_i32 };
         GDExtensionObjectPtr ret_node = nullptr;
         gd_object_method_bind_ptrcall(mb_packed_scene_instantiate, scene, args, &ret_node);
         if (ret_node) return ret_node;
@@ -1760,7 +1805,22 @@ static const char* bridge_node_get_name(GDExtensionObjectPtr node) {
     static thread_local char s_name_buf[256];
     s_name_buf[0] = '\0';
 
-    if (gd_variant_stringify && gd_string_to_utf8_chars) {
+    if (!gd_string_from_string_name && gd_variant_get_ptr_constructor) {
+        gd_string_from_string_name = gd_variant_get_ptr_constructor(GDEXTENSION_VARIANT_TYPE_STRING, 2);
+    }
+
+    if (gd_string_from_string_name && gd_string_to_utf8_chars) {
+        alignas(void*) char gd_str[8] = {};
+        const GDExtensionConstTypePtr args[1] = { sn_buf };
+        gd_string_from_string_name(gd_str, args);
+
+        int64_t len = gd_string_to_utf8_chars(gd_str, s_name_buf, sizeof(s_name_buf) - 1);
+        if (len >= 0 && len < (int64_t)sizeof(s_name_buf)) {
+            s_name_buf[len] = '\0';
+        }
+
+        if (gd_string_destroy) gd_string_destroy(gd_str);
+    } else if (gd_variant_stringify && gd_string_to_utf8_chars) {
         alignas(void*) char var_sn[24] = {};
         alignas(void*) char gd_str[8] = {};
         bridge_variant_from_type(GDEXTENSION_VARIANT_TYPE_STRING_NAME, var_sn, sn_buf);
@@ -2467,6 +2527,7 @@ extern "C" GDE_EXPORT GDExtensionBool crystal_library_init(
     gd_print_warning = (GDExtensionInterfacePrintWarning)p_get_proc_address("print_warning");
     gd_print_warning_with_message = (GDExtensionInterfacePrintWarningWithMessage)p_get_proc_address("print_warning_with_message");
     gd_variant_get_ptr_utility_function = (GDExtensionInterfaceVariantGetPtrUtilityFunction)p_get_proc_address("variant_get_ptr_utility_function");
+    gd_variant_get_ptr_constructor = (GDExtensionInterfaceVariantGetPtrConstructor)p_get_proc_address("variant_get_ptr_constructor");
     gd_variant_get_ptr_destructor = (GDExtensionInterfaceVariantGetPtrDestructor)p_get_proc_address("variant_get_ptr_destructor");
 
     if (gd_variant_get_ptr_destructor) {

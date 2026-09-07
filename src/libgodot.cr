@@ -64,22 +64,26 @@ module Godot
 
     # Returns the parent node cast to T, or nil if parent is not of type T or is null
     def get_parent_as(type : T.class) : T? forall T
-      parent = get_parent?
-      return nil if parent.nil? || parent.pointer.null?
-      parent.as?(T)
+      if parent = get_parent?
+        T.new(parent.pointer)
+      end
     end
 
     # Finds child node matching pattern and casts to T, returning nil if not found
     def find_child_as(type : T.class, pattern : String, recursive : Bool = true, owned : Bool = false) : T? forall T
-      child = find_child(pattern, recursive, owned)
-      return nil if child.nil? || child.pointer.null?
-      child.as?(T)
+      if child = find_child(pattern, recursive, owned)
+        T.new(child.pointer)
+      end
     end
 
     # Returns the scene unique node with name `%unique_name` cast to T
     def get_unique_node_as(type : T.class, unique_name : String) : T? forall T
       path = unique_name.starts_with?("%") ? unique_name : "%#{unique_name}"
-      get_node_as(type, path)
+      if node = get_node?(path)
+        T.new(node.pointer)
+      elsif node = find_child(unique_name.lchop("%"))
+        T.new(node.pointer)
+      end
     end
 
     # Reliable GDExtension bridge implementation of find_child with default parameters
@@ -358,57 +362,54 @@ module Godot
   end
 
   # Resource and Scene loading helpers
-  def self.load(path : String, type_hint : String = "", cache_mode : Int64 = 1_i64) : Resource
-    ResourceLoader.instance.load(path, type_hint, cache_mode)
+  def self.load(path : String, type_hint : String = "", cache_mode : Int64 = 0_i64) : Resource
+    ptr = Bridge.resource_loader_load(path, type_hint, cache_mode)
+    Resource.new(ptr)
   end
 
   def self.load_scene(path : String) : PackedScene
-    res = load(path)
-    res.as(PackedScene)
+    load_as(PackedScene, path)
   end
 
   def self.instantiate_scene(path : String, type : T.class) : T forall T
     scene = load_scene(path)
-    scene.instantiate_as(type)
+    inst = scene.instantiate
+    type.new(inst.pointer)
   end
 end
 
 module Godot
   class Input < Godot::Object
     def action_pressed?(action : String, exact_match : Bool = false) : Bool
-      return false if @pointer.null?
-      is_action_pressed(action, exact_match)
+      Bridge.is_action_pressed(action, exact_match)
     end
 
     def action_just_pressed?(action : String, exact_match : Bool = false) : Bool
-      return false if @pointer.null?
-      is_action_just_pressed(action, exact_match)
+      Bridge.is_action_just_pressed(action, exact_match)
     end
 
     def action_just_released?(action : String, exact_match : Bool = false) : Bool
-      return false if @pointer.null?
-      is_action_just_released(action, exact_match)
+      Bridge.is_action_just_released(action, exact_match)
     end
 
     def axis(negative_action : String, positive_action : String) : Float32
-      return 0.0_f32 if @pointer.null?
-      get_axis(negative_action, positive_action).to_f32
+      Bridge.get_axis(negative_action, positive_action)
     end
 
     def self.action_pressed?(action : String, exact_match : Bool = false) : Bool
-      instance.action_pressed?(action, exact_match)
+      Bridge.is_action_pressed(action, exact_match)
     end
 
     def self.action_just_pressed?(action : String, exact_match : Bool = false) : Bool
-      instance.action_just_pressed?(action, exact_match)
+      Bridge.is_action_just_pressed(action, exact_match)
     end
 
     def self.action_just_released?(action : String, exact_match : Bool = false) : Bool
-      instance.action_just_released?(action, exact_match)
+      Bridge.is_action_just_released(action, exact_match)
     end
 
     def self.axis(negative_action : String, positive_action : String) : Float32
-      instance.axis(negative_action, positive_action)
+      Bridge.get_axis(negative_action, positive_action)
     end
   end
 

@@ -349,9 +349,11 @@ node ToolTester2D < Godot::Node2D do
     if passed == total
       @test_status = "All #{total}/#{total} Tests Passed!"
       Godot.print("[ToolTester2D] SUCCESS: All #{total} in-editor tests passed cleanly!")
+      File.write(".tool_tests_passed", "All #{total} in-editor tests passed cleanly!\n")
     else
       @test_status = "Failed: #{total - passed}/#{total} Errors"
       Godot.printerr("[ToolTester2D] FAILED: #{total - passed} test(s) failed.")
+      File.write(".tool_tests_failed", "Failed: #{total - passed} test(s) failed.\n")
     end
   end
 end
@@ -402,9 +404,11 @@ node ToolTester3D < Godot::Node3D do
     if passed == total
       @test_status = "All #{total}/#{total} Tests Passed!"
       Godot.print("[ToolTester3D] SUCCESS: All #{total} in-editor tests passed cleanly!")
+      File.write(".tool_tests_passed", "All #{total} in-editor tests passed cleanly!\n")
     else
       @test_status = "Failed: #{total - passed}/#{total} Errors"
       Godot.printerr("[ToolTester3D] FAILED: #{total - passed} test(s) failed.")
+      File.write(".tool_tests_failed", "Failed: #{total - passed} test(s) failed.\n")
     end
   end
 end

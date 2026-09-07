@@ -100,6 +100,8 @@ test_macros_dsl "Signal connecting to method symbol on target object" do
 
   TestFramework.assert_true listener.method_called_by_symbol, "Signal connected via method symbol should invoke method on target"
   emitter.disconnect("battle_started")
+  emitter.destroy
+  listener.destroy
 end
 
 test_macros_dsl "Signal introspection: has_signal? and signal_connection_count" do
@@ -127,6 +129,7 @@ test_macros_dsl "Declarative class-level group macro and in_group? predicate" do
   TestFramework.assert_true node.in_group?("enemies"), "Node should be added to 'enemies' group via group macro"
   TestFramework.assert_true node.in_group?("flammable"), "Node should be added to 'flammable' group via group macro"
   TestFramework.assert_false node.in_group?("allies"), "Node should not be in unassigned group"
+  node.destroy
 end
 
 test_macros_dsl "Hierarchy cast helpers on Node (get_parent_as, find_child_as, get_unique_node_as)" do
@@ -152,6 +155,8 @@ test_macros_dsl "Hierarchy cast helpers on Node (get_parent_as, find_child_as, g
   # get_unique_node_as
   unique_child = parent.get_unique_node_as(Godot::Node2D, "MyUniqueChild")
   TestFramework.assert_not_nil unique_child
+
+  parent.destroy
 end
 
 test_macros_dsl "Singletons accessors on Godot module" do
