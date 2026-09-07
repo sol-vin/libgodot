@@ -68,6 +68,24 @@ if (-not (Test-Path $presetCfg)) {
     }
 }
 
+# Ensure addons/crystal_integration is synchronized to the project
+$addonSrc = Join-Path $RootDir "addons"
+$addonDest = Join-Path $projFull "addons"
+if (Test-Path $addonSrc) {
+    $syncAddonsScript = Join-Path $RootDir "scripts/sync_addons.ps1"
+    if (Test-Path $syncAddonsScript) {
+        Write-Host "  -> Synchronizing addons to $addonDest..." -ForegroundColor Gray
+        & $syncAddonsScript -Source $addonSrc -Destinations $addonDest
+    }
+}
+
+# Ensure .godot/extension_list.cfg exists in project so Godot loads GDExtension during export
+$cfgDir = Join-Path $projFull ".godot"
+if (-not (Test-Path $cfgDir)) {
+    New-Item -ItemType Directory -Force -Path $cfgDir | Out-Null
+}
+Set-Content -Path (Join-Path $cfgDir "extension_list.cfg") -Value 'res://addons/crystal_integration/crystal.gdextension' -Force
+
 # Ensure project has icon.svg so Godot Android export doesn't warn/error
 $projIcon = Join-Path $projFull "icon.svg"
 if (-not (Test-Path $projIcon)) {
@@ -246,10 +264,16 @@ if ($godotProc.ExitCode -ne 0 -or -not (Test-Path $outputFull)) {
 $apkSize = (Get-Item $outputFull).Length
 Write-Host "  [OK] Successfully created APK: '$outputFull' ($apkSize bytes)!" -ForegroundColor Green
 
-# 10. Validate APK contents using 7-Zip
+# 10. Validate APK contents using 7-Zip or unzip
+$zipInspect = @()
 if (Get-Command 7z -ErrorAction SilentlyContinue) {
-    Write-Host "[PackageAndroid] Inspecting APK native library contents..." -ForegroundColor Cyan
     $zipInspect = & 7z l $outputFull "lib/arm64-v8a/*"
+} elseif (Get-Command unzip -ErrorAction SilentlyContinue) {
+    $zipInspect = & unzip -l $outputFull "lib/arm64-v8a/*"
+}
+
+if ($zipInspect.Count -gt 0) {
+    Write-Host "[PackageAndroid] Inspecting APK native library contents..." -ForegroundColor Cyan
     $hasBridge = $zipInspect -match "libcrystal_bridge\.so"
     $hasGame = $zipInspect -match "libgame\.so"
     

@@ -453,7 +453,7 @@ jobs:
         run: |
           & pwsh -NoProfile -File scripts/report_android.ps1
 
-      - name: Upload Android Status Report & Artifacts
+      - name: Upload Android Status Report
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -462,8 +462,6 @@ jobs:
             bin/android/test_report.md
             bin/android/test_report.json
             bin/android/android_audit_report.txt
-            bin/android/*.apk
-            bin/android/*.idsig
           if-no-files-found: ignore
 
       - name: Publish Android Assets to Release

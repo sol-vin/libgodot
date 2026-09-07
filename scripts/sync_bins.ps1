@@ -68,4 +68,10 @@ foreach ($p in $projects) {
     Set-Content -Path (Join-Path $cfgDir "extension_list.cfg") -Value 'res://addons/crystal_integration/crystal.gdextension' -Force
 }
 
+# Ensure addons are synchronized to all consumer projects
+$syncAddonsScript = Join-Path $RootDir "scripts/sync_addons.ps1"
+if (Test-Path $syncAddonsScript) {
+    & $syncAddonsScript
+}
+
 exit 0
