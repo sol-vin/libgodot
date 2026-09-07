@@ -177,10 +177,6 @@ if ($TestRelease) {
         & make all RELEASE=1
         if ($LASTEXITCODE -ne 0) { throw "make all RELEASE=1 failed with code $LASTEXITCODE" }
 
-        Write-Host "[Release] Compiling examples standalone executables (make examples_exe RELEASE=1)..." -ForegroundColor Cyan
-        & make examples_exe RELEASE=1
-        if ($LASTEXITCODE -ne 0) { throw "make examples_exe RELEASE=1 failed with code $LASTEXITCODE" }
-
         # 2. Package examples-windows-x86_64.zip (complete playable Godot game)
         Write-Host "[Release] Packaging examples-windows-x86_64.zip (playable Godot game)..." -ForegroundColor Cyan
         $examplesDist = Join-Path $RootDir "dist/examples_dist"

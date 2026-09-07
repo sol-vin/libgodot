@@ -58,24 +58,34 @@ jobs:
           $candidate = $env:GODOT4
           if ($candidate) {
             $candidate = $candidate -replace '^/([a-zA-Z])/', '$1:/'
+            $mainCand = $candidate -replace '(_console|\.console)\.exe$', '.exe'
+            if (Test-Path $mainCand) {
+              $candidate = $mainCand
+            }
           }
           if ($candidate -and (Test-Path $candidate)) {
             Copy-Item $candidate ./godot.exe -Force
           } elseif ($env:GODOT4_BIN) {
             $candidate2 = $env:GODOT4_BIN -replace '^/([a-zA-Z])/', '$1:/'
+            $mainCand2 = $candidate2 -replace '(_console|\.console)\.exe$', '.exe'
+            if (Test-Path $mainCand2) {
+              $candidate2 = $mainCand2
+            }
             if (Test-Path $candidate2) {
               Copy-Item $candidate2 ./godot.exe -Force
             }
           } elseif (Get-Command godot -ErrorAction SilentlyContinue) {
             $cmd = (Get-Command godot).Source
+            $mainCmd = $cmd -replace '(_console|\.console)\.exe$', '.exe'
+            if (Test-Path $mainCmd) { $cmd = $mainCmd }
             Copy-Item $cmd ./godot.exe -Force
           }
 
-          if (-not (Test-Path ./godot.exe)) {
+          if (-not (Test-Path ./godot.exe) -or ((Get-Item ./godot.exe).Length -lt 1000000)) {
             $zipUrl = "https://github.com/godotengine/godot-builds/releases/download/4.8-dev4/Godot_v4.8-dev4_win64.exe.zip"
             Invoke-WebRequest -Uri $zipUrl -OutFile "godot.zip"
             Expand-Archive -Path "godot.zip" -DestinationPath "godot_temp" -Force
-            $foundExe = (Get-ChildItem -Path "godot_temp" -Filter "*_console.exe" -Recurse | Select-Object -First 1).FullName
+            $foundExe = (Get-ChildItem -Path "godot_temp" -Filter "*.exe" -Recurse | Where-Object { $_.Name -notlike "*_console*" -and $_.Name -notlike "*.console*" } | Select-Object -First 1).FullName
             if (-not $foundExe) {
               $foundExe = (Get-ChildItem -Path "godot_temp" -Filter "*.exe" -Recurse | Select-Object -First 1).FullName
             }
@@ -114,7 +124,6 @@ jobs:
         shell: pwsh
         run: |
           make all RELEASE=1
-          make examples_exe RELEASE=1
 
       - name: Package Windows Examples (examples-windows-x86_64.zip)
         shell: pwsh
@@ -266,7 +275,6 @@ jobs:
         shell: bash
         run: |
           make all RELEASE=1
-          make examples_exe RELEASE=1
 
       - name: Package Linux Examples (examples-linux-x86_64.zip)
         shell: pwsh

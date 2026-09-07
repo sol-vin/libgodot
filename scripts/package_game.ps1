@@ -47,9 +47,18 @@ $godotExe = ""
 foreach ($cand in $godotCandidates) {
     if ($cand) {
         $cleanCand = $cand -replace '^/([a-zA-Z])/', '$1:/'
+        $mainCand = $cleanCand -replace '(_console|\.console)\.exe$', '.exe'
+        if (Test-Path $mainCand) {
+            $cleanCand = $mainCand
+        }
         if (Test-Path $cleanCand) {
-            $godotExe = (Resolve-Path $cleanCand).Path
-            break
+            $item = Get-Item $cleanCand
+            if ($item.Length -gt 1000000) {
+                $godotExe = $item.FullName
+                break
+            } elseif (-not $godotExe) {
+                $godotExe = $item.FullName
+            }
         }
     }
 }
@@ -96,11 +105,19 @@ if (Test-Path $bridgeSrc) {
     Copy-Item $bridgeSrc (Join-Path $binDir "crystal_bridge.$soExt") -Force
 }
 
-# 7. Compile Crystal game library (game.dll / game.so)
+# 7. Compile Crystal game library (game.dll / game.so) if missing or outdated
 $mainCr = Join-Path $projFull "src/main.cr"
+$gameLib = Join-Path $binDir "game.$soExt"
+$needsCompile = $false
 if (Test-Path $mainCr) {
+    if (-not (Test-Path $gameLib)) {
+        $needsCompile = $true
+    } elseif ((Get-Item $mainCr).LastWriteTime -gt (Get-Item $gameLib).LastWriteTime) {
+        $needsCompile = $true
+    }
+}
+if ($needsCompile) {
     $buildScript = Join-Path $rootDir "scripts/build_crystal.ps1"
-    $gameLib = Join-Path $binDir "game.$soExt"
     $linkFlags = if ($onWindows) { "/DLL /ENTRY:_DllMainCRTStartup /EXPORT:crystal_godot_init" } else { "-shared" }
     $srcPath = Join-Path $rootDir "src"
     
@@ -202,7 +219,7 @@ if ($TargetDir) {
 
             Write-Host "  [OK] Standalone Godot export complete in '$gameDir'." -ForegroundColor Green
         } else {
-            Write-Warning "[PackageGame] Godot export-release did not produce expected standalone binary. Falling back to project runner bundle."
+            throw "[PackageGame] Godot export-release did not produce expected standalone binary for '$Name'. Ensure export templates are installed."
         }
     }
 
