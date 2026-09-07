@@ -24,4 +24,6 @@ godot.exe
 dist/
 *.zip
 test_report.*
-android_audit_report.txt
+android_audit_report.txt
+godot-src/
+

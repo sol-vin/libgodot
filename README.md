@@ -136,15 +136,44 @@ end
 
 LibGodot features an extensive in-code documentation suite under the `Docs` module. Each submodule details internal mechanics, macro pipelines, export options, and engine caveats:
 
-| Submodule | Topic |
-| :--- | :--- |
-| [`Docs::A_ARCHITECTURE`](src/libgodot/docs.cr) | Dual-paradigm model, GDExtension Mode A vs Standalone LibGodot Mode B. |
-| [`Docs::B_COMPILATION_AND_BUILD`](src/libgodot/docs.cr) | Bridge compilation, Windows shadow DLL file-locking bypass, F5 editor hook, and `Makefile` orchestration. |
-| [`Docs::C_EXPORTS_AND_INSPECTOR`](src/libgodot/docs.cr) | All `@[Export*]` annotations, `PropertyInfo` mapping, ranges, enums, flags, categories, and buttons. |
-| [`Docs::D_NODE_DSL_AND_SIGNALS`](src/libgodot/docs.cr) | Node macro DSL, lifecycle callbacks (`_ready`, `_physics_process`), signal registration, and scene APIs. |
-| [`Docs::E_DOC_COMMENTS_AND_HELP`](src/libgodot/docs.cr) | Compile-time doc comment harvesting, `DocData` XML generation, and Godot offline F1 Help integration. |
-| [`Docs::F_GDSCRIPT_INTEROP`](src/libgodot/docs.cr) | The `bind_gdscript_methods` DSL and Variant marshaling. |
-| [`Docs::G_CAVEATS_AND_INTERNALS`](src/libgodot/docs.cr) | Boehm GC vs Godot memory lifecycles, threading rules, method bind caching, and Windows toolchains. |
+<table>
+  <thead>
+    <tr>
+      <th align="left">Submodule</th>
+      <th align="left">Topic</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><a href="src/libgodot/docs.cr"><code>Docs::A_ARCHITECTURE</code></a></td>
+      <td>Dual-paradigm model, GDExtension Mode A vs Standalone LibGodot Mode B.</td>
+    </tr>
+    <tr>
+      <td><a href="src/libgodot/docs.cr"><code>Docs::B_COMPILATION_AND_BUILD</code></a></td>
+      <td>Bridge compilation, Windows shadow DLL file-locking bypass, F5 editor hook, and <code>Makefile</code> orchestration.</td>
+    </tr>
+    <tr>
+      <td><a href="src/libgodot/docs.cr"><code>Docs::C_EXPORTS_AND_INSPECTOR</code></a></td>
+      <td>All <code>@[Export*]</code> annotations, <code>PropertyInfo</code> mapping, ranges, enums, flags, categories, and buttons.</td>
+    </tr>
+    <tr>
+      <td><a href="src/libgodot/docs.cr"><code>Docs::D_NODE_DSL_AND_SIGNALS</code></a></td>
+      <td>Node macro DSL, lifecycle callbacks (<code>_ready</code>, <code>_physics_process</code>), signal registration, and scene APIs.</td>
+    </tr>
+    <tr>
+      <td><a href="src/libgodot/docs.cr"><code>Docs::E_DOC_COMMENTS_AND_HELP</code></a></td>
+      <td>Compile-time doc comment harvesting, <code>DocData</code> XML generation, and Godot offline F1 Help integration.</td>
+    </tr>
+    <tr>
+      <td><a href="src/libgodot/docs.cr"><code>Docs::F_GDSCRIPT_INTEROP</code></a></td>
+      <td>The <code>bind_gdscript_methods</code> DSL and Variant marshaling.</td>
+    </tr>
+    <tr>
+      <td><a href="src/libgodot/docs.cr"><code>Docs::G_CAVEATS_AND_INTERNALS</code></a></td>
+      <td>Boehm GC vs Godot memory lifecycles, threading rules, method bind caching, and Windows toolchains.</td>
+    </tr>
+  </tbody>
+</table>
 
 To generate and browse the complete HTML documentation locally:
 ```bash
@@ -158,20 +187,64 @@ Then open `docs/index.html` in your browser.
 
 Build operations are orchestrated through the root `Makefile`.
 
-| Command | Description |
-| :--- | :--- |
-| `make all` | **Default Build**: Compiles loader bridge, test project, examples, template, and synchronizes all DLLs. |
-| `make run` | Launches the test suite project directly in the Godot engine. |
-| `make editor` | Opens the test project in the Godot Editor (`godot.exe --editor --path test`). |
-| `make test` | Runs the automated Crystal specification suite (`spec/`). |
-| `make docs` | Generates offline HTML documentation into `docs/`. |
-| `make bridge` | Compiles `src/bridge/crystal_bridge.cpp` into `bin/crystal_bridge.dll`. |
-| `make test_project` | Compiles the test suite project (`test/bin/game.dll`). |
-| `make examples` | Compiles all showcase projects in `examples/`. |
-| `make template` | Compiles the starter template (`template/bin/game.dll`). |
-| `make game_exe` | Compiles standalone host executable `bin/game.exe` (Mode B). |
-| `make sync` | Synchronizes binaries, runtime DLLs, and addons across all consumer directories. |
-| `make clean` | Removes compiled binaries and intermediate build artifacts while preserving runtime DLLs. |
+<table>
+  <thead>
+    <tr>
+      <th align="left">Command</th>
+      <th align="left">Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>make all</code></td>
+      <td><strong>Default Build</strong>: Compiles loader bridge, test project, examples, template, and synchronizes all DLLs.</td>
+    </tr>
+    <tr>
+      <td><code>make run</code></td>
+      <td>Launches the test suite project directly in the Godot engine.</td>
+    </tr>
+    <tr>
+      <td><code>make editor</code></td>
+      <td>Opens the test project in the Godot Editor (<code>godot.exe --editor --path test</code>).</td>
+    </tr>
+    <tr>
+      <td><code>make test</code></td>
+      <td>Runs the automated Crystal specification suite (<code>spec/</code>).</td>
+    </tr>
+    <tr>
+      <td><code>make docs</code></td>
+      <td>Generates offline HTML documentation into <code>docs/</code>.</td>
+    </tr>
+    <tr>
+      <td><code>make bridge</code></td>
+      <td>Compiles <code>src/bridge/crystal_bridge.cpp</code> into <code>bin/crystal_bridge.dll</code>.</td>
+    </tr>
+    <tr>
+      <td><code>make test_project</code></td>
+      <td>Compiles the test suite project (<code>test/bin/game.dll</code>).</td>
+    </tr>
+    <tr>
+      <td><code>make examples</code></td>
+      <td>Compiles all showcase projects in <code>examples/</code>.</td>
+    </tr>
+    <tr>
+      <td><code>make template</code></td>
+      <td>Compiles the starter template (<code>template/bin/game.dll</code>).</td>
+    </tr>
+    <tr>
+      <td><code>make game_exe</code></td>
+      <td>Compiles standalone host executable <code>bin/game.exe</code> (Mode B).</td>
+    </tr>
+    <tr>
+      <td><code>make sync</code></td>
+      <td>Synchronizes binaries, runtime DLLs, and addons across all consumer directories.</td>
+    </tr>
+    <tr>
+      <td><code>make clean</code></td>
+      <td>Removes compiled binaries and intermediate build artifacts while preserving runtime DLLs.</td>
+    </tr>
+  </tbody>
+</table>
 
 ### Build Options
 - `RELEASE=1`: Compiles Crystal code with release optimizations (`--release -O3`).

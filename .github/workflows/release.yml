@@ -315,7 +315,8 @@ jobs:
       - name: Package Linux Core LibGodot Distribution
         shell: bash
         run: |
-          LIB_DIR="bin/linux/libgodot_linux"
+          ROOT_DIR="$(pwd)"
+          LIB_DIR="$ROOT_DIR/bin/linux/libgodot_linux"
           rm -rf "$LIB_DIR"
           mkdir -p "$LIB_DIR/bin"
 
@@ -334,10 +335,8 @@ jobs:
           [ -f LICENSE ] && cp LICENSE "$LIB_DIR/"
 
           TAG="${{ needs.init-release.outputs.tag_name }}"
-          ARCHIVE_NAME="bin/linux/libgodot-crystal-linux-x86_64-$TAG.zip"
-          cd "$LIB_DIR"
-          zip -r "../../$ARCHIVE_NAME" ./*
-          cd ../..
+          ARCHIVE_PATH="$ROOT_DIR/bin/linux/libgodot-crystal-linux-x86_64-$TAG.zip"
+          (cd "$LIB_DIR" && zip -r "$ARCHIVE_PATH" ./*)
 
       - name: Collect Linux Staging Artifacts
         shell: bash
@@ -517,7 +516,8 @@ jobs:
       - name: Package Universal Addon (godot-crystal-addon.zip)
         shell: bash
         run: |
-          ADDON_DIST="bin/addon_dist"
+          ROOT_DIR="$(pwd)"
+          ADDON_DIST="$ROOT_DIR/bin/addon_dist"
           rm -rf "$ADDON_DIST"
           mkdir -p "$ADDON_DIST/addons"
           mkdir -p "$ADDON_DIST/bin"
@@ -550,14 +550,13 @@ jobs:
             cp -r "$ANDROID_ARM"/* "$ADDON_DIST/bin/android/arm64-v8a/"
           fi
 
-          cd "$ADDON_DIST"
-          zip -r "../../bin/godot-crystal-addon.zip" ./*
-          cd ../..
+          (cd "$ADDON_DIST" && zip -r "$ROOT_DIR/bin/godot-crystal-addon.zip" ./*)
 
       - name: Package Universal Starter Template (template-project.zip)
         shell: bash
         run: |
-          TEMPLATE_DIST="bin/template_dist"
+          ROOT_DIR="$(pwd)"
+          TEMPLATE_DIST="$ROOT_DIR/bin/template_dist"
           rm -rf "$TEMPLATE_DIST"
           mkdir -p "$TEMPLATE_DIST/bin"
 
@@ -603,24 +602,19 @@ jobs:
           cp shard.yml "$TEMPLATE_DIST/lib/libgodot/"
           [ -f README.md ] && cp README.md "$TEMPLATE_DIST/lib/libgodot/"
 
-          cd "$TEMPLATE_DIST"
-          zip -r "../../bin/template-project.zip" ./*
-          cd ../..
+          (cd "$TEMPLATE_DIST" && zip -r "$ROOT_DIR/bin/template-project.zip" ./*)
 
       - name: Prepare Final Universal Assets & Checksums
         shell: bash
         run: |
-          mkdir -p bin/release_assets
+          ROOT_DIR="$(pwd)"
+          mkdir -p "$ROOT_DIR/bin/release_assets"
           TAG="${{ needs.init-release.outputs.tag_name }}"
 
-          [ -f bin/godot-crystal-addon.zip ] && cp bin/godot-crystal-addon.zip bin/release_assets/
-          [ -f bin/template-project.zip ] && cp bin/template-project.zip bin/release_assets/
+          [ -f "$ROOT_DIR/bin/godot-crystal-addon.zip" ] && cp "$ROOT_DIR/bin/godot-crystal-addon.zip" "$ROOT_DIR/bin/release_assets/"
+          [ -f "$ROOT_DIR/bin/template-project.zip" ] && cp "$ROOT_DIR/bin/template-project.zip" "$ROOT_DIR/bin/release_assets/"
 
-          cd bin/release_assets
-          sha256sum * > ../checksums.txt
-          cp ../checksums.txt ./
-          cat checksums.txt
-          cd ../..
+          (cd "$ROOT_DIR/bin/release_assets" && sha256sum *.zip > checksums.txt && cat checksums.txt)
 
       - name: Generate Descriptive Release Notes
         id: notes
