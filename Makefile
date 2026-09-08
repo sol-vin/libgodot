@@ -206,6 +206,7 @@ tests: test
 docs:
 	@echo Generating Crystal HTML documentation in docs/...
 	$(CRYSTAL) docs
+	@$(PWSH_FILE) scripts/patch_docs.ps1
 	@echo Documentation generated at docs/index.html
 
 # Launch test project using Godot

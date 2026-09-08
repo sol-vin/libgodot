@@ -239,6 +239,9 @@ def generate_class_code(io : IO, c : JSON::Any, keywords : Hash(String, String),
   if name == "Object"
     io.puts "  class Object"
     io.puts "    def initialize(@pointer : Void* = Pointer(Void).null)"
+    io.puts "      if !@pointer.null?"
+    io.puts "        @instance_id = Bridge.object_get_instance_id(@pointer)"
+    io.puts "      end"
     io.puts "    end\n"
   else
     io.puts "  class #{name} < #{parent_type}"
@@ -377,14 +380,22 @@ def generate_class_code(io : IO, c : JSON::Any, keywords : Hash(String, String),
   io.puts "  end\n"
 end
 
+# Assert that 100% of classes from extension_api.json were sorted
+if sorted_classes.size != classes.size
+  puts "Error: Sorted classes count (#{sorted_classes.size}) does not match extension_api.json classes count (#{classes.size})!"
+  exit 1
+end
+
 # Generate modular files in topological dependency order
 num_parts = 6
 chunk_size = (sorted_classes.size.to_f / num_parts).ceil.to_i
+total_chunked = 0
 
 num_parts.times do |part_idx|
   start_idx = part_idx * chunk_size
   end_idx = Math.min((part_idx + 1) * chunk_size, sorted_classes.size)
   part_classes = sorted_classes[start_idx...end_idx]
+  total_chunked += part_classes.size
   part_num = part_idx + 1
 
   puts "Writing src/libgodot/generated/classes/classes_part#{part_num}.cr (#{part_classes.size} classes)..."
@@ -398,6 +409,11 @@ num_parts.times do |part_idx|
   end
 end
 
+if total_chunked != sorted_classes.size
+  puts "Error: Total chunked classes (#{total_chunked}) does not match sorted classes (#{sorted_classes.size})!"
+  exit 1
+end
+
 # Generate master all_classes.cr
 File.open("src/libgodot/generated/classes/all_classes.cr", "w") do |f|
   f.puts "# Master index requiring all classes in topological dependency order"
@@ -406,4 +422,4 @@ File.open("src/libgodot/generated/classes/all_classes.cr", "w") do |f|
   end
 end
 
-puts "=== Binding Generation Complete! ==="
+puts "=== Binding Generation Complete: #{total_chunked}/#{classes.size} classes verified! ==="

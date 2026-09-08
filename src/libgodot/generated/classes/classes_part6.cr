@@ -6914,7 +6914,7 @@ module Godot
     end
     @@mb_allocate : Void* = Pointer(Void).null
     # Initializes this `VoxelGIData` with the specified data. `octree_cells` must be a multiple of 32. `octree_cells` must be double the size of `data_cells`. The allocated data can be retrieved later using the various getter methods.
-    def allocate(to_cell_xform : Transform3D, aabb : AABB, octree_size : Vector3, octree_cells : Void*, data_cells : Void*, distance_field : Void*, level_counts : Void*) : Void
+    def godot_allocate(to_cell_xform : Transform3D, aabb : AABB, octree_size : Vector3, octree_cells : Void*, data_cells : Void*, distance_field : Void*, level_counts : Void*) : Void
       if @@mb_allocate.null?
         @@mb_allocate = Bridge.get_method_bind("VoxelGIData", "allocate", 4041601946_i64)
       end
@@ -7488,7 +7488,7 @@ module Godot
     # }
     #
     # ```
-    def initialize(configuration : Void*) : Int64
+    def godot_initialize(configuration : Void*) : Int64
       if @@mb_initialize.null?
         @@mb_initialize = Bridge.get_method_bind("WebRTCPeerConnection", "initialize", 2625064318_i64)
       end

@@ -49,7 +49,7 @@ module Godot
       ret != 0_u8
     end
     @@mb_initialize : Void* = Pointer(Void).null
-    def initialize(params : Void*) : Void*
+    def godot_initialize(params : Void*) : Void*
       if @@mb_initialize.null?
         @@mb_initialize = Bridge.get_method_bind("GDScriptLanguageProtocol", "initialize", 3762224011_i64)
       end
@@ -24972,7 +24972,7 @@ module Godot
     # **Note:** You must enable the XR mode on the main viewport for any device that uses the main output of Godot, such as for mobile VR.
     # If you do this for a platform that handles its own output (such as OpenVR) Godot will show just one eye without distortion on screen. Alternatively, you can add a separate viewport node to your scene and enable AR/VR on that viewport. It will be used to output to the HMD, leaving you free to do anything you like in the main window, such as using a separate camera as a spectator camera or rendering something completely different.
     # While currently not used, you can activate additional interfaces. You may wish to do this if you want to track controllers from other platforms. However, at this point in time only one interface can render to an HMD.
-    def initialize() : Bool
+    def godot_initialize() : Bool
       if @@mb_initialize.null?
         @@mb_initialize = Bridge.get_method_bind("XRInterface", "initialize", 2240911060_i64)
       end

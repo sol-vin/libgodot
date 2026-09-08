@@ -169,6 +169,13 @@ if (-not $SkipSpecs) {
     if (-not $specResult2["Success"]) {
         $FailedSteps.Add("Crystal Spec (boot_spec.cr)")
     }
+
+    $specResult3 = Invoke-TestCommand -Name "Crystal Spec: API Definition & Class Coverage" `
+        -Executable "crystal" `
+        -Arguments @("run", "spec/api_coverage_spec.cr")
+    if (-not $specResult3["Success"]) {
+        $FailedSteps.Add("Crystal Spec (api_coverage_spec.cr)")
+    }
 }
 
 # -----------------------------------------------------------------------------

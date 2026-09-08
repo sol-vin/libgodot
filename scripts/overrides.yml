@@ -50,6 +50,8 @@ keywords:
   fun: fun_val
   module: module_val
   macro: macro_val
+  initialize: godot_initialize
+  allocate: godot_allocate
 
 # Primitive and core type mappings from Godot C-API to Crystal
 type_map:
