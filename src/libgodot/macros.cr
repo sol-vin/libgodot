@@ -659,10 +659,10 @@ macro node(decl, &block)
       {%
         m_name_str = stmt.name.stringify
         is_lifecycle_cb = (m_name_str == "_ready" || m_name_str == "_process" || m_name_str == "_physics_process" || m_name_str == "_enter_tree" || m_name_str == "_exit_tree" || m_name_str == "_build")
-        m_doc = extracted_method_docs[m_name_str] || stmt.doc_comment || ""
+        m_doc = extracted_method_docs[m_name_str] || (stmt.doc_comment ? stmt.doc_comment.stringify : "") || ""
       %}
       {% if !is_lifecycle_cb || (!m_doc.empty?) %}
-        {% methods_doc << {stmt.name, stmt.args, stmt.return_type, m_doc} %}
+        {% methods_doc << {stmt.name, stmt.args, stmt.return_type, m_doc.stringify} %}
       {% end %}
       {% last_anno = nil %}
     {% elsif stmt.is_a?(Call) && stmt.name.id == "property" %}
@@ -1287,7 +1287,7 @@ macro node(decl, &block)
         %}
         io << "    <member name=\"{{arg.var.id}}\" type=\"{{gtype.id}}\" setter=\"\" getter=\"\">"
         {% if p_doc && p_doc != "" %}
-          io << {{p_doc}}
+          io << {{p_doc.stringify}}
         {% end %}
         io << "</member>\n"
       {% end %}
@@ -1307,7 +1307,7 @@ macro node(decl, &block)
       io << "    <signal name=\"{{sig_name.id}}\">\n"
       io << "      <description>"
       {% if sig_doc && sig_doc != "" %}
-        io << {{sig_doc}}
+        io << {{sig_doc.stringify}}
       {% end %}
       io << "</description>\n"
       {% for a, a_idx in sig_args %}
@@ -1384,7 +1384,7 @@ macro node(decl, &block)
       {% end %}
       io << "      <description>"
       {% if m_doc && m_doc != "" %}
-        io << {{m_doc}}
+        io << {{m_doc.stringify}}
       {% end %}
       io << "</description>\n"
       io << "    </method>\n"
