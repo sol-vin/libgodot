@@ -106,10 +106,17 @@ module Godot
     ptr = Bridge.construct_object(class_name)
     if inst = Bridge.find_alive_instance(ptr)
       if casted = inst.as?(T)
+        if casted.is_a?(RefCounted)
+          casted.init_ref
+        end
         return casted
       end
     end
-    T.new(ptr)
+    res = T.new(ptr)
+    if res.is_a?(RefCounted)
+      res.init_ref
+    end
+    res
   end
 
   # Raised when an operation is attempted on a Godot Object that has been deleted or freed.
@@ -652,6 +659,23 @@ module Godot
       ret = 0_i64
       Bridge.ptrcall(@@mb_ref_get_reference_count, @pointer, Pointer(Pointer(Void)).null, pointerof(ret).as(Void*))
       ret
+    end
+
+    # Safely destroys or unreferences this RefCounted object.
+    def destroy : Void
+      return if @destroyed
+      @destroyed = true
+      Godot.clear_signal_subscriptions(signal_target_id)
+      if !@pointer.null?
+        target_ptr = @pointer
+        if alive? && is_valid? && get_reference_count > 0
+          unreference
+          @pointer = Pointer(Void).null
+        else
+          @pointer = Pointer(Void).null
+          Bridge.object_destroy(target_ptr)
+        end
+      end
     end
   end
 

@@ -12,7 +12,12 @@ module Godot
 
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
+      init_ref
       @@instance = self
+    end
+
+    def self.clear_instance : Void
+      @@instance = nil
     end
 
     def get_recognized_extensions : Array(String)
@@ -119,7 +124,12 @@ module Godot
 
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
+      init_ref
       @@instance = self
+    end
+
+    def self.clear_instance : Void
+      @@instance = nil
     end
 
     def recognize(type : String) : Bool

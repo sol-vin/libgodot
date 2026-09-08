@@ -868,41 +868,42 @@ static void generic_virtual_build(GDExtensionClassInstancePtr p_instance, const 
 /**
  * Legacy virtual method resolution for Godot 4.1/4.2.
  */
+static void *g_sn_pp = nullptr;
+static void *g_sn_p = nullptr;
+static void *g_sn_r = nullptr;
+static void *g_sn_et = nullptr;
+static void *g_sn_xt = nullptr;
+static void *g_sn_b = nullptr;
+
 static GDExtensionClassCallVirtual generic_class_get_virtual(void *p_class_userdata, GDExtensionConstStringNamePtr p_name) {
     const CrystalClassDesc *desc = (const CrystalClassDesc*)p_class_userdata;
     if (!desc) return nullptr;
 
-    static void *sn_pp = nullptr;
-    static void *sn_p = nullptr;
-    static void *sn_r = nullptr;
-    static void *sn_et = nullptr;
-    static void *sn_xt = nullptr;
-    static void *sn_b = nullptr;
-    if (!sn_pp) {
-        sn_pp = make_string_name("_physics_process");
-        sn_p = make_string_name("_process");
-        sn_r = make_string_name("_ready");
-        sn_et = make_string_name("_enter_tree");
-        sn_xt = make_string_name("_exit_tree");
-        sn_b = make_string_name("_build");
+    if (!g_sn_pp) {
+        g_sn_pp = make_string_name("_physics_process");
+        g_sn_p = make_string_name("_process");
+        g_sn_r = make_string_name("_ready");
+        g_sn_et = make_string_name("_enter_tree");
+        g_sn_xt = make_string_name("_exit_tree");
+        g_sn_b = make_string_name("_build");
     }
 
-    if (desc->has_physics_process && memcmp(p_name, sn_pp, sizeof(void*)) == 0) {
+    if (desc->has_physics_process && memcmp(p_name, g_sn_pp, sizeof(void*)) == 0) {
         return generic_virtual_physics_process;
     }
-    if (desc->has_process && memcmp(p_name, sn_p, sizeof(void*)) == 0) {
+    if (desc->has_process && memcmp(p_name, g_sn_p, sizeof(void*)) == 0) {
         return generic_virtual_process;
     }
-    if (desc->has_ready && memcmp(p_name, sn_r, sizeof(void*)) == 0) {
+    if (desc->has_ready && memcmp(p_name, g_sn_r, sizeof(void*)) == 0) {
         return generic_virtual_ready;
     }
-    if (desc->has_enter_tree && memcmp(p_name, sn_et, sizeof(void*)) == 0) {
+    if (desc->has_enter_tree && memcmp(p_name, g_sn_et, sizeof(void*)) == 0) {
         return generic_virtual_enter_tree;
     }
-    if (desc->has_exit_tree && memcmp(p_name, sn_xt, sizeof(void*)) == 0) {
+    if (desc->has_exit_tree && memcmp(p_name, g_sn_xt, sizeof(void*)) == 0) {
         return generic_virtual_exit_tree;
     }
-    if (memcmp(p_name, sn_b, sizeof(void*)) == 0) {
+    if (memcmp(p_name, g_sn_b, sizeof(void*)) == 0) {
         return generic_virtual_build;
     }
 
@@ -3398,6 +3399,12 @@ static void deinitialize_crystal_module(void *p_userdata, GDExtensionInitializat
         g_deferred_editor_classes.clear();
         g_editor_doc_xmls.clear();
         g_all_registered_class_names.clear();
+        if (g_sn_pp) { free_string_name(g_sn_pp); g_sn_pp = nullptr; }
+        if (g_sn_p) { free_string_name(g_sn_p); g_sn_p = nullptr; }
+        if (g_sn_r) { free_string_name(g_sn_r); g_sn_r = nullptr; }
+        if (g_sn_et) { free_string_name(g_sn_et); g_sn_et = nullptr; }
+        if (g_sn_xt) { free_string_name(g_sn_xt); g_sn_xt = nullptr; }
+        if (g_sn_b) { free_string_name(g_sn_b); g_sn_b = nullptr; }
         unload_crystal_game_library();
         godot_log_print("[CrystalBridge] Crystal module deinitialized.");
     }

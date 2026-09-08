@@ -55,6 +55,7 @@ module Godot
             ed_settings.call("set_initial_value", "docks/filesystem/textfile_extensions", new_val, false)
             Godot.print("[CrystalIntegrationPlugin] Added 'cr' to EditorSettings docks/filesystem/textfile_extensions: #{new_val}")
           end
+          ed_settings.unreference
         end
       end
 
@@ -126,6 +127,7 @@ module Godot
       r_loader.remove_resource_format_loader(loader)
       loader.unreference
       @@resource_loader = nil
+      ResourceFormatLoaderCrystal.clear_instance
     end
 
     if saver = @@resource_saver
@@ -133,6 +135,12 @@ module Godot
       r_saver.remove_resource_format_saver(saver)
       saver.unreference
       @@resource_saver = nil
+      ResourceFormatSaverCrystal.clear_instance
+    end
+
+    if tex = @@cached_icon_texture
+      tex.unreference
+      @@cached_icon_texture = nil
     end
 
     if lang = @@crystal_language
