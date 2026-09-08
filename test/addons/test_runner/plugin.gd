@@ -64,6 +64,7 @@ func _run_in_editor_tool_tests():
 			if tester_3d:
 				if tester_3d.has_method("run_tool_tests"):
 					tester_3d.call("run_tool_tests")
+				print("[CrystalToolTester] run_tool_tests completed. Getting test_status...")
 				var status_3d = str(tester_3d.get("test_status"))
 				print("[CrystalToolTester] ToolTester3D status: " + status_3d)
 				if status_3d.contains("Failed") or status_3d.contains("Error"):
@@ -76,7 +77,9 @@ func _run_in_editor_tool_tests():
 				printerr(msg)
 				error_messages.append(msg)
 				errors += 1
+			print("[CrystalToolTester] Freeing node_3d...")
 			node_3d.free()
+			print("[CrystalToolTester] node_3d freed successfully!")
 	else:
 		var msg = "[CrystalToolTester] Failed to load res://scenes/test_tool_3d.tscn"
 		printerr(msg)
@@ -104,6 +107,19 @@ func _run_in_editor_tool_tests():
 			errors += 1
 		else:
 			print("[CrystalToolTester]   ✔ %s registered as EditorPlugin" % cls)
+
+	# 4. Open a .cr script in the editor to verify Script tab integration
+	print("[CrystalToolTester] Testing Script Tab: Loading and editing res://src/main.cr...")
+	var cr_script = load("res://src/main.cr")
+	if cr_script:
+		print("[CrystalToolTester]   ✔ Loaded res://src/main.cr as %s" % cr_script.get_class())
+		EditorInterface.edit_script(cr_script, true)
+		print("[CrystalToolTester]   ✔ Successfully opened res://src/main.cr in EditorInterface.edit_script!")
+	else:
+		var msg = "[CrystalToolTester] Failed to load res://src/main.cr as CrystalScript resource"
+		printerr(msg)
+		error_messages.append(msg)
+		errors += 1
 
 	print("==================================================================")
 	if errors > 0:

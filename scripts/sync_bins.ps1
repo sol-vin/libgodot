@@ -94,12 +94,15 @@ foreach ($piDir in $pluginDirs) {
 }
 
 # Clean up any stray plugin.dll in non-crystal_integration addons
-if (Test-Path (Join-Path $RootDir "test/addons")) {
-    Get-ChildItem -Path (Join-Path $RootDir "test/addons") -Directory | Where-Object { $_.Name -ne "crystal_integration" } | ForEach-Object {
-        foreach ($pLib in @('plugin.dll', 'plugin.so', 'plugin.dylib')) {
-            $strayPlugin = Join-Path $_.FullName "bin/$pLib"
-            if (Test-Path $strayPlugin) {
-                Remove-Item $strayPlugin -Force -ErrorAction SilentlyContinue
+foreach ($addonParent in @("test/addons", "template-addon/addons")) {
+    $parentPath = Join-Path $RootDir $addonParent
+    if (Test-Path $parentPath) {
+        Get-ChildItem -Path $parentPath -Directory | Where-Object { $_.Name -ne "crystal_integration" } | ForEach-Object {
+            foreach ($pLib in @('plugin.dll', 'plugin.so', 'plugin.dylib')) {
+                $strayPlugin = Join-Path $_.FullName "bin/$pLib"
+                if (Test-Path $strayPlugin) {
+                    Remove-Item $strayPlugin -Force -ErrorAction SilentlyContinue
+                }
             }
         }
     }

@@ -104,6 +104,11 @@ module Godot
   def self.create(type : T.class) : T forall T
     class_name = {{ T.name.stringify.split("::").last }}
     ptr = Bridge.construct_object(class_name)
+    if inst = Bridge.find_alive_instance(ptr)
+      if casted = inst.as?(T)
+        return casted
+      end
+    end
     T.new(ptr)
   end
 
@@ -417,6 +422,15 @@ module Godot
 
     # Invoked by the GDExtension bridge when retrieving an exposed `@export` property.
     def _godot_get_property(prop_name : String, ret_ptr : Void*) : Void
+    end
+
+    # Checks if this object class overrides a generic virtual method.
+    def self._godot_has_virtual_method(method_name : String) : Bool
+      false
+    end
+
+    # Dispatches generic virtual methods with raw arguments and return buffer.
+    def _godot_call_virtual_with_data(method_name : String, args : Void**, ret : Void*) : Void
     end
 
     # Emits a parameterless signal on this Godot object.

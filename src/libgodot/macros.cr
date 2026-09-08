@@ -293,6 +293,14 @@ module Godot
       property icon_path : String
       property is_abstract : Bool
       property rpc_methods : Array(NamedTuple(name: String, rpc_mode: Int32, transfer_mode: Int32, call_local: Bool, channel: Int32))
+      property has_virtual_proc : (String -> Bool)? = nil
+
+      def has_virtual_method?(name : String) : Bool
+        if proc = @has_virtual_proc
+          return true if proc.call(name)
+        end
+        false
+      end
 
       def initialize(
         @class_name : String,
@@ -308,7 +316,8 @@ module Godot
         @signals : Array(SignalInfo) = [] of SignalInfo,
         @icon_path : String = "",
         @is_abstract : Bool = false,
-        @rpc_methods : Array(NamedTuple(name: String, rpc_mode: Int32, transfer_mode: Int32, call_local: Bool, channel: Int32)) = [] of NamedTuple(name: String, rpc_mode: Int32, transfer_mode: Int32, call_local: Bool, channel: Int32)
+        @rpc_methods : Array(NamedTuple(name: String, rpc_mode: Int32, transfer_mode: Int32, call_local: Bool, channel: Int32)) = [] of NamedTuple(name: String, rpc_mode: Int32, transfer_mode: Int32, call_local: Bool, channel: Int32),
+        @has_virtual_proc : (String -> Bool)? = nil
       )
       end
     end
@@ -574,7 +583,7 @@ macro node(decl, &block)
       {% end %}
     {% elsif stmt.is_a?(StringLiteral) && class_doc.empty? %}
       {% class_doc = stmt.value %}
-    {% elsif stmt.is_a?(Def) %}
+    {% elsif stmt.is_a?(Def) && (stmt.receiver.is_a?(Nop) || !stmt.receiver) %}
       {% if stmt.name.stringify == "_ready" %}
         {% has_ready = true %}
       {% elsif stmt.name.stringify == "_process" %}
@@ -706,6 +715,19 @@ macro node(decl, &block)
 
     def self.godot_parent_class_name : String
       {{base_godot_name}}
+    end
+
+    def self._godot_has_virtual_method(method_name : String) : Bool
+      case method_name
+      {% for stmt in stmts %}
+        {% if stmt.is_a?(Def) && stmt.name.stringify.starts_with?("_") %}
+        when {{stmt.name.stringify}}
+          return true
+        {% end %}
+      {% end %}
+      else
+        false
+      end
     end
 
     # Macro block containing fields, signals, and methods
@@ -1214,10 +1236,11 @@ macro node(decl, &block)
         {% for r in rpc_methods %}
           {name: {{r[0]}}, rpc_mode: {{r[1]}}, transfer_mode: {{r[2]}}, call_local: {{r[3]}}, channel: {{r[4]}}},
         {% end %}
-      ]
+      ],
       {% else %}
-        [] of NamedTuple(name: String, rpc_mode: Int32, transfer_mode: Int32, call_local: Bool, channel: Int32)
+        ([] of NamedTuple(name: String, rpc_mode: Int32, transfer_mode: Int32, call_local: Bool, channel: Int32)),
       {% end %}
+      has_virtual_proc: ->(m : String) { {{class_name}}._godot_has_virtual_method(m) }
     )
   )
 

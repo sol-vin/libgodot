@@ -16,4 +16,4 @@ Write-Host "==========================================" -ForegroundColor Green
 Write-Host "Engine:  $GodotExe"
 Write-Host "Project: $TestPath"
 
-& $GodotExe --editor --path $TestPath @args | Out-Host
+& $GodotExe --verbose --editor --path $TestPath @args | Out-Host

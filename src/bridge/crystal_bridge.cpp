@@ -71,6 +71,10 @@
 
 #include "gdextension_interface.h"
 
+#ifdef _WIN32
+static LONG WINAPI custom_crash_handler(PEXCEPTION_POINTERS pExceptionInfo);
+#endif
+
 // ==============================================================================
 // Cached Function Pointers from Godot Engine (GDExtension Interface)
 // ==============================================================================
@@ -93,6 +97,12 @@ static GDExtensionInterfaceClassdbConstructObject gd_classdb_construct_object = 
 
 /** Destroys an Object via GDExtension interface */
 static GDExtensionInterfaceObjectDestroy gd_object_destroy = nullptr;
+
+/** Sets the Object referenced by a Ref<T> pointer */
+static GDExtensionInterfaceRefSetObject gd_ref_set_object = nullptr;
+
+/** Gets the Object referenced by a Ref<T> pointer */
+static GDExtensionInterfaceRefGetObject gd_ref_get_object = nullptr;
 
 /** Retrieves the 64-bit instance ID of an Object */
 static GDExtensionInterfaceObjectGetInstanceId gd_object_get_instance_id = nullptr;
@@ -160,6 +170,12 @@ static GDExtensionInterfaceVariantGetPtrConstructor gd_variant_get_ptr_construct
 
 /** Looks up the destructor function for a specific Variant type */
 static GDExtensionInterfaceVariantGetPtrDestructor gd_variant_get_ptr_destructor = nullptr;
+
+/** Looks up a built-in method on a Variant type */
+static GDExtensionInterfaceVariantGetPtrBuiltinMethod gd_variant_get_ptr_builtin_method = nullptr;
+
+/** Looks up a keyed setter function for a Variant type (e.g. Dictionary) */
+static GDExtensionInterfaceVariantGetPtrKeyedSetter gd_variant_get_ptr_keyed_setter = nullptr;
 
 /** Cached constructor for NodePath(const String &) */
 static GDExtensionPtrConstructor gd_nodepath_from_string = nullptr;
@@ -525,6 +541,12 @@ struct CrystalClassDesc {
     /** Invokes Crystal property getter */
     void (*get_property)(void *crystal_instance, const char *prop_name, void *ret_ptr);
 
+    /** Queries whether the Crystal class overrides a specific virtual method */
+    int (*has_virtual_method)(const CrystalClassDesc *desc, const char *method_name);
+
+    /** Invokes a generic virtual method with raw arguments and return pointer */
+    void (*call_virtual_with_data)(void *crystal_instance, const char *method_name, const void **args, void *ret);
+
     int property_count;                     /** Number of exported properties */
     const CrystalPropertyDesc *properties;  /** Array of property descriptors */
 
@@ -578,6 +600,65 @@ static bool is_editor_active() {
 }
 
 // ==============================================================================
+// Boehm GC Multi-Threading & Foreign Engine Thread Registration
+// ==============================================================================
+#ifdef _WIN32
+struct GC_stack_base {
+    void *mem_base;
+};
+
+typedef int (*GCGetStackBaseFn)(struct GC_stack_base *sb);
+typedef int (*GCRegisterMyThreadFn)(const struct GC_stack_base *sb);
+typedef int (*GCThreadIsRegisteredFn)(void);
+typedef void (*GCAllowRegisterThreadsFn)(void);
+typedef void (*GCInitFn)(void);
+
+static GCGetStackBaseFn gd_gc_get_stack_base = nullptr;
+static GCRegisterMyThreadFn gd_gc_register_my_thread = nullptr;
+static GCThreadIsRegisteredFn gd_gc_thread_is_registered = nullptr;
+static GCAllowRegisterThreadsFn gd_gc_allow_register_threads = nullptr;
+static GCInitFn gd_gc_init = nullptr;
+
+static void init_gc_library() {
+    if (!gd_gc_register_my_thread) {
+        HMODULE hGc = GetModuleHandleA("gc.dll");
+        if (!hGc) hGc = LoadLibraryA("gc.dll");
+        if (hGc) {
+            gd_gc_init = (GCInitFn)GetProcAddress(hGc, "GC_init");
+            gd_gc_allow_register_threads = (GCAllowRegisterThreadsFn)GetProcAddress(hGc, "GC_allow_register_threads");
+            gd_gc_get_stack_base = (GCGetStackBaseFn)GetProcAddress(hGc, "GC_get_stack_base");
+            gd_gc_register_my_thread = (GCRegisterMyThreadFn)GetProcAddress(hGc, "GC_register_my_thread");
+            gd_gc_thread_is_registered = (GCThreadIsRegisteredFn)GetProcAddress(hGc, "GC_thread_is_registered");
+            if (gd_gc_init) gd_gc_init();
+            if (gd_gc_allow_register_threads) gd_gc_allow_register_threads();
+        }
+    }
+}
+
+static thread_local bool t_gc_thread_registered = false;
+
+static void ensure_gc_thread_registered() {
+    if (t_gc_thread_registered) return;
+    init_gc_library();
+    if (gd_gc_register_my_thread && gd_gc_get_stack_base) {
+        if (gd_gc_thread_is_registered && gd_gc_thread_is_registered()) {
+            t_gc_thread_registered = true;
+            return;
+        }
+        struct GC_stack_base sb;
+        sb.mem_base = nullptr;
+        if (gd_gc_get_stack_base(&sb) == 0) {
+            gd_gc_register_my_thread(&sb);
+            t_gc_thread_registered = true;
+        }
+    }
+}
+#else
+static inline void init_gc_library() {}
+static inline void ensure_gc_thread_registered() {}
+#endif
+
+// ==============================================================================
 // Generic ClassDB Lifecycle & Virtual Callbacks
 // ==============================================================================
 
@@ -610,6 +691,7 @@ static bool is_tool_desc(const CrystalClassDesc *desc) {
  * @return Allocated GDExtensionObjectPtr or nullptr on failure.
  */
 static GDExtensionObjectPtr generic_class_create(void *p_class_userdata, GDExtensionBool p_notify_postinitialize) {
+    ensure_gc_thread_registered();
     const CrystalClassDesc *desc = (const CrystalClassDesc*)p_class_userdata;
     if (!desc) return nullptr;
 
@@ -668,6 +750,7 @@ static GDExtensionObjectPtr generic_class_create(void *p_class_userdata, GDExten
  * Used during scene deserialization, editor reload, or hot-reload recreation.
  */
 static GDExtensionClassInstancePtr generic_class_recreate(void *p_class_userdata, GDExtensionObjectPtr p_object) {
+    ensure_gc_thread_registered();
     const CrystalClassDesc *desc = (const CrystalClassDesc*)p_class_userdata;
     if (!desc) return nullptr;
 
@@ -703,6 +786,7 @@ static GDExtensionClassInstancePtr generic_class_recreate(void *p_class_userdata
  * Called by Godot when the underlying C++ Object is destroyed.
  */
 static void generic_class_free(void *p_class_userdata, GDExtensionClassInstancePtr p_instance) {
+    ensure_gc_thread_registered();
     GenericExtensionInstance *inst = (GenericExtensionInstance*)p_instance;
     if (inst) {
         if (inst->desc && inst->desc->free_instance && inst->crystal_instance) {
@@ -714,6 +798,7 @@ static void generic_class_free(void *p_class_userdata, GDExtensionClassInstanceP
 
 /** Dispatches Godot's _physics_process(delta) virtual callback into Crystal */
 static void generic_virtual_physics_process(GDExtensionClassInstancePtr p_instance, const GDExtensionConstTypePtr *p_args, GDExtensionTypePtr r_ret) {
+    ensure_gc_thread_registered();
     GenericExtensionInstance *inst = (GenericExtensionInstance*)p_instance;
     if (!inst || !inst->desc || !inst->desc->call_virtual || !inst->crystal_instance) return;
     if (is_editor_active() && !is_tool_desc(inst->desc)) return;
@@ -723,6 +808,7 @@ static void generic_virtual_physics_process(GDExtensionClassInstancePtr p_instan
 
 /** Dispatches Godot's _process(delta) virtual callback into Crystal */
 static void generic_virtual_process(GDExtensionClassInstancePtr p_instance, const GDExtensionConstTypePtr *p_args, GDExtensionTypePtr r_ret) {
+    ensure_gc_thread_registered();
     GenericExtensionInstance *inst = (GenericExtensionInstance*)p_instance;
     if (!inst || !inst->desc || !inst->desc->call_virtual || !inst->crystal_instance) return;
     if (is_editor_active() && !is_tool_desc(inst->desc)) return;
@@ -732,6 +818,7 @@ static void generic_virtual_process(GDExtensionClassInstancePtr p_instance, cons
 
 /** Dispatches Godot's _ready() virtual callback into Crystal */
 static void generic_virtual_ready(GDExtensionClassInstancePtr p_instance, const GDExtensionConstTypePtr *p_args, GDExtensionTypePtr r_ret) {
+    ensure_gc_thread_registered();
     GenericExtensionInstance *inst = (GenericExtensionInstance*)p_instance;
     if (!inst || !inst->desc || !inst->desc->call_virtual || !inst->crystal_instance) return;
     if (is_editor_active() && !is_tool_desc(inst->desc)) return;
@@ -740,6 +827,7 @@ static void generic_virtual_ready(GDExtensionClassInstancePtr p_instance, const 
 
 /** Dispatches Godot's _enter_tree() virtual callback into Crystal */
 static void generic_virtual_enter_tree(GDExtensionClassInstancePtr p_instance, const GDExtensionConstTypePtr *p_args, GDExtensionTypePtr r_ret) {
+    ensure_gc_thread_registered();
     GenericExtensionInstance *inst = (GenericExtensionInstance*)p_instance;
     if (!inst || !inst->desc || !inst->desc->call_virtual || !inst->crystal_instance) return;
     if (is_editor_active() && !is_tool_desc(inst->desc)) return;
@@ -748,6 +836,7 @@ static void generic_virtual_enter_tree(GDExtensionClassInstancePtr p_instance, c
 
 /** Dispatches Godot's _exit_tree() virtual callback into Crystal */
 static void generic_virtual_exit_tree(GDExtensionClassInstancePtr p_instance, const GDExtensionConstTypePtr *p_args, GDExtensionTypePtr r_ret) {
+    ensure_gc_thread_registered();
     GenericExtensionInstance *inst = (GenericExtensionInstance*)p_instance;
     if (!inst || !inst->desc || !inst->desc->call_virtual || !inst->crystal_instance) return;
     if (is_editor_active() && !is_tool_desc(inst->desc)) return;
@@ -756,17 +845,17 @@ static void generic_virtual_exit_tree(GDExtensionClassInstancePtr p_instance, co
 
 /** Dispatches Godot's _build() virtual callback for EditorPlugin into Crystal */
 static void generic_virtual_build(GDExtensionClassInstancePtr p_instance, const GDExtensionConstTypePtr *p_args, GDExtensionTypePtr r_ret) {
-    if (r_ret) *(uint8_t*)r_ret = 1;
+    ensure_gc_thread_registered();
     GenericExtensionInstance *inst = (GenericExtensionInstance*)p_instance;
-    if (!inst || !inst->desc || !inst->desc->call_virtual || !inst->crystal_instance) return;
-    inst->desc->call_virtual(inst->crystal_instance, "_build", 0.0);
+    if (!inst || !inst->desc || !inst->crystal_instance) return;
+    if (r_ret) *(uint8_t*)r_ret = 1;
+    if (inst->desc->call_virtual) inst->desc->call_virtual(inst->crystal_instance, "_build", 0.0);
 }
 
 /**
- * Maps Godot virtual method StringNames (_ready, _process, _physics_process, _enter_tree, _exit_tree, _build)
- * to their respective static C dispatch handlers.
+ * Legacy virtual method resolution for Godot 4.1/4.2.
  */
-static GDExtensionClassCallVirtual generic_class_get_virtual(void *p_class_userdata, GDExtensionConstStringNamePtr p_name, uint32_t p_hash) {
+static GDExtensionClassCallVirtual generic_class_get_virtual(void *p_class_userdata, GDExtensionConstStringNamePtr p_name) {
     const CrystalClassDesc *desc = (const CrystalClassDesc*)p_class_userdata;
     if (!desc) return nullptr;
 
@@ -807,6 +896,138 @@ static GDExtensionClassCallVirtual generic_class_get_virtual(void *p_class_userd
     return nullptr;
 }
 
+static std::unordered_set<std::string> g_interned_virtual_methods;
+
+static const char* intern_virtual_method(const char *name) {
+    if (!name) return nullptr;
+    auto it = g_interned_virtual_methods.find(name);
+    if (it != g_interned_virtual_methods.end()) {
+        return it->c_str();
+    }
+    auto res = g_interned_virtual_methods.insert(name);
+    return res.first->c_str();
+}
+
+static bool string_name_to_cstr(GDExtensionConstStringNamePtr sn, char *out, size_t max_len) {
+    if (!sn || !out || max_len == 0) return false;
+    out[0] = '\0';
+    if (!gd_string_from_string_name && gd_variant_get_ptr_constructor) {
+        gd_string_from_string_name = gd_variant_get_ptr_constructor(GDEXTENSION_VARIANT_TYPE_STRING, 2);
+    }
+    if (gd_string_from_string_name && gd_string_to_utf8_chars) {
+        alignas(void*) char gd_str[8] = {};
+        const GDExtensionConstTypePtr args[1] = { sn };
+        gd_string_from_string_name(gd_str, args);
+
+        int64_t len = gd_string_to_utf8_chars(gd_str, out, max_len - 1);
+        if (len >= 0 && len < (int64_t)max_len) {
+            out[len] = '\0';
+        } else {
+            out[max_len - 1] = '\0';
+        }
+        if (gd_string_destroy) gd_string_destroy(gd_str);
+        return true;
+    }
+    return false;
+}
+
+/**
+ * Resolves virtual call user data for Godot 4 virtual methods.
+ * Returning non-null indicates the virtual method is overridden by the extension.
+ */
+static void *generic_class_get_virtual_call_data(void *p_class_userdata, GDExtensionConstStringNamePtr p_name, uint32_t p_hash) {
+    ensure_gc_thread_registered();
+    const CrystalClassDesc *desc = (const CrystalClassDesc*)p_class_userdata;
+    if (!desc) return nullptr;
+
+    char method_buf[128];
+    if (!string_name_to_cstr(p_name, method_buf, sizeof(method_buf))) {
+        return nullptr;
+    }
+
+    // Built-in lifecycle methods
+    if (strcmp(method_buf, "_ready") == 0) {
+        return desc->has_ready ? (void*)intern_virtual_method("_ready") : nullptr;
+    }
+    if (strcmp(method_buf, "_process") == 0) {
+        return desc->has_process ? (void*)intern_virtual_method("_process") : nullptr;
+    }
+    if (strcmp(method_buf, "_physics_process") == 0) {
+        return desc->has_physics_process ? (void*)intern_virtual_method("_physics_process") : nullptr;
+    }
+    if (strcmp(method_buf, "_enter_tree") == 0) {
+        return desc->has_enter_tree ? (void*)intern_virtual_method("_enter_tree") : nullptr;
+    }
+    if (strcmp(method_buf, "_exit_tree") == 0) {
+        return desc->has_exit_tree ? (void*)intern_virtual_method("_exit_tree") : nullptr;
+    }
+    if (strcmp(method_buf, "_build") == 0) {
+        return (void*)intern_virtual_method("_build");
+    }
+
+    // Generic virtual method queried via Crystal callback
+    if (desc->has_virtual_method && desc->has_virtual_method(desc, method_buf)) {
+        return (void*)intern_virtual_method(method_buf);
+    }
+
+    return nullptr;
+}
+
+/**
+ * Dispatches generic virtual methods with arguments and return buffers into Crystal.
+ */
+static void generic_class_call_virtual_with_data(
+    GDExtensionClassInstancePtr p_instance,
+    GDExtensionConstStringNamePtr p_name,
+    void *p_virtual_call_userdata,
+    const GDExtensionConstTypePtr *p_args,
+    GDExtensionTypePtr r_ret
+) {
+    ensure_gc_thread_registered();
+    GenericExtensionInstance *inst = (GenericExtensionInstance*)p_instance;
+    if (!inst || !inst->desc || !inst->crystal_instance) return;
+
+    const char *method_name = (const char*)p_virtual_call_userdata;
+    if (!method_name) return;
+
+    if (strcmp(method_name, "_ready") == 0) {
+        if (is_editor_active() && !is_tool_desc(inst->desc)) return;
+        if (inst->desc->call_virtual) inst->desc->call_virtual(inst->crystal_instance, "_ready", 0.0);
+        return;
+    }
+    if (strcmp(method_name, "_process") == 0) {
+        if (is_editor_active() && !is_tool_desc(inst->desc)) return;
+        double delta = (p_args && p_args[0]) ? *(const double*)p_args[0] : 0.016666666666666666;
+        if (inst->desc->call_virtual) inst->desc->call_virtual(inst->crystal_instance, "_process", delta);
+        return;
+    }
+    if (strcmp(method_name, "_physics_process") == 0) {
+        if (is_editor_active() && !is_tool_desc(inst->desc)) return;
+        double delta = (p_args && p_args[0]) ? *(const double*)p_args[0] : 0.016666666666666666;
+        if (inst->desc->call_virtual) inst->desc->call_virtual(inst->crystal_instance, "_physics_process", delta);
+        return;
+    }
+    if (strcmp(method_name, "_enter_tree") == 0) {
+        if (is_editor_active() && !is_tool_desc(inst->desc)) return;
+        if (inst->desc->call_virtual) inst->desc->call_virtual(inst->crystal_instance, "_enter_tree", 0.0);
+        return;
+    }
+    if (strcmp(method_name, "_exit_tree") == 0) {
+        if (is_editor_active() && !is_tool_desc(inst->desc)) return;
+        if (inst->desc->call_virtual) inst->desc->call_virtual(inst->crystal_instance, "_exit_tree", 0.0);
+        return;
+    }
+    if (strcmp(method_name, "_build") == 0) {
+        if (r_ret) *(uint8_t*)r_ret = 1;
+        if (inst->desc->call_virtual) inst->desc->call_virtual(inst->crystal_instance, "_build", 0.0);
+        return;
+    }
+
+    if (inst->desc->call_virtual_with_data) {
+        inst->desc->call_virtual_with_data(inst->crystal_instance, method_name, (const void**)p_args, (void*)r_ret);
+    }
+}
+
 /**
  * Dynamic property setter called by Godot's inspector, animations, or scripts.
  *
@@ -816,6 +1037,7 @@ static GDExtensionClassCallVirtual generic_class_get_virtual(void *p_class_userd
  * @return 1 if the property was handled, 0 otherwise.
  */
 static GDExtensionBool generic_class_set(GDExtensionClassInstancePtr p_instance, GDExtensionConstStringNamePtr p_name, GDExtensionConstVariantPtr p_value) {
+    ensure_gc_thread_registered();
     GenericExtensionInstance *inst = (GenericExtensionInstance*)p_instance;
     if (!inst || !inst->desc || !inst->desc->set_property || !inst->crystal_instance) return 0;
 
@@ -846,6 +1068,7 @@ static GDExtensionBool generic_class_set(GDExtensionClassInstancePtr p_instance,
  * @return 1 if the property was handled, 0 otherwise.
  */
 static GDExtensionBool generic_class_get(GDExtensionClassInstancePtr p_instance, GDExtensionConstStringNamePtr p_name, GDExtensionVariantPtr r_ret) {
+    ensure_gc_thread_registered();
     GenericExtensionInstance *inst = (GenericExtensionInstance*)p_instance;
     if (!inst || !inst->desc || !inst->desc->get_property || !inst->crystal_instance) return 0;
 
@@ -920,7 +1143,9 @@ static void do_classdb_register(CrystalClassDesc *desc) {
     cinfo.create_instance_func = generic_class_create;
     cinfo.free_instance_func = generic_class_free;
     cinfo.recreate_instance_func = generic_class_recreate;
-    cinfo.get_virtual_func = generic_class_get_virtual;
+    cinfo.get_virtual_func = nullptr;
+    cinfo.get_virtual_call_data_func = generic_class_get_virtual_call_data;
+    cinfo.call_virtual_with_data_func = generic_class_call_virtual_with_data;
     cinfo.class_userdata = (void*)desc;
 
     gd_classdb_register_extension_class6(g_library, class_sn, parent_sn, &cinfo);
@@ -1942,6 +2167,247 @@ static const char* bridge_node_get_name(GDExtensionObjectPtr node) {
 }
 
 // ==============================================================================
+// Virtual Call Return and Argument Marshalling Helpers
+// ==============================================================================
+
+static void bridge_ret_string(void *r_ret, const char *str) {
+    if (!r_ret) return;
+    if (gd_string_new_with_utf8_chars) {
+        gd_string_new_with_utf8_chars(r_ret, str ? str : "");
+    }
+}
+
+static void bridge_ret_string_name(void *r_ret, const char *str) {
+    if (!r_ret) return;
+    if (gd_string_name_new_with_utf8_chars) {
+        gd_string_name_new_with_utf8_chars(r_ret, str ? str : "");
+    }
+}
+
+static GDExtensionPtrConstructor gd_packed_string_array_constructor = nullptr;
+static GDExtensionPtrBuiltInMethod gd_packed_string_array_append = nullptr;
+
+static void bridge_ret_packed_string_array(void *r_ret, const char **strings, int count) {
+    if (!r_ret) return;
+    if (!gd_packed_string_array_append && gd_variant_get_ptr_builtin_method) {
+        void *sn_append = make_string_name("append");
+        gd_packed_string_array_append = gd_variant_get_ptr_builtin_method(GDEXTENSION_VARIANT_TYPE_PACKED_STRING_ARRAY, sn_append, 816187996ULL);
+        free_string_name(sn_append);
+    }
+    if (gd_packed_string_array_append && strings) {
+        for (int i = 0; i < count; i++) {
+            alignas(void*) char gd_str[8] = {};
+            if (gd_string_new_with_utf8_chars) {
+                gd_string_new_with_utf8_chars(gd_str, strings[i] ? strings[i] : "");
+            }
+            const GDExtensionConstTypePtr args[1] = { gd_str };
+            alignas(void*) uint8_t append_ret = 0;
+            gd_packed_string_array_append(r_ret, args, &append_ret, 1);
+            if (gd_string_destroy) gd_string_destroy(gd_str);
+        }
+    }
+}
+
+static GDExtensionPtrConstructor gd_dictionary_constructor = nullptr;
+static GDExtensionPtrConstructor gd_array_constructor = nullptr;
+static GDExtensionPtrConstructor gd_variant_nil_constructor = nullptr;
+static GDExtensionPtrKeyedSetter gd_dict_keyed_setter = nullptr;
+
+static void bridge_ret_dictionary_empty(void *r_ret) {
+    if (!r_ret) return;
+    if (!gd_dictionary_constructor && gd_variant_get_ptr_constructor) {
+        gd_dictionary_constructor = gd_variant_get_ptr_constructor(GDEXTENSION_VARIANT_TYPE_DICTIONARY, 0);
+    }
+    if (gd_dictionary_constructor) {
+        gd_dictionary_constructor(r_ret, nullptr);
+    }
+}
+
+static void bridge_ret_array_empty(void *r_ret) {
+    if (!r_ret) return;
+    if (!gd_array_constructor && gd_variant_get_ptr_constructor) {
+        gd_array_constructor = gd_variant_get_ptr_constructor(GDEXTENSION_VARIANT_TYPE_ARRAY, 0);
+    }
+    if (gd_array_constructor) {
+        gd_array_constructor(r_ret, nullptr);
+    }
+}
+
+static void bridge_ret_object(void *r_ret, void *obj) {
+    if (!r_ret) return;
+    *(GDExtensionObjectPtr*)r_ret = (GDExtensionObjectPtr)obj;
+}
+
+static void bridge_ret_ref(void *r_ret, void *obj) {
+    if (!r_ret) return;
+    if (gd_ref_set_object) {
+        gd_ref_set_object((GDExtensionRefPtr)r_ret, (GDExtensionObjectPtr)obj);
+    } else {
+        *(GDExtensionObjectPtr*)r_ret = (GDExtensionObjectPtr)obj;
+    }
+}
+
+static void bridge_ret_variant_object(void *r_ret, void *obj) {
+    if (!r_ret) return;
+    bridge_variant_from_type(GDEXTENSION_VARIANT_TYPE_OBJECT, r_ret, &obj);
+}
+
+static void bridge_ret_variant_nil(void *r_ret) {
+    if (!r_ret) return;
+    memset(r_ret, 0, 24);
+}
+
+static void bridge_highlighter_add_span(void *r_color_map, int64_t col, float r, float g, float b, float a) {
+    if (!r_color_map) return;
+    if (!gd_dict_keyed_setter && gd_variant_get_ptr_keyed_setter) {
+        gd_dict_keyed_setter = gd_variant_get_ptr_keyed_setter(GDEXTENSION_VARIANT_TYPE_DICTIONARY);
+    }
+    if (!gd_dictionary_constructor && gd_variant_get_ptr_constructor) {
+        gd_dictionary_constructor = gd_variant_get_ptr_constructor(GDEXTENSION_VARIANT_TYPE_DICTIONARY, 0);
+    }
+    if (!gd_dict_keyed_setter || !gd_dictionary_constructor) return;
+
+    alignas(void*) char sub_dict[8] = {};
+    gd_dictionary_constructor(sub_dict, nullptr);
+
+    alignas(void*) char var_color_str[24] = {};
+    const char *color_str = "color";
+    bridge_variant_from_type(GDEXTENSION_VARIANT_TYPE_STRING, var_color_str, &color_str);
+
+    struct { float r, g, b, a; } color_val = { r, g, b, a };
+    alignas(void*) char var_color_val[24] = {};
+    bridge_variant_from_type(GDEXTENSION_VARIANT_TYPE_COLOR, var_color_val, &color_val);
+
+    gd_dict_keyed_setter(sub_dict, var_color_str, var_color_val);
+
+    alignas(void*) char var_col[24] = {};
+    bridge_variant_from_type(GDEXTENSION_VARIANT_TYPE_INT, var_col, &col);
+
+    alignas(void*) char var_sub_dict[24] = {};
+    bridge_variant_from_type(GDEXTENSION_VARIANT_TYPE_DICTIONARY, var_sub_dict, sub_dict);
+
+    gd_dict_keyed_setter(r_color_map, var_col, var_sub_dict);
+
+    if (gd_variant_destroy) {
+        gd_variant_destroy(var_color_str);
+        gd_variant_destroy(var_color_val);
+        gd_variant_destroy(var_col);
+        gd_variant_destroy(var_sub_dict);
+    }
+    static GDExtensionPtrDestructor gd_dict_destructor = nullptr;
+    if (!gd_dict_destructor && gd_variant_get_ptr_destructor) {
+        gd_dict_destructor = gd_variant_get_ptr_destructor(GDEXTENSION_VARIANT_TYPE_DICTIONARY);
+    }
+    if (gd_dict_destructor) {
+        gd_dict_destructor(sub_dict);
+    }
+}
+
+static int bridge_arg_to_string(const void *arg, char *out, int max_len) {
+    if (!arg || !out || max_len <= 0) return 0;
+    out[0] = '\0';
+    if (gd_string_to_utf8_chars) {
+        int64_t len = gd_string_to_utf8_chars((GDExtensionConstStringPtr)arg, out, max_len - 1);
+        if (len >= 0 && len < (int64_t)max_len) {
+            out[len] = '\0';
+            return (int)len;
+        } else {
+            out[max_len - 1] = '\0';
+            return max_len - 1;
+        }
+    }
+    return 0;
+}
+
+static int bridge_arg_to_string_name(const void *arg, char *out, int max_len) {
+    if (!arg || !out || max_len <= 0) return 0;
+    out[0] = '\0';
+    if (string_name_to_cstr((GDExtensionConstStringNamePtr)arg, out, max_len)) {
+        return (int)strlen(out);
+    }
+    return 0;
+}
+
+static void dict_set_variant(void *dict, const char *key_str, int var_type, const void *val_ptr) {
+    if (!gd_dict_keyed_setter && gd_variant_get_ptr_keyed_setter) {
+        gd_dict_keyed_setter = gd_variant_get_ptr_keyed_setter(GDEXTENSION_VARIANT_TYPE_DICTIONARY);
+    }
+    if (!gd_dict_keyed_setter) return;
+
+    alignas(void*) char var_key[24] = {};
+    const char *k = key_str;
+    bridge_variant_from_type(GDEXTENSION_VARIANT_TYPE_STRING, var_key, &k);
+
+    alignas(void*) char var_val[24] = {};
+    bridge_variant_from_type(var_type, var_val, val_ptr);
+
+    gd_dict_keyed_setter(dict, var_key, var_val);
+
+    if (gd_variant_destroy) {
+        gd_variant_destroy(var_key);
+        gd_variant_destroy(var_val);
+    }
+}
+
+static void bridge_ret_dictionary_validate(void *r_ret, uint8_t valid) {
+    bridge_ret_dictionary_empty(r_ret);
+    uint8_t v_bool = valid;
+    dict_set_variant(r_ret, "valid", GDEXTENSION_VARIANT_TYPE_BOOL, &v_bool);
+}
+
+static void bridge_ret_dictionary_complete_code(void *r_ret) {
+    bridge_ret_dictionary_empty(r_ret);
+    int64_t v_res = 0;
+    dict_set_variant(r_ret, "result", GDEXTENSION_VARIANT_TYPE_INT, &v_res);
+    uint8_t v_force = 0;
+    dict_set_variant(r_ret, "force", GDEXTENSION_VARIANT_TYPE_BOOL, &v_force);
+    const char *v_hint = "";
+    dict_set_variant(r_ret, "call_hint", GDEXTENSION_VARIANT_TYPE_STRING, &v_hint);
+}
+
+static void bridge_ret_dictionary_lookup_code(void *r_ret) {
+    bridge_ret_dictionary_empty(r_ret);
+    int64_t v_res = 2; // ERR_UNAVAILABLE
+    dict_set_variant(r_ret, "result", GDEXTENSION_VARIANT_TYPE_INT, &v_res);
+    int64_t v_type = 0;
+    dict_set_variant(r_ret, "type", GDEXTENSION_VARIANT_TYPE_INT, &v_type);
+}
+
+static GDExtensionMethodBindPtr mb_text_edit_get_line = nullptr;
+
+static int bridge_text_edit_get_line(void *text_edit, int64_t line, char *out_buf, int max_len) {
+    if (!text_edit || !out_buf || max_len <= 0) return 0;
+    out_buf[0] = '\0';
+    if (!mb_text_edit_get_line && gd_classdb_get_method_bind) {
+        void *sn_te = make_string_name("TextEdit");
+        void *sn_gl = make_string_name("get_line");
+        mb_text_edit_get_line = gd_classdb_get_method_bind(sn_te, sn_gl, 844755477ULL);
+        free_string_name(sn_te); free_string_name(sn_gl);
+    }
+    if (!mb_text_edit_get_line || !gd_object_method_bind_ptrcall) return 0;
+
+    alignas(void*) char gd_str[8] = {};
+    const void *args[1] = { &line };
+    gd_object_method_bind_ptrcall(mb_text_edit_get_line, (GDExtensionObjectPtr)text_edit, args, gd_str);
+
+    int ret_len = 0;
+    if (gd_string_to_utf8_chars) {
+        int64_t len = gd_string_to_utf8_chars(gd_str, out_buf, max_len - 1);
+        if (len >= 0 && len < (int64_t)max_len) {
+            out_buf[len] = '\0';
+            ret_len = (int)len;
+        } else {
+            out_buf[max_len - 1] = '\0';
+            ret_len = max_len - 1;
+        }
+    }
+    if (gd_string_destroy) {
+        gd_string_destroy(gd_str);
+    }
+    return ret_len;
+}
+
+// ==============================================================================
 // Master BridgeAPI Table Exposed to Crystal
 // ==============================================================================
 
@@ -1983,6 +2449,22 @@ struct BridgeAPI {
     uint64_t (*object_get_instance_id)(GDExtensionConstObjectPtr p_o);
     GDExtensionObjectPtr (*object_get_instance_from_id)(uint64_t id);
     uint8_t (*is_instance_valid)(uint64_t id);
+    void (*ret_string)(void *r_ret, const char *str);
+    void (*ret_string_name)(void *r_ret, const char *str);
+    void (*ret_packed_string_array)(void *r_ret, const char **strings, int count);
+    void (*ret_dictionary_empty)(void *r_ret);
+    void (*ret_array_empty)(void *r_ret);
+    void (*ret_object)(void *r_ret, void *obj);
+    void (*ret_ref)(void *r_ret, void *obj);
+    void (*ret_variant_object)(void *r_ret, void *obj);
+    void (*ret_variant_nil)(void *r_ret);
+    void (*highlighter_add_span)(void *r_color_map, int64_t col, float r, float g, float b, float a);
+    int (*arg_to_string)(const void *arg, char *out, int max_len);
+    int (*arg_to_string_name)(const void *arg, char *out, int max_len);
+    void (*ret_dictionary_validate)(void *r_ret, uint8_t valid);
+    void (*ret_dictionary_complete_code)(void *r_ret);
+    void (*ret_dictionary_lookup_code)(void *r_ret);
+    int (*text_edit_get_line)(void *text_edit, int64_t line, char *out_buf, int max_len);
 };
 
 static BridgeAPI g_bridge_api = {
@@ -2018,7 +2500,23 @@ static BridgeAPI g_bridge_api = {
     bridge_object_destroy,
     bridge_object_get_instance_id,
     bridge_object_get_instance_from_id,
-    bridge_is_instance_valid
+    bridge_is_instance_valid,
+    bridge_ret_string,
+    bridge_ret_string_name,
+    bridge_ret_packed_string_array,
+    bridge_ret_dictionary_empty,
+    bridge_ret_array_empty,
+    bridge_ret_object,
+    bridge_ret_ref,
+    bridge_ret_variant_object,
+    bridge_ret_variant_nil,
+    bridge_highlighter_add_span,
+    bridge_arg_to_string,
+    bridge_arg_to_string_name,
+    bridge_ret_dictionary_validate,
+    bridge_ret_dictionary_complete_code,
+    bridge_ret_dictionary_lookup_code,
+    bridge_text_edit_get_line
 };
 
 // ==============================================================================
@@ -2510,6 +3008,9 @@ static void load_crystal_game_library() {
             CrystalInitFn init_fn = (CrystalInitFn)bridge_get_proc(hModule, "crystal_godot_init");
             if (init_fn) {
                 init_fn(&g_bridge_api);
+#ifdef _WIN32
+                AddVectoredExceptionHandler(1, custom_crash_handler);
+#endif
             } else {
                 godot_log_error("Failed to find 'crystal_godot_init' in loaded library", nullptr, "load_crystal_game_library", __FILE__, __LINE__);
             }
@@ -2643,11 +3144,90 @@ static void deinitialize_crystal_module(void *p_userdata, GDExtensionInitializat
  * @param r_initialization Struct to receive initialize and deinitialize function pointers.
  * @return 1 on success, 0 on failure.
  */
+#ifdef _WIN32
+static LONG WINAPI custom_crash_handler(PEXCEPTION_POINTERS pExceptionInfo) {
+    if (pExceptionInfo->ExceptionRecord->ExceptionCode == EXCEPTION_ACCESS_VIOLATION) {
+        void *faulting_addr = pExceptionInfo->ExceptionRecord->ExceptionAddress;
+        ULONG_PTR access_type = pExceptionInfo->ExceptionRecord->ExceptionInformation[0];
+        ULONG_PTR target_addr = pExceptionInfo->ExceptionRecord->ExceptionInformation[1];
+
+        HMODULE hMod = NULL;
+        char mod_name[MAX_PATH] = "Unknown";
+        if (GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+                               (LPCSTR)faulting_addr, &hMod)) {
+            GetModuleFileNameA(hMod, mod_name, sizeof(mod_name));
+        }
+
+        char report[4096];
+        int pos = snprintf(report, sizeof(report),
+            "\n==================== CRASH INTERCEPTED ====================\n"
+            "Access Violation (0xC0000005) attempting to %s address 0x%llx\n"
+            "Faulting instruction at: %p in module %s (offset 0x%llx)\n"
+            "Callstack:\n",
+            access_type == 0 ? "read" : "write", (unsigned long long)target_addr,
+            faulting_addr, mod_name, (unsigned long long)((uintptr_t)faulting_addr - (uintptr_t)hMod));
+
+        void *backtrace[32];
+        WORD count = CaptureStackBackTrace(0, 32, backtrace, NULL);
+        for (int i = 0; i < count && pos < (int)sizeof(report) - 128; i++) {
+            HMODULE frame_mod = NULL;
+            char frame_mod_name[MAX_PATH] = "Unknown";
+            if (GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+                                   (LPCSTR)backtrace[i], &frame_mod)) {
+                GetModuleFileNameA(frame_mod, frame_mod_name, sizeof(frame_mod_name));
+            }
+            const char *base_name = strrchr(frame_mod_name, '\\');
+            base_name = base_name ? base_name + 1 : frame_mod_name;
+            pos += snprintf(report + pos, sizeof(report) - pos,
+                "  [%02d] %p (%s + 0x%llx)\n", i, backtrace[i], base_name,
+                (unsigned long long)((uintptr_t)backtrace[i] - (uintptr_t)frame_mod));
+        }
+        if (pos < (int)sizeof(report) - 64) {
+            pos += snprintf(report + pos, sizeof(report) - pos,
+                "===========================================================\n\n");
+        }
+
+        FILE *f = fopen("crash_dump.txt", "w");
+        if (f) {
+            fputs(report, f);
+            fclose(f);
+        }
+        FILE *f2 = fopen("test/crash_dump.txt", "w");
+        if (f2) {
+            fputs(report, f2);
+            fclose(f2);
+        }
+
+        DWORD written = 0;
+        HANDLE hErr = GetStdHandle(STD_ERROR_HANDLE);
+        if (hErr && hErr != INVALID_HANDLE_VALUE) {
+            WriteFile(hErr, report, (DWORD)pos, &written, NULL);
+        }
+        HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+        if (hOut && hOut != INVALID_HANDLE_VALUE) {
+            WriteFile(hOut, report, (DWORD)pos, &written, NULL);
+        }
+        fputs(report, stderr);
+        fflush(stderr);
+    }
+    return EXCEPTION_CONTINUE_SEARCH;
+}
+#endif
+
 extern "C" GDE_EXPORT GDExtensionBool crystal_library_init(
     GDExtensionInterfaceGetProcAddress p_get_proc_address,
     GDExtensionClassLibraryPtr p_library,
     GDExtensionInitialization *r_initialization
 ) {
+    init_gc_library();
+    ensure_gc_thread_registered();
+#ifdef _WIN32
+    static bool s_handler_installed = false;
+    if (!s_handler_installed) {
+        s_handler_installed = true;
+        AddVectoredExceptionHandler(1, custom_crash_handler);
+    }
+#endif
     gd_get_proc_address = p_get_proc_address;
     g_library = p_library;
 
@@ -2673,6 +3253,8 @@ extern "C" GDE_EXPORT GDExtensionBool crystal_library_init(
     gd_object_get_instance_from_id = (GDExtensionInterfaceObjectGetInstanceFromId)p_get_proc_address("object_get_instance_from_id");
     gd_object_destroy = (GDExtensionInterfaceObjectDestroy)p_get_proc_address("object_destroy");
     gd_object_get_instance_id = (GDExtensionInterfaceObjectGetInstanceId)p_get_proc_address("object_get_instance_id");
+    gd_ref_set_object = (GDExtensionInterfaceRefSetObject)p_get_proc_address("ref_set_object");
+    gd_ref_get_object = (GDExtensionInterfaceRefGetObject)p_get_proc_address("ref_get_object");
     gd_variant_stringify = (GDExtensionInterfaceVariantStringify)p_get_proc_address("variant_stringify");
     gd_string_to_utf8_chars = (GDExtensionInterfaceStringToUtf8Chars)p_get_proc_address("string_to_utf8_chars");
 
@@ -2689,6 +3271,8 @@ extern "C" GDE_EXPORT GDExtensionBool crystal_library_init(
     gd_variant_get_ptr_utility_function = (GDExtensionInterfaceVariantGetPtrUtilityFunction)p_get_proc_address("variant_get_ptr_utility_function");
     gd_variant_get_ptr_constructor = (GDExtensionInterfaceVariantGetPtrConstructor)p_get_proc_address("variant_get_ptr_constructor");
     gd_variant_get_ptr_destructor = (GDExtensionInterfaceVariantGetPtrDestructor)p_get_proc_address("variant_get_ptr_destructor");
+    gd_variant_get_ptr_builtin_method = (GDExtensionInterfaceVariantGetPtrBuiltinMethod)p_get_proc_address("variant_get_ptr_builtin_method");
+    gd_variant_get_ptr_keyed_setter = (GDExtensionInterfaceVariantGetPtrKeyedSetter)p_get_proc_address("variant_get_ptr_keyed_setter");
 
     if (gd_variant_get_ptr_destructor) {
         gd_string_destroy = gd_variant_get_ptr_destructor(GDEXTENSION_VARIANT_TYPE_STRING);

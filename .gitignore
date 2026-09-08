@@ -46,4 +46,5 @@ dist/
 test_report.*
 android_audit_report.txt
 godot-src/
+*.cr.uid
 

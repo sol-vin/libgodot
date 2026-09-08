@@ -349,11 +349,11 @@ node ToolTester2D < Godot::Node2D do
     if passed == total
       @test_status = "All #{total}/#{total} Tests Passed!"
       Godot.print("[ToolTester2D] SUCCESS: All #{total} in-editor tests passed cleanly!")
-      File.write(".tool_tests_passed", "All #{total} in-editor tests passed cleanly!\n")
+      Godot::SystemIO.write_file(".tool_tests_passed", "All #{total} in-editor tests passed cleanly!\n")
     else
       @test_status = "Failed: #{total - passed}/#{total} Errors"
       Godot.printerr("[ToolTester2D] FAILED: #{total - passed} test(s) failed.")
-      File.write(".tool_tests_failed", "Failed: #{total - passed} test(s) failed.\n")
+      Godot::SystemIO.write_file(".tool_tests_failed", "Failed: #{total - passed} test(s) failed.\n")
     end
   end
 
@@ -405,11 +405,11 @@ node ToolTester3D < Godot::Node3D do
     if passed == total
       @test_status = "All #{total}/#{total} Tests Passed!"
       Godot.print("[ToolTester3D] SUCCESS: All #{total} in-editor tests passed cleanly!")
-      File.write(".tool_tests_passed", "All #{total} in-editor tests passed cleanly!\n")
+      Godot::SystemIO.write_file(".tool_tests_passed", "All #{total} in-editor tests passed cleanly!\n")
     else
       @test_status = "Failed: #{total - passed}/#{total} Errors"
       Godot.printerr("[ToolTester3D] FAILED: #{total - passed} test(s) failed.")
-      File.write(".tool_tests_failed", "Failed: #{total - passed} test(s) failed.\n")
+      Godot::SystemIO.write_file(".tool_tests_failed", "Failed: #{total - passed} test(s) failed.\n")
     end
   end
 
@@ -495,13 +495,14 @@ node RunTesterPanel < Godot::Control do
     if suite_label == "All"
       begin
         summary = "TOTAL=#{total}\nPASSED=#{passed}\nFAILED=#{total - passed}\n"
-        File.write(".runtime_test_results.txt", summary)
+        Godot::SystemIO.write_file(".runtime_test_results.txt", summary)
         if passed == total
-          File.write(".runtime_tests_passed", "PASSED\n")
-          File.delete(".runtime_tests_failed") if File.exists?(".runtime_tests_failed")
+          Godot::SystemIO.write_file(".runtime_tests_passed", "PASSED\n")
+          Godot::SystemIO.delete_file(".runtime_tests_failed") if Godot::SystemIO.file_exists?(".runtime_tests_failed")
         else
-          File.write(".runtime_tests_failed", "FAILED: #{total - passed} test(s) failed\n")
-          File.delete(".runtime_tests_passed") if File.exists?(".runtime_tests_passed")
+          failed_lines = results.reject(&.passed).map { |r| "FAILED: [#{r.category}] #{r.name} - #{r.message}" }.join("\n")
+          Godot::SystemIO.write_file(".runtime_tests_failed", "FAILED: #{total - passed} test(s) failed\n#{failed_lines}\n")
+          Godot::SystemIO.delete_file(".runtime_tests_passed") if Godot::SystemIO.file_exists?(".runtime_tests_passed")
         end
       rescue
       end
@@ -1368,4 +1369,5 @@ require "./suites/test_classdb_coverage"
 require "./suites/test_concurrency"
 require "./suites/test_macros_dsl"
 require "./suites/test_multi_addon_isolation"
+require "./suites/test_script_first_class"
 

@@ -1,4 +1,5 @@
 require "./libgodot/types"
+require "./libgodot/system_io"
 require "./libgodot/object"
 require "./libgodot/doc_macro"
 require "./libgodot/macros"
@@ -11,6 +12,8 @@ require "./libgodot/generated/global_enums"
 require "./libgodot/generated/classes/all_classes"
 require "./libgodot/generated/singletons"
 require "./libgodot/docs"
+require "./libgodot/script"
+require "./libgodot/editor"
 
 module Godot
   class PackedScene < Resource

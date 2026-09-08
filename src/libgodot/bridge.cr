@@ -39,6 +39,9 @@ module Godot
       set_property : (Void*, LibC::Char*, Void* -> Void)
       get_property : (Void*, LibC::Char*, Void* -> Void)
 
+      has_virtual_method : (CrystalClassDesc*, LibC::Char* -> Int32)
+      call_virtual_with_data : (Void*, LibC::Char*, Void**, Void* -> Void)
+
       property_count : Int32
       properties : CrystalPropertyDesc*
 
@@ -87,6 +90,22 @@ module Godot
       object_get_instance_id : (Void* -> UInt64)
       object_get_instance_from_id : (UInt64 -> Void*)
       is_instance_valid : (UInt64 -> UInt8)
+      ret_string : (Void*, LibC::Char* -> Void)
+      ret_string_name : (Void*, LibC::Char* -> Void)
+      ret_packed_string_array : (Void*, LibC::Char**, Int32 -> Void)
+      ret_dictionary_empty : (Void* -> Void)
+      ret_array_empty : (Void* -> Void)
+      ret_object : (Void*, Void* -> Void)
+      ret_ref : (Void*, Void* -> Void)
+      ret_variant_object : (Void*, Void* -> Void)
+      ret_variant_nil : (Void* -> Void)
+      highlighter_add_span : (Void*, Int64, Float32, Float32, Float32, Float32 -> Void)
+      arg_to_string : (Void*, LibC::Char*, Int32 -> Int32)
+      arg_to_string_name : (Void*, LibC::Char*, Int32 -> Int32)
+      ret_dictionary_validate : (Void*, UInt8 -> Void)
+      ret_dictionary_complete_code : (Void* -> Void)
+      ret_dictionary_lookup_code : (Void* -> Void)
+      text_edit_get_line : (Void*, Int64, LibC::Char*, Int32 -> Int32)
     end
   end
 
@@ -233,6 +252,24 @@ module Godot
         end
       }
 
+      has_virtual_fn = ->(desc : LibBridge::CrystalClassDesc*, method_name : LibC::Char*) : Int32 {
+        class_name = String.new(desc.value.name)
+        m_name = String.new(method_name)
+        if entry = Godot::ClassRegistry.find(class_name)
+          entry.has_virtual_method?(m_name) ? 1 : 0
+        else
+          0
+        end
+      }
+
+      virtual_with_data_fn = ->(crystal_inst : Void*, method_name : LibC::Char*, args : Void**, ret : Void*) {
+        if !crystal_inst.null?
+          inst = Box(Godot::Object).unbox(crystal_inst)
+          m_name = String.new(method_name)
+          inst._godot_call_virtual_with_data(m_name, args, ret)
+        end
+      }
+
       # Register every class defined in Crystal
       print "[CrystalBridge] Step 3: ClassRegistry has #{Godot::ClassRegistry.entries.size} entries"
       Godot::ClassRegistry.entries.each do |entry|
@@ -288,6 +325,8 @@ module Godot
         desc.call_virtual = virtual_fn
         desc.set_property = set_prop_fn
         desc.get_property = get_prop_fn
+        desc.has_virtual_method = has_virtual_fn
+        desc.call_virtual_with_data = virtual_with_data_fn
 
         desc.property_count = p_count
         desc.properties = props
@@ -748,6 +787,102 @@ module Godot
     def self.is_instance_valid(id : UInt64) : Bool
       return false if id == 0 || @@api.null? || @@api.value.is_instance_valid.pointer.null?
       @@api.value.is_instance_valid.call(id) != 0_u8
+    end
+
+    def self.find_alive_instance(godot_obj : Void*) : Godot::Object?
+      @@alive_mutex.synchronize do
+        @@alive_instances.values.find { |inst| inst.pointer == godot_obj }
+      end
+    end
+
+    def self.ret_string(ret : Void*, str : String) : Void
+      return if ret.null? || @@api.null? || @@api.value.ret_string.pointer.null?
+      @@api.value.ret_string.call(ret, str.to_unsafe)
+    end
+
+    def self.ret_string_name(ret : Void*, str : String) : Void
+      return if ret.null? || @@api.null? || @@api.value.ret_string_name.pointer.null?
+      @@api.value.ret_string_name.call(ret, str.to_unsafe)
+    end
+
+    def self.ret_packed_string_array(ret : Void*, strings : Array(String)) : Void
+      return if ret.null? || @@api.null? || @@api.value.ret_packed_string_array.pointer.null?
+      c_strings = Pointer(LibC::Char*).malloc(strings.size > 0 ? strings.size : 1)
+      strings.each_with_index do |s, idx|
+        c_strings[idx] = s.to_unsafe
+      end
+      @@api.value.ret_packed_string_array.call(ret, c_strings, strings.size)
+    end
+
+    def self.ret_dictionary_empty(ret : Void*) : Void
+      return if ret.null? || @@api.null? || @@api.value.ret_dictionary_empty.pointer.null?
+      @@api.value.ret_dictionary_empty.call(ret)
+    end
+
+    def self.ret_dictionary_validate(ret : Void*, valid : Bool) : Void
+      return if ret.null? || @@api.null? || @@api.value.ret_dictionary_validate.pointer.null?
+      @@api.value.ret_dictionary_validate.call(ret, valid ? 1_u8 : 0_u8)
+    end
+
+    def self.ret_dictionary_complete_code(ret : Void*) : Void
+      return if ret.null? || @@api.null? || @@api.value.ret_dictionary_complete_code.pointer.null?
+      @@api.value.ret_dictionary_complete_code.call(ret)
+    end
+
+    def self.ret_dictionary_lookup_code(ret : Void*) : Void
+      return if ret.null? || @@api.null? || @@api.value.ret_dictionary_lookup_code.pointer.null?
+      @@api.value.ret_dictionary_lookup_code.call(ret)
+    end
+
+    def self.text_edit_get_line(text_edit : Void*, line : Int64) : String
+      return "" if text_edit.null? || @@api.null? || @@api.value.text_edit_get_line.pointer.null?
+      buf = StaticArray(UInt8, 4096).new(0_u8)
+      len = @@api.value.text_edit_get_line.call(text_edit, line, buf.to_unsafe.as(LibC::Char*), 4096)
+      len > 0 ? String.new(buf.to_slice[0, len]) : ""
+    end
+
+    def self.ret_array_empty(ret : Void*) : Void
+      return if ret.null? || @@api.null? || @@api.value.ret_array_empty.pointer.null?
+      @@api.value.ret_array_empty.call(ret)
+    end
+
+    def self.ret_object(ret : Void*, obj_ptr : Void*) : Void
+      return if ret.null? || @@api.null? || @@api.value.ret_object.pointer.null?
+      @@api.value.ret_object.call(ret, obj_ptr)
+    end
+
+    def self.ret_ref(ret : Void*, obj_ptr : Void*) : Void
+      return if ret.null? || @@api.null? || @@api.value.ret_ref.pointer.null?
+      @@api.value.ret_ref.call(ret, obj_ptr)
+    end
+
+    def self.ret_variant_object(ret : Void*, obj_ptr : Void*) : Void
+      return if ret.null? || @@api.null? || @@api.value.ret_variant_object.pointer.null?
+      @@api.value.ret_variant_object.call(ret, obj_ptr)
+    end
+
+    def self.ret_variant_nil(ret : Void*) : Void
+      return if ret.null? || @@api.null? || @@api.value.ret_variant_nil.pointer.null?
+      @@api.value.ret_variant_nil.call(ret)
+    end
+
+    def self.highlighter_add_span(ret : Void*, col : Int64, r : Float32, g : Float32, b : Float32, a : Float32 = 1.0_f32) : Void
+      return if ret.null? || @@api.null? || @@api.value.highlighter_add_span.pointer.null?
+      @@api.value.highlighter_add_span.call(ret, col, r, g, b, a)
+    end
+
+    def self.arg_to_string(arg_ptr : Void*) : String
+      return "" if arg_ptr.null? || @@api.null? || @@api.value.arg_to_string.pointer.null?
+      buf = Bytes.new(2048)
+      len = @@api.value.arg_to_string.call(arg_ptr, buf.to_unsafe.as(LibC::Char*), 2048)
+      len > 0 ? String.new(buf[0, len]) : ""
+    end
+
+    def self.arg_to_string_name(arg_ptr : Void*) : String
+      return "" if arg_ptr.null? || @@api.null? || @@api.value.arg_to_string_name.pointer.null?
+      buf = Bytes.new(512)
+      len = @@api.value.arg_to_string_name.call(arg_ptr, buf.to_unsafe.as(LibC::Char*), 512)
+      len > 0 ? String.new(buf[0, len]) : ""
     end
   end
 end
