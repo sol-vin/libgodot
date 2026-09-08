@@ -36,6 +36,7 @@ node CrystalIntegrationPlugin < EditorPlugin do
     Godot.print("  [CrystalIntegrationPlugin] Native Crystal editor plugin unloaded.")
   end
 
+  # Handles toolbar compile button press to trigger manual Crystal rebuild
   def on_compile_button_pressed : Void
     Godot.print("[CrystalIntegrationPlugin] Triggering manual Crystal build...")
     success = execute_crystal_build
@@ -46,15 +47,18 @@ node CrystalIntegrationPlugin < EditorPlugin do
     end
   end
 
+  # Invoked by Godot editor before running project (F5 / F6)
   def _build : Bool
     Godot.print("[CrystalIntegrationPlugin] Editor build requested (F5 / Play). Compiling Crystal...")
     execute_crystal_build
   end
 
+  # Compiles project Crystal code into shared library
   def execute_crystal_build : Bool
     execute_crystal_build_with_options(false)
   end
 
+  # Compiles project Crystal code with optional release optimizations
   def execute_crystal_build_with_options(is_release : Bool = false) : Bool
     entry_file = "src/main.cr"
     entry_file = "test/src/main.cr" unless File.exists?(entry_file)

@@ -273,16 +273,57 @@ if ($TestRelease) {
         }
         Get-ChildItem -Path $templateDist -Include "*.pdb", "*.exp", "*.lib" -Recurse | Remove-Item -Force -ErrorAction SilentlyContinue
 
-        $bundledLib = Join-Path $templateDist "lib/libgodot"
-        New-Item -ItemType Directory -Force -Path $bundledLib | Out-Null
-        Copy-Item -Path "src" -Destination (Join-Path $bundledLib "src") -Recurse -Force
-        Copy-Item "shard.yml" "$bundledLib/shard.yml" -Force
-        if (Test-Path "README.md") { Copy-Item "README.md" "$bundledLib/README.md" -Force }
+        # Swap shard.release.yml to shard.yml for GitHub release
+        $tplReleaseShard = Join-Path $templateDist "shard.release.yml"
+        if (Test-Path $tplReleaseShard) {
+            Copy-Item $tplReleaseShard (Join-Path $templateDist "shard.yml") -Force
+            Remove-Item $tplReleaseShard -Force
+        }
 
         $templateZip = Join-Path $RootDir "bin/windows/template-project.zip"
         if (Test-Path $templateZip) { Remove-Item $templateZip -Force }
         Compress-Archive -Path "$templateDist/*" -DestinationPath $templateZip -Force
         Write-Host "  [OK] Created template archive: $templateZip ($( [math]::Round((Get-Item $templateZip).Length / 1MB, 2) ) MB)" -ForegroundColor Green
+
+        # 3b. Package Addon Starter Template (template-addon-project.zip)
+        Write-Host "[Release] Packaging template-addon-project.zip..." -ForegroundColor Cyan
+        $templateAddonDist = Join-Path $RootDir "bin/windows/template_addon_pkg"
+        if (Test-Path $templateAddonDist) { Remove-Item $templateAddonDist -Recurse -Force }
+        New-Item -ItemType Directory -Force -Path $templateAddonDist | Out-Null
+
+        Get-ChildItem -Path "template-addon" -Exclude ".godot", "dist" | ForEach-Object {
+            Copy-Item -Path $_.FullName -Destination $templateAddonDist -Recurse -Force
+        }
+
+        $tplAddonInt = Join-Path $templateAddonDist "addons/crystal_integration"
+        if (-not (Test-Path $tplAddonInt)) {
+            New-Item -ItemType Directory -Force -Path (Split-Path $tplAddonInt) | Out-Null
+            Copy-Item -Path "addons/crystal_integration" -Destination (Split-Path $tplAddonInt) -Recurse -Force
+        }
+
+        # Populate bridge & runtime DLLs into crystal_addon and crystal_integration bin folders
+        foreach ($subAddon in @("crystal_addon", "crystal_integration")) {
+            $sBin = Join-Path $templateAddonDist "addons/$subAddon/bin"
+            if (-not (Test-Path $sBin)) { New-Item -ItemType Directory -Force -Path $sBin | Out-Null }
+            if (Test-Path "bin/crystal_bridge.dll") {
+                Copy-Item "bin/crystal_bridge.dll" "$sBin/crystal_bridge.dll" -Force
+            }
+            foreach ($dll in @('gc.dll', 'iconv-2.dll', 'pcre2-8.dll', 'libgodot.dll')) {
+                if (Test-Path "bin/$dll") { Copy-Item "bin/$dll" "$sBin/$dll" -Force }
+            }
+        }
+        Get-ChildItem -Path $templateAddonDist -Include "*.pdb", "*.exp", "*.lib" -Recurse | Remove-Item -Force -ErrorAction SilentlyContinue
+
+        $addonReleaseShard = Join-Path $templateAddonDist "shard.release.yml"
+        if (Test-Path $addonReleaseShard) {
+            Copy-Item $addonReleaseShard (Join-Path $templateAddonDist "shard.yml") -Force
+            Remove-Item $addonReleaseShard -Force
+        }
+
+        $templateAddonZip = Join-Path $RootDir "bin/windows/template-addon-project.zip"
+        if (Test-Path $templateAddonZip) { Remove-Item $templateAddonZip -Force }
+        Compress-Archive -Path "$templateAddonDist/*" -DestinationPath $templateAddonZip -Force
+        Write-Host "  [OK] Created template-addon archive: $templateAddonZip ($( [math]::Round((Get-Item $templateAddonZip).Length / 1MB, 2) ) MB)" -ForegroundColor Green
 
         # 4. Package Core LibGodot Distribution
         Write-Host "[Release] Packaging core LibGodot distribution zip..." -ForegroundColor Cyan
@@ -291,32 +332,22 @@ if ($TestRelease) {
         New-Item -ItemType Directory -Force -Path $libDist | Out-Null
 
         Copy-Item -Path "src" -Destination (Join-Path $libDist "src") -Recurse -Force
+        Copy-Item -Path "bin" -Destination (Join-Path $libDist "bin") -Recurse -Force
         Copy-Item -Path "addons" -Destination (Join-Path $libDist "addons") -Recurse -Force
         Copy-Item -Path "template" -Destination (Join-Path $libDist "template") -Recurse -Force
+        Copy-Item -Path "shard.yml" "$libDist/shard.yml" -Force
+        if (Test-Path "README.md") { Copy-Item "README.md" "$libDist/README.md" -Force }
+        Get-ChildItem -Path $libDist -Include "*.pdb", "*.exp" -Recurse | Remove-Item -Force -ErrorAction SilentlyContinue
 
-        $binTarget = Join-Path $libDist "bin"
-        New-Item -ItemType Directory -Force -Path $binTarget | Out-Null
-        if (Test-Path "bin/crystal_bridge.dll") {
-            Copy-Item "bin/crystal_bridge.dll" "$binTarget/crystal_bridge.dll" -Force
-        }
-        foreach ($dll in @('gc.dll', 'iconv-2.dll', 'pcre2-8.dll', 'libgodot.dll')) {
-            if (Test-Path "bin/$dll") { Copy-Item "bin/$dll" "$binTarget/$dll" -Force }
-        }
-
-        Copy-Item "shard.yml" "$libDist/shard.yml" -Force
-        Copy-Item "README.md" "$libDist/README.md" -Force
-        if (Test-Path "LICENSE") { Copy-Item "LICENSE" "$libDist/LICENSE" -Force }
-
-        $tag = $env:GITHUB_REF_NAME
-        $coreZip = Join-Path $RootDir "bin/windows/libgodot-crystal-windows-x86_64-$tag.zip"
+        $coreZip = Join-Path $RootDir "bin/windows/libgodot-windows-x86_64.zip"
         if (Test-Path $coreZip) { Remove-Item $coreZip -Force }
         Compress-Archive -Path "$libDist/*" -DestinationPath $coreZip -Force
-        Write-Host "  [OK] Created core archive: $coreZip ($( [math]::Round((Get-Item $coreZip).Length / 1MB, 2) ) MB)" -ForegroundColor Green
+        Write-Host "  [OK] Created core LibGodot distribution archive: $coreZip ($( [math]::Round((Get-Item $coreZip).Length / 1MB, 2) ) MB)" -ForegroundColor Green
 
         # 5. Generate Checksums
         Write-Host "[Release] Generating SHA256 checksums..." -ForegroundColor Cyan
         $checksumFile = Join-Path $RootDir "bin/windows/checksums.txt"
-        $hashTargets = @($examplesZip, $addonZip, $templateZip, $coreZip)
+        $hashTargets = @($examplesZip, $addonZip, $templateZip, $templateAddonZip, $coreZip)
         if (Test-Path $templatesZip) { $hashTargets += $templatesZip }
         Get-FileHash -Algorithm SHA256 $hashTargets | Format-Table -AutoSize | Out-String | Set-Content $checksumFile
         Get-Content $checksumFile | Write-Host

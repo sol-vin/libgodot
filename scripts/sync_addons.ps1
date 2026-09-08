@@ -9,6 +9,7 @@ if ($Destinations.Count -eq 0) {
     $dests = [System.Collections.Generic.List[string]]::new()
     $dests.Add("test/addons")
     $dests.Add("template/addons")
+    $dests.Add("template-addon/addons")
     if (Test-Path "examples") {
         foreach ($ex in Get-ChildItem -Path "examples" -Directory) {
             $dests.Add("examples/$($ex.Name)/addons")
@@ -63,7 +64,7 @@ foreach ($dest in $Destinations) {
     foreach ($df in $destFiles) {
         $dRel = $df.FullName.Substring($destRoot.Length + 1)
         if (-not $srcRelPaths.Contains($dRel)) {
-            if ($df.Name -like "game.*" -or $df.Name -like "*_loaded_*" -or $dRel -like "test_runner*" -or $dRel -like "dummy_*") {
+            if ($df.Name -like "game.*" -or $df.Name -like "*_loaded_*" -or $dRel -like "test_runner*" -or $dRel -like "dummy_*" -or $dRel -like "crystal_addon*") {
                 continue
             }
             try {

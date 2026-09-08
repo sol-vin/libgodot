@@ -232,7 +232,7 @@ if (-not $SkipToolTests) {
     # Pre-populate extension_list.cfg so Godot loads GDExtension upfront without in-flight scan races
     $addonGodotDir = Join-Path $RootDir "template-addon/.godot"
     if (-not (Test-Path $addonGodotDir)) { New-Item -ItemType Directory -Force -Path $addonGodotDir | Out-Null }
-    Set-Content -Path (Join-Path $addonGodotDir "extension_list.cfg") -Value 'res://addons/crystal_addon/crystal_addon.gdextension' -Force
+    Set-Content -Path (Join-Path $addonGodotDir "extension_list.cfg") -Value @('res://addons/crystal_addon/crystal_addon.gdextension', 'res://addons/crystal_integration/crystal.gdextension') -Force
 
     $onWindows = ($env:OS -eq "Windows_NT" -or [System.IO.Path]::PathSeparator -eq ';')
     $shell = if ($onWindows) { "cmd" } else { "sh" }
@@ -373,7 +373,7 @@ if (-not $SkipStandaloneTests) {
                 -WorkingDirectory $TestDir `
                 -CustomVerification
 
-            if (Test-Path $runFailMarker -or (-not $relResult["Success"] -and -not (Test-Path $runPassMarker))) {
+            if ((Test-Path $runFailMarker) -or (-not $relResult["Success"] -and -not (Test-Path $runPassMarker))) {
                 $relResult["Success"] = $false
                 $FailedSteps.Add("Standalone Release Test Suite (Process exited with code $($relResult['ExitCode']))")
                 Write-Host "[FAILED] Standalone Release Test Runner`n" -ForegroundColor Red

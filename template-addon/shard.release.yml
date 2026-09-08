@@ -1,0 +1,14 @@
+name: crystal_addon
+version: 0.1.0
+authors:
+  - Developer <developer@example.com>
+license: MIT
+
+dependencies:
+  libgodot:
+    github: sol-vin/libgodot
+    branch: master
+
+targets:
+  addon:
+    main: src/main.cr

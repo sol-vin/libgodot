@@ -29,7 +29,23 @@ abort "Failed: missing member speed" unless player_doc.includes?("<member name=\
 abort "Failed: missing member speed doc comment" unless player_doc.includes?("Player movement speed in pixels")
 abort "Failed: missing signal player_died" unless player_doc.includes?("<signal name=\"player_died\"")
 abort "Failed: missing method take_damage" unless player_doc.includes?("<method name=\"take_damage\"")
+abort "Failed: missing method take_damage return type" unless player_doc.includes?("<return type=\"void\" />")
+abort "Failed: missing method take_damage param" unless player_doc.includes?("<param index=\"0\" name=\"dmg\" type=\"int\" />")
 abort "Failed: missing method take_damage doc comment" unless player_doc.includes?("Inflicts damage to the entity")
+
+# Verify undocumented lifecycle callbacks are omitted from <methods>
+node TestLifecycleDocNode < Godot::Node do
+  def _ready : Void
+  end
+  def _enter_tree : Void
+  end
+  def _exit_tree : Void
+  end
+end
+
+lc_doc = docs.find { |d| d.includes?("TestLifecycleDocNode") }
+abort "Failed: TestLifecycleDocNode doc not found in registry" unless lc_doc
+abort "Failed: TestLifecycleDocNode should not have method tags for undocumented lifecycle callbacks" if lc_doc.includes?("<method ")
 
 puts "✓ Compile-time Doc Comments and Godot XML DocData generation verified!"
 

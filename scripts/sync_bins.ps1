@@ -4,8 +4,9 @@ $addonBinDir = Join-Path $RootDir "addons/crystal_integration/bin"
 $testBinDir = Join-Path $RootDir "test/bin"
 $testAddonBinDir = Join-Path $RootDir "test/addons/crystal_integration/bin"
 $templateBinDir = Join-Path $RootDir "template/bin"
-$templateAddonIntBinDir = Join-Path $RootDir "template/addons/crystal_integration/bin"
+$templateIntBinDir = Join-Path $RootDir "template/addons/crystal_integration/bin"
 $templateAddonBinDir = Join-Path $RootDir "template-addon/addons/crystal_addon/bin"
+$templateAddonIntBinDir = Join-Path $RootDir "template-addon/addons/crystal_integration/bin"
 $examplesDir = Join-Path $RootDir "examples"
 
 $targetDirs = [System.Collections.Generic.List[string]]::new()
@@ -13,8 +14,9 @@ $targetDirs.Add($addonBinDir)
 $targetDirs.Add($testBinDir)
 $targetDirs.Add($testAddonBinDir)
 $targetDirs.Add($templateBinDir)
-$targetDirs.Add($templateAddonIntBinDir)
+$targetDirs.Add($templateIntBinDir)
 $targetDirs.Add($templateAddonBinDir)
+$targetDirs.Add($templateAddonIntBinDir)
 
 $testAddons = Join-Path $RootDir "test/addons"
 if (Test-Path $testAddons) {
@@ -68,6 +70,7 @@ foreach ($dir in $targetDirs) {
 $pluginDirs = [System.Collections.Generic.List[string]]::new()
 $pluginDirs.Add($addonBinDir)
 $pluginDirs.Add($testAddonBinDir)
+$pluginDirs.Add($templateIntBinDir)
 $pluginDirs.Add($templateAddonIntBinDir)
 if (Test-Path $examplesDir) {
     foreach ($ex in Get-ChildItem -Path $examplesDir -Directory) {
@@ -117,7 +120,7 @@ foreach ($targetName in @("game.dll", "game.so", "game.dylib", "game.exe", "game
 
     # Also sync template game binaries
     $tplTarget = Join-Path $templateBinDir $targetName
-    $tplAddonTarget = Join-Path $templateAddonIntBinDir $targetName
+    $tplAddonTarget = Join-Path $templateIntBinDir $targetName
     if (Test-Path $tplTarget) {
         Copy-Item $tplTarget $tplAddonTarget -Force -ErrorAction SilentlyContinue
     } elseif (Test-Path $tplAddonTarget) {
@@ -178,7 +181,10 @@ if (Test-Path $addonProj) {
     if (-not (Test-Path $addonCfgDir)) {
         New-Item -ItemType Directory -Force -Path $addonCfgDir | Out-Null
     }
-    Set-Content -Path (Join-Path $addonCfgDir "extension_list.cfg") -Value 'res://addons/crystal_addon/crystal_addon.gdextension' -Force
+    Set-Content -Path (Join-Path $addonCfgDir "extension_list.cfg") -Value @(
+        'res://addons/crystal_addon/crystal_addon.gdextension',
+        'res://addons/crystal_integration/crystal.gdextension'
+    ) -Force
 }
 
 # Ensure addons are synchronized to all consumer projects

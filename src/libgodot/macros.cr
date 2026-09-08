@@ -647,8 +647,12 @@ macro node(decl, &block)
         {% end %}
         {% rpc_methods << {stmt.name.stringify, r_mode, r_trans, r_local, r_chan} %}
       {% end %}
-      {% if stmt.name.stringify != "_ready" && stmt.name.stringify != "_process" && stmt.name.stringify != "_physics_process" %}
-        {% m_doc = extracted_method_docs[stmt.name.stringify] || stmt.doc_comment || "" %}
+      {%
+        m_name_str = stmt.name.stringify
+        is_lifecycle_cb = (m_name_str == "_ready" || m_name_str == "_process" || m_name_str == "_physics_process" || m_name_str == "_enter_tree" || m_name_str == "_exit_tree" || m_name_str == "_build")
+        m_doc = extracted_method_docs[m_name_str] || stmt.doc_comment || ""
+      %}
+      {% if !is_lifecycle_cb || (!m_doc.empty?) %}
         {% methods_doc << {stmt.name, stmt.args, stmt.return_type, m_doc} %}
       {% end %}
       {% last_anno = nil %}
@@ -1298,7 +1302,63 @@ macro node(decl, &block)
       {% m_args = m_entry[1] %}
       {% m_ret = m_entry[2] %}
       {% m_doc = m_entry[3] %}
+      {%
+        ret_type_str = m_ret ? m_ret.stringify : "void"
+        g_ret = "void"
+        if ret_type_str == "Void" || ret_type_str == "Nil" || ret_type_str == "void"
+          g_ret = "void"
+        elsif ret_type_str == "Float32" || ret_type_str == "Float64"
+          g_ret = "float"
+        elsif ret_type_str.starts_with?("Int") || ret_type_str.starts_with?("UInt")
+          g_ret = "int"
+        elsif ret_type_str == "Bool"
+          g_ret = "bool"
+        elsif ret_type_str == "String"
+          g_ret = "String"
+        elsif ret_type_str == "Vector2"
+          g_ret = "Vector2"
+        elsif ret_type_str == "Vector3"
+          g_ret = "Vector3"
+        elsif ret_type_str == "Color"
+          g_ret = "Color"
+        elsif ret_type_str == "NodePath"
+          g_ret = "NodePath"
+        elsif !ret_type_str.empty?
+          g_ret = ret_type_str
+        end
+      %}
       io << "    <method name=\"{{m_name.id}}\">\n"
+      io << "      <return type=\"" << {{g_ret}} << "\" />\n"
+      {% for a, a_idx in m_args %}
+        {%
+          a_type_str = a.restriction ? a.restriction.stringify : "Variant"
+          a_gtype = "Variant"
+          if a_type_str == "Float32" || a_type_str == "Float64"
+            a_gtype = "float"
+          elsif a_type_str.starts_with?("Int") || a_type_str.starts_with?("UInt")
+            a_gtype = "int"
+          elsif a_type_str == "Bool"
+            a_gtype = "bool"
+          elsif a_type_str == "String"
+            a_gtype = "String"
+          elsif a_type_str == "Vector2"
+            a_gtype = "Vector2"
+          elsif a_type_str == "Vector3"
+            a_gtype = "Vector3"
+          elsif a_type_str == "Color"
+            a_gtype = "Color"
+          elsif a_type_str == "NodePath"
+            a_gtype = "NodePath"
+          elsif !a_type_str.empty?
+            a_gtype = a_type_str
+          end
+        %}
+        {% if a.default_value %}
+          io << "      <param index=\"" << {{a_idx}} << "\" name=\"{{a.name.id}}\" type=\"" << {{a_gtype}} << "\" default=\"{{a.default_value.id}}\" />\n"
+        {% else %}
+          io << "      <param index=\"" << {{a_idx}} << "\" name=\"{{a.name.id}}\" type=\"" << {{a_gtype}} << "\" />\n"
+        {% end %}
+      {% end %}
       io << "      <description>"
       {% if m_doc && m_doc != "" %}
         io << {{m_doc}}

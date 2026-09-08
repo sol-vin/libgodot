@@ -72,6 +72,22 @@ test_multi_addon "EditorPlugin coexistence and single compiler hook enforcement"
   end
 end
 
+test_multi_addon "EditorPlugin documentation and public methods registration" do
+  class_db = Godot::ClassDB.new(Godot::ClassDB.singleton_ptr)
+
+  # Check that plugins have their exported properties and signals registered in ClassDB
+  if Godot.editor_hint? || class_db.call_bool("class_exists", "EditorPlugin")
+    TestFramework.assert_true class_db.call_bool("class_has_signal", "DummyAudioPlugin", "preview_stopped"), "DummyAudioPlugin must expose preview_stopped signal"
+    TestFramework.assert_true class_db.call_bool("class_has_signal", "DummyDialoguePlugin", "dialogue_validated"), "DummyDialoguePlugin must expose dialogue_validated signal"
+    TestFramework.assert_true class_db.call_bool("class_has_signal", "DummyInventoryPlugin", "slot_inspected"), "DummyInventoryPlugin must expose slot_inspected signal"
+  end
+
+  # Check runtime node signals and properties
+  TestFramework.assert_true class_db.call_bool("class_has_signal", "AudioStreamPlayerCrystal", "playback_started"), "AudioStreamPlayerCrystal must expose playback_started signal"
+  TestFramework.assert_true class_db.call_bool("class_has_signal", "DialogueBox", "line_finished"), "DialogueBox must expose line_finished signal"
+  TestFramework.assert_true class_db.call_bool("class_has_signal", "InventoryGrid", "item_added"), "InventoryGrid must expose item_added signal"
+end
+
 test_multi_addon "Zero memory leak across multiple addon nodes" do
   container = Godot.create(Godot::Node)
   root.add_child(container)

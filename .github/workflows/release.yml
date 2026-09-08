@@ -782,12 +782,80 @@ jobs:
             cp -r "$ANDROID_ARM"/* "$TEMPLATE_DIST/bin/android/arm64-v8a/"
           fi
 
-          mkdir -p "$TEMPLATE_DIST/lib/libgodot"
-          cp -r src "$TEMPLATE_DIST/lib/libgodot/"
-          cp shard.yml "$TEMPLATE_DIST/lib/libgodot/"
-          [ -f README.md ] && cp README.md "$TEMPLATE_DIST/lib/libgodot/"
+          # Swap shard.release.yml to shard.yml for GitHub release
+          if [ -f "$TEMPLATE_DIST/shard.release.yml" ]; then
+            cp "$TEMPLATE_DIST/shard.release.yml" "$TEMPLATE_DIST/shard.yml"
+            rm -f "$TEMPLATE_DIST/shard.release.yml"
+          fi
 
           (cd "$TEMPLATE_DIST" && zip -r "$ROOT_DIR/bin/template-project.zip" ./*)
+
+      - name: Package Universal Addon Starter Template (template-addon-project.zip)
+        shell: bash
+        run: |
+          ROOT_DIR="$(pwd)"
+          TEMPLATE_ADDON_DIST="$ROOT_DIR/bin/template_addon_dist"
+          rm -rf "$TEMPLATE_ADDON_DIST"
+          mkdir -p "$TEMPLATE_ADDON_DIST"
+
+          cp -r template-addon/. "$TEMPLATE_ADDON_DIST/"
+          rm -rf "$TEMPLATE_ADDON_DIST/.godot" "$TEMPLATE_ADDON_DIST/dist"
+
+          # Embed crystal_integration addon if not present
+          if [ ! -d "$TEMPLATE_ADDON_DIST/addons/crystal_integration" ]; then
+            mkdir -p "$TEMPLATE_ADDON_DIST/addons"
+            cp -r addons/crystal_integration "$TEMPLATE_ADDON_DIST/addons/"
+          fi
+
+          ADDON_BIN="$TEMPLATE_ADDON_DIST/addons/crystal_addon/bin"
+          INT_BIN="$TEMPLATE_ADDON_DIST/addons/crystal_integration/bin"
+          mkdir -p "$ADDON_BIN" "$INT_BIN"
+
+          # Locate Windows DLLs
+          WIN_DIR="staging/windows"
+          [ -d "staging/windows/bin" ] && WIN_DIR="staging/windows/bin"
+          if [ -f "$WIN_DIR/crystal_bridge.dll" ]; then
+            cp "$WIN_DIR/crystal_bridge.dll" "$ADDON_BIN/"
+            cp "$WIN_DIR/crystal_bridge.dll" "$INT_BIN/"
+            for dll in gc.dll iconv-2.dll pcre2-8.dll libgodot.dll; do
+              if [ -f "$WIN_DIR/$dll" ]; then
+                cp "$WIN_DIR/$dll" "$ADDON_BIN/"
+                cp "$WIN_DIR/$dll" "$INT_BIN/"
+              fi
+            done
+          fi
+
+          # Locate Linux shared objects
+          LINUX_DIR="staging/linux"
+          [ -d "staging/linux/bin" ] && LINUX_DIR="staging/linux/bin"
+          if [ -f "$LINUX_DIR/crystal_bridge.so" ]; then
+            cp "$LINUX_DIR/crystal_bridge.so" "$ADDON_BIN/"
+            cp "$LINUX_DIR/crystal_bridge.so" "$INT_BIN/"
+            if [ -f "$LINUX_DIR/libgodot.so" ]; then
+              cp "$LINUX_DIR/libgodot.so" "$ADDON_BIN/"
+              cp "$LINUX_DIR/libgodot.so" "$INT_BIN/"
+            fi
+          fi
+
+          # Locate macOS dylibs
+          MAC_DIR="staging/macos"
+          [ -d "staging/macos/bin" ] && MAC_DIR="staging/macos/bin"
+          if [ -f "$MAC_DIR/crystal_bridge.dylib" ]; then
+            cp "$MAC_DIR/crystal_bridge.dylib" "$ADDON_BIN/"
+            cp "$MAC_DIR/crystal_bridge.dylib" "$INT_BIN/"
+            if [ -f "$MAC_DIR/libgodot.dylib" ]; then
+              cp "$MAC_DIR/libgodot.dylib" "$ADDON_BIN/"
+              cp "$MAC_DIR/libgodot.dylib" "$INT_BIN/"
+            fi
+          fi
+
+          # Swap shard.release.yml to shard.yml for GitHub release
+          if [ -f "$TEMPLATE_ADDON_DIST/shard.release.yml" ]; then
+            cp "$TEMPLATE_ADDON_DIST/shard.release.yml" "$TEMPLATE_ADDON_DIST/shard.yml"
+            rm -f "$TEMPLATE_ADDON_DIST/shard.release.yml"
+          fi
+
+          (cd "$TEMPLATE_ADDON_DIST" && zip -r "$ROOT_DIR/bin/template-addon-project.zip" ./*)
 
       - name: Prepare Final Universal Assets & Checksums
         shell: bash
@@ -798,6 +866,7 @@ jobs:
 
           [ -f "$ROOT_DIR/bin/godot-crystal-addon.zip" ] && cp "$ROOT_DIR/bin/godot-crystal-addon.zip" "$ROOT_DIR/bin/release_assets/"
           [ -f "$ROOT_DIR/bin/template-project.zip" ] && cp "$ROOT_DIR/bin/template-project.zip" "$ROOT_DIR/bin/release_assets/"
+          [ -f "$ROOT_DIR/bin/template-addon-project.zip" ] && cp "$ROOT_DIR/bin/template-addon-project.zip" "$ROOT_DIR/bin/release_assets/"
 
           (cd "$ROOT_DIR/bin/release_assets" && sha256sum *.zip > checksums.txt && cat checksums.txt)
 
@@ -809,11 +878,13 @@ jobs:
           cat << 'EOF' > release_body.md
           ## LibGodot Crystal Release Notes
 
-          ### 📦 Addon & Starter Template
+          ### 📦 Addon & Starter Templates
           - **`godot-crystal-addon.zip`**:
             The official Godot editor addon (`addons/crystal_integration`) with pre-compiled GDExtension loader bridge binaries for **Windows** (`crystal_bridge.dll`), **macOS** (`crystal_bridge.dylib`), **Linux** (`crystal_bridge.so`), and **Android** (`arm64-v8a/libcrystal_bridge.so`). Drop the `addons/` folder directly into your existing Godot 4.8+ project to enable Crystal node authoring, inspector properties, and hot-reload.
           - **`template-project.zip`**:
             A clean, ready-to-use Godot project skeleton powered by Crystal. Contains pre-configured scenes, sample 3D nodes (`src/main.cr`), automated specifications (`spec/main_spec.cr`), GDExtension configuration, multi-platform export presets (Windows, macOS, Linux, Android), and pre-wired **GitHub Actions CI/CD workflows** (`.github/workflows/`) for automated testing (`crystal spec`) and multi-platform release deployment.
+          - **`template-addon-project.zip`**:
+            A complete starter template for building and packaging redistributable GDExtension addons and editor plugins in Crystal (`template-addon`). Pre-configured with dual-plugin architecture (`crystal_addon` and embedded `crystal_integration`), pre-compiled bridge binaries, and packaging scripts to export distributable addon zips for vanilla Godot users.
 
           ### 🛠️ Export Templates
           - **`godot-crystal-export-templates-4.8-dev4.zip`**:
@@ -851,6 +922,7 @@ jobs:
           files: |
             bin/release_assets/godot-crystal-addon.zip
             bin/release_assets/template-project.zip
+            bin/release_assets/template-addon-project.zip
             bin/release_assets/checksums.txt
           generate_release_notes: false
           draft: false
