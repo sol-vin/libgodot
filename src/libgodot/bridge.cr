@@ -106,6 +106,9 @@ module Godot
       ret_dictionary_complete_code : (Void* -> Void)
       ret_dictionary_lookup_code : (Void* -> Void)
       text_edit_get_line : (Void*, Int64, LibC::Char*, Int32 -> Int32)
+      object_connect_signal : (Void*, LibC::Char* -> Void)
+      object_disconnect_signal : (Void*, LibC::Char* -> Void)
+      register_signal_callback : ((UInt64, LibC::Char*, LibC::Char**, Int32 -> Void) -> Void)
     end
   end
 
@@ -131,6 +134,7 @@ module Godot
     # Active instance table rooting living Crystal nodes to protect against premature Boehm GC deallocation
     @@alive_instances = Hash(Void*, Godot::Object).new
     @@alive_mutex = ::Thread::Mutex.new
+    @@native_signal_cb : (UInt64, LibC::Char*, LibC::Char**, Int32 -> Void)? = nil
 
     # Retrieves the active Crystal instance root table for testing and diagnostics
     def self.alive_instances : Hash(Void*, Godot::Object)
@@ -346,6 +350,22 @@ module Godot
       print "[CrystalBridge] Successfully registered #{Godot::ClassRegistry.entries.size} Crystal classes with Godot!"
       # Load all compile-time generated XML documentation into Godot Editor Help & Inspector
       Godot::EditorDocRegistry.load_all
+
+      # Register native signal callback from C++ bridge into Crystal signal dispatcher
+      if !api.value.register_signal_callback.pointer.null?
+        cb = ->(target_id : UInt64, sig_ptr : LibC::Char*, args_ptr : LibC::Char**, count : Int32) {
+          sig_name = String.new(sig_ptr)
+          arr = [] of String
+          if !args_ptr.null? && count > 0
+            count.times do |i|
+              arr << String.new(args_ptr[i])
+            end
+          end
+          Godot.notify_signal(target_id, sig_name, arr)
+        }
+        @@native_signal_cb = cb
+        api.value.register_signal_callback.call(cb)
+      end
     end
 
     # Engine Logging Helpers
@@ -523,6 +543,7 @@ module Godot
       bool_storage = StaticArray(UInt8, 16).new(0_u8)
       v2_storage = StaticArray(Godot::Vector2, 16).new(Godot::Vector2.new)
       v3_storage = StaticArray(Godot::Vector3, 16).new(Godot::Vector3.new)
+      color_storage = StaticArray(Godot::Color, 16).new(Godot::Color.new)
       obj_storage = StaticArray(Void*, 16).new(Pointer(Void).null)
 
       count = [args.size, 16].min
@@ -548,10 +569,23 @@ module Godot
         elsif arg.is_a?(Godot::Object)
           obj_storage[idx] = arg.pointer
           c_args[idx] = LibBridge::CrystalSignalArg.new(arg_type: 7, data: (obj_storage.to_unsafe + idx).as(Void*))
+        elsif arg.is_a?(Godot::Color)
+          color_storage[idx] = arg
+          c_args[idx] = LibBridge::CrystalSignalArg.new(arg_type: 8, data: (color_storage.to_unsafe + idx).as(Void*))
         end
       end
 
       @@api.value.object_emit_signal.call(godot_obj, signal_name.to_unsafe, c_args.to_unsafe, count)
+    end
+
+    def self.object_connect_signal(godot_obj : Void*, signal_name : String) : Void
+      return if godot_obj.null? || @@api.null? || @@api.value.object_connect_signal.pointer.null?
+      @@api.value.object_connect_signal.call(godot_obj, signal_name.to_unsafe)
+    end
+
+    def self.object_disconnect_signal(godot_obj : Void*, signal_name : String) : Void
+      return if godot_obj.null? || @@api.null? || @@api.value.object_disconnect_signal.pointer.null?
+      @@api.value.object_disconnect_signal.call(godot_obj, signal_name.to_unsafe)
     end
 
     def self.object_call_deferred(godot_obj : Void*, method_name : String) : Void
@@ -572,6 +606,7 @@ module Godot
       bool_storage = StaticArray(UInt8, 16).new(0_u8)
       v2_storage = StaticArray(Godot::Vector2, 16).new(Godot::Vector2.new)
       v3_storage = StaticArray(Godot::Vector3, 16).new(Godot::Vector3.new)
+      color_storage = StaticArray(Godot::Color, 16).new(Godot::Color.new)
       obj_storage = StaticArray(Void*, 16).new(Pointer(Void).null)
 
       count = [args.size, 16].min
@@ -597,6 +632,9 @@ module Godot
         elsif arg.is_a?(Godot::Object)
           obj_storage[idx] = arg.pointer
           c_args[idx] = LibBridge::CrystalSignalArg.new(arg_type: 7, data: (obj_storage.to_unsafe + idx).as(Void*))
+        elsif arg.is_a?(Godot::Color)
+          color_storage[idx] = arg
+          c_args[idx] = LibBridge::CrystalSignalArg.new(arg_type: 8, data: (color_storage.to_unsafe + idx).as(Void*))
         end
       end
 
@@ -621,6 +659,7 @@ module Godot
       bool_storage = StaticArray(UInt8, 16).new(0_u8)
       v2_storage = StaticArray(Godot::Vector2, 16).new(Godot::Vector2.new)
       v3_storage = StaticArray(Godot::Vector3, 16).new(Godot::Vector3.new)
+      color_storage = StaticArray(Godot::Color, 16).new(Godot::Color.new)
       obj_storage = StaticArray(Void*, 16).new(Pointer(Void).null)
 
       count = [args.size, 16].min
@@ -646,6 +685,9 @@ module Godot
         elsif arg.is_a?(Godot::Object)
           obj_storage[idx] = arg.pointer
           c_args[idx] = LibBridge::CrystalSignalArg.new(arg_type: 7, data: (obj_storage.to_unsafe + idx).as(Void*))
+        elsif arg.is_a?(Godot::Color)
+          color_storage[idx] = arg
+          c_args[idx] = LibBridge::CrystalSignalArg.new(arg_type: 8, data: (color_storage.to_unsafe + idx).as(Void*))
         end
       end
 
@@ -703,6 +745,7 @@ module Godot
       bool_storage = StaticArray(UInt8, 16).new(0_u8)
       v2_storage = StaticArray(Godot::Vector2, 16).new(Godot::Vector2.new)
       v3_storage = StaticArray(Godot::Vector3, 16).new(Godot::Vector3.new)
+      color_storage = StaticArray(Godot::Color, 16).new(Godot::Color.new)
       obj_storage = StaticArray(Void*, 16).new(Pointer(Void).null)
 
       count = [args.size, 16].min
@@ -728,6 +771,9 @@ module Godot
         elsif arg.is_a?(Godot::Object)
           obj_storage[idx] = arg.pointer
           c_args[idx] = LibBridge::CrystalSignalArg.new(arg_type: 7, data: (obj_storage.to_unsafe + idx).as(Void*))
+        elsif arg.is_a?(Godot::Color)
+          color_storage[idx] = arg
+          c_args[idx] = LibBridge::CrystalSignalArg.new(arg_type: 8, data: (color_storage.to_unsafe + idx).as(Void*))
         end
       end
       yield c_args.to_unsafe, count

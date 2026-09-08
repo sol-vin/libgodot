@@ -49,7 +49,7 @@ ifeq ($(RELEASE), 1)
 	CRYSTAL_FLAGS += --release
 endif
 
-.PHONY: all game_dll game_exe standalone deps bridge extension_list addons run editor clean help
+.PHONY: all game_dll game_exe standalone spec deps bridge extension_list addons rebuild export export_release run editor clean help
 
 all: dirs deps bridge extension_list addons game_dll
 	@echo ===================================================================
@@ -76,6 +76,10 @@ game_dll: dirs deps bridge extension_list addons
 	@$(PWSH_FILE) ../scripts/build_crystal.ps1 -Entry $(ENTRY) -Output $(GAME_LIB) -LinkFlags '$(LINK_FLAGS)' $(if $(filter 1,$(RELEASE)),-Release,) -SourcePath ../src
 	@$(PWSH_CMD) "if (Test-Path '$(GAME_LIB)') { Copy-Item '$(GAME_LIB)' '../bin/game.$(SO_EXT)' -Force -ErrorAction SilentlyContinue; Copy-Item '$(GAME_LIB)' 'addons/crystal_integration/bin/game.$(SO_EXT)' -Force -ErrorAction SilentlyContinue }"
 
+spec:
+	@echo [Spec] Running Crystal specifications in spec/...
+	crystal spec
+
 standalone: dirs deps bridge extension_list addons game_dll
 	@echo [Test] Packaging standalone test runner executable...
 	@$(PWSH_FILE) ../scripts/package_game.ps1 -ProjectPath . -Name tests $(if $(filter 1,$(RELEASE)),-Release 1,) -ForceCompile
@@ -95,4 +99,30 @@ editor: all
 
 clean:
 	@$(RM) $(BIN_DIR)/*
-	@$(PWSH_CMD) "Remove-Item -Path 'tests.exe', 'tests', 'game.exe', 'game', 'test_report.md', 'test_report.json', '.tool_tests_passed', '.tool_tests_failed', '.runtime_tests_passed', '.runtime_tests_failed', '.runtime_test_results.txt' -Force -ErrorAction SilentlyContinue"
+	@$(PWSH_CMD) "Remove-Item -Path 'tests.exe', 'tests', 'game.exe', 'game', 'export', 'test_report.md', 'test_report.json', '.tool_tests_passed', '.tool_tests_failed', '.runtime_tests_passed', '.runtime_tests_failed', '.runtime_test_results.txt' -Recurse -Force -ErrorAction SilentlyContinue"
+
+rebuild: clean all
+
+export: all
+	@echo [Test] Exporting test project to export/ directory...
+	@$(PWSH_FILE) ../scripts/package_game.ps1 -ProjectPath . -Name tests -TargetDir export -ForceCompile
+
+export_release: dirs deps bridge extension_list addons
+	@echo [Test] Exporting optimized release test project to export/ directory...
+	@$(PWSH_FILE) ../scripts/package_game.ps1 -ProjectPath . -Name tests -TargetDir export -Release 1 -ForceCompile
+
+help:
+	@echo ===================================================================
+	@echo   LibGodot Test Suite - Build and Export Commands
+	@echo ===================================================================
+	@echo   make                Build test project and dependencies
+	@echo   make rebuild        Clean and rebuild all artifacts
+	@echo   make game_dll       Compile test game shared library (game.$(SO_EXT))
+	@echo   make standalone     Package standalone test executable runner
+	@echo   make game_exe       Compile standalone game executable
+	@echo   make export         Export standalone playable test suite to export/
+	@echo   make export_release Export release optimized test suite to export/
+	@echo   make run            Launch test suite with Godot
+	@echo   make editor         Open test suite in Godot Editor
+	@echo   make clean          Remove all built artifacts and test reports
+	@echo ===================================================================

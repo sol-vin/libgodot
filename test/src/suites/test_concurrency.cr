@@ -8,24 +8,24 @@ test_concurrency "Cooperative Fiber scheduling with spawn and Fiber.yield" do
   fiber_log = Array(Int32).new
 
   spawn do
-    fiber_log << 1
-    Fiber.yield
-    fiber_log << 3
-    completed_fibers += 1
+	fiber_log << 1
+	Fiber.yield
+	fiber_log << 3
+	completed_fibers += 1
   end
 
   spawn do
-    fiber_log << 2
-    Fiber.yield
-    fiber_log << 4
-    completed_fibers += 1
+	fiber_log << 2
+	Fiber.yield
+	fiber_log << 4
+	completed_fibers += 1
   end
 
   # Cooperatively yield from current execution context to let spawned fibers run
   iterations = 0
   while completed_fibers < 2 && iterations < 50
-    Fiber.yield
-    iterations += 1
+	Fiber.yield
+	iterations += 1
   end
 
   TestFramework.assert_eq completed_fibers, 2, "All cooperative fibers should complete"
@@ -38,10 +38,10 @@ test_concurrency "Channel message passing between background worker Thread and m
   worker_payload = "WorkerResult_48A"
 
   worker = Thread.new do
-    # Heavy background processing simulation
-    sum = 0_i64
-    1000.times { |i| sum += i }
-    ch.send("#{worker_payload}_#{sum}")
+	# Heavy background processing simulation
+	sum = 0_i64
+	1000.times { |i| sum += i }
+	ch.send("#{worker_payload}_#{sum}")
   end
 
   worker.join
@@ -59,11 +59,11 @@ test_concurrency "Multi-producer channel contention across parallel worker threa
 
   workers = Array(Thread).new
   worker_count.times do |worker_id|
-    workers << Thread.new do
-      items_per_worker.times do
-        ch.send(worker_id)
-      end
-    end
+	workers << Thread.new do
+	  items_per_worker.times do
+		ch.send(worker_id)
+	  end
+	end
   end
 
   # Wait for all workers to finish putting items into the channel
@@ -72,12 +72,12 @@ test_concurrency "Multi-producer channel contention across parallel worker threa
   # Drain the channel from the main thread
   received_counts = Hash(Int32, Int32).new(0)
   total_items.times do
-    val = ch.receive
-    received_counts[val] += 1
+	val = ch.receive
+	received_counts[val] += 1
   end
 
   worker_count.times do |worker_id|
-    TestFramework.assert_eq received_counts[worker_id], items_per_worker, "Worker #{worker_id} items mismatch"
+	TestFramework.assert_eq received_counts[worker_id], items_per_worker, "Worker #{worker_id} items mismatch"
   end
 end
 
@@ -91,13 +91,13 @@ test_concurrency "Mutex synchronization guarantees atomic shared state updates" 
 
   threads = Array(Thread).new
   thread_count.times do
-    threads << Thread.new do
-      increments_per_thread.times do
-        mutex.synchronize do
-          shared_counter += 1
-        end
-      end
-    end
+	threads << Thread.new do
+	  increments_per_thread.times do
+		mutex.synchronize do
+		  shared_counter += 1
+		end
+	  end
+	end
   end
 
   threads.each(&.join)
@@ -114,11 +114,11 @@ test_concurrency "Lock-free Atomic operations under high thread contention" do
 
   threads = Array(Thread).new
   thread_count.times do
-    threads << Thread.new do
-      increments_per_thread.times do
-        atomic_counter.add(1)
-      end
-    end
+	threads << Thread.new do
+	  increments_per_thread.times do
+		atomic_counter.add(1)
+	  end
+	end
   end
 
   threads.each(&.join)
@@ -132,15 +132,15 @@ test_concurrency "Boehm GC stability during rapid multi-threaded heap allocation
 
   threads = Array(Thread).new
   thread_count.times do |t_idx|
-    threads << Thread.new do
-      allocations_per_thread.times do |i|
-        # Rapidly allocate heap objects: strings, arrays, hashes
-        str = "GC_Stress_Thread_#{t_idx}_Iter_#{i}_#{Time.utc.to_unix_ms}"
-        arr = Array(Int32).new(10) { |x| x * i }
-        h = Hash(String, Int32).new
-        h[str] = arr.size
-      end
-    end
+	threads << Thread.new do
+	  allocations_per_thread.times do |i|
+		# Rapidly allocate heap objects: strings, arrays, hashes
+		str = "GC_Stress_Thread_#{t_idx}_Iter_#{i}_#{Time.utc.to_unix_ms}"
+		arr = Array(Int32).new(10) { |x| x * i }
+		h = Hash(String, Int32).new
+		h[str] = arr.size
+	  end
+	end
   end
 
   threads.each(&.join)
@@ -162,15 +162,15 @@ test_concurrency "Thread-safe instance registry (alive_instances) under concurre
 
   threads = Array(Thread).new
   thread_count.times do |t_idx|
-    threads << Thread.new do
-      ops_per_thread.times do |i|
-        fake_ptr = Pointer(Void).new((t_idx * 10000 + i + 1).to_u64)
-        Godot::Bridge.register_alive_instance(fake_ptr, test_obj)
-        TestFramework.assert_true Godot::Bridge.has_alive_instance?(fake_ptr)
-        Godot::Bridge.unregister_alive_instance(fake_ptr)
-        TestFramework.assert_false Godot::Bridge.has_alive_instance?(fake_ptr)
-      end
-    end
+	threads << Thread.new do
+	  ops_per_thread.times do |i|
+		fake_ptr = Pointer(Void).new((t_idx * 10000 + i + 1).to_u64)
+		Godot::Bridge.register_alive_instance(fake_ptr, test_obj)
+		TestFramework.assert_true Godot::Bridge.has_alive_instance?(fake_ptr)
+		Godot::Bridge.unregister_alive_instance(fake_ptr)
+		TestFramework.assert_false Godot::Bridge.has_alive_instance?(fake_ptr)
+	  end
+	end
   end
 
   threads.each(&.join)
@@ -183,8 +183,8 @@ test_concurrency "Background thread safe deferred method dispatch (call_deferred
   target.name = "InitialTargetName"
 
   worker = Thread.new do
-    # Offload dispatch to background thread: call_deferred routes through Godot thread-safe MessageQueue
-    target.call_deferred("set_name", "DeferredWorkerName")
+	# Offload dispatch to background thread: call_deferred routes through Godot thread-safe MessageQueue
+	target.call_deferred("set_name", "DeferredWorkerName")
   end
 
   worker.join
@@ -202,21 +202,21 @@ test_concurrency "Cross-thread object validity and dead-pointer safety" do
   ch_done = Channel(Bool).new(1)
 
   checker = Thread.new do
-    ch_ready.send(nil) # Signal main thread that checker is running
-    # Poll validity while waiting for main thread destruction
-    valid_initial = Godot::Object.is_instance_id_valid(inst_id)
-    ch_ready.send(nil) # Signal that initial check passed
+	ch_ready.send(nil) # Signal main thread that checker is running
+	# Poll validity while waiting for main thread destruction
+	valid_initial = Godot::Object.is_instance_id_valid(inst_id)
+	ch_ready.send(nil) # Signal that initial check passed
 
-    # Wait for destruction signal
-    dead_detected = false
-    50.times do
-      unless Godot::Object.is_instance_id_valid(inst_id)
-        dead_detected = true
-        break
-      end
-      Crystal::System::Thread.sleep(2.milliseconds)
-    end
-    ch_done.send(dead_detected)
+	# Wait for destruction signal
+	dead_detected = false
+	50.times do
+	  unless Godot::Object.is_instance_id_valid(inst_id)
+		dead_detected = true
+		break
+	  end
+	  Crystal::System::Thread.sleep(2.milliseconds)
+	end
+	ch_done.send(dead_detected)
   end
 
   ch_ready.receive # Checker thread started
@@ -234,10 +234,10 @@ test_concurrency "Cross-thread object validity and dead-pointer safety" do
   # Attempting call on destroyed instance from main thread safely raises DisposedObjectError
   caught = false
   begin
-    node_to_destroy.call("get_name")
+	node_to_destroy.call("get_name")
   rescue ex : Godot::DisposedObjectError
-    caught = true
-    TestFramework.assert_eq ex.instance_id, inst_id
+	caught = true
+	TestFramework.assert_eq ex.instance_id, inst_id
   end
   TestFramework.assert_true caught, "DisposedObjectError raised on dead pointer access"
 end
@@ -248,9 +248,9 @@ test_concurrency "Cooperative fiber awaiting custom signal with arguments" do
   fiber_completed = false
 
   spawn do
-    args = await(target, "test_event_fired")
-    received_args = args
-    fiber_completed = true
+	args = await(target, "test_event_fired")
+	received_args = args
+	fiber_completed = true
   end
 
   # Fiber should initially be waiting
@@ -263,7 +263,7 @@ test_concurrency "Cooperative fiber awaiting custom signal with arguments" do
   # Cooperatively advance fiber
   start = ::Time.instant
   while !fiber_completed && (::Time.instant - start).total_seconds < 0.2
-    Fiber.yield
+	Fiber.yield
   end
 
   TestFramework.assert_true fiber_completed, "Fiber should resume after signal emission"
@@ -275,14 +275,14 @@ test_concurrency "Cooperative fiber awaiting duration (non-blocking sleep altern
   elapsed = false
 
   spawn do
-    await(0.02) # 20 milliseconds cooperative pause
-    elapsed = true
+	await(0.02) # 20 milliseconds cooperative pause
+	elapsed = true
   end
 
   # Allow cooperative yielding slices
   start = ::Time.instant
   while !elapsed && (::Time.instant - start).total_seconds < 0.2
-    Fiber.yield
+	Fiber.yield
   end
 
   TestFramework.assert_true elapsed, "Awaiting duration should complete without blocking main loop"
@@ -293,14 +293,14 @@ test_concurrency "Awaiting signal with timeout expires cleanly" do
   timeout_completed = false
 
   spawn do
-    # Await a signal that will never be emitted, with 0.02s timeout
-    await(target, "non_existent_signal", timeout_sec: 0.02)
-    timeout_completed = true
+	# Await a signal that will never be emitted, with 0.02s timeout
+	await(target, "non_existent_signal", timeout_sec: 0.02)
+	timeout_completed = true
   end
 
   start = ::Time.instant
   while !timeout_completed && (::Time.instant - start).total_seconds < 0.2
-    Fiber.yield
+	Fiber.yield
   end
 
   TestFramework.assert_true timeout_completed, "Await with timeout should exit cleanly when time expires"
@@ -311,11 +311,11 @@ test_concurrency "Awaiting signal on destroyed object raises DisposedObjectError
   error_caught = false
 
   spawn do
-    begin
-      await(target, "some_signal")
-    rescue ex : Godot::DisposedObjectError
-      error_caught = true
-    end
+	begin
+	  await(target, "some_signal")
+	rescue ex : Godot::DisposedObjectError
+	  error_caught = true
+	end
   end
 
   Fiber.yield # Start fiber and begin await
@@ -323,7 +323,7 @@ test_concurrency "Awaiting signal on destroyed object raises DisposedObjectError
 
   start = ::Time.instant
   while !error_caught && (::Time.instant - start).total_seconds < 0.2
-    Fiber.yield
+	Fiber.yield
   end
   TestFramework.assert_true error_caught, "Awaiting a signal on a destroyed object must raise DisposedObjectError"
 end
@@ -339,10 +339,10 @@ test_concurrency "BoundSignal await syntax: await(target.test_event_fired)" do
   TestFramework.assert_eq bound_sig.name, "test_event_fired"
 
   spawn do
-    # Idiomatic syntax: await(target.test_event_fired)
-    args = await(target.test_event_fired)
-    received_args = args
-    fiber_completed = true
+	# Idiomatic syntax: await(target.test_event_fired)
+	args = await(target.test_event_fired)
+	received_args = args
+	fiber_completed = true
   end
 
   Fiber.yield
@@ -352,7 +352,7 @@ test_concurrency "BoundSignal await syntax: await(target.test_event_fired)" do
 
   start = ::Time.instant
   while !fiber_completed && (::Time.instant - start).total_seconds < 0.2
-    Fiber.yield
+	Fiber.yield
   end
 
   TestFramework.assert_true fiber_completed, "Fiber should resume after bound signal emission"
@@ -365,8 +365,8 @@ test_concurrency "BoundSignal connect and emit: sig.connect and sig.emit" do
   connected_arg = ""
 
   target.test_event_fired.connect do |args|
-    connected_called = true
-    connected_arg = args.first? || ""
+	connected_called = true
+	connected_arg = args.first? || ""
   end
 
   target.test_event_fired.emit(123)
@@ -383,10 +383,10 @@ test_concurrency "Classic Object#await_signal instance method with string name" 
   completed = false
 
   spawn do
-    # Classic instance method: target.await_signal("signal_name")
-    args = target.await_signal("test_event_fired")
-    received_args = args
-    completed = true
+	# Classic instance method: target.await_signal("signal_name")
+	args = target.await_signal("test_event_fired")
+	received_args = args
+	completed = true
   end
 
   Fiber.yield
@@ -396,7 +396,7 @@ test_concurrency "Classic Object#await_signal instance method with string name" 
 
   start = ::Time.instant
   while !completed && (::Time.instant - start).total_seconds < 0.2
-    Fiber.yield
+	Fiber.yield
   end
 
   TestFramework.assert_true completed, "Fiber should resume after await_signal"

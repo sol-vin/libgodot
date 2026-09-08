@@ -27,6 +27,8 @@ module Godot
   @@resource_loader : ResourceFormatLoaderCrystal? = nil
   @@resource_saver : ResourceFormatSaverCrystal? = nil
   @@compile_button : Button? = nil
+  @@crystal_panel : Node? = nil
+  @@cached_icon_texture : Texture2D? = nil
 
   def _enter_tree : Void
     Godot.print("==================================================================")
@@ -43,6 +45,16 @@ module Godot
           ed_settings.call("set_setting", "text_editor/appearance/gutters/highlight_type_safe_lines", false)
           ed_settings.call("set_initial_value", "text_editor/appearance/gutters/highlight_type_safe_lines", false, false)
           ed_settings.call("set_setting", "text_editor/appearance/guidelines/highlight_type_safe_lines", false)
+
+          val = ed_settings.call_str("get_setting", "docks/filesystem/textfile_extensions")
+          exts = (val.empty? ? "txt,md,cfg,ini,log,json,yml,yaml,toml,xml" : val).split(',').map(&.strip).reject(&.empty?)
+          unless exts.includes?("cr")
+            exts << "cr"
+            new_val = exts.join(",")
+            ed_settings.call("set_setting", "docks/filesystem/textfile_extensions", new_val)
+            ed_settings.call("set_initial_value", "docks/filesystem/textfile_extensions", new_val, false)
+            Godot.print("[CrystalIntegrationPlugin] Added 'cr' to EditorSettings docks/filesystem/textfile_extensions: #{new_val}")
+          end
         end
       end
 
@@ -79,7 +91,18 @@ module Godot
         r_saver.add_resource_format_saver(saver, true)
       end
 
+      # Safe filesystem scan only if Godot is not already performing its startup scan
+      if !Godot::EditorInterface.singleton_ptr.null?
+        ed_interface = Godot::EditorInterface.new(Godot::EditorInterface.singleton_ptr)
+        r_fs = ed_interface.get_resource_filesystem
+        if !r_fs.pointer.null? && !r_fs.is_scanning
+          r_fs.scan
+          Godot.print("[CrystalIntegrationPlugin] Triggered EditorFileSystem.scan() to index Crystal source files.")
+        end
+      end
+
       setup_toolbar_button
+      setup_main_screen_panel
 
       Godot.print("[CrystalIntegrationPlugin] First-class .cr script support, language, and syntax highlighter registered in 100% pure Crystal.")
     end
@@ -121,8 +144,20 @@ module Godot
 
     if btn = @@compile_button
       remove_control_from_container(Godot::EditorPlugin::CustomControlContainer::ContainerToolbar.value, btn)
+      if p = btn.call_obj("get_parent")
+        p.call("remove_child", btn)
+      end
       btn.queue_free
       @@compile_button = nil
+    end
+
+    if panel = @@crystal_panel
+      dock = panel.call_obj("get_parent")
+      panel.call("queue_free")
+      @@crystal_panel = nil
+      if dock && !dock.pointer.null? && dock.call_str("get_class") == "EditorDock"
+        dock.call("queue_free")
+      end
     end
 
     Godot.print("  [CrystalIntegrationPlugin] Native Crystal editor plugin unloaded.")
@@ -134,23 +169,95 @@ module Godot
   </svg>
   SVG
 
-  private def setup_toolbar_button : Void
-    return if @@compile_button
+  # Docks the CrystalPanel into Godot Editor's main screen
+  private def setup_main_screen_panel : Void
+    return if @@crystal_panel
     return if Godot::EditorInterface.singleton_ptr.null?
     ed_iface = Godot::EditorInterface.new(Godot::EditorInterface.singleton_ptr)
-    base_ctrl = ed_iface.get_base_control
-    return if base_ctrl.pointer.null?
+    main_screen = ed_iface.get_editor_main_screen
+    return if main_screen.pointer.null?
 
     if !Godot::DisplayServer.singleton_ptr.null?
       ds = Godot::DisplayServer.new(Godot::DisplayServer.singleton_ptr)
       return if ds.call_str("get_name") == "headless"
     end
 
-    btn = Godot.create(Godot::Button)
-    return unless btn
-    btn.call("set_flat", true)
+    if panel = Godot.create("CrystalPanel")
+      panel.call("set_visible", false)
+      main_screen.call("add_child", panel)
+      @@crystal_panel = panel
+      Godot.print("[CrystalIntegrationPlugin] Native Crystal Main Screen Tab docked successfully.")
+    end
+  rescue ex
+    Godot.printerr("[CrystalIntegrationPlugin] Notice: could not setup main screen panel: #{ex.message}")
+  end
 
-    # Load Crystal button icon texture
+  def make_crystal_panel_visible(visible : Bool) : Void
+    if panel = @@crystal_panel
+      panel.call("set_visible", visible)
+    end
+  end
+
+  def get_crystal_plugin_icon : Texture2D?
+    self.class.get_crystal_icon_texture
+  end
+
+  def self._godot_has_virtual_method(method_name : String) : Bool
+    case method_name
+    when "_has_main_screen", "_get_plugin_name", "_get_plugin_icon", "_make_visible"
+      true
+    else
+      false
+    end
+  end
+
+  def _godot_call_virtual_with_data(method_name : String, args : Void**, ret : Void*) : Void
+    case method_name
+    when "_has_main_screen"
+      return if ret.null?
+      ret.as(UInt8*).value = 1_u8
+      Godot.print("[CrystalIntegrationPlugin] Main screen queried: _has_main_screen -> true")
+    when "_get_plugin_name"
+      return if ret.null?
+      Bridge.ret_string(ret, "Crystal")
+      Godot.print("[CrystalIntegrationPlugin] Main screen queried: _get_plugin_name -> 'Crystal'")
+    when "_get_plugin_icon"
+      return if ret.null?
+      tex = self.class.get_crystal_icon_texture
+      if tex && !tex.pointer.null?
+        Bridge.ret_ref(ret, tex.pointer)
+      else
+        Bridge.ret_ref(ret, Pointer(Void).null)
+      end
+      Godot.print("[CrystalIntegrationPlugin] Main screen queried: _get_plugin_icon -> #{tex ? "icon" : "null"}")
+    when "_make_visible"
+      visible = !args.null? && !args[0].null? && (args[0].as(UInt8*).value != 0_u8)
+      make_crystal_panel_visible(visible)
+      Godot.print("[CrystalIntegrationPlugin] Main screen visibility toggled: _make_visible(#{visible})")
+    end
+  end
+
+  def _has_main_screen : Bool
+    true
+  end
+
+  def _get_plugin_name : String
+    "Crystal"
+  end
+
+  def _get_plugin_icon : Texture2D?
+    get_crystal_plugin_icon
+  end
+
+  def _make_visible(visible : Bool) : Void
+    make_crystal_panel_visible(visible)
+  end
+
+  def self.get_crystal_icon_texture : Godot::Texture2D?
+    if cached = @@cached_icon_texture
+      return cached if !cached.pointer.null?
+    end
+
     icon_tex : Godot::Texture2D? = nil
     ["res://addons/crystal_integration/crystal_icon.svg", "res://crystal_icon.svg"].each do |p|
       res = Godot.load(p, "Texture2D")
@@ -160,7 +267,6 @@ module Godot
       end
     end
 
-    # Guaranteed fallback: render embedded SVG string directly into an ImageTexture
     if !icon_tex || icon_tex.pointer.null?
       img = Godot.create(Godot::Image)
       if img && !img.pointer.null?
@@ -175,6 +281,37 @@ module Godot
       end
     end
 
+    @@cached_icon_texture = icon_tex
+    icon_tex
+  end
+
+  private def setup_toolbar_button : Void
+    return if @@compile_button
+    return if Godot::EditorInterface.singleton_ptr.null?
+    ed_iface = Godot::EditorInterface.new(Godot::EditorInterface.singleton_ptr)
+    base_ctrl = ed_iface.get_base_control
+    return if base_ctrl.pointer.null?
+
+    if !Godot::DisplayServer.singleton_ptr.null?
+      ds = Godot::DisplayServer.new(Godot::DisplayServer.singleton_ptr)
+      return if ds.call_str("get_name") == "headless"
+    end
+
+    # Check if button already exists in editor tree to avoid duplicates
+    existing = base_ctrl.call_obj("find_child", "BuildCrystalToolbarButton", true, false)
+    if existing && !existing.pointer.null?
+      @@compile_button = Godot::Button.new(existing.pointer)
+      return
+    end
+
+    btn = Godot.create(Godot::Button)
+    return unless btn
+    btn.call("set_name", "BuildCrystalToolbarButton")
+    btn.call("set_flat", true)
+    btn.call("set_theme_type_variation", "RunBarButton")
+
+    icon_tex = self.class.get_crystal_icon_texture
+
     if icon_tex && !icon_tex.pointer.null?
       btn.set_button_icon(icon_tex)
       btn.call("set_button_icon", icon_tex)
@@ -183,14 +320,40 @@ module Godot
       btn.call("set_text", "Build Crystal")
     end
 
-    btn.call("set_tooltip_text", "Build Crystal")
+    btn.call("set_tooltip_text", "Build Crystal (Quick Recompile)")
     btn.call("set_focus_mode", 0)
 
     btn.connect("pressed") do |_args|
       on_compile_button_pressed
     end
 
+    # Place the "Build Crystal" button in CONTAINER_TOOLBAR (EditorTitleBar, an HBoxContainer)
+    # and move it right before EditorRunBar (the Play buttons)
     add_control_to_container(Godot::EditorPlugin::CustomControlContainer::ContainerToolbar.value, btn)
+
+    if title_bar = btn.call_obj("get_parent")
+      run_bar_idx = -1_i64
+      count = title_bar.call_i64("get_child_count")
+      count.times do |i|
+        child = title_bar.call_obj("get_child", i)
+        if child && !child.pointer.null?
+          cls = child.call_str("get_class")
+          c_name = child.call_str("get_name")
+          if cls == "EditorRunBar" || c_name == "EditorRunBar" || c_name.includes?("RunBar")
+            run_bar_idx = i
+            break
+          end
+        end
+      end
+
+      if run_bar_idx >= 0
+        title_bar.call("move_child", btn, run_bar_idx)
+        Godot.print("[CrystalIntegrationPlugin] Build Crystal button placed in EditorTitleBar before EditorRunBar at index #{run_bar_idx}.")
+      else
+        Godot.print("[CrystalIntegrationPlugin] Build Crystal button added to ContainerToolbar.")
+      end
+    end
+
     @@compile_button = btn
   rescue ex
     Godot.printerr("[CrystalIntegrationPlugin] Warning: could not setup toolbar button: #{ex.message}")
@@ -199,6 +362,7 @@ module Godot
   # Handles toolbar compile button press to trigger manual Crystal rebuild
   def on_compile_button_pressed : Void
     Godot.print("[CrystalIntegrationPlugin] Triggering manual Crystal build...")
+    recompile_modified_addons_silent
     success = execute_crystal_build
     if success
       Godot.print("[CrystalIntegrationPlugin] Build completed successfully!")
@@ -216,7 +380,17 @@ module Godot
   # Invoked by Godot editor before running project (F5 / F6)
   def _build : Bool
     Godot.print("[CrystalIntegrationPlugin] Editor build requested (F5 / Play). Compiling Crystal...")
+    recompile_modified_addons_silent
     execute_crystal_build
+  end
+
+  def recompile_modified_addons_silent : Void
+    recompile_script = File.exists?("scripts/recompile_addons.ps1") ? "scripts/recompile_addons.ps1" : "../scripts/recompile_addons.ps1"
+    return unless File.exists?(recompile_script)
+
+    output_io = IO::Memory.new
+    Process.run("powershell", ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", recompile_script, "-ProjectPath", "."], output: output_io, error: output_io)
+  rescue
   end
 
   # Compiles project Crystal code into shared library

@@ -1,6 +1,6 @@
 # LibGodot for Crystal
 
-[![Crystal](https://img.shields.io/badge/Crystal-1.14+-black.svg?style=flat&logo=crystal)](https://crystal-lang.org)
+[![Crystal](https://img.shields.io/badge/Crystal-1.20+-black.svg?style=flat&logo=crystal)](https://crystal-lang.org)
 [![Godot](https://img.shields.io/badge/Godot-4.8--dev4-blue.svg?style=flat&logo=godotengine)](https://godotengine.org)
 [![Docs](https://img.shields.io/badge/Docs-Online-blueviolet.svg?style=flat)](https://sol-vin.github.io/libgodot/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)

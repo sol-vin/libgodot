@@ -45,7 +45,7 @@ ifeq ($(RELEASE), 1)
 	CRYSTAL_FLAGS += --release
 endif
 
-.PHONY: all build deps bridge extension_list addons package run editor clean help
+.PHONY: all build deps bridge extension_list addons package export export_release rebuild run editor clean help
 
 all: dirs deps bridge extension_list addons build
 	@echo ===================================================================
@@ -76,6 +76,14 @@ package: all
 	@echo [Addon] Packaging distributable zip for '$(ADDON_NAME)'...
 	@$(PWSH_FILE) package.ps1 -AddonName $(ADDON_NAME)
 
+export: package
+
+export_release:
+	@echo [Addon] Packaging release optimized distributable zip for '$(ADDON_NAME)'...
+	@$(MAKE) package RELEASE=1
+
+rebuild: clean all
+
 editor: all
 	@echo [Addon] Launching Godot Editor to test addon...
 	$(GODOT) --editor --path .
@@ -87,3 +95,18 @@ run: all
 clean:
 	@$(RM) $(ADDON_BIN_DIR)/*
 	@$(RM) dist/*
+
+help:
+	@echo ===================================================================
+	@echo   LibGodot Addon Template - Build and Export Commands
+	@echo ===================================================================
+	@echo   make                Build addon library and sync dependencies
+	@echo   make build          Compile addon Crystal library (game.$(SO_EXT))
+	@echo   make rebuild        Clean and rebuild all addon artifacts
+	@echo   make package        Package redistributable zip archive into dist/
+	@echo   make export         Alias for 'make package'
+	@echo   make export_release Package release optimized zip into dist/
+	@echo   make run            Run test project with addon in Godot
+	@echo   make editor         Launch Godot Editor to test addon
+	@echo   make clean          Remove compiled addon binaries and dist/
+	@echo ===================================================================

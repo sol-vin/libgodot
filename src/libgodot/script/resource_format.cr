@@ -53,7 +53,7 @@ module Godot
 
     def self._godot_has_virtual_method(method_name : String) : Bool
       case method_name
-      when "_get_recognized_extensions", "_handles_type", "_get_resource_type", "_load"
+      when "_get_recognized_extensions", "_recognize_path", "_handles_type", "_get_resource_type", "_load"
         true
       else
         false
@@ -64,9 +64,12 @@ module Godot
       case method_name
       when "_get_recognized_extensions"
         Bridge.ret_packed_string_array(ret, ["cr"])
+      when "_recognize_path"
+        path = Bridge.arg_to_string(args[0])
+        ret.as(UInt8*).value = path.ends_with?(".cr") ? 1_u8 : 0_u8
       when "_handles_type"
         typename = Bridge.arg_to_string_name(args[0])
-        handles = (typename == "Script" || typename == "CrystalScript" || typename == "Resource")
+        handles = (typename == "Script" || typename == "CrystalScript" || typename == "Resource" || typename.empty?)
         ret.as(UInt8*).value = handles ? 1_u8 : 0_u8
       when "_get_resource_type"
         path = Bridge.arg_to_string(args[0])

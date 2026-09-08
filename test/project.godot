@@ -17,4 +17,4 @@ config/icon="res://icon.svg"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/crystal_integration/plugin.cfg", "res://addons/test_runner/plugin.cfg", "res://addons/dummy_dialogue/plugin.cfg", "res://addons/dummy_inventory/plugin.cfg", "res://addons/dummy_audio/plugin.cfg")
+enabled=PackedStringArray("res://addons/crystal_integration/plugin.cfg", "res://addons/dummy_audio/plugin.cfg", "res://addons/dummy_dialogue/plugin.cfg", "res://addons/dummy_inventory/plugin.cfg", "res://addons/test_runner/plugin.cfg")

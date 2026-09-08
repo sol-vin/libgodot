@@ -135,7 +135,13 @@ module Godot
     def trigger(signal_args : Array(String)) : Void
       @completed = true
       @args = signal_args
-      @callback.try(&.call(signal_args))
+      if cb = @callback
+        begin
+          cb.call(signal_args)
+        rescue ex
+          Godot.printerr("[CrystalSignal] Error executing callback for '#{@signal_name}' on #{target_id}: #{ex.message}\n#{ex.backtrace.join("\n")}")
+        end
+      end
     end
   end
 
@@ -192,6 +198,9 @@ module Godot
     target.check_alive!
     target_id = target.signal_target_id
     sub = subscribe_signal(target_id, signal_name)
+    if !target.pointer.null? && target.instance_id > 0
+      Bridge.object_connect_signal(target.pointer, signal_name)
+    end
     start_time = ::Time.instant
     begin
       while !sub.completed?
@@ -514,13 +523,21 @@ module Godot
     # Connects a callback proc to the named signal.
     def connect(signal_name : String, callback : Proc(Array(String), Void)) : SignalSubscription
       check_alive!
-      Godot.subscribe_signal(signal_target_id, signal_name, callback)
+      sub = Godot.subscribe_signal(signal_target_id, signal_name, callback)
+      if !@pointer.null? && @instance_id > 0
+        Bridge.object_connect_signal(@pointer, signal_name)
+      end
+      sub
     end
 
     # Connects a callback block to the named signal.
     def connect(signal_name : String, &block : Array(String) -> Void) : SignalSubscription
       check_alive!
-      Godot.subscribe_signal(signal_target_id, signal_name, block)
+      sub = Godot.subscribe_signal(signal_target_id, signal_name, block)
+      if !@pointer.null? && @instance_id > 0
+        Bridge.object_connect_signal(@pointer, signal_name)
+      end
+      sub
     end
 
     # Connects a one-shot callback block to the named signal.
@@ -538,6 +555,9 @@ module Godot
       key = {signal_target_id, signal_name}
       Godot.signal_subs_mutex.synchronize do
         Godot.signal_subs.delete(key)
+      end
+      if !@pointer.null? && @instance_id > 0
+        Bridge.object_disconnect_signal(@pointer, signal_name)
       end
     end
 

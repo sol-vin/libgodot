@@ -179,6 +179,14 @@ function Invoke-TestCommand {
 if (-not $SkipSpecs) {
     Write-Host "--- Phase 1: Crystal Verification Specs ---" -ForegroundColor Magenta
 
+    $editorSpecResult = Invoke-TestCommand -Name "Crystal Spec: Test Editor Suite (test/spec)" `
+        -Executable "crystal" `
+        -Arguments @("spec", "--no-color") `
+        -WorkingDirectory $TestDir
+    if (-not $editorSpecResult["Success"]) {
+        $FailedSteps.Add("Crystal Spec: Test Editor Suite (test/spec)")
+    }
+
     $specResult1 = Invoke-TestCommand -Name "Crystal Spec: LibGodot Core" `
         -Executable "crystal" `
         -Arguments @("run", "spec/libgodot_spec.cr")

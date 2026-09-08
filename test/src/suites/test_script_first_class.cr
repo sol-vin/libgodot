@@ -4,8 +4,8 @@
 
 macro test_script_first_class(name, &block)
   ::TestFramework::Registry.register("ScriptFirstClass", {{name}}) do |node|
-    root = node
-    {{block.body}}
+	root = node
+	{{block.body}}
   end
 end
 
@@ -71,27 +71,27 @@ end
 
 test_script_first_class "CrystalScript AST reflection and Inspector property extraction" do
   source = <<-CRYSTAL
-  require "libgodot"
+	require "libgodot"
 
-  # Hero player character
-  node HeroPlayer < CharacterBody2D do
-    # Movement speed in px/s
-    @[Export(range: 50.0_f32..800.0_f32, step: 10.0_f32)]
-    property speed : Float32 = 250.0_f32
+	# Hero player character
+	node HeroPlayer < CharacterBody2D do
+	  # Movement speed in px/s
+	  @[Export(range: 50.0_f32..800.0_f32, step: 10.0_f32)]
+	  property speed : Float32 = 250.0_f32
 
-    @[Export]
-    property player_name : String = "Hero"
+	  @[Export]
+	  property player_name : String = "Hero"
 
-    signal leveled_up(new_level : Int32)
-    signal defeated
+	  signal leveled_up(new_level : Int32)
+	  signal defeated
 
-    def _ready : Void
-    end
+	  def _ready : Void
+	  end
 
-    def attack : Void
-    end
-  end
-  CRYSTAL
+	  def attack : Void
+	  end
+	end
+	CRYSTAL
 
   script = Godot::CrystalScript.new("res://hero_player.cr", source)
 
@@ -110,17 +110,17 @@ test_script_first_class "CrystalScript AST reflection and Inspector property ext
   speed_prop = props.find { |p| p.name == "speed" }
   TestFramework.assert_true !speed_prop.nil?, "Script should expose 'speed' property"
   if s = speed_prop
-    TestFramework.assert_eq s.type_name, "Float32"
-    TestFramework.assert_eq s.variant_type, 3 # TYPE_FLOAT
-    TestFramework.assert_eq s.hint, 1_u32 # PROPERTY_HINT_RANGE
-    TestFramework.assert_eq s.hint_string, "50.0,800.0,10.0"
+	TestFramework.assert_eq s.type_name, "Float32"
+	TestFramework.assert_eq s.variant_type, 3 # TYPE_FLOAT
+	TestFramework.assert_eq s.hint, 1_u32 # PROPERTY_HINT_RANGE
+	TestFramework.assert_eq s.hint_string, "50.0,800.0,10.0"
   end
 
   name_prop = props.find { |p| p.name == "player_name" }
   TestFramework.assert_true !name_prop.nil?, "Script should expose 'player_name' property"
   if np = name_prop
-    TestFramework.assert_eq np.type_name, "String"
-    TestFramework.assert_eq np.variant_type, 4 # TYPE_STRING
+	TestFramework.assert_eq np.type_name, "String"
+	TestFramework.assert_eq np.variant_type, 4 # TYPE_STRING
   end
 end
 
@@ -139,13 +139,13 @@ test_script_first_class "ResourceFormatLoader and ResourceFormatSaver for .cr fi
   # Load actual sample player script
   script = loader.load("sample_player.cr", "sample_player.cr")
   if script.nil? || script.source_code.empty?
-    script = loader.load("test/sample_player.cr", "test/sample_player.cr")
+	script = loader.load("test/sample_player.cr", "test/sample_player.cr")
   end
   TestFramework.assert_true !script.nil?, "Loader should load sample_player.cr successfully"
   if sc = script
-    TestFramework.assert_eq sc.class_name, "SamplePlayer"
-    TestFramework.assert_eq sc.base_type, "CharacterBody2D"
-    TestFramework.assert_true sc.properties.any? { |p| p.name == "speed" }, "Loaded script has 'speed' property"
-    TestFramework.assert_true sc.properties.any? { |p| p.name == "max_health" }, "Loaded script has 'max_health' property"
+	TestFramework.assert_eq sc.class_name, "SamplePlayer"
+	TestFramework.assert_eq sc.base_type, "CharacterBody2D"
+	TestFramework.assert_true sc.properties.any? { |p| p.name == "speed" }, "Loaded script has 'speed' property"
+	TestFramework.assert_true sc.properties.any? { |p| p.name == "max_health" }, "Loaded script has 'max_health' property"
   end
 end

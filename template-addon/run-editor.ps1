@@ -35,24 +35,25 @@ if (-not $godotExe) {
     exit 1
 }
 
-# 2. Build game library if needed
+# 2. Build addon library if needed
 if (-not $NoBuild) {
-    $gameLib = Join-Path $projRoot "bin/game." + (if ($onWindows) { "dll" } elseif ($IsMacOS) { "dylib" } else { "so" })
+    $addonName = "crystal_addon"
+    $addonBin = Join-Path $projRoot "addons/$addonName/bin/game." + (if ($onWindows) { "dll" } elseif ($IsMacOS) { "dylib" } else { "so" })
     $mainCr = Join-Path $projRoot "src/main.cr"
     $needsBuild = $false
 
     if (Test-Path $mainCr) {
-        if (-not (Test-Path $gameLib)) {
+        if (-not (Test-Path $addonBin)) {
             $needsBuild = $true
-        } elseif ((Get-Item $mainCr).LastWriteTime -gt (Get-Item $gameLib).LastWriteTime) {
+        } elseif ((Get-Item $mainCr).LastWriteTime -gt (Get-Item $addonBin).LastWriteTime) {
             $needsBuild = $true
         }
     }
 
     if ($needsBuild) {
-        Write-Host "[RunEditor] Building project before launching editor..." -ForegroundColor Cyan
+        Write-Host "[RunEditor] Building addon before launching editor..." -ForegroundColor Cyan
         if (Get-Command make -ErrorAction SilentlyContinue) {
-            & make -C $projRoot game_dll
+            & make -C $projRoot build
         }
     }
 }

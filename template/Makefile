@@ -49,7 +49,7 @@ ifeq ($(RELEASE), 1)
 	CRYSTAL_FLAGS += --release
 endif
 
-.PHONY: all game_dll game_exe deps bridge extension_list addons run editor clean help
+.PHONY: all game_dll game_exe deps bridge extension_list addons rebuild export export_release run editor clean help
 
 all: dirs deps bridge extension_list addons game_dll game_exe
 	@echo ===================================================================
@@ -90,3 +90,29 @@ editor: all
 
 clean:
 	@$(RM) $(BIN_DIR)/*
+	@$(PWSH_CMD) "Remove-Item -Path 'game.exe', 'game', 'export' -Recurse -Force -ErrorAction SilentlyContinue"
+
+rebuild: clean all
+
+export: all
+	@echo [Template] Exporting project to export/ directory...
+	@$(PWSH_FILE) ../scripts/package_game.ps1 -ProjectPath . -Name game -TargetDir export -ForceCompile
+
+export_release: dirs deps bridge extension_list addons
+	@echo [Template] Exporting optimized release project to export/ directory...
+	@$(PWSH_FILE) ../scripts/package_game.ps1 -ProjectPath . -Name game -TargetDir export -Release 1 -ForceCompile
+
+help:
+	@echo ===================================================================
+	@echo   LibGodot Template - Build and Export Commands
+	@echo ===================================================================
+	@echo   make                Build game library, runnable executable, and sync
+	@echo   make rebuild        Clean and rebuild all artifacts
+	@echo   make game_dll       Compile game shared library (game.$(SO_EXT))
+	@echo   make game_exe       Package playable game executable into bin/
+	@echo   make export         Export standalone playable game package to export/
+	@echo   make export_release Export release optimized game package to export/
+	@echo   make run            Launch game in Godot
+	@echo   make editor         Open project in Godot Editor
+	@echo   make clean          Remove built binaries and export directories
+	@echo ===================================================================

@@ -4,8 +4,8 @@
 
 macro test_lifecycle(name, &block)
   ::TestFramework::Registry.register("Lifecycle", {{name}}) do |node|
-    root = node
-    {{block.body}}
+	root = node
+	{{block.body}}
   end
 end
 

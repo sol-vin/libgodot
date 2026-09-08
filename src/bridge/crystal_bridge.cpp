@@ -223,6 +223,19 @@ static GDExtensionVariantGetInternalPtrFunc gd_variant_get_internal_ptr_object =
 /** Library handle passed to GDExtension at initialization, required for class registration */
 static GDExtensionClassLibraryPtr g_library = nullptr;
 
+/** Custom Callable interface pointers for connecting Godot signals to Crystal callbacks */
+static GDExtensionInterfaceCallableCustomCreate2 gd_callable_custom_create2 = nullptr;
+static GDExtensionInterfaceCallableCustomCreate gd_callable_custom_create = nullptr;
+static GDExtensionInterfaceVariantNewNil gd_variant_new_nil = nullptr;
+static GDExtensionPtrDestructor gd_callable_destroy = nullptr;
+
+typedef void (*CrystalSignalCallbackFn)(uint64_t target_id, const char *signal_name, const char **args, int arg_count);
+static std::vector<CrystalSignalCallbackFn> g_crystal_signal_callbacks;
+
+static GDExtensionMethodBindPtr mb_object_connect = nullptr;
+static GDExtensionMethodBindPtr mb_object_is_connected = nullptr;
+static GDExtensionMethodBindPtr mb_object_disconnect = nullptr;
+
 // ==============================================================================
 // Variant & Object Marshaling Helpers
 // ==============================================================================
@@ -1435,6 +1448,9 @@ static void bridge_call_method_vararg(GDExtensionMethodBindPtr mb, GDExtensionOb
             } else if (t == 7) { // Object*
                 GDExtensionVariantFromTypeConstructorFunc conv = gd_get_variant_from_type_constructor(GDEXTENSION_VARIANT_TYPE_OBJECT);
                 if (conv) conv(var_args[i], (GDExtensionTypePtr)d);
+            } else if (t == 8) { // Color
+                GDExtensionVariantFromTypeConstructorFunc conv = gd_get_variant_from_type_constructor(GDEXTENSION_VARIANT_TYPE_COLOR);
+                if (conv) conv(var_args[i], (GDExtensionTypePtr)d);
             }
         }
         call_args[i + 1] = var_args[i];
@@ -1508,6 +1524,9 @@ static void bridge_call_method_vararg_ret(GDExtensionMethodBindPtr mb, GDExtensi
                 if (conv) conv(var_args[i], (GDExtensionTypePtr)d);
             } else if (t == 7) { // Object*
                 GDExtensionVariantFromTypeConstructorFunc conv = gd_get_variant_from_type_constructor(GDEXTENSION_VARIANT_TYPE_OBJECT);
+                if (conv) conv(var_args[i], (GDExtensionTypePtr)d);
+            } else if (t == 8) { // Color
+                GDExtensionVariantFromTypeConstructorFunc conv = gd_get_variant_from_type_constructor(GDEXTENSION_VARIANT_TYPE_COLOR);
                 if (conv) conv(var_args[i], (GDExtensionTypePtr)d);
             }
         }
@@ -2408,6 +2427,245 @@ static int bridge_text_edit_get_line(void *text_edit, int64_t line, char *out_bu
 }
 
 // ==============================================================================
+// Native Signal Connection & Custom Callable Dispatcher
+// ==============================================================================
+
+struct CustomSignalBinding {
+    uint64_t target_id;
+    std::string signal_name;
+};
+
+static void custom_callable_call(void *callable_userdata, const GDExtensionConstVariantPtr *p_args, GDExtensionInt p_argument_count, GDExtensionVariantPtr r_return, GDExtensionCallError *r_error) {
+    if (r_error) {
+        r_error->error = GDEXTENSION_CALL_OK;
+        r_error->argument = 0;
+        r_error->expected = 0;
+    }
+    if (r_return && gd_variant_new_nil) {
+        gd_variant_new_nil(r_return);
+    }
+    if (!callable_userdata) return;
+    ensure_gc_thread_registered();
+    CustomSignalBinding *binding = (CustomSignalBinding*)callable_userdata;
+    if (g_crystal_signal_callbacks.empty()) return;
+
+    int count = (int)p_argument_count;
+    std::vector<std::string> str_storage;
+    std::vector<const char*> c_ptrs;
+    if (count > 0 && p_args) {
+        str_storage.reserve(count);
+        c_ptrs.reserve(count);
+        for (int i = 0; i < count; i++) {
+            if (p_args[i] && gd_variant_stringify && gd_string_to_utf8_chars && gd_string_destroy) {
+                void *gd_str = malloc(sizeof(void*));
+                gd_variant_stringify((GDExtensionConstVariantPtr)p_args[i], gd_str);
+                GDExtensionInt len = gd_string_to_utf8_chars(gd_str, nullptr, 0);
+                std::string s(len, '\0');
+                gd_string_to_utf8_chars(gd_str, &s[0], len);
+                gd_string_destroy(gd_str);
+                free(gd_str);
+                str_storage.push_back(s);
+                c_ptrs.push_back(str_storage.back().c_str());
+            } else {
+                str_storage.push_back("");
+                c_ptrs.push_back(str_storage.back().c_str());
+            }
+        }
+    }
+
+    for (auto cb : g_crystal_signal_callbacks) {
+        if (cb) {
+            cb(
+                binding->target_id,
+                binding->signal_name.c_str(),
+                c_ptrs.empty() ? nullptr : c_ptrs.data(),
+                count
+            );
+        }
+    }
+}
+
+static GDExtensionBool custom_callable_is_valid(void *callable_userdata) {
+    if (!callable_userdata) return 0;
+    return 1;
+}
+
+static void custom_callable_free(void *callable_userdata) {
+    if (callable_userdata) {
+        delete (CustomSignalBinding*)callable_userdata;
+    }
+}
+
+static uint32_t custom_callable_hash(void *callable_userdata) {
+    if (!callable_userdata) return 0;
+    CustomSignalBinding *b = (CustomSignalBinding*)callable_userdata;
+    uint32_t h = (uint32_t)(b->target_id ^ (b->target_id >> 32));
+    for (char c : b->signal_name) {
+        h = (h * 31) + (uint32_t)c;
+    }
+    return h;
+}
+
+static GDExtensionBool custom_callable_equal(void *a, void *b) {
+    if (a == b) return 1;
+    if (!a || !b) return 0;
+    CustomSignalBinding *ba = (CustomSignalBinding*)a;
+    CustomSignalBinding *bb = (CustomSignalBinding*)b;
+    return (ba->target_id == bb->target_id && ba->signal_name == bb->signal_name) ? 1 : 0;
+}
+
+static GDExtensionBool custom_callable_less_than(void *a, void *b) {
+    if (!a || !b) return 0;
+    CustomSignalBinding *ba = (CustomSignalBinding*)a;
+    CustomSignalBinding *bb = (CustomSignalBinding*)b;
+    if (ba->target_id != bb->target_id) return ba->target_id < bb->target_id ? 1 : 0;
+    return ba->signal_name < bb->signal_name ? 1 : 0;
+}
+
+static void custom_callable_to_string(void *callable_userdata, GDExtensionBool *r_is_valid, GDExtensionStringPtr r_out) {
+    if (r_is_valid) *r_is_valid = 1;
+    if (gd_string_new_with_utf8_chars && r_out) {
+        gd_string_new_with_utf8_chars(r_out, "CrystalSignalCallable");
+    }
+}
+
+static void bridge_register_signal_callback(CrystalSignalCallbackFn fn) {
+    if (!fn) return;
+    for (auto existing : g_crystal_signal_callbacks) {
+        if (existing == fn) return;
+    }
+    g_crystal_signal_callbacks.push_back(fn);
+}
+
+static void bridge_object_connect_signal(GDExtensionObjectPtr instance, const char *signal_name) {
+    if (!instance || !signal_name || !gd_classdb_get_method_bind || !gd_object_method_bind_ptrcall) return;
+    if (!gd_callable_custom_create2 && !gd_callable_custom_create) return;
+
+    uint64_t target_id = bridge_object_get_instance_id(instance);
+    if (target_id == 0) return;
+
+    if (!mb_object_connect) {
+        void *sn_obj = make_string_name("Object");
+        void *sn_conn = make_string_name("connect");
+        mb_object_connect = gd_classdb_get_method_bind(sn_obj, sn_conn, 1518946055ULL);
+        if (!mb_object_connect) {
+            mb_object_connect = gd_classdb_get_method_bind(sn_obj, sn_conn, 1469446357ULL);
+        }
+        void *sn_is_conn = make_string_name("is_connected");
+        mb_object_is_connected = gd_classdb_get_method_bind(sn_obj, sn_is_conn, 768136979ULL);
+        void *sn_disconn = make_string_name("disconnect");
+        mb_object_disconnect = gd_classdb_get_method_bind(sn_obj, sn_disconn, 1874754934ULL);
+
+        free_string_name(sn_obj);
+        free_string_name(sn_conn);
+        free_string_name(sn_is_conn);
+        free_string_name(sn_disconn);
+    }
+    if (!mb_object_connect) return;
+
+    CustomSignalBinding *binding = new CustomSignalBinding{ target_id, signal_name };
+    alignas(void*) char callable_buf[32] = {0};
+
+    if (gd_callable_custom_create2) {
+        GDExtensionCallableCustomInfo2 info;
+        memset(&info, 0, sizeof(info));
+        info.callable_userdata = binding;
+        info.token = g_library;
+        info.object_id = 0;
+        info.call_func = custom_callable_call;
+        info.is_valid_func = nullptr;
+        info.free_func = custom_callable_free;
+        info.hash_func = custom_callable_hash;
+        info.equal_func = custom_callable_equal;
+        info.less_than_func = custom_callable_less_than;
+        info.to_string_func = custom_callable_to_string;
+        gd_callable_custom_create2(callable_buf, &info);
+    } else {
+        GDExtensionCallableCustomInfo info;
+        memset(&info, 0, sizeof(info));
+        info.callable_userdata = binding;
+        info.token = g_library;
+        info.object_id = 0;
+        info.call_func = custom_callable_call;
+        info.is_valid_func = nullptr;
+        info.free_func = custom_callable_free;
+        info.hash_func = custom_callable_hash;
+        info.equal_func = custom_callable_equal;
+        info.less_than_func = custom_callable_less_than;
+        info.to_string_func = custom_callable_to_string;
+        gd_callable_custom_create(callable_buf, &info);
+    }
+
+    void *sn_sig = make_string_name(signal_name);
+
+    uint8_t already_connected = 0;
+    if (mb_object_is_connected) {
+        const void *check_args[2] = { sn_sig, callable_buf };
+        gd_object_method_bind_ptrcall(mb_object_is_connected, instance, (GDExtensionConstTypePtr*)check_args, &already_connected);
+    }
+
+    if (!already_connected) {
+        uint32_t flags = 0;
+        const void *conn_args[3] = { sn_sig, callable_buf, &flags };
+        int64_t err = 0;
+        gd_object_method_bind_ptrcall(mb_object_connect, instance, (GDExtensionConstTypePtr*)conn_args, &err);
+    }
+
+    free_string_name(sn_sig);
+
+    if (gd_callable_destroy) {
+        gd_callable_destroy(callable_buf);
+    }
+}
+
+static void bridge_object_disconnect_signal(GDExtensionObjectPtr instance, const char *signal_name) {
+    if (!instance || !signal_name || !mb_object_disconnect || !gd_object_method_bind_ptrcall) return;
+    uint64_t target_id = bridge_object_get_instance_id(instance);
+    if (target_id == 0) return;
+
+    CustomSignalBinding temp_binding{ target_id, signal_name };
+    alignas(void*) char callable_buf[32] = {0};
+    if (gd_callable_custom_create2) {
+        GDExtensionCallableCustomInfo2 info;
+        memset(&info, 0, sizeof(info));
+        info.callable_userdata = &temp_binding;
+        info.token = g_library;
+        info.object_id = 0;
+        info.call_func = custom_callable_call;
+        info.hash_func = custom_callable_hash;
+        info.equal_func = custom_callable_equal;
+        info.less_than_func = custom_callable_less_than;
+        gd_callable_custom_create2(callable_buf, &info);
+    } else if (gd_callable_custom_create) {
+        GDExtensionCallableCustomInfo info;
+        memset(&info, 0, sizeof(info));
+        info.callable_userdata = &temp_binding;
+        info.token = g_library;
+        info.object_id = 0;
+        info.call_func = custom_callable_call;
+        info.hash_func = custom_callable_hash;
+        info.equal_func = custom_callable_equal;
+        info.less_than_func = custom_callable_less_than;
+        gd_callable_custom_create(callable_buf, &info);
+    }
+
+    void *sn_sig = make_string_name(signal_name);
+    uint8_t is_conn = 0;
+    if (mb_object_is_connected) {
+        const void *check_args[2] = { sn_sig, callable_buf };
+        gd_object_method_bind_ptrcall(mb_object_is_connected, instance, (GDExtensionConstTypePtr*)check_args, &is_conn);
+    }
+    if (is_conn) {
+        const void *dis_args[2] = { sn_sig, callable_buf };
+        gd_object_method_bind_ptrcall(mb_object_disconnect, instance, (GDExtensionConstTypePtr*)dis_args, nullptr);
+    }
+    free_string_name(sn_sig);
+    if (gd_callable_destroy) {
+        gd_callable_destroy(callable_buf);
+    }
+}
+
+// ==============================================================================
 // Master BridgeAPI Table Exposed to Crystal
 // ==============================================================================
 
@@ -2465,6 +2723,9 @@ struct BridgeAPI {
     void (*ret_dictionary_complete_code)(void *r_ret);
     void (*ret_dictionary_lookup_code)(void *r_ret);
     int (*text_edit_get_line)(void *text_edit, int64_t line, char *out_buf, int max_len);
+    void (*object_connect_signal)(GDExtensionObjectPtr instance, const char *signal_name);
+    void (*object_disconnect_signal)(GDExtensionObjectPtr instance, const char *signal_name);
+    void (*register_signal_callback)(CrystalSignalCallbackFn fn);
 };
 
 static BridgeAPI g_bridge_api = {
@@ -2516,7 +2777,10 @@ static BridgeAPI g_bridge_api = {
     bridge_ret_dictionary_validate,
     bridge_ret_dictionary_complete_code,
     bridge_ret_dictionary_lookup_code,
-    bridge_text_edit_get_line
+    bridge_text_edit_get_line,
+    bridge_object_connect_signal,
+    bridge_object_disconnect_signal,
+    bridge_register_signal_callback
 };
 
 // ==============================================================================
@@ -2548,6 +2812,15 @@ extern "C" {
     }
     GDE_EXPORT void crystal_range_set_value(GDExtensionObjectPtr range_obj, double value) {
         bridge_range_set_value(range_obj, value);
+    }
+    GDE_EXPORT void crystal_object_connect_signal(GDExtensionObjectPtr instance, const char *signal_name) {
+        bridge_object_connect_signal(instance, signal_name);
+    }
+    GDE_EXPORT void crystal_object_disconnect_signal(GDExtensionObjectPtr instance, const char *signal_name) {
+        bridge_object_disconnect_signal(instance, signal_name);
+    }
+    GDE_EXPORT void crystal_register_signal_callback(CrystalSignalCallbackFn fn) {
+        bridge_register_signal_callback(fn);
     }
     GDE_EXPORT const BridgeAPI* crystal_bridge_get_api() {
         return &g_bridge_api;
@@ -2692,6 +2965,7 @@ static std::vector<HMODULE> g_loaded_modules;
 static void unload_crystal_game_library() {
     g_hGame = NULL;
     g_loaded_modules.clear();
+    g_crystal_signal_callbacks.clear();
 }
 
 /**
@@ -3274,9 +3548,14 @@ extern "C" GDE_EXPORT GDExtensionBool crystal_library_init(
     gd_variant_get_ptr_builtin_method = (GDExtensionInterfaceVariantGetPtrBuiltinMethod)p_get_proc_address("variant_get_ptr_builtin_method");
     gd_variant_get_ptr_keyed_setter = (GDExtensionInterfaceVariantGetPtrKeyedSetter)p_get_proc_address("variant_get_ptr_keyed_setter");
 
+    gd_callable_custom_create2 = (GDExtensionInterfaceCallableCustomCreate2)p_get_proc_address("callable_custom_create2");
+    gd_callable_custom_create = (GDExtensionInterfaceCallableCustomCreate)p_get_proc_address("callable_custom_create");
+    gd_variant_new_nil = (GDExtensionInterfaceVariantNewNil)p_get_proc_address("variant_new_nil");
+
     if (gd_variant_get_ptr_destructor) {
         gd_string_destroy = gd_variant_get_ptr_destructor(GDEXTENSION_VARIANT_TYPE_STRING);
         gd_string_name_destroy = gd_variant_get_ptr_destructor(GDEXTENSION_VARIANT_TYPE_STRING_NAME);
+        gd_callable_destroy = gd_variant_get_ptr_destructor(GDEXTENSION_VARIANT_TYPE_CALLABLE);
     }
 
     if (gd_variant_get_ptr_utility_function && gd_string_name_new_with_utf8_chars) {

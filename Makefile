@@ -95,7 +95,7 @@ PLUGIN_DLL       = $(PLUGIN_LIB)
 GAME_DLL         = $(GAME_LIB)
 LIBGODOT_DLL     = $(LIBGODOT_LIB)
 
-.PHONY: all bridge plugin test_project test_standalone examples examples_exe template template_addon game_dll game_exe android package_android generate dump_api deps addons sync engine test tests docs run editor clean help
+.PHONY: all bridge plugin test_project test_standalone examples examples_exe template template_addon game_dll game_exe android package_android generate dump_api deps addons sync engine spec test tests docs run editor clean help
 
 # Default target: compile bridge, plugin, test project, examples, template, template_addon, sync DLLs, and run test suite
 all: dirs deps bridge plugin addons test_project examples template template_addon sync test
@@ -214,6 +214,11 @@ engine:
 	$(SCONS) -C godot-src target=template_debug dev_build=yes library_type=shared_library -j$(SCONS_JOBS)
 	@$(PWSH_FILE) scripts/sync_bins.ps1
 	@echo $(LIBGODOT_LIB) updated successfully!
+
+# Run Crystal unit specifications (test/spec)
+spec:
+	@echo [Spec] Running Crystal specifications in test/spec...
+	$(CRYSTAL) spec test/spec
 
 # Run complete test suites and verification (Crystal specs, in-editor @tool tests, runtime project tests, smoke tests)
 test:

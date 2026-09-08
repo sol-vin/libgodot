@@ -49,7 +49,7 @@ ifeq ($(RELEASE), 1)
 	CRYSTAL_FLAGS += --release
 endif
 
-.PHONY: all game_dll game_exe deps bridge extension_list addons run editor clean help
+.PHONY: all game_dll game_exe deps bridge extension_list addons rebuild export export_release run editor clean help
 
 all: dirs deps bridge extension_list addons game_dll game_exe
 	@echo ===================================================================
@@ -90,3 +90,29 @@ editor: all
 
 clean:
 	@$(RM) $(BIN_DIR)/*
+	@$(PWSH_CMD) "Remove-Item -Path 'basic_demo.exe', 'basic_demo', 'game.exe', 'game', 'export' -Recurse -Force -ErrorAction SilentlyContinue"
+
+rebuild: clean all
+
+export: all
+	@echo [Demo] Exporting demo to export/ directory...
+	@$(PWSH_FILE) ../../scripts/package_game.ps1 -ProjectPath . -Name basic_demo -TargetDir export -ForceCompile
+
+export_release: dirs deps bridge extension_list addons
+	@echo [Demo] Exporting optimized release demo to export/ directory...
+	@$(PWSH_FILE) ../../scripts/package_game.ps1 -ProjectPath . -Name basic_demo -TargetDir export -Release 1 -ForceCompile
+
+help:
+	@echo ===================================================================
+	@echo   LibGodot Basic Demo - Build and Export Commands
+	@echo ===================================================================
+	@echo   make                Build demo library, runnable executable, and sync
+	@echo   make rebuild        Clean and rebuild all artifacts
+	@echo   make game_dll       Compile demo shared library (game.$(SO_EXT))
+	@echo   make game_exe       Package playable demo executable into bin/
+	@echo   make export         Export standalone playable demo package to export/
+	@echo   make export_release Export release optimized demo package to export/
+	@echo   make run            Launch demo in Godot
+	@echo   make editor         Open demo in Godot Editor
+	@echo   make clean          Remove built binaries and export directories
+	@echo ===================================================================

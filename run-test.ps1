@@ -26,6 +26,7 @@ if ($Interactive -or $UI) {
     & $GodotExe --path $TestPath @args | Out-Host
     exit $LASTEXITCODE
 } else {
-    & powershell -ExecutionPolicy Bypass -File (Join-Path $Root "scripts/run_tests.ps1") @PSBoundParameters.Values
+    $script = Join-Path $Root "scripts/run_tests.ps1"
+    & powershell -ExecutionPolicy Bypass -File $script @args
     exit $LASTEXITCODE
 }
