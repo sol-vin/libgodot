@@ -533,10 +533,7 @@ jobs:
             codesign --force --deep --sign - "$GODOT_APP" 2>/dev/null || true
           fi
 
-          cat << EOF > ./godot
-#!/usr/bin/env bash
-exec "$GODOT_EXEC" "\$@"
-EOF
+          printf '#!/usr/bin/env bash\nexec "%s" "$@"\n' "$GODOT_EXEC" > ./godot
           chmod +x ./godot
           xattr -d com.apple.quarantine ./godot 2>/dev/null || true
 
