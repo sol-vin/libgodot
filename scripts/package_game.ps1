@@ -242,27 +242,36 @@ if ($TargetDir) {
                 & chmod +x $destExe
             }
 
-            # Copy game library and runtime dependencies directly next to game executable
+            # Copy game library and runtime dependencies directly next to game executable and into addons/crystal_integration/bin
+            $gameAddonBin = Join-Path $gameDir "addons/crystal_integration/bin"
+            if (-not (Test-Path $gameAddonBin)) { New-Item -ItemType Directory -Force -Path $gameAddonBin | Out-Null }
+
             if (Test-Path (Join-Path $binDir "game.$soExt")) {
                 Copy-Item (Join-Path $binDir "game.$soExt") $gameDir -Force
+                Copy-Item (Join-Path $binDir "game.$soExt") $gameAddonBin -Force
             }
             if (Test-Path (Join-Path $binDir "crystal_bridge.$soExt")) {
                 Copy-Item (Join-Path $binDir "crystal_bridge.$soExt") $gameDir -Force
+                Copy-Item (Join-Path $binDir "crystal_bridge.$soExt") $gameAddonBin -Force
             }
             if ($onWindows) {
                 foreach ($dll in @("gc.dll", "iconv-2.dll", "pcre2-8.dll", "libgodot.dll")) {
                     $srcDll = Join-Path $binDir $dll
                     if (-not (Test-Path $srcDll)) { $srcDll = Join-Path $rootDir "bin/$dll" }
-                    if (Test-Path $srcDll) { Copy-Item $srcDll $gameDir -Force }
+                    if (Test-Path $srcDll) {
+                        Copy-Item $srcDll $gameDir -Force
+                        Copy-Item $srcDll $gameAddonBin -Force
+                    }
                 }
             } else {
                 if (Test-Path (Join-Path $binDir "libgodot.so")) {
                     Copy-Item (Join-Path $binDir "libgodot.so") $gameDir -Force
+                    Copy-Item (Join-Path $binDir "libgodot.so") $gameAddonBin -Force
                 }
             }
 
-            # Remove any temporary shadow-copy dlls, subdirectories, and non-library files
-            Get-ChildItem -Path $gameDir -Directory | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+            # Remove any temporary shadow-copy dlls, but preserve addons directory
+            Get-ChildItem -Path $gameDir -Directory | Where-Object { $_.Name -ne "addons" } | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
             Get-ChildItem -Path $gameDir -File | Where-Object {
                 $isExe = ($_.Name -eq "game$exeExt")
                 $isLib = ($_.Name -like "*.dll") -or ($_.Name -like "*.so*")

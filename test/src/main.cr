@@ -1348,4 +1348,5 @@ require "./suites/test_lifecycle_destruction"
 require "./suites/test_classdb_coverage"
 require "./suites/test_concurrency"
 require "./suites/test_macros_dsl"
+require "./suites/test_multi_addon_isolation"
 

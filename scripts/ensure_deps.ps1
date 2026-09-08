@@ -5,8 +5,11 @@ param(
 $RootDir = Split-Path -Parent $PSScriptRoot
 $binDirs = [System.Collections.Generic.List[string]]::new()
 $binDirs.Add((Join-Path $RootDir "bin"))
+$binDirs.Add((Join-Path $RootDir "addons/crystal_integration/bin"))
 $binDirs.Add((Join-Path $RootDir "test/bin"))
+$binDirs.Add((Join-Path $RootDir "test/addons/crystal_integration/bin"))
 $binDirs.Add((Join-Path $RootDir "template/bin"))
+$binDirs.Add((Join-Path $RootDir "template/addons/crystal_integration/bin"))
 $binDirs.Add((Join-Path $RootDir "template-addon/addons/crystal_addon/bin"))
 
 if (-not [string]::IsNullOrWhiteSpace($TargetBin)) {
@@ -18,7 +21,7 @@ if (-not [string]::IsNullOrWhiteSpace($TargetBin)) {
     }
 }
 
-# Add all existing examples/*/bin directories
+# Add all existing examples/*/bin and examples/*/addons/crystal_integration/bin directories
 $examplesDir = Join-Path $RootDir "examples"
 if (Test-Path $examplesDir) {
     Get-ChildItem -Path $examplesDir -Directory | ForEach-Object {
@@ -26,6 +29,8 @@ if (Test-Path $examplesDir) {
         if (Test-Path $exBin) {
             $binDirs.Add($exBin)
         }
+        $exAddonBin = Join-Path $_.FullName "addons/crystal_integration/bin"
+        $binDirs.Add($exAddonBin)
     }
 }
 

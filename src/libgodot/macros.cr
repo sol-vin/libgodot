@@ -368,6 +368,7 @@ macro node(decl, &block)
     has_physics_process = false
     has_enter_tree = false
     has_exit_tree = false
+    has_build = false
     is_tool_class = (base_godot_name == "EditorPlugin" || parent_name.stringify.includes?("EditorPlugin"))
     is_abstract_class = false
     is_static_unload = false
@@ -584,6 +585,8 @@ macro node(decl, &block)
         {% has_enter_tree = true %}
       {% elsif stmt.name.stringify == "_exit_tree" %}
         {% has_exit_tree = true %}
+      {% elsif stmt.name.stringify == "_build" %}
+        {% has_build = true %}
       {% elsif !stmt.name.stringify.starts_with?("_") && stmt.args.size == 0 %}
         {% user_methods << stmt.name %}
       {% end %}
@@ -735,6 +738,10 @@ macro node(decl, &block)
       when "_exit_tree"
         _exit_tree if responds_to?(:_exit_tree)
       {% end %}
+      {% if has_build %}
+      when "_build"
+        _build if responds_to?(:_build)
+      {% end %}
       {% if has_ready || node_groups.size > 0 %}
       when "_ready"
         {% if node_groups.size > 0 %}
@@ -811,6 +818,9 @@ macro node(decl, &block)
               self.{{var_name.id}} = val_ptr.as(::Godot::Rect2*).value
             {% elsif var_type == "Transform3D" %}
               self.{{var_name.id}} = val_ptr.as(::Godot::Transform3D*).value
+            {% elsif var_type == "String" %}
+              c_str = val_ptr.as(Pointer(UInt8)*).value
+              self.{{var_name.id}} = c_str.null? ? "" : String.new(c_str)
             {% end %}
         {% end %}
       {% end %}
@@ -847,6 +857,8 @@ macro node(decl, &block)
               ret_ptr.as(::Godot::Rect2*).value = self.{{var_name.id}}
             {% elsif var_type == "Transform3D" %}
               ret_ptr.as(::Godot::Transform3D*).value = self.{{var_name.id}}
+            {% elsif var_type == "String" %}
+              ret_ptr.as(Pointer(UInt8)*).value = self.{{var_name.id}}.to_unsafe
             {% end %}
         {% end %}
       {% end %}

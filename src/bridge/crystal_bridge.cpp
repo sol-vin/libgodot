@@ -66,6 +66,8 @@
 #include <vector>
 #include <deque>
 #include <string>
+#include <unordered_set>
+
 
 #include "gdextension_interface.h"
 
@@ -254,11 +256,32 @@ static GDExtensionObjectPtr bridge_object_from_variant(const void *variant) {
  * @param dst Pointer to the destination buffer allocated by Crystal.
  * @param variant Pointer to the source Godot Variant.
  */
+static void* make_string(const char *str);
+static void free_string(void *s);
+
 static void bridge_type_from_variant(int variant_type, void *dst, const void *variant) {
     if (!variant || !dst) return;
     if (variant_type == GDEXTENSION_VARIANT_TYPE_OBJECT) {
         GDExtensionObjectPtr obj = bridge_object_from_variant(variant);
         memcpy(dst, &obj, sizeof(GDExtensionObjectPtr));
+        return;
+    }
+    if (variant_type == GDEXTENSION_VARIANT_TYPE_STRING) {
+        static thread_local char s_type_str_buf[1024];
+        s_type_str_buf[0] = '\0';
+        if (gd_string_to_utf8_chars && gd_get_variant_to_type_constructor) {
+            alignas(void*) char gd_str[8] = {0};
+            GDExtensionTypeFromVariantConstructorFunc conv = gd_get_variant_to_type_constructor(GDEXTENSION_VARIANT_TYPE_STRING);
+            if (conv) {
+                conv(gd_str, (GDExtensionVariantPtr)variant);
+                int64_t len = gd_string_to_utf8_chars(gd_str, s_type_str_buf, sizeof(s_type_str_buf) - 1);
+                if (len >= 0 && len < (int64_t)sizeof(s_type_str_buf)) {
+                    s_type_str_buf[len] = '\0';
+                }
+            }
+            if (gd_string_destroy) gd_string_destroy(gd_str);
+        }
+        *(const char**)dst = s_type_str_buf;
         return;
     }
     if (gd_get_variant_to_type_constructor) {
@@ -277,6 +300,19 @@ static void bridge_type_from_variant(int variant_type, void *dst, const void *va
  * @param src Pointer to the source raw value (e.g. float, int, Vector3).
  */
 static void bridge_variant_from_type(int variant_type, void *variant, const void *src) {
+    if (!variant || !src) return;
+    if (variant_type == GDEXTENSION_VARIANT_TYPE_STRING) {
+        const char *s = *(const char**)src;
+        void *gd_str = make_string(s ? s : "");
+        if (gd_variant_from_string) {
+            gd_variant_from_string(variant, gd_str);
+        }
+        if (gd_string_destroy) {
+            gd_string_destroy(gd_str);
+        }
+        free(gd_str);
+        return;
+    }
     if (gd_get_variant_from_type_constructor && variant && src) {
         GDExtensionVariantFromTypeConstructorFunc conv = gd_get_variant_from_type_constructor((GDExtensionVariantType)variant_type);
         if (conv) {
@@ -514,6 +550,7 @@ static GDExtensionInitializationLevel g_current_init_level = GDEXTENSION_INITIAL
 static std::vector<CrystalClassDesc*> g_deferred_editor_classes;
 static std::vector<std::string> g_registered_editor_class_names;
 static std::vector<std::string> g_registered_scene_class_names;
+static std::unordered_set<std::string> g_all_registered_class_names;
 static bool is_editor_class(const CrystalClassDesc *desc);
 
 /**
@@ -717,8 +754,16 @@ static void generic_virtual_exit_tree(GDExtensionClassInstancePtr p_instance, co
     inst->desc->call_virtual(inst->crystal_instance, "_exit_tree", 0.0);
 }
 
+/** Dispatches Godot's _build() virtual callback for EditorPlugin into Crystal */
+static void generic_virtual_build(GDExtensionClassInstancePtr p_instance, const GDExtensionConstTypePtr *p_args, GDExtensionTypePtr r_ret) {
+    if (r_ret) *(uint8_t*)r_ret = 1;
+    GenericExtensionInstance *inst = (GenericExtensionInstance*)p_instance;
+    if (!inst || !inst->desc || !inst->desc->call_virtual || !inst->crystal_instance) return;
+    inst->desc->call_virtual(inst->crystal_instance, "_build", 0.0);
+}
+
 /**
- * Maps Godot virtual method StringNames (_ready, _process, _physics_process, _enter_tree, _exit_tree)
+ * Maps Godot virtual method StringNames (_ready, _process, _physics_process, _enter_tree, _exit_tree, _build)
  * to their respective static C dispatch handlers.
  */
 static GDExtensionClassCallVirtual generic_class_get_virtual(void *p_class_userdata, GDExtensionConstStringNamePtr p_name, uint32_t p_hash) {
@@ -730,12 +775,14 @@ static GDExtensionClassCallVirtual generic_class_get_virtual(void *p_class_userd
     static void *sn_r = nullptr;
     static void *sn_et = nullptr;
     static void *sn_xt = nullptr;
+    static void *sn_b = nullptr;
     if (!sn_pp) {
         sn_pp = make_string_name("_physics_process");
         sn_p = make_string_name("_process");
         sn_r = make_string_name("_ready");
         sn_et = make_string_name("_enter_tree");
         sn_xt = make_string_name("_exit_tree");
+        sn_b = make_string_name("_build");
     }
 
     if (desc->has_physics_process && memcmp(p_name, sn_pp, sizeof(void*)) == 0) {
@@ -752,6 +799,9 @@ static GDExtensionClassCallVirtual generic_class_get_virtual(void *p_class_userd
     }
     if (desc->has_exit_tree && memcmp(p_name, sn_xt, sizeof(void*)) == 0) {
         return generic_virtual_exit_tree;
+    }
+    if (memcmp(p_name, sn_b, sizeof(void*)) == 0) {
+        return generic_virtual_build;
     }
 
     return nullptr;
@@ -818,18 +868,43 @@ static GDExtensionBool generic_class_get(GDExtensionClassInstancePtr p_instance,
 }
 
 /**
- * Registers a Crystal class, all its exported properties, and all its signals with Godot ClassDB.
- *
- * Called by Crystal during game library initialization (crystal_godot_init).
- *
- * @param p_desc Pointer to the CrystalClassDesc filled out by Crystal's registration macros.
- * @return 1 on success, 0 on failure.
+ * Checks if a class is already registered in Godot's ClassDB (either engine native or another GDExtension module).
  */
+static bool is_class_registered_in_engine(const char *name) {
+    if (!name || !gd_global_get_singleton || !gd_classdb_get_method_bind || !gd_object_method_bind_ptrcall) return false;
+    void *sn_cdb = make_string_name("ClassDB");
+    GDExtensionObjectPtr cdb = gd_global_get_singleton(sn_cdb);
+    free_string_name(sn_cdb);
+    if (!cdb) return false;
+
+    static GDExtensionMethodBindPtr mb_exists = nullptr;
+    if (!mb_exists) {
+        void *sn_c = make_string_name("ClassDB");
+        void *sn_m = make_string_name("class_exists");
+        mb_exists = gd_classdb_get_method_bind(sn_c, sn_m, 2619796661ULL);
+        free_string_name(sn_c); free_string_name(sn_m);
+    }
+    if (!mb_exists) return false;
+
+    void *sn_target = make_string_name(name);
+    const void *args[1] = { sn_target };
+    uint8_t ret = 0;
+    gd_object_method_bind_ptrcall(mb_exists, cdb, args, &ret);
+    free_string_name(sn_target);
+    return (ret != 0);
+}
+
 /**
  * Internal helper that executes ClassDB registration with Godot.
  */
 static void do_classdb_register(CrystalClassDesc *desc) {
     if (!desc || !g_library) return;
+    if (is_class_registered_in_engine(desc->name)) {
+        char msg[256];
+        snprintf(msg, sizeof(msg), "[CrystalBridge] Notice: Class '%s' already registered with ClassDB in engine. Skipping duplicate registration safely.", desc->name);
+        godot_log_print(msg);
+        return;
+    }
 
     void *class_sn = make_string_name(desc->name);
     void *parent_sn = make_string_name(desc->parent_name);
@@ -927,6 +1002,14 @@ static bool is_editor_class(const CrystalClassDesc *desc) {
  */
 static int bridge_register_class(const CrystalClassDesc *p_desc) {
     if (!p_desc || !g_library) return 0;
+
+    if (g_all_registered_class_names.find(p_desc->name) != g_all_registered_class_names.end() || is_class_registered_in_engine(p_desc->name)) {
+        char log_buf[256];
+        snprintf(log_buf, sizeof(log_buf), "[CrystalBridge] Notice: Class '%s' already registered with ClassDB. Skipping duplicate registration safely.", p_desc->name);
+        godot_log_print(log_buf);
+        return 1;
+    }
+    g_all_registered_class_names.insert(p_desc->name);
 
     g_registered_classes.push_back(*p_desc);
     CrystalClassDesc *desc = &g_registered_classes.back();
@@ -2092,6 +2175,8 @@ static uint64_t get_file_mtime(const char *path) {
 
 /** Global handle to the currently loaded Crystal game library (game.dll/so) */
 static HMODULE g_hGame = NULL;
+/** List of all loaded Crystal module handles (plugin.dll, game.dll, etc.) */
+static std::vector<HMODULE> g_loaded_modules;
 
 /**
  * Unloads the Crystal game library reference.
@@ -2101,17 +2186,18 @@ static HMODULE g_hGame = NULL;
  */
 static void unload_crystal_game_library() {
     g_hGame = NULL;
+    g_loaded_modules.clear();
 }
 
 /**
  * Scans the bridge directory and removes stale temporary shadow copies
- * (`game_loaded_*.dll/so`) left behind by previous, closed editor sessions.
+ * (`*_loaded_*.dll/so`) left behind by previous, closed editor sessions.
  */
 static void cleanup_old_shadow_dlls(const char *dir) {
     if (!dir || dir[0] == '\0') return;
 #ifdef _WIN32
     char search_pattern[MAX_PATH];
-    snprintf(search_pattern, sizeof(search_pattern), "%s\\game_loaded_*.dll", dir);
+    snprintf(search_pattern, sizeof(search_pattern), "%s\\*_loaded_*.dll", dir);
 
     WIN32_FIND_DATAA fd;
     HANDLE hFind = FindFirstFileA(search_pattern, &fd);
@@ -2128,7 +2214,7 @@ static void cleanup_old_shadow_dlls(const char *dir) {
     if (!d) return;
     struct dirent *entry;
     while ((entry = readdir(d)) != nullptr) {
-        if (strncmp(entry->d_name, "game_loaded_", 12) == 0) {
+        if (strstr(entry->d_name, "_loaded_") != nullptr) {
             char file_path[MAX_PATH];
             snprintf(file_path, sizeof(file_path), "%s/%s", dir, entry->d_name);
             unlink(file_path);
@@ -2224,31 +2310,30 @@ static void load_crystal_game_library() {
     cleanup_old_shadow_dlls(bridge_dir);
 
     bool use_shadow = bridge_should_use_shadow_copy();
-    char candidate_path[MAX_PATH] = {0};
-    char shadow_path[MAX_PATH] = {0};
-
     uint64_t ts = bridge_get_tick_count();
     unsigned long pid = bridge_get_pid();
 
 #ifdef _WIN32
-    const char *candidate_names[] = { "game.dll", "plugin.dll", "crystal_addon.dll" };
+    const char *candidate_names[] = { "plugin.dll", "game.dll", "crystal_addon.dll" };
     const char *path_sep = "\\";
     const char *shadow_ext = "dll";
 #elif defined(__ANDROID__) || defined(ANDROID)
-    const char *candidate_names[] = { "libgame.so", "libplugin.so", "libcrystal_addon.so" };
+    const char *candidate_names[] = { "libplugin.so", "libgame.so", "libcrystal_addon.so" };
     const char *path_sep = "/";
     const char *shadow_ext = "so";
 #elif defined(__APPLE__)
-    const char *candidate_names[] = { "game.dylib", "libgame.dylib", "plugin.dylib", "crystal_addon.dylib" };
+    const char *candidate_names[] = { "plugin.dylib", "game.dylib", "libgame.dylib", "crystal_addon.dylib" };
     const char *path_sep = "/";
     const char *shadow_ext = "dylib";
 #else
-    const char *candidate_names[] = { "game.so", "plugin.so", "crystal_addon.so" };
+    const char *candidate_names[] = { "plugin.so", "game.so", "crystal_addon.so" };
     const char *path_sep = "/";
     const char *shadow_ext = "so";
 #endif
 
-    // 1. Primary candidate: game, plugin, or addon library sitting directly next to crystal_bridge
+    std::vector<std::string> to_load;
+
+    // 1. Primary candidates sitting directly next to crystal_bridge
     if (bridge_dir[0] != '\0') {
 #ifdef _WIN32
         SetDllDirectoryA(bridge_dir);
@@ -2257,15 +2342,58 @@ static void load_crystal_game_library() {
             char test_path[MAX_PATH] = {0};
             snprintf(test_path, sizeof(test_path), "%s%s%s", bridge_dir, path_sep, candidate_names[c]);
             if (bridge_file_exists(test_path)) {
-                snprintf(candidate_path, sizeof(candidate_path), "%s", test_path);
-                if (use_shadow) {
-                    do {
-                        snprintf(shadow_path, sizeof(shadow_path), "%s%s%s_loaded_%lu_%llu.%s", bridge_dir, path_sep, candidate_names[c], pid, (unsigned long long)ts, shadow_ext);
-                        ts++;
-                    } while (bridge_file_exists(shadow_path));
-                }
-                break;
+                to_load.push_back(std::string(test_path));
             }
+        }
+
+        // If standard names not found, search directory for any custom addon DLL/SO
+        if (to_load.empty()) {
+#ifdef _WIN32
+            char search_pattern[MAX_PATH];
+            snprintf(search_pattern, sizeof(search_pattern), "%s\\*.dll", bridge_dir);
+            WIN32_FIND_DATAA fd;
+            HANDLE hFind = FindFirstFileA(search_pattern, &fd);
+            if (hFind != INVALID_HANDLE_VALUE) {
+                do {
+                    // Skip system/runtime dlls and temporary shadow dlls
+                    if (strstr(fd.cFileName, "crystal_bridge") == nullptr &&
+                        fd.cFileName[0] != '~' &&
+                        strcmp(fd.cFileName, "gc.dll") != 0 &&
+                        strcmp(fd.cFileName, "iconv-2.dll") != 0 &&
+                        strcmp(fd.cFileName, "pcre2-8.dll") != 0 &&
+                        strcmp(fd.cFileName, "libgodot.dll") != 0 &&
+                        strstr(fd.cFileName, "_loaded_") == nullptr) {
+                        char full_path[MAX_PATH];
+                        snprintf(full_path, sizeof(full_path), "%s\\%s", bridge_dir, fd.cFileName);
+                        to_load.push_back(std::string(full_path));
+                    }
+                } while (FindNextFileA(hFind, &fd));
+                FindClose(hFind);
+            }
+#else
+            DIR *d = opendir(bridge_dir);
+            if (d) {
+                struct dirent *entry;
+                while ((entry = readdir(d)) != nullptr) {
+                    const char *name = entry->d_name;
+                    size_t len = strlen(name);
+                    bool is_lib = (len > 3 && strcmp(name + len - 3, ".so") == 0) ||
+                                  (len > 6 && strcmp(name + len - 6, ".dylib") == 0);
+                    if (is_lib &&
+                        strstr(name, "crystal_bridge") == nullptr &&
+                        strstr(name, "libgc") == nullptr &&
+                        strstr(name, "libpcre2") == nullptr &&
+                        strstr(name, "libiconv") == nullptr &&
+                        strstr(name, "libgodot") == nullptr &&
+                        strstr(name, "_loaded_") == nullptr) {
+                        char full_path[MAX_PATH];
+                        snprintf(full_path, sizeof(full_path), "%s/%s", bridge_dir, name);
+                        to_load.push_back(std::string(full_path));
+                    }
+                }
+                closedir(d);
+            }
+#endif
         }
     }
 
@@ -2282,24 +2410,71 @@ static void load_crystal_game_library() {
     }
 #endif
 
-    HMODULE hGame = NULL;
+    // Fallback search paths if none found in bridge_dir
+    if (to_load.empty()) {
+#ifdef _WIN32
+        const char *fallbacks[] = { "addons/crystal_integration/bin/plugin.dll", "addons/crystal_integration/bin/game.dll", "addons/crystal_addon/bin/game.dll", "demo/bin/game.dll", "bin/game.dll", "game.dll" };
+#elif defined(__ANDROID__) || defined(ANDROID)
+        const char *fallbacks[] = { "libplugin.so", "libgame.so", "addons/crystal_integration/bin/android/arm64-v8a/libgame.so", "bin/android/arm64-v8a/libgame.so", "game.so" };
+#elif defined(__APPLE__)
+        const char *fallbacks[] = { "addons/crystal_integration/bin/plugin.dylib", "addons/crystal_integration/bin/game.dylib", "addons/crystal_addon/bin/game.dylib", "demo/bin/game.dylib", "bin/game.dylib", "game.dylib", "bin/libgame.dylib", "libgame.dylib" };
+#else
+        const char *fallbacks[] = { "addons/crystal_integration/bin/plugin.so", "addons/crystal_integration/bin/game.so", "addons/crystal_addon/bin/game.so", "demo/bin/game.so", "bin/game.so", "game.so" };
+#endif
+        for (size_t i = 0; i < sizeof(fallbacks) / sizeof(fallbacks[0]); i++) {
+            if (bridge_file_exists(fallbacks[i])) {
+                to_load.push_back(std::string(fallbacks[i]));
+                break;
+            }
+        }
+    }
 
-    // Check if the co-located game library exists
-    if (candidate_path[0] != '\0' && bridge_file_exists(candidate_path)) {
+#if defined(__ANDROID__) || defined(ANDROID)
+    // On Android, if not found on filesystem, try loading directly via linker search path
+    if (to_load.empty()) {
+        HMODULE hSys = bridge_load_library("libgame.so");
+        if (hSys) {
+            godot_log_print("[CrystalBridge] Loaded game library via system dlopen('libgame.so')");
+            g_hGame = hSys;
+            g_loaded_modules.push_back(hSys);
+            typedef void (*CrystalInitFn)(const BridgeAPI *api);
+            CrystalInitFn init_fn = (CrystalInitFn)bridge_get_proc(hSys, "crystal_godot_init");
+            if (init_fn) init_fn(&g_bridge_api);
+            return;
+        }
+    }
+#endif
+
+    if (to_load.empty()) {
+        godot_log_print("[CrystalBridge] No game or plugin library found yet. Click 'Build Crystal' in the editor to compile your project.");
+        return;
+    }
+
+    typedef void (*CrystalInitFn)(const BridgeAPI *api);
+
+    for (size_t i = 0; i < to_load.size(); i++) {
+        const std::string &candidate_path = to_load[i];
+        HMODULE hModule = NULL;
+
         if (use_shadow) {
-            if (!bridge_copy_file(candidate_path, shadow_path)) {
+            char shadow_path[MAX_PATH] = {0};
+            do {
+                snprintf(shadow_path, sizeof(shadow_path), "%s_loaded_%lu_%llu.%s", candidate_path.c_str(), pid, (unsigned long long)ts, shadow_ext);
+                ts++;
+            } while (bridge_file_exists(shadow_path));
+
+            if (!bridge_copy_file(candidate_path.c_str(), shadow_path)) {
                 char err_buf[256];
                 bridge_get_last_error(err_buf, sizeof(err_buf));
                 char log_buf[512];
-                snprintf(log_buf, sizeof(log_buf), "[CrystalBridge] Copy failed from %s to %s (%s)", candidate_path, shadow_path, err_buf);
+                snprintf(log_buf, sizeof(log_buf), "[CrystalBridge] Copy failed from %s to %s (%s)", candidate_path.c_str(), shadow_path, err_buf);
                 godot_log_error(log_buf, nullptr, "load_crystal_game_library", __FILE__, __LINE__);
             }
-            hGame = bridge_load_library(shadow_path);
-            if (hGame) {
+            hModule = bridge_load_library(shadow_path);
+            if (hModule) {
                 char buf[512];
-                snprintf(buf, sizeof(buf), "[CrystalBridge] Loaded game library from %s via shadow copy %s", candidate_path, shadow_path);
+                snprintf(buf, sizeof(buf), "[CrystalBridge] Loaded library from %s via shadow copy %s", candidate_path.c_str(), shadow_path);
                 godot_log_print(buf);
-                g_hGame = hGame;
             } else {
                 char err_buf[256];
                 bridge_get_last_error(err_buf, sizeof(err_buf));
@@ -2308,92 +2483,31 @@ static void load_crystal_game_library() {
                 godot_log_warning(log_buf, nullptr, "load_crystal_game_library", __FILE__, __LINE__);
             }
         } else {
-            hGame = bridge_load_library(candidate_path);
-            if (hGame) {
+            hModule = bridge_load_library(candidate_path.c_str());
+            if (hModule) {
                 char buf[512];
-                snprintf(buf, sizeof(buf), "[CrystalBridge] Loaded game library directly from %s", candidate_path);
+                snprintf(buf, sizeof(buf), "[CrystalBridge] Loaded library directly from %s", candidate_path.c_str());
                 godot_log_print(buf);
-                g_hGame = hGame;
             } else {
                 char err_buf[256];
                 bridge_get_last_error(err_buf, sizeof(err_buf));
                 char log_buf[512];
-                snprintf(log_buf, sizeof(log_buf), "[CrystalBridge] Failed to load library %s (%s)", candidate_path, err_buf);
+                snprintf(log_buf, sizeof(log_buf), "[CrystalBridge] Failed to load library %s (%s)", candidate_path.c_str(), err_buf);
                 godot_log_warning(log_buf, nullptr, "load_crystal_game_library", __FILE__, __LINE__);
             }
         }
-    }
 
-    // Fallback search paths if co-located wasn't found
-    if (!hGame) {
-#ifdef _WIN32
-        const char *fallbacks[] = { "addons/crystal_addon/bin/game.dll", "demo/bin/game.dll", "bin/game.dll", "game.dll" };
-#elif defined(__ANDROID__) || defined(ANDROID)
-        const char *fallbacks[] = { "libgame.so", "bin/android/arm64-v8a/libgame.so", "game.so" };
-#elif defined(__APPLE__)
-        const char *fallbacks[] = { "addons/crystal_addon/bin/game.dylib", "demo/bin/game.dylib", "bin/game.dylib", "game.dylib", "bin/libgame.dylib", "libgame.dylib" };
-#else
-        const char *fallbacks[] = { "addons/crystal_addon/bin/game.so", "demo/bin/game.so", "bin/game.so", "game.so" };
-#endif
-        for (size_t i = 0; i < sizeof(fallbacks) / sizeof(fallbacks[0]); i++) {
-            if (!bridge_file_exists(fallbacks[i])) continue;
-            if (use_shadow) {
-                do {
-                    snprintf(shadow_path, sizeof(shadow_path), "%s_loaded_%lu_%llu.%s", fallbacks[i], pid, (unsigned long long)ts, shadow_ext);
-                    ts++;
-                } while (bridge_file_exists(shadow_path));
-                if (!bridge_copy_file(fallbacks[i], shadow_path)) {
-                    char err_buf[256];
-                    bridge_get_last_error(err_buf, sizeof(err_buf));
-                    char log_buf[512];
-                    snprintf(log_buf, sizeof(log_buf), "[CrystalBridge] Copy failed from %s to %s (%s)", fallbacks[i], shadow_path, err_buf);
-                    godot_log_error(log_buf, nullptr, "load_crystal_game_library", __FILE__, __LINE__);
-                }
-                hGame = bridge_load_library(shadow_path);
-                if (hGame) {
-                    char buf[512];
-                    snprintf(buf, sizeof(buf), "[CrystalBridge] Loaded fallback game library from %s via %s", fallbacks[i], shadow_path);
-                    godot_log_print(buf);
-                    g_hGame = hGame;
-                    break;
-                }
+        if (hModule) {
+            g_hGame = hModule;
+            g_loaded_modules.push_back(hModule);
+            CrystalInitFn init_fn = (CrystalInitFn)bridge_get_proc(hModule, "crystal_godot_init");
+            if (init_fn) {
+                init_fn(&g_bridge_api);
             } else {
-                hGame = bridge_load_library(fallbacks[i]);
-                if (hGame) {
-                    char buf[512];
-                    snprintf(buf, sizeof(buf), "[CrystalBridge] Loaded fallback game library directly from %s", fallbacks[i]);
-                    godot_log_print(buf);
-                    g_hGame = hGame;
-                    break;
-                }
+                godot_log_error("Failed to find 'crystal_godot_init' in loaded library", nullptr, "load_crystal_game_library", __FILE__, __LINE__);
             }
         }
     }
-
-#if defined(__ANDROID__) || defined(ANDROID)
-    // On Android, if not found on filesystem, try loading directly via linker search path
-    if (!hGame) {
-        hGame = bridge_load_library("libgame.so");
-        if (hGame) {
-            godot_log_print("[CrystalBridge] Loaded game library via system dlopen('libgame.so')");
-            g_hGame = hGame;
-        }
-    }
-#endif
-
-    if (!hGame) {
-        godot_log_print("[CrystalBridge] No game library found yet. Click 'Build Crystal' in the editor to compile your project.");
-        return;
-    }
-
-    typedef void (*CrystalInitFn)(const BridgeAPI *api);
-    CrystalInitFn init_fn = (CrystalInitFn)bridge_get_proc(hGame, "crystal_godot_init");
-    if (!init_fn) {
-        godot_log_error("Failed to find 'crystal_godot_init' in game library", nullptr, "load_crystal_game_library", __FILE__, __LINE__);
-        return;
-    }
-
-    init_fn(&g_bridge_api);
 }
 
 /**
@@ -2501,6 +2615,7 @@ static void deinitialize_crystal_module(void *p_userdata, GDExtensionInitializat
         g_registered_classes.clear();
         g_deferred_editor_classes.clear();
         g_editor_doc_xmls.clear();
+        g_all_registered_class_names.clear();
         unload_crystal_game_library();
         godot_log_print("[CrystalBridge] Crystal module deinitialized.");
     }

@@ -74,7 +74,7 @@ addons:
 game_dll: dirs deps bridge extension_list addons
 	@echo [Demo] Compiling game.$(SO_EXT) from $(ENTRY)...
 	@$(PWSH_FILE) ../../scripts/build_crystal.ps1 -Entry $(ENTRY) -Output $(GAME_LIB) -LinkFlags '$(LINK_FLAGS)' $(if $(filter 1,$(RELEASE)),-Release,) -SourcePath ../../src
-	@$(PWSH_CMD) "if (Test-Path '$(GAME_LIB)') { Copy-Item '$(GAME_LIB)' '../../bin/game.$(SO_EXT)' -Force -ErrorAction SilentlyContinue }"
+	@$(PWSH_CMD) "if (Test-Path '$(GAME_LIB)') { Copy-Item '$(GAME_LIB)' 'addons/crystal_integration/bin/game.$(SO_EXT)' -Force -ErrorAction SilentlyContinue }"
 
 game_exe: dirs deps bridge extension_list addons game_dll
 	@echo [Demo] Packaging complete playable game executable...

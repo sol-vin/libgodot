@@ -123,6 +123,7 @@ addons:
 game_dll: dirs deps bridge extension_list addons
 	@echo [$Name] Compiling game.dll from `$(ENTRY)...
 	@powershell -ExecutionPolicy Bypass -File ../../scripts/build_crystal.ps1 -Entry `$(ENTRY) -Output `$(GAME_DLL) -LinkFlags '`$(LINK_FLAGS)' `$(if `$(filter 1,`$(RELEASE)),-Release,) -SourcePath ../../src
+	@powershell -ExecutionPolicy Bypass -Command "if (Test-Path '`$(GAME_DLL)') { Copy-Item '`$(GAME_DLL)' 'addons/crystal_integration/bin/game.dll' -Force -ErrorAction SilentlyContinue }"
 
 game_exe: dirs deps bridge extension_list addons game_dll
 	@echo [$Name] Packaging complete playable game executable...

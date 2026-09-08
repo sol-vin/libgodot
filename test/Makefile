@@ -66,7 +66,7 @@ bridge: dirs
 	@$(PWSH_CMD) "if (Test-Path '$(BRIDGE_SRC)') { Copy-Item '$(BRIDGE_SRC)' '$(BIN_DIR)/crystal_bridge.$(SO_EXT)' -Force -ErrorAction SilentlyContinue }"
 
 extension_list:
-	@$(PWSH_CMD) "if (-not (Test-Path '.godot')) { New-Item -ItemType Directory -Force -Path '.godot' | Out-Null }; Set-Content -Path '.godot/extension_list.cfg' -Value 'res://addons/crystal_integration/crystal.gdextension' -Force"
+	@$(PWSH_CMD) "$$exts = @(); if (Test-Path 'addons') { Get-ChildItem -Path 'addons' -Filter '*.gdextension' -Recurse | ForEach-Object { $$exts += 'res://' + $$_.FullName.Substring((Resolve-Path '.').Path.Length + 1).Replace('\', '/') } }; if ($$exts.Count -eq 0) { $$exts += 'res://addons/crystal_integration/crystal.gdextension' }; if (-not (Test-Path '.godot')) { New-Item -ItemType Directory -Force -Path '.godot' | Out-Null }; Set-Content -Path '.godot/extension_list.cfg' -Value $$exts -Force"
 
 addons:
 	@$(PWSH_FILE) ../scripts/sync_addons.ps1 -Source ../addons -Destinations addons
@@ -74,7 +74,7 @@ addons:
 game_dll: dirs deps bridge extension_list addons
 	@echo [Test] Compiling game.$(SO_EXT) from $(ENTRY)...
 	@$(PWSH_FILE) ../scripts/build_crystal.ps1 -Entry $(ENTRY) -Output $(GAME_LIB) -LinkFlags '$(LINK_FLAGS)' $(if $(filter 1,$(RELEASE)),-Release,) -SourcePath ../src
-	@$(PWSH_CMD) "if (Test-Path '$(GAME_LIB)') { Copy-Item '$(GAME_LIB)' '../bin/game.$(SO_EXT)' -Force -ErrorAction SilentlyContinue }"
+	@$(PWSH_CMD) "if (Test-Path '$(GAME_LIB)') { Copy-Item '$(GAME_LIB)' '../bin/game.$(SO_EXT)' -Force -ErrorAction SilentlyContinue; Copy-Item '$(GAME_LIB)' 'addons/crystal_integration/bin/game.$(SO_EXT)' -Force -ErrorAction SilentlyContinue }"
 
 game_exe: dirs deps bridge
 	@echo [Test] Compiling standalone game executable from $(ENTRY)...

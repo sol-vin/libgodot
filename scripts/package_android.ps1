@@ -144,8 +144,9 @@ if (Test-Path $debugApkTemplate) {
 
 # 5. Ensure host GDExtension bridge exists so headless Godot can load the project during export
 $hostBridgeName = if ($onWindows) { "crystal_bridge.dll" } else { "crystal_bridge.so" }
-$hostBridgePath = Join-Path $projFull "bin/$hostBridgeName"
-if (-not (Test-Path $hostBridgePath)) {
+$hostBridgePath = Join-Path $projFull "addons/crystal_integration/bin/$hostBridgeName"
+$hostBridgePathFallback = Join-Path $projFull "bin/$hostBridgeName"
+if ((-not (Test-Path $hostBridgePath)) -and (-not (Test-Path $hostBridgePathFallback))) {
     $rootBridgePath = Join-Path $RootDir "bin/$hostBridgeName"
     if (-not (Test-Path $rootBridgePath)) {
         $hostCxx = if (Get-Command g++ -ErrorAction SilentlyContinue) { "g++" } elseif (Get-Command clang++ -ErrorAction SilentlyContinue) { "clang++" } else { "" }
@@ -245,6 +246,10 @@ if ($env:ANDROID_HOME -and (Test-Path (Join-Path $env:ANDROID_HOME "cmake"))) {
 if (Test-Path $outputFull) {
     Remove-Item $outputFull -Force -ErrorAction SilentlyContinue
 }
+
+# Ensure all binaries are fully synced into project's addons/crystal_integration/bin
+$syncScript = Join-Path $RootDir "scripts/sync_bins.ps1"
+if (Test-Path $syncScript) { & $syncScript }
 
 # 9. Execute Godot headless export
 $exportMode = if ($Release) { "--export-release" } else { "--export-debug" }

@@ -37,9 +37,10 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 18
 text = "READY"
 
-[node name="ButtonBox" type="HBoxContainer" parent="MarginContainer/VBox"]
+[node name="ButtonBox" type="HFlowContainer" parent="MarginContainer/VBox"]
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_override_constants/h_separation = 10
+theme_override_constants/v_separation = 8
 
 [node name="BtnRunAll" type="Button" parent="MarginContainer/VBox/ButtonBox"]
 custom_minimum_size = Vector2(140, 36)
@@ -47,22 +48,22 @@ layout_mode = 2
 text = "▶ Run All Tests"
 
 [node name="BtnRun2D" type="Button" parent="MarginContainer/VBox/ButtonBox"]
-custom_minimum_size = Vector2(120, 36)
+custom_minimum_size = Vector2(110, 36)
 layout_mode = 2
-text = "Run 2D"
+text = "2D Suite"
 
 [node name="BtnRun3D" type="Button" parent="MarginContainer/VBox/ButtonBox"]
-custom_minimum_size = Vector2(120, 36)
+custom_minimum_size = Vector2(110, 36)
 layout_mode = 2
-text = "Run 3D"
+text = "3D Suite"
 
 [node name="BtnRunCore" type="Button" parent="MarginContainer/VBox/ButtonBox"]
-custom_minimum_size = Vector2(120, 36)
+custom_minimum_size = Vector2(110, 36)
 layout_mode = 2
-text = "Run Core"
+text = "Core"
 
 [node name="BtnRunProps" type="Button" parent="MarginContainer/VBox/ButtonBox"]
-custom_minimum_size = Vector2(130, 36)
+custom_minimum_size = Vector2(110, 36)
 layout_mode = 2
 text = "Properties"
 
@@ -90,6 +91,31 @@ text = "Physics"
 custom_minimum_size = Vector2(110, 36)
 layout_mode = 2
 text = "Stress"
+
+[node name="BtnRunUI" type="Button" parent="MarginContainer/VBox/ButtonBox"]
+custom_minimum_size = Vector2(110, 36)
+layout_mode = 2
+text = "UI"
+
+[node name="BtnRunAudioAnim" type="Button" parent="MarginContainer/VBox/ButtonBox"]
+custom_minimum_size = Vector2(110, 36)
+layout_mode = 2
+text = "Audio/Anim"
+
+[node name="BtnRunResources" type="Button" parent="MarginContainer/VBox/ButtonBox"]
+custom_minimum_size = Vector2(110, 36)
+layout_mode = 2
+text = "Resources"
+
+[node name="BtnRunLifecycle" type="Button" parent="MarginContainer/VBox/ButtonBox"]
+custom_minimum_size = Vector2(110, 36)
+layout_mode = 2
+text = "Lifecycle"
+
+[node name="BtnRunClassDB" type="Button" parent="MarginContainer/VBox/ButtonBox"]
+custom_minimum_size = Vector2(110, 36)
+layout_mode = 2
+text = "ClassDB"
 
 [node name="StatsLabel" type="Label" parent="MarginContainer/VBox"]
 layout_mode = 2

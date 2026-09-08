@@ -170,6 +170,12 @@ if (-not $SkipSpecs) {
         $FailedSteps.Add("Crystal Spec (boot_spec.cr)")
     }
 
+    $apiJsonPath = Join-Path $RootDir "extension_api.json"
+    if ((-not (Test-Path $apiJsonPath)) -and $GodotExe -and (Test-Path $GodotExe)) {
+        Write-Host "Dumping extension_api.json for api_coverage_spec..." -ForegroundColor Cyan
+        & $GodotExe --headless --dump-extension-api | Out-Null
+    }
+
     $specResult3 = Invoke-TestCommand -Name "Crystal Spec: API Definition & Class Coverage" `
         -Executable "crystal" `
         -Arguments @("run", "spec/api_coverage_spec.cr")

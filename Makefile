@@ -83,19 +83,22 @@ TEST_BIN_DIR     = test/bin
 TEMPLATE_BIN_DIR = template/bin
 EXAMPLES_DIR     = examples
 BRIDGE_LIB       = $(BIN_DIR)/crystal_bridge.$(SO_EXT)
+PLUGIN_LIB       = $(BIN_DIR)/plugin.$(SO_EXT)
+PLUGIN_ENTRY     ?= src/editor/plugin.cr
 GAME_LIB         = $(BIN_DIR)/game.$(SO_EXT)
 GAME_EXE         = $(BIN_DIR)/game$(EXE_EXT)
 LIBGODOT_LIB     = $(BIN_DIR)/libgodot.$(SO_EXT)
 
 # Aliases for backwards compatibility
 BRIDGE_DLL       = $(BRIDGE_LIB)
+PLUGIN_DLL       = $(PLUGIN_LIB)
 GAME_DLL         = $(GAME_LIB)
 LIBGODOT_DLL     = $(LIBGODOT_LIB)
 
-.PHONY: all bridge test_project examples examples_exe template template_addon game_dll game_exe android package_android generate dump_api deps addons sync engine test tests docs run editor clean help
+.PHONY: all bridge plugin test_project examples examples_exe template template_addon game_dll game_exe android package_android generate dump_api deps addons sync engine test tests docs run editor clean help
 
-# Default target: compile bridge, test project, examples, template, template_addon, sync DLLs, and run test suite
-all: dirs deps bridge addons test_project examples template template_addon sync test
+# Default target: compile bridge, plugin, test project, examples, template, template_addon, sync DLLs, and run test suite
+all: dirs deps bridge plugin addons test_project examples template template_addon sync test
 	@echo ===================================================================
 	@echo   LibGodot Crystal library build completed successfully!
 	@echo   Run 'make run' to launch test runner or 'make editor' for editor.
@@ -115,12 +118,23 @@ else
 endif
 	@$(PWSH_FILE) scripts/sync_bins.ps1
 
+# Compile Crystal editor integration plugin library (plugin.dll)
+plugin: dirs deps bridge
+	@echo [Plugin] Compiling Crystal editor integration plugin $(PLUGIN_LIB)...
+	@$(PWSH_FILE) scripts/build_crystal.ps1 -Entry $(PLUGIN_ENTRY) -Output $(PLUGIN_LIB) -LinkFlags "$(LINK_FLAGS)" $(if $(filter 1,$(RELEASE)),-Release,)
+	@$(PWSH_FILE) scripts/sync_bins.ps1
+
 # Synchronize addons across root, test, template, and examples
 addons: dirs
 	@$(PWSH_FILE) scripts/sync_addons.ps1
 
+# Build dummy test addons for multi-addon isolation stress tests
+dummy_addons: dirs deps bridge
+	@$(PWSH_FILE) scripts/build_dummy_addons.ps1 $(if $(filter 1,$(RELEASE)),-Release,)
+	@$(PWSH_FILE) scripts/sync_bins.ps1
+
 # Build test project
-test_project: dirs deps bridge addons
+test_project: dirs deps bridge addons dummy_addons
 	@echo [Test] Building test suite project...
 	$(MAKE) -C test RELEASE=$(RELEASE)
 
@@ -221,10 +235,10 @@ editor:
 
 # Clean build artifacts (preserves libgodot.dll and runtime DLLs)
 clean:
-	@echo Cleaning build artifacts across bin/, test/bin/, template/bin/, and examples...
-	@$(POWERSHELL) "Get-ChildItem -Path '$(BIN_DIR)', '$(TEST_BIN_DIR)', '$(TEMPLATE_BIN_DIR)' -Include 'crystal_bridge.*', 'game.*', '~crystal_bridge.*' -Recurse -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue"
-	@$(POWERSHELL) "if (Test-Path '$(EXAMPLES_DIR)') { Get-ChildItem -Path '$(EXAMPLES_DIR)' -Include 'crystal_bridge.*', 'game.*', '~crystal_bridge.*' -Recurse -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue }"
-	@$(POWERSHELL) "Get-ChildItem -Path 'scratch' -Include '*.obj', '*.exp' -Recurse -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue"
+	@echo Cleaning build artifacts across bin/, test/bin/, template/bin/, addons/crystal_integration/bin, and examples...
+	@$(PWSH_CMD) "Get-ChildItem -Path '$(BIN_DIR)', '$(TEST_BIN_DIR)', '$(TEMPLATE_BIN_DIR)', 'addons/crystal_integration/bin' -Include 'crystal_bridge.*', 'game.*', '~crystal_bridge.*' -Recurse -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue"
+	@$(PWSH_CMD) "if (Test-Path '$(EXAMPLES_DIR)') { Get-ChildItem -Path '$(EXAMPLES_DIR)' -Include 'crystal_bridge.*', 'game.*', '~crystal_bridge.*' -Recurse -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue }"
+	@$(PWSH_CMD) "Get-ChildItem -Path 'scratch' -Include '*.obj', '*.exp' -Recurse -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue"
 	@echo Clean complete.
 
 # Display help menu

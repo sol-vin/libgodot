@@ -438,14 +438,21 @@ jobs:
       - name: Package Android Examples to APKs
         shell: pwsh
         run: |
+          $examplesDir = "bin/android/examples"
+          if (Test-Path $examplesDir) { Remove-Item $examplesDir -Recurse -Force }
+          New-Item -ItemType Directory -Force -Path $examplesDir | Out-Null
+
           if (Test-Path "examples") {
             foreach ($ex in Get-ChildItem -Path "examples" -Directory) {
               Write-Host "Packaging Android APK for $($ex.Name)..." -ForegroundColor Cyan
               & pwsh -NoProfile -File scripts/package_android.ps1 -ProjectPath $ex.FullName -Name $ex.Name -Release
+              if (Test-Path "bin/android/$($ex.Name).apk") {
+                Copy-Item "bin/android/$($ex.Name).apk" "$examplesDir/" -Force
+              }
             }
           }
 
-          Compress-Archive -Path "bin/android/*.apk" -DestinationPath "bin/android/examples-android-arm64.zip" -Force
+          Compress-Archive -Path "$examplesDir/*" -DestinationPath "bin/android/examples-android-arm64.zip" -Force
 
       - name: Generate Android Status Report
         if: always()
@@ -471,7 +478,7 @@ jobs:
           name: ${{ needs.init-release.outputs.release_title }}
           files: |
             bin/android/examples-android-arm64.zip
-            bin/android/*.apk
+            bin/android/template.apk
           fail_on_unmatched_files: false
 
       - name: Upload Android Staging Artifact
@@ -680,17 +687,18 @@ jobs:
           ADDON_DIST="$ROOT_DIR/bin/addon_dist"
           rm -rf "$ADDON_DIST"
           mkdir -p "$ADDON_DIST/addons"
-          mkdir -p "$ADDON_DIST/bin"
 
           cp -r addons/crystal_integration "$ADDON_DIST/addons/"
+          ADDON_BIN="$ADDON_DIST/addons/crystal_integration/bin"
+          mkdir -p "$ADDON_BIN"
 
           # Locate Windows DLLs
           WIN_DIR="staging/windows"
           [ -d "staging/windows/bin" ] && WIN_DIR="staging/windows/bin"
           if [ -f "$WIN_DIR/crystal_bridge.dll" ]; then
-            cp "$WIN_DIR/crystal_bridge.dll" "$ADDON_DIST/bin/"
+            cp "$WIN_DIR/crystal_bridge.dll" "$ADDON_BIN/"
             for dll in gc.dll iconv-2.dll pcre2-8.dll libgodot.dll; do
-              [ -f "$WIN_DIR/$dll" ] && cp "$WIN_DIR/$dll" "$ADDON_DIST/bin/"
+              [ -f "$WIN_DIR/$dll" ] && cp "$WIN_DIR/$dll" "$ADDON_BIN/"
             done
           fi
 
@@ -698,27 +706,27 @@ jobs:
           LINUX_DIR="staging/linux"
           [ -d "staging/linux/bin" ] && LINUX_DIR="staging/linux/bin"
           if [ -f "$LINUX_DIR/crystal_bridge.so" ]; then
-            cp "$LINUX_DIR/crystal_bridge.so" "$ADDON_DIST/bin/"
-            [ -f "$LINUX_DIR/libgodot.so" ] && cp "$LINUX_DIR/libgodot.so" "$ADDON_DIST/bin/"
+            cp "$LINUX_DIR/crystal_bridge.so" "$ADDON_BIN/"
+            [ -f "$LINUX_DIR/libgodot.so" ] && cp "$LINUX_DIR/libgodot.so" "$ADDON_BIN/"
           fi
 
           # Locate macOS dylibs
           MAC_DIR="staging/macos"
           [ -d "staging/macos/bin" ] && MAC_DIR="staging/macos/bin"
           if [ -f "$MAC_DIR/crystal_bridge.dylib" ]; then
-            cp "$MAC_DIR/crystal_bridge.dylib" "$ADDON_DIST/bin/"
-            [ -f "$MAC_DIR/libgodot.dylib" ] && cp "$MAC_DIR/libgodot.dylib" "$ADDON_DIST/bin/"
+            cp "$MAC_DIR/crystal_bridge.dylib" "$ADDON_BIN/"
+            [ -f "$MAC_DIR/libgodot.dylib" ] && cp "$MAC_DIR/libgodot.dylib" "$ADDON_BIN/"
           fi
 
           # Locate Android shared objects
           ANDROID_ARM="staging/android/arm64-v8a"
           [ -d "staging/android/bin/android/arm64-v8a" ] && ANDROID_ARM="staging/android/bin/android/arm64-v8a"
           if [ -d "$ANDROID_ARM" ]; then
-            mkdir -p "$ADDON_DIST/bin/android/arm64-v8a"
-            cp -r "$ANDROID_ARM"/* "$ADDON_DIST/bin/android/arm64-v8a/"
+            mkdir -p "$ADDON_BIN/android/arm64-v8a"
+            cp -r "$ANDROID_ARM"/* "$ADDON_BIN/android/arm64-v8a/"
           fi
 
-          (cd "$ADDON_DIST" && zip -r "$ROOT_DIR/bin/godot-crystal-addon.zip" ./*)
+          (cd "$ADDON_DIST" && zip -r "$ROOT_DIR/bin/godot-crystal-addon.zip" addons)
 
       - name: Package Universal Starter Template (template-project.zip)
         shell: bash
@@ -820,10 +828,8 @@ jobs:
             Complete LibGodot Crystal package for **Linux (x86_64)**. Contains the full Crystal bindings library source (`src/`), GDExtension bridge shared object (`crystal_bridge.so`), and Linux GDExtension configurations for native Linux exports and development.
 
           ### 🎮 Pre-Compiled Example Games & Standalone Packages
-          - **`basic_demo.apk`**:
-            Standalone installable Android APK for the `basic_demo` 3D showcase game. Built for `arm64-v8a` devices (Android 10+ / API 29+) with statically embedded Boehm GC, PCRE2, and Crystal runtime. Ready to install via `adb install -r basic_demo.apk`.
           - **`examples-android-arm64.zip`**:
-            Collection of all pre-compiled example game APKs packaged for Android (`arm64-v8a`).
+            Collection of all pre-compiled example game APKs packaged for Android (`arm64-v8a`), including the `basic_demo` 3D showcase APK. Ready to extract and install via `adb install -r <name>.apk`.
           - **`examples-windows-x86_64.zip`**:
             Standalone compiled game executables for all examples on **Windows (x86_64)**, bundled with all required runtime DLLs (`libgodot.dll`, `crystal_bridge.dll`, `gc.dll`, `iconv-2.dll`, `pcre2-8.dll`). Ready to extract and run immediately without needing compiler setup.
           - **`examples-macos.zip`**:

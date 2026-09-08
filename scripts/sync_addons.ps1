@@ -63,6 +63,9 @@ foreach ($dest in $Destinations) {
     foreach ($df in $destFiles) {
         $dRel = $df.FullName.Substring($destRoot.Length + 1)
         if (-not $srcRelPaths.Contains($dRel)) {
+            if ($df.Name -like "game.*" -or $df.Name -like "*_loaded_*" -or $dRel -like "test_runner*" -or $dRel -like "dummy_*") {
+                continue
+            }
             try {
                 Remove-Item -Path $df.FullName -Force -ErrorAction SilentlyContinue
             } catch {}

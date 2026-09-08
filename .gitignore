@@ -1,6 +1,7 @@
 godot.exe
 /.godot/
 /bin/
+/addons/*/bin/
 
 /examples/*/.godot/
 /examples/*/bin
@@ -18,7 +19,11 @@ godot.exe
 
 /test/.godot/
 /test/bin
-/test/addons
+/test/addons/*
+!/test/addons/test_runner/
+!/test/addons/dummy_*/
+/test/addons/*/bin/
+/test/addons/*/bin
 
 /docs/
 /scratch/
@@ -27,7 +32,16 @@ godot.exe
 .*_test_results*
 dist/
 *.zip
+*.log
+*.dll
+*.so
+*.dylib
+*.pdb
+*.exp
+*.lib
+*.o
+
 test_report.*
 android_audit_report.txt
 godot-src/
-
+
