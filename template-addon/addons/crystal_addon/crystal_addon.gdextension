@@ -14,3 +14,11 @@ macos.debug.arm64 = "res://addons/crystal_addon/bin/crystal_bridge.dylib"
 macos.release.arm64 = "res://addons/crystal_addon/bin/crystal_bridge.dylib"
 macos.debug.x86_64 = "res://addons/crystal_addon/bin/crystal_bridge.dylib"
 macos.release.x86_64 = "res://addons/crystal_addon/bin/crystal_bridge.dylib"
+
+[dependencies]
+macos.debug = { "res://addons/crystal_addon/bin/game.dylib": "" }
+macos.release = { "res://addons/crystal_addon/bin/game.dylib": "" }
+macos.debug.arm64 = { "res://addons/crystal_addon/bin/game.dylib": "" }
+macos.release.arm64 = { "res://addons/crystal_addon/bin/game.dylib": "" }
+macos.debug.x86_64 = { "res://addons/crystal_addon/bin/game.dylib": "" }
+macos.release.x86_64 = { "res://addons/crystal_addon/bin/game.dylib": "" }

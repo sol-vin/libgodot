@@ -2214,6 +2214,12 @@ static void load_crystal_game_library() {
     }
 #endif
 
+    if (bridge_dir[0] != '\0') {
+        char dir_log[512];
+        snprintf(dir_log, sizeof(dir_log), "[CrystalBridge] Resolved bridge directory: %s", bridge_dir);
+        godot_log_print(dir_log);
+    }
+
     // Clean up stale shadow copies from previous editor sessions
     cleanup_old_shadow_dlls(bridge_dir);
 
@@ -2321,13 +2327,13 @@ static void load_crystal_game_library() {
     // Fallback search paths if co-located wasn't found
     if (!hGame) {
 #ifdef _WIN32
-        const char *fallbacks[] = { "demo/bin/game.dll", "bin/game.dll", "game.dll" };
+        const char *fallbacks[] = { "addons/crystal_addon/bin/game.dll", "demo/bin/game.dll", "bin/game.dll", "game.dll" };
 #elif defined(__ANDROID__) || defined(ANDROID)
         const char *fallbacks[] = { "libgame.so", "bin/android/arm64-v8a/libgame.so", "game.so" };
 #elif defined(__APPLE__)
-        const char *fallbacks[] = { "demo/bin/game.dylib", "bin/game.dylib", "game.dylib", "bin/libgame.dylib", "libgame.dylib" };
+        const char *fallbacks[] = { "addons/crystal_addon/bin/game.dylib", "demo/bin/game.dylib", "bin/game.dylib", "game.dylib", "bin/libgame.dylib", "libgame.dylib" };
 #else
-        const char *fallbacks[] = { "demo/bin/game.so", "bin/game.so", "game.so" };
+        const char *fallbacks[] = { "addons/crystal_addon/bin/game.so", "demo/bin/game.so", "bin/game.so", "game.so" };
 #endif
         for (size_t i = 0; i < sizeof(fallbacks) / sizeof(fallbacks[0]); i++) {
             if (!bridge_file_exists(fallbacks[i])) continue;

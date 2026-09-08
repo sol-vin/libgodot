@@ -89,7 +89,9 @@ function Invoke-TestCommand {
     $cmdStart = Get-Date
     # Ensure working directory bin and root bin are in PATH for DLL resolution
     $oldPath = $env:PATH
+    $oldDyldFallback = $env:DYLD_FALLBACK_LIBRARY_PATH
     $binCandidates = @(
+        (Join-Path $WorkingDirectory "addons/crystal_addon/bin"),
         (Join-Path $WorkingDirectory "bin"),
         (Join-Path $RootDir "bin"),
         (Join-Path $RootDir "test/bin")
@@ -97,11 +99,6 @@ function Invoke-TestCommand {
     if ($binCandidates) {
         $binJoined = $binCandidates -join [System.IO.Path]::PathSeparator
         $env:PATH = $binJoined + [System.IO.Path]::PathSeparator + $env:PATH
-        if ($env:DYLD_LIBRARY_PATH) {
-            $env:DYLD_LIBRARY_PATH = $binJoined + ":" + $env:DYLD_LIBRARY_PATH
-        } else {
-            $env:DYLD_LIBRARY_PATH = $binJoined
-        }
         if ($env:DYLD_FALLBACK_LIBRARY_PATH) {
             $env:DYLD_FALLBACK_LIBRARY_PATH = $binJoined + ":" + $env:DYLD_FALLBACK_LIBRARY_PATH
         } else {
@@ -122,6 +119,7 @@ function Invoke-TestCommand {
     } finally {
         Pop-Location
         $env:PATH = $oldPath
+        $env:DYLD_FALLBACK_LIBRARY_PATH = $oldDyldFallback
         foreach ($k in $EnvironmentVars.Keys) {
             [System.Environment]::SetEnvironmentVariable($k, $null)
         }
@@ -225,11 +223,13 @@ if (-not $SkipToolTests) {
     $onWindows = ($env:OS -eq "Windows_NT" -or [System.IO.Path]::PathSeparator -eq ';')
     $shell = if ($onWindows) { "cmd" } else { "sh" }
     $shellFlag = if ($onWindows) { "/c" } else { "-c" }
-    $shellCmd = "`"$GodotExe`" --headless --rendering-driver opengl3 --editor --path template-addon --quit > `"$addonLogFile`" 2>&1"
+    $addonDir = Join-Path $RootDir "template-addon"
+    $shellCmd = "`"$GodotExe`" --headless --rendering-driver opengl3 --editor --path `"$addonDir`" --quit > `"$addonLogFile`" 2>&1"
 
     $addonEditorResult = Invoke-TestCommand -Name "Headless Editor Addon Test (template-addon)" `
         -Executable $shell `
         -Arguments @($shellFlag, $shellCmd) `
+        -WorkingDirectory $addonDir `
         -CustomVerification
 
     $addonLogContent = if (Test-Path $addonLogFile) { Get-Content $addonLogFile -Raw } else { "" }
