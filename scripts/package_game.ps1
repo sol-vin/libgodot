@@ -2,7 +2,8 @@ param(
     [string]$ProjectPath = ".",
     [string]$Name = "",
     [string]$Release = "",
-    [string]$TargetDir = ""
+    [string]$TargetDir = "",
+    [switch]$ForceCompile
 )
 
 $ErrorActionPreference = "Stop"
@@ -85,15 +86,7 @@ if (-not (Test-Path $binDir)) {
     New-Item -ItemType Directory -Force -Path $binDir | Out-Null
 }
 
-# 4. Ensure .godot/extension_list.cfg exists
-$godotConfigDir = Join-Path $projFull ".godot"
-if (-not (Test-Path $godotConfigDir)) {
-    New-Item -ItemType Directory -Force -Path $godotConfigDir | Out-Null
-}
-$extListFile = Join-Path $godotConfigDir "extension_list.cfg"
-Set-Content -Path $extListFile -Value "res://addons/crystal_integration/crystal.gdextension" -Force
-
-# 5. Ensure addons/crystal_integration is synchronized
+# 4. Ensure addons/crystal_integration is synchronized
 $addonSrc = Join-Path $rootDir "addons"
 $addonDest = Join-Path $projFull "addons"
 if (Test-Path $addonSrc) {
@@ -102,6 +95,25 @@ if (Test-Path $addonSrc) {
         & $syncScript -Source $addonSrc -Destinations $addonDest
     }
 }
+
+# 5. Ensure .godot/extension_list.cfg includes all project gdextensions
+$godotConfigDir = Join-Path $projFull ".godot"
+if (-not (Test-Path $godotConfigDir)) {
+    New-Item -ItemType Directory -Force -Path $godotConfigDir | Out-Null
+}
+$extListFile = Join-Path $godotConfigDir "extension_list.cfg"
+$allExts = [System.Collections.Generic.List[string]]::new()
+$projAddons = Join-Path $projFull "addons"
+if (Test-Path $projAddons) {
+    Get-ChildItem -Path $projAddons -Filter "*.gdextension" -Recurse | ForEach-Object {
+        $relPath = $_.FullName.Substring($projFull.Length).TrimStart('\', '/').Replace('\', '/')
+        $allExts.Add("res://$relPath")
+    }
+}
+if ($allExts.Count -eq 0) {
+    $allExts.Add("res://addons/crystal_integration/crystal.gdextension")
+}
+Set-Content -Path $extListFile -Value $allExts -Force
 
 # 6. Ensure runtime DLLs and crystal_bridge are in bin/
 $depsScript = Join-Path $rootDir "scripts/ensure_deps.ps1"
@@ -118,7 +130,9 @@ if (Test-Path $bridgeSrc) {
 $mainCr = Join-Path $projFull "src/main.cr"
 $gameLib = Join-Path $binDir "game.$soExt"
 $needsCompile = $false
-if (Test-Path $mainCr) {
+if ($ForceCompile) {
+    $needsCompile = $true
+} elseif (Test-Path $mainCr) {
     if (-not (Test-Path $gameLib)) {
         $needsCompile = $true
     } elseif ((Get-Item $mainCr).LastWriteTime -gt (Get-Item $gameLib).LastWriteTime) {
@@ -135,6 +149,18 @@ if ($needsCompile) {
         & $buildScript -Entry $mainCr -Output $gameLib -LinkFlags $linkFlags -SourcePath $srcPath -Release
     } else {
         & $buildScript -Entry $mainCr -Output $gameLib -LinkFlags $linkFlags -SourcePath $srcPath
+    }
+}
+
+# Ensure addons/crystal_integration/bin is populated with game and bridge
+$addonBin = Join-Path $projFull "addons/crystal_integration/bin"
+if (Test-Path $addonBin) {
+    if (Test-Path $gameLib) {
+        Copy-Item $gameLib (Join-Path $addonBin "game.$soExt") -Force -ErrorAction SilentlyContinue
+    }
+    $bridgeLocal = Join-Path $binDir "crystal_bridge.$soExt"
+    if (Test-Path $bridgeLocal) {
+        Copy-Item $bridgeLocal (Join-Path $addonBin "crystal_bridge.$soExt") -Force -ErrorAction SilentlyContinue
     }
 }
 

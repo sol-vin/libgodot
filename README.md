@@ -227,7 +227,11 @@ Build operations are orchestrated through the root `Makefile`.
     </tr>
     <tr>
       <td><code>make test</code></td>
-      <td>Runs the automated Crystal specification suite (<code>spec/</code>).</td>
+      <td>Runs the multi-tier automated test suite: Crystal specs, headless in-editor tool tests, runtime test project, standalone test runner (<code>--autorun</code>), and smoke tests.</td>
+    </tr>
+    <tr>
+      <td><code>make test_standalone</code></td>
+      <td>Packages and executes the standalone test runner executable (<code>tests.exe --autorun</code>) in debug or release mode.</td>
     </tr>
     <tr>
       <td><code>make docs</code></td>
@@ -265,9 +269,156 @@ Build operations are orchestrated through the root `Makefile`.
 </table>
 
 ### Build Options
-- `RELEASE=1`: Compiles Crystal code with release optimizations (`--release -O3`).
+- `RELEASE=1`: Compiles Crystal code with release optimizations (`--release -O3`) and defines `LIBGODOT_RELEASE=1` / `NDEBUG`.
 - `ENTRY=<path>`: Customizes the Crystal entry file (default: `test/src/main.cr`).
 - `CXX=<compiler>`: Specifies C++ compiler for the bridge (default: `g++`).
+
+---
+
+## Support & Toolchain Scripts (`scripts/`)
+
+LibGodot provides specialized automation scripts under `scripts/` to orchestrate builds, cross-compilation, asset synchronization, testing, code generation, and deployment:
+
+### Build & Compilation Scripts
+
+<table>
+  <thead>
+    <tr>
+      <th align="left">Script</th>
+      <th align="left">Description &amp; Role</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><a href="scripts/build_crystal.ps1"><code>scripts/build_crystal.ps1</code></a></td>
+      <td>Primary Crystal compilation driver. Sets up <code>CRYSTAL_PATH</code>, configures platform-specific linker flags (<code>/DLL</code> on Windows, <code>-shared</code> on Linux, <code>-dynamiclib</code> on macOS), and automatically injects symbol localization wrappers on Linux to prevent symbol collisions.</td>
+    </tr>
+    <tr>
+      <td><a href="scripts/build_android.ps1"><code>scripts/build_android.ps1</code></a></td>
+      <td>Cross-compiles LibGodot shared libraries (<code>libcrystal_bridge.so</code> and <code>libgame.so</code>) for Android architectures (<code>arm64-v8a</code>), resolving Android NDK paths, sysroots, and clang toolchains.</td>
+    </tr>
+    <tr>
+      <td><a href="scripts/build_examples.ps1"><code>scripts/build_examples.ps1</code></a></td>
+      <td>Iterates through all showcase demo projects in <code>examples/</code> (e.g. <code>basic_demo</code>), invoking their local Makefiles to build game shared libraries or standalone game executables (<code>-Exe</code>).</td>
+    </tr>
+    <tr>
+      <td><a href="scripts/build_dummy_addons.ps1"><code>scripts/build_dummy_addons.ps1</code></a></td>
+      <td>Compiles lightweight mock GDExtension addons (<code>dummy_audio</code>, <code>dummy_dialogue</code>, <code>dummy_inventory</code>) in <code>test/addons/</code> to verify multi-addon isolation, independent ClassDB registrations, and compiler hooks.</td>
+    </tr>
+    <tr>
+      <td><a href="scripts/cc_wrapper.sh"><code>scripts/cc_wrapper.sh</code></a></td>
+      <td>POSIX compiler wrapper script. Filters out <code>-rdynamic</code> on Linux shared library builds and invokes <code>ld -r</code> and <code>objcopy --keep-global-symbol=crystal_godot_init</code> to localize internal Crystal runtime symbols, preventing GNU ld/LLD version node link errors.</td>
+    </tr>
+  </tbody>
+</table>
+
+### Packaging & Distribution Scripts
+
+<table>
+  <thead>
+    <tr>
+      <th align="left">Script</th>
+      <th align="left">Description &amp; Role</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><a href="scripts/package_game.ps1"><code>scripts/package_game.ps1</code></a></td>
+      <td>Packages a project (such as <code>test</code> or an example) into a playable standalone executable (e.g. <code>tests.exe</code>, <code>game.exe</code>). Automatically discovers all <code>.gdextension</code> manifests, generates <code>.godot/extension_list.cfg</code>, synchronizes runtime dependencies, and sets up self-contained binaries for production shipping.</td>
+    </tr>
+    <tr>
+      <td><a href="scripts/package_android.ps1"><code>scripts/package_android.ps1</code></a></td>
+      <td>Builds and packages complete installable Android APK bundles for Godot + Crystal games, configuring Gradle project templates, export manifests, and native <code>.so</code> packaging.</td>
+    </tr>
+    <tr>
+      <td><a href="scripts/manage_keystore.ps1"><code>scripts/manage_keystore.ps1</code></a></td>
+      <td>Manages Android signing keystores and certificates for debug and release builds, including generation, inspection, and base64 environment variable decoding for CI pipelines.</td>
+    </tr>
+    <tr>
+      <td><a href="scripts/ensure_export_templates.ps1"><code>scripts/ensure_export_templates.ps1</code></a></td>
+      <td>Verifies that the appropriate Godot 4 export templates are installed on the host system for desktop and mobile targets, reporting readiness for standalone release exports.</td>
+    </tr>
+  </tbody>
+</table>
+
+### Synchronization & Dependency Scripts
+
+<table>
+  <thead>
+    <tr>
+      <th align="left">Script</th>
+      <th align="left">Description &amp; Role</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><a href="scripts/sync_bins.ps1"><code>scripts/sync_bins.ps1</code></a></td>
+      <td>Synchronizes compiled binaries (<code>crystal_bridge.dll</code>, <code>game.dll</code>, <code>plugin.dll</code>) and Crystal runtime libraries (<code>gc.dll</code>, <code>iconv-2.dll</code>, <code>pcre2-8.dll</code>, <code>libgodot.dll</code>) across <code>bin/</code>, <code>test/bin/</code>, <code>template/bin/</code>, <code>examples/*/bin/</code>, and all addon directories.</td>
+    </tr>
+    <tr>
+      <td><a href="scripts/sync_addons.ps1"><code>scripts/sync_addons.ps1</code></a></td>
+      <td>Maintains strict file parity for <code>addons/crystal_integration</code> across root, test, template, and showcase projects, updating GDExtension manifests and editor build hooks.</td>
+    </tr>
+    <tr>
+      <td><a href="scripts/ensure_deps.ps1"><code>scripts/ensure_deps.ps1</code></a></td>
+      <td>Locates and copies required Crystal runtime dynamic libraries (Boehm GC, iconv, PCRE2, and LibGodot engine shared libraries) into target binary output folders.</td>
+    </tr>
+    <tr>
+      <td><a href="scripts/ensure_dirs.ps1"><code>scripts/ensure_dirs.ps1</code></a></td>
+      <td>Ensures all required build, output, and staging directories exist across the repository workspace.</td>
+    </tr>
+  </tbody>
+</table>
+
+### Testing & Verification Scripts
+
+<table>
+  <thead>
+    <tr>
+      <th align="left">Script</th>
+      <th align="left">Description &amp; Role</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><a href="scripts/run_tests.ps1"><code>scripts/run_tests.ps1</code></a></td>
+      <td>The master multi-tier test suite runner. Executes Phase 1 Crystal specs, Phase 2 in-editor <code>@tool</code> tests, Phase 3 runtime project suites, Phase 3b standalone compiled runner (<code>tests.exe --autorun</code> in debug and release modes), and Phase 4 smoke tests. Generates <code>test_report.md</code> and JSON summaries for GitHub Actions CI.</td>
+    </tr>
+    <tr>
+      <td><a href="scripts/run_ci_local.ps1"><code>scripts/run_ci_local.ps1</code></a></td>
+      <td>Runs a complete local simulation of the GitHub Actions CI pipeline, executing builds, format checks, multi-tier tests, and packaging steps within a clean staging environment.</td>
+    </tr>
+    <tr>
+      <td><a href="scripts/report_android.ps1"><code>scripts/report_android.ps1</code></a></td>
+      <td>Audits Android APK bundles (generated by <code>package_android.ps1</code>), verifying ELF architecture ABI compatibility, dynamic symbol tables, permissions, and manifest integrity.</td>
+    </tr>
+  </tbody>
+</table>
+
+### Binding Generation & Documentation Scripts
+
+<table>
+  <thead>
+    <tr>
+      <th align="left">Script</th>
+      <th align="left">Description &amp; Role</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><a href="scripts/generate_bindings.cr"><code>scripts/generate_bindings.cr</code></a></td>
+      <td>Automated code generator that parses Godot's <code>extension_api.json</code> and synthesizes strongly typed Crystal classes, global enums, singletons, and method bindings into <code>src/libgodot/generated/</code>.</td>
+    </tr>
+    <tr>
+      <td><a href="scripts/overrides.yml"><code>scripts/overrides.yml</code></a></td>
+      <td>Type mapping and signature override definitions consumed by <code>generate_bindings.cr</code> to handle engine C-API quirks, method rename rules, and custom Variant marshalers.</td>
+    </tr>
+    <tr>
+      <td><a href="scripts/patch_docs.ps1"><code>scripts/patch_docs.ps1</code></a></td>
+      <td>Post-processes offline HTML documentation produced by <code>crystal docs</code>, injecting modern CSS themes, navigation enhancements, and repository links into <code>docs/</code>.</td>
+    </tr>
+  </tbody>
+</table>
 
 ---
 

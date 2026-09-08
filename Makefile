@@ -95,7 +95,7 @@ PLUGIN_DLL       = $(PLUGIN_LIB)
 GAME_DLL         = $(GAME_LIB)
 LIBGODOT_DLL     = $(LIBGODOT_LIB)
 
-.PHONY: all bridge plugin test_project examples examples_exe template template_addon game_dll game_exe android package_android generate dump_api deps addons sync engine test tests docs run editor clean help
+.PHONY: all bridge plugin test_project test_standalone examples examples_exe template template_addon game_dll game_exe android package_android generate dump_api deps addons sync engine test tests docs run editor clean help
 
 # Default target: compile bridge, plugin, test project, examples, template, template_addon, sync DLLs, and run test suite
 all: dirs deps bridge plugin addons test_project examples template template_addon sync test
@@ -137,6 +137,11 @@ dummy_addons: dirs deps bridge
 test_project: dirs deps bridge addons dummy_addons
 	@echo [Test] Building test suite project...
 	$(MAKE) -C test RELEASE=$(RELEASE)
+
+# Build standalone test project executable
+test_standalone: dirs deps bridge addons dummy_addons
+	@echo [Test] Building standalone test suite executable...
+	$(MAKE) -C test standalone RELEASE=$(RELEASE)
 
 # Build all example projects in examples/
 examples: dirs deps bridge addons
@@ -238,6 +243,7 @@ clean:
 	@echo Cleaning build artifacts across bin/, test/bin/, template/bin/, addons/crystal_integration/bin, and examples...
 	@$(PWSH_CMD) "Get-ChildItem -Path '$(BIN_DIR)', '$(TEST_BIN_DIR)', '$(TEMPLATE_BIN_DIR)', 'addons/crystal_integration/bin' -Include 'crystal_bridge.*', 'game.*', '~crystal_bridge.*' -Recurse -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue"
 	@$(PWSH_CMD) "if (Test-Path '$(EXAMPLES_DIR)') { Get-ChildItem -Path '$(EXAMPLES_DIR)' -Include 'crystal_bridge.*', 'game.*', '~crystal_bridge.*' -Recurse -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue }"
+	@$(PWSH_CMD) "Remove-Item -Path 'test/tests.exe', 'test/tests' -Force -ErrorAction SilentlyContinue"
 	@$(PWSH_CMD) "Get-ChildItem -Path 'scratch' -Include '*.obj', '*.exp' -Recurse -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue"
 	@echo Clean complete.
 

@@ -506,11 +506,30 @@ node RunTesterPanel < Godot::Control do
       rescue
       end
 
-      if ENV["GODOT_TEST_AUTORUN"]? == "1"
+      if should_autorun?
         tree = get_tree
         tree.quit(passed == total ? 0_i64 : 1_i64) unless tree.pointer.null?
       end
     end
+  end
+
+  def should_autorun? : Bool
+    return true if ENV["GODOT_TEST_AUTORUN"]? == "1"
+    begin
+      return true if ARGV.includes?("--autorun")
+    rescue
+    end
+    begin
+      cmdline_args = Godot.os.call_str("get_cmdline_args")
+      return true if cmdline_args.includes?("--autorun")
+    rescue
+    end
+    begin
+      user_args = Godot.os.call_str("get_cmdline_user_args")
+      return true if user_args.includes?("--autorun")
+    rescue
+    end
+    false
   end
 end
 

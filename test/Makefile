@@ -49,7 +49,7 @@ ifeq ($(RELEASE), 1)
 	CRYSTAL_FLAGS += --release
 endif
 
-.PHONY: all game_dll game_exe deps bridge extension_list addons run editor clean help
+.PHONY: all game_dll game_exe standalone deps bridge extension_list addons run editor clean help
 
 all: dirs deps bridge extension_list addons game_dll
 	@echo ===================================================================
@@ -76,6 +76,10 @@ game_dll: dirs deps bridge extension_list addons
 	@$(PWSH_FILE) ../scripts/build_crystal.ps1 -Entry $(ENTRY) -Output $(GAME_LIB) -LinkFlags '$(LINK_FLAGS)' $(if $(filter 1,$(RELEASE)),-Release,) -SourcePath ../src
 	@$(PWSH_CMD) "if (Test-Path '$(GAME_LIB)') { Copy-Item '$(GAME_LIB)' '../bin/game.$(SO_EXT)' -Force -ErrorAction SilentlyContinue; Copy-Item '$(GAME_LIB)' 'addons/crystal_integration/bin/game.$(SO_EXT)' -Force -ErrorAction SilentlyContinue }"
 
+standalone: dirs deps bridge extension_list addons game_dll
+	@echo [Test] Packaging standalone test runner executable...
+	@$(PWSH_FILE) ../scripts/package_game.ps1 -ProjectPath . -Name tests $(if $(filter 1,$(RELEASE)),-Release 1,) -ForceCompile
+
 game_exe: dirs deps bridge
 	@echo [Test] Compiling standalone game executable from $(ENTRY)...
 	@$(PWSH_FILE) ../scripts/build_crystal.ps1 -Entry $(ENTRY) -Output $(GAME_EXE) $(if $(filter 1,$(RELEASE)),-Release,) -SourcePath ../src
@@ -91,3 +95,4 @@ editor: all
 
 clean:
 	@$(RM) $(BIN_DIR)/*
+	@$(PWSH_CMD) "Remove-Item -Path 'tests.exe', 'tests' -Force -ErrorAction SilentlyContinue"

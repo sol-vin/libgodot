@@ -19,6 +19,8 @@ godot.exe
 
 /test/.godot/
 /test/bin
+/test/*.exe
+/test/tests
 /test/addons/*
 !/test/addons/test_runner/
 !/test/addons/dummy_*/
