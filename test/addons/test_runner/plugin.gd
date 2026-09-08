@@ -9,6 +9,10 @@ extends EditorPlugin
 # GODOT_RUN_TOOL_TESTS=1 or --run-tool-tests.
 
 func _enter_tree():
+	var settings = EditorInterface.get_editor_settings()
+	if settings:
+		settings.set_setting("text_editor/appearance/gutters/highlight_type_safe_lines", false)
+		settings.set_setting("text_editor/appearance/guidelines/highlight_type_safe_lines", false)
 	if OS.get_environment("GODOT_RUN_TOOL_TESTS") == "1" or "--run-tool-tests" in OS.get_cmdline_args():
 		call_deferred("_run_in_editor_tool_tests")
 
@@ -18,6 +22,11 @@ func _run_in_editor_tool_tests():
 	print("==================================================================")
 	var errors = 0
 	var error_messages = []
+
+	var settings = EditorInterface.get_editor_settings()
+	if settings:
+		settings.set_setting("text_editor/appearance/gutters/highlight_type_safe_lines", false)
+		settings.set_setting("text_editor/appearance/guidelines/highlight_type_safe_lines", false)
 
 	for i in range(5):
 		await get_tree().process_frame
@@ -109,31 +118,41 @@ func _run_in_editor_tool_tests():
 			print("[CrystalToolTester]   ✔ %s registered as EditorPlugin" % cls)
 
 	# 4. Open a .cr script in the editor to verify Script tab integration
-	print("[CrystalToolTester] Testing Script Tab: Loading and editing res://src/main.cr...")
-	var cr_script = load("res://src/main.cr")
+	print("[CrystalToolTester] Testing Script Tab: Loading and editing res://sample_player.cr...")
+	var cr_script = load("res://sample_player.cr")
+	if not cr_script:
+		cr_script = load("res://src/main.cr")
 	if cr_script:
-		print("[CrystalToolTester]   ✔ Loaded res://src/main.cr as %s" % cr_script.get_class())
-		EditorInterface.edit_script(cr_script, true)
-		print("[CrystalToolTester]   ✔ Successfully opened res://src/main.cr in EditorInterface.edit_script!")
+		print("[CrystalToolTester]   ✔ Loaded %s as %s" % [cr_script.resource_path, cr_script.get_class()])
+		EditorInterface.edit_script(cr_script, -1, 0, false)
+		print("[CrystalToolTester]   ✔ Successfully opened %s in EditorInterface.edit_script!" % cr_script.resource_path)
 	else:
-		var msg = "[CrystalToolTester] Failed to load res://src/main.cr as CrystalScript resource"
+		var msg = "[CrystalToolTester] Failed to load CrystalScript resource"
 		printerr(msg)
 		error_messages.append(msg)
 		errors += 1
 
 	print("==================================================================")
+	if not DirAccess.dir_exists_absolute("res://bin"):
+		DirAccess.make_dir_absolute("res://bin")
+
 	if errors > 0:
 		printerr("[CrystalToolTester] IN-EDITOR TOOL TESTS FAILED (%d errors)!" % errors)
-		var f = FileAccess.open("res://.tool_tests_failed", FileAccess.WRITE)
-		if f:
-			f.store_string("FAILED: %d errors\n%s\n" % [errors, "\n".join(error_messages)])
-			f.close()
+		var fail_msg = "FAILED: %d errors\n%s\n" % [errors, "\n".join(error_messages)]
+		var f_bin = FileAccess.open("res://bin/.tool_tests_failed", FileAccess.WRITE)
+		if f_bin:
+			f_bin.store_string(fail_msg)
+			f_bin.close()
+		if FileAccess.file_exists("res://.tool_tests_failed"):
+			DirAccess.remove_absolute("res://.tool_tests_failed")
 	else:
 		print("[CrystalToolTester] ALL IN-EDITOR TOOL TESTS PASSED CLEANLY!")
-		var f = FileAccess.open("res://.tool_tests_passed", FileAccess.WRITE)
-		if f:
-			f.store_string("PASSED\n")
-			f.close()
+		var f_bin = FileAccess.open("res://bin/.tool_tests_passed", FileAccess.WRITE)
+		if f_bin:
+			f_bin.store_string("PASSED\n")
+			f_bin.close()
+		if FileAccess.file_exists("res://.tool_tests_passed"):
+			DirAccess.remove_absolute("res://.tool_tests_passed")
 
 	var has_quit_after = false
 	for arg in OS.get_cmdline_args():

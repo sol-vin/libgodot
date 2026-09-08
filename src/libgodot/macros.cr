@@ -16,10 +16,26 @@ annotation Export; end
 annotation ExportRange; end
 
 # Exports a property whose values are constrained to an enumeration or list of string choices.
+# Can take a list of string choices, or a Crystal `Enum` type directly (`@[ExportEnum(MyEnum)]`).
 #
 # ```crystal
+# enum CharacterClass
+#   Warrior
+#   Mage
+#   Rogue
+# end
+#
+# # Strongly-typed Crystal enum:
+# @[ExportEnum(CharacterClass)]
+# property character_class : CharacterClass = CharacterClass::Warrior
+#
+# # Integer property with enum dropdown:
+# @[ExportEnum(CharacterClass)]
+# property class_id : Int32 = 0
+#
+# # String choice list:
 # @[ExportEnum("Warrior", "Mage", "Rogue")]
-# property character_class : String = "Warrior"
+# property class_name : String = "Warrior"
 # ```
 annotation ExportEnum; end
 
@@ -66,8 +82,25 @@ annotation ExportMultiline; end
 annotation ExportPlaceholder; end
 
 # Exports an integer property as a bitmask flag field in the Godot inspector.
+# Can take a list of flag names or a Crystal `@[Flags] enum` type directly (`@[ExportFlags(CombatFlags)]`).
 #
 # ```crystal
+# @[Flags]
+# enum CombatFlags
+#   Melee
+#   Ranged
+#   Magic
+# end
+#
+# # Strongly-typed flag enum:
+# @[ExportFlags(CombatFlags)]
+# property flags : CombatFlags = CombatFlags::Melee
+#
+# # Integer bitmask property:
+# @[ExportFlags(CombatFlags)]
+# property flags_mask : Int32 = 0
+#
+# # Explicit string flag names:
 # @[ExportFlags("Fire", "Water", "Earth", "Air")]
 # property elemental_affinities : Int32 = 0
 # ```
@@ -847,6 +880,8 @@ macro node(decl, &block)
             {% elsif var_type == "String" %}
               c_str = val_ptr.as(Pointer(UInt8)*).value
               self.{{var_name.id}} = c_str.null? ? "" : String.new(c_str)
+            {% elsif arg.type.is_a?(Path) && arg.type.resolve? && (arg.type.resolve < Enum) %}
+              self.{{var_name.id}} = {{arg.type.id}}.from_value?(val_ptr.as(Int64*).value) || self.{{var_name.id}}
             {% end %}
         {% end %}
       {% end %}
@@ -885,6 +920,8 @@ macro node(decl, &block)
               ret_ptr.as(::Godot::Transform3D*).value = self.{{var_name.id}}
             {% elsif var_type == "String" %}
               ret_ptr.as(Pointer(UInt8)*).value = self.{{var_name.id}}.to_unsafe
+            {% elsif arg.type.is_a?(Path) && arg.type.resolve? && (arg.type.resolve < Enum) %}
+              ret_ptr.as(Int64*).value = self.{{var_name.id}}.to_i64
             {% end %}
         {% end %}
       {% end %}
@@ -931,7 +968,16 @@ macro node(decl, &block)
       {% var_type = arg.type.stringify.gsub(/^(::)?Godot::/, "") %}
       {%
         vtype = 0
-        if var_type == "Bool"
+        hint = 0
+        hint_str = ""
+        is_enum = false
+        if arg.type.is_a?(Path) && arg.type.resolve? && (arg.type.resolve < Enum)
+          is_enum = true
+          vtype = 2
+          hint = 2
+          enum_res = arg.type.resolve
+          hint_str = enum_res.constants.map { |c| "#{c.id}:#{enum_res.constant(c).id}" }.join(",")
+        elsif var_type == "Bool"
           vtype = 1
         elsif var_type == "Int32" || var_type == "Int64"
           vtype = 2
@@ -989,8 +1035,6 @@ macro node(decl, &block)
           vtype = 24
         end
 
-        hint = 0
-        hint_str = ""
         prop_usage = anno ? 6 : 2
       %}
       {% if anno %}
@@ -1011,6 +1055,12 @@ macro node(decl, &block)
                 {% hint = 2 %}
                 {% if val.is_a?(ArrayLiteral) %}
                   {% hint_str = val.map(&.id.stringify).join(",") %}
+                {% elsif val.is_a?(Path) && val.resolve? && (val.resolve < Enum) %}
+                  {% enum_res = val.resolve %}
+                  {% hint_str = enum_res.constants.map { |c| "#{c.id}:#{enum_res.constant(c).id}" }.join(",") %}
+                  {% if var_type != "String" %}
+                    {% vtype = 2 %}
+                  {% end %}
                 {% else %}
                   {% hint_str = val.id.stringify %}
                 {% end %}
@@ -1036,6 +1086,13 @@ macro node(decl, &block)
                 {% hint = 6 %}
                 {% if val.is_a?(ArrayLiteral) %}
                   {% hint_str = val.map(&.id.stringify).join(",") %}
+                {% elsif val.is_a?(Path) && val.resolve? && (val.resolve < Enum) %}
+                  {% enum_res = val.resolve %}
+                  {% valid_consts = enum_res.constants.reject { |c| c.stringify == "None" || c.stringify == "All" } %}
+                  {% hint_str = valid_consts.map(&.id.stringify).join(",") %}
+                  {% if var_type != "String" %}
+                    {% vtype = 2 %}
+                  {% end %}
                 {% else %}
                   {% hint_str = val.id.stringify %}
                 {% end %}
@@ -1096,7 +1153,15 @@ macro node(decl, &block)
           {% end %}
         {% elsif a_name == "ExportEnum" %}
           {% hint = 2 %}
-          {% hint_str = anno.args.map(&.id.stringify).join(",") %}
+          {% if anno.args.size > 0 && anno.args[0].is_a?(Path) && anno.args[0].resolve? && (anno.args[0].resolve < Enum) %}
+            {% enum_res = anno.args[0].resolve %}
+            {% hint_str = enum_res.constants.map { |c| "#{c.id}:#{enum_res.constant(c).id}" }.join(",") %}
+            {% if var_type != "String" %}
+              {% vtype = 2 %}
+            {% end %}
+          {% elsif anno.args.size > 0 %}
+            {% hint_str = anno.args.map(&.id.stringify).join(",") %}
+          {% end %}
         {% elsif a_name == "ExportFile" %}
           {% hint = 13 %}
           {% hint_str = anno.args.size > 0 ? anno.args[0].id.stringify : "" %}
@@ -1117,7 +1182,16 @@ macro node(decl, &block)
           {% hint_str = anno.args[0].id.stringify %}
         {% elsif a_name == "ExportFlags" %}
           {% hint = 6 %}
-          {% hint_str = anno.args.map(&.id.stringify).join(",") %}
+          {% if anno.args.size > 0 && anno.args[0].is_a?(Path) && anno.args[0].resolve? && (anno.args[0].resolve < Enum) %}
+            {% enum_res = anno.args[0].resolve %}
+            {% valid_consts = enum_res.constants.reject { |c| c.stringify == "None" || c.stringify == "All" } %}
+            {% hint_str = valid_consts.map(&.id.stringify).join(",") %}
+            {% if var_type != "String" %}
+              {% vtype = 2 %}
+            {% end %}
+          {% elsif anno.args.size > 0 %}
+            {% hint_str = anno.args.map(&.id.stringify).join(",") %}
+          {% end %}
         {% elsif a_name == "ExportFlags2DRender" %}
           {% hint = 7 %}
         {% elsif a_name == "ExportFlags2DPhysics" %}

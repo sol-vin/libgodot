@@ -21,6 +21,20 @@ node GroupDslTestNode < Godot::Node do
   end
 end
 
+enum DslTestRole
+  Knight = 0
+  Wizard = 1
+  Thief  = 5
+end
+
+node EnumDslTestNode < Godot::Node do
+  @[ExportEnum(DslTestRole)]
+  property role : DslTestRole = DslTestRole::Knight
+
+  @[ExportEnum(DslTestRole)]
+  property role_id : Int32 = 0
+end
+
 test_macros_dsl "Type-safe signal listeners with converted arguments (on_<signal>)" do
   target = PropertyTestTarget.new
   received_code = 0
@@ -198,3 +212,26 @@ test_macros_dsl "Top-level math constructor helpers: vec2 and vec3" do
   TestFramework.assert_true (v3.y - 2.5_f32).abs < 0.001
   TestFramework.assert_true (v3.z - (-9.9_f32)).abs < 0.001
 end
+
+test_macros_dsl "Direct Crystal enum property binding and property dispatch" do
+  node = EnumDslTestNode.new
+  TestFramework.assert_eq node.role, DslTestRole::Knight
+  TestFramework.assert_eq node.role_id, 0
+
+  # Update via direct Crystal setter
+  node.role = DslTestRole::Wizard
+  TestFramework.assert_eq node.role, DslTestRole::Wizard
+
+  # Dispatch set property as Godot does via pointer
+  val_thief = 5_i64
+  node._godot_set_property("role", pointerof(val_thief).as(Void*))
+  TestFramework.assert_eq node.role, DslTestRole::Thief
+
+  # Dispatch get property
+  val_out = 0_i64
+  node._godot_get_property("role", pointerof(val_out).as(Void*))
+  TestFramework.assert_eq val_out, 5_i64
+
+  node.destroy
+end
+

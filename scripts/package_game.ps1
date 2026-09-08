@@ -166,19 +166,31 @@ if (Test-Path $addonBin) {
 
 # 8. Create playable Godot game executable
 if ($godotExe -and (Test-Path $godotExe)) {
-    # Place runner at project root as <Name>.exe (e.g. basic_demo.exe)
-    $rootGameExe = Join-Path $projFull "$Name$exeExt"
-    Copy-Item $godotExe $rootGameExe -Force
+    # Place runner inside bin/ (e.g. bin/tests.exe or bin/basic_demo.exe)
+    $binNamedExe = Join-Path $binDir "$Name$exeExt"
+    Copy-Item $godotExe $binNamedExe -Force
     if (-not $onWindows -and (Get-Command chmod -ErrorAction SilentlyContinue)) {
-        & chmod +x $rootGameExe
+        & chmod +x $binNamedExe
     }
-    Write-Host "  -> Created playable executable: $rootGameExe" -ForegroundColor Green
+    Write-Host "  -> Created playable executable: $binNamedExe" -ForegroundColor Green
 
     # Also place runner in bin/game.exe for toolchain consistency
     $binGameExe = Join-Path $binDir "game$exeExt"
-    Copy-Item $godotExe $binGameExe -Force
-    if (-not $onWindows -and (Get-Command chmod -ErrorAction SilentlyContinue)) {
-        & chmod +x $binGameExe
+    if ($binGameExe -ne $binNamedExe) {
+        Copy-Item $godotExe $binGameExe -Force
+        if (-not $onWindows -and (Get-Command chmod -ErrorAction SilentlyContinue)) {
+            & chmod +x $binGameExe
+        }
+    }
+
+    # Ensure project root does not contain stray game executables
+    $rootGameExe = Join-Path $projFull "$Name$exeExt"
+    if (Test-Path $rootGameExe) {
+        Remove-Item $rootGameExe -Force -ErrorAction SilentlyContinue
+    }
+    $rootDefaultExe = Join-Path $projFull "game$exeExt"
+    if (Test-Path $rootDefaultExe) {
+        Remove-Item $rootDefaultExe -Force -ErrorAction SilentlyContinue
     }
 
     # Ensure bin/ does not contain stray project.godot which causes Godot warning

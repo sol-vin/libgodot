@@ -24,8 +24,30 @@ $ErrorActionPreference = "Stop"
 
 $RootDir = Split-Path -Parent $PSScriptRoot
 $TestDir = Join-Path $RootDir "test"
+$TestBinDir = Join-Path $TestDir "bin"
 $TemplateDir = Join-Path $RootDir "template"
 $ExamplesDir = Join-Path $RootDir "examples"
+
+if (-not (Test-Path $TestBinDir)) {
+    New-Item -ItemType Directory -Force -Path $TestBinDir | Out-Null
+}
+
+# Clean up any legacy root executables, reports, or markers from previous runs
+@(
+    (Join-Path $TestDir "tests.exe"),
+    (Join-Path $TestDir "tests"),
+    (Join-Path $TestDir "game.exe"),
+    (Join-Path $TestDir "game"),
+    (Join-Path $TestDir "test_report.md"),
+    (Join-Path $TestDir "test_report.json"),
+    (Join-Path $TestDir ".tool_tests_passed"),
+    (Join-Path $TestDir ".tool_tests_failed"),
+    (Join-Path $TestDir ".runtime_tests_passed"),
+    (Join-Path $TestDir ".runtime_tests_failed"),
+    (Join-Path $TestDir ".runtime_test_results.txt")
+) | Where-Object { Test-Path $_ } | ForEach-Object {
+    Remove-Item $_ -Force -ErrorAction SilentlyContinue
+}
 
 # Resolve Godot executable path
 $GodotExe = $null
@@ -192,8 +214,8 @@ if (-not $SkipToolTests) {
     Write-Host "--- Phase 2: In-Editor @tool Script Tests ---" -ForegroundColor Magenta
 
     # Clear old marker files
-    $passMarker = Join-Path $TestDir ".tool_tests_passed"
-    $failMarker = Join-Path $TestDir ".tool_tests_failed"
+    $passMarker = Join-Path $TestBinDir ".tool_tests_passed"
+    $failMarker = Join-Path $TestBinDir ".tool_tests_failed"
     if (Test-Path $passMarker) { Remove-Item $passMarker -Force }
     if (Test-Path $failMarker) { Remove-Item $failMarker -Force }
 
@@ -270,9 +292,9 @@ if (-not $SkipRuntimeTests) {
     Write-Host "--- Phase 3: Runtime Test Project (2D, 3D, Mesh, Physics, Stress) ---" -ForegroundColor Magenta
 
     # Clear old marker files
-    $runPassMarker = Join-Path $TestDir ".runtime_tests_passed"
-    $runFailMarker = Join-Path $TestDir ".runtime_tests_failed"
-    $summaryFile = Join-Path $TestDir ".runtime_test_results.txt"
+    $runPassMarker = Join-Path $TestBinDir ".runtime_tests_passed"
+    $runFailMarker = Join-Path $TestBinDir ".runtime_tests_failed"
+    $summaryFile = Join-Path $TestBinDir ".runtime_test_results.txt"
     if (Test-Path $runPassMarker) { Remove-Item $runPassMarker -Force }
     if (Test-Path $runFailMarker) { Remove-Item $runFailMarker -Force }
     if (Test-Path $summaryFile) { Remove-Item $summaryFile -Force }
@@ -311,16 +333,21 @@ if (-not $SkipStandaloneTests) {
     $onWindows = ($env:OS -eq "Windows_NT" -or [System.IO.Path]::PathSeparator -eq ';')
     $exeExt = if ($onWindows) { ".exe" } else { "" }
     $pkgScript = Join-Path $RootDir "scripts/package_game.ps1"
-    $standaloneExe = Join-Path $TestDir "tests$exeExt"
+    $standaloneExe = Join-Path $TestBinDir "tests$exeExt"
 
     # 1. Package test suite into standalone executable (Debug)
     Write-Host "[Standalone Test] Packaging test project into standalone executable (Debug)..." -ForegroundColor Cyan
     & $pkgScript -ProjectPath $TestDir -Name "tests" -ForceCompile
 
+    if (-not (Test-Path $standaloneExe)) {
+        $candidateExe = Join-Path $TestBinDir "game$exeExt"
+        if (Test-Path $candidateExe) { $standaloneExe = $candidateExe }
+    }
+
     if (Test-Path $standaloneExe) {
-        $runPassMarker = Join-Path $TestDir ".runtime_tests_passed"
-        $runFailMarker = Join-Path $TestDir ".runtime_tests_failed"
-        $summaryFile = Join-Path $TestDir ".runtime_test_results.txt"
+        $runPassMarker = Join-Path $TestBinDir ".runtime_tests_passed"
+        $runFailMarker = Join-Path $TestBinDir ".runtime_tests_failed"
+        $summaryFile = Join-Path $TestBinDir ".runtime_test_results.txt"
         if (Test-Path $runPassMarker) { Remove-Item $runPassMarker -Force }
         if (Test-Path $runFailMarker) { Remove-Item $runFailMarker -Force }
         if (Test-Path $summaryFile) { Remove-Item $summaryFile -Force }
@@ -360,9 +387,9 @@ if (-not $SkipStandaloneTests) {
         & $pkgScript -ProjectPath $TestDir -Name "tests" -Release 1 -ForceCompile
 
         if (Test-Path $standaloneExe) {
-            $runPassMarker = Join-Path $TestDir ".runtime_tests_passed"
-            $runFailMarker = Join-Path $TestDir ".runtime_tests_failed"
-            $summaryFile = Join-Path $TestDir ".runtime_test_results.txt"
+            $runPassMarker = Join-Path $TestBinDir ".runtime_tests_passed"
+            $runFailMarker = Join-Path $TestBinDir ".runtime_tests_failed"
+            $summaryFile = Join-Path $TestBinDir ".runtime_test_results.txt"
             if (Test-Path $runPassMarker) { Remove-Item $runPassMarker -Force }
             if (Test-Path $runFailMarker) { Remove-Item $runFailMarker -Force }
             if (Test-Path $summaryFile) { Remove-Item $summaryFile -Force }
@@ -435,7 +462,7 @@ $godotVer = (& $GodotExe --version 2>$null | Select-Object -First 1)
 $runtimeTotal = 0
 $runtimePassed = 0
 $runtimeFailed = 0
-$summaryFile = Join-Path $TestDir ".runtime_test_results.txt"
+$summaryFile = Join-Path $TestBinDir ".runtime_test_results.txt"
 if (Test-Path $summaryFile) {
     $rawSummary = Get-Content $summaryFile -Raw
     if ($rawSummary -match 'TOTAL=(\d+)') { $runtimeTotal = [int]$matches[1] }
@@ -478,7 +505,7 @@ if ($FailedSteps.Count -gt 0) {
 }
 
 $reportMdContent = $mdReport.ToString()
-$reportMdPath = Join-Path $TestDir "test_report.md"
+$reportMdPath = Join-Path $TestBinDir "test_report.md"
 Set-Content -Path $reportMdPath -Value $reportMdContent -Force
 
 # Generate JSON report
@@ -498,7 +525,7 @@ $jsonReport = @{
     steps = $RecordedResults
     timestamp = (Get-Date -Format "o")
 } | ConvertTo-Json -Depth 5
-$reportJsonPath = Join-Path $TestDir "test_report.json"
+$reportJsonPath = Join-Path $TestBinDir "test_report.json"
 Set-Content -Path $reportJsonPath -Value $jsonReport -Force
 
 # Append to GITHUB_STEP_SUMMARY if running in GitHub Actions

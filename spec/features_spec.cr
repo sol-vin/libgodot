@@ -101,10 +101,35 @@ abort "Failed: TestToolAnnotationNode is_tool should be true" unless entry_anno.
 
 puts "✓ Tool scripts verified!"
 
+enum CharacterRole
+  Warrior = 0
+  Mage    = 1
+  Rogue   = 5
+end
+
+@[Flags]
+enum CombatSkills
+  Slash
+  Shoot
+  Cast
+end
+
 # 5. Test Complete Godot 4 Annotations Suite (All Exports, Groups, Classes, OnReady, RPC)
 @[Icon("res://icons/player.svg")]
 @[Abstract]
 node TestAnnotationsSuite < CharacterBody3D do
+  @[ExportEnum(CharacterRole)]
+  property role : CharacterRole = CharacterRole::Warrior
+
+  @[ExportEnum(CharacterRole)]
+  property role_id : Int32 = 0
+
+  @[Export]
+  property role_auto : CharacterRole = CharacterRole::Rogue
+
+  @[ExportFlags(CombatSkills)]
+  property skills : CombatSkills = CombatSkills::Slash
+
   # Diagnostic warning ignore
   @[WarningIgnore("unused_variable")]
   warning_ignore "unused_parameter"
@@ -267,8 +292,12 @@ check_prop.call("camera_path", 26_u32, "Camera3D", 6_u32)
 check_prop.call("internal_seed", 0_u32, "", 2_u32)
 check_prop.call("btn_reset", 39_u32, "Reset Health", 6_u32)
 check_prop.call("custom_prop", 1_u32, "10,200,2", 6_u32)
+check_prop.call("role", 2_u32, "Warrior:0,Mage:1,Rogue:5", 6_u32)
+check_prop.call("role_id", 2_u32, "Warrior:0,Mage:1,Rogue:5", 6_u32)
+check_prop.call("role_auto", 2_u32, "Warrior:0,Mage:1,Rogue:5", 6_u32)
+check_prop.call("skills", 6_u32, "Slash,Shoot,Cast", 6_u32)
 
-puts "✓ All 24 Export Hints & Grouping annotations verified!"
+puts "✓ All Export Hints & Grouping annotations verified!"
 
 # Verify RPC Methods
 abort "Failed: Expected 2 RPC methods" unless suite_entry.rpc_methods.size == 2
@@ -289,9 +318,28 @@ abort "Failed: sync_state default channel 0" unless rpc_sync[:channel] == 0
 puts "✓ Multiplayer @[RPC] configurations verified!"
 
 # Instantiate and verify virtual callback dispatch
-inst = suite_entry.create_proc.call(Pointer(Void).null)
+inst = suite_entry.create_proc.call(Pointer(Void).null).as(TestAnnotationsSuite)
 abort "Failed: create_proc returned nil" unless inst
 inst._godot_call_virtual("_ready", 0.0_f32)
 
 puts "✓ @[OnReady] dispatch verified!"
+
+# Verify enum getter / setter dispatch
+val_to_set = 5_i64 # Rogue
+inst._godot_set_property("role", pointerof(val_to_set).as(Void*))
+abort "Failed: role not updated to Rogue" unless inst.role == CharacterRole::Rogue
+
+val_read = 0_i64
+inst._godot_get_property("role", pointerof(val_read).as(Void*))
+abort "Failed: role getter mismatch, expected 5 got #{val_read}" unless val_read == 5_i64
+
+skill_to_set = (CombatSkills::Slash | CombatSkills::Cast).value.to_i64
+inst._godot_set_property("skills", pointerof(skill_to_set).as(Void*))
+abort "Failed: skills not updated via flags" unless inst.skills == (CombatSkills::Slash | CombatSkills::Cast)
+
+skill_read = 0_i64
+inst._godot_get_property("skills", pointerof(skill_read).as(Void*))
+abort "Failed: skills getter mismatch" unless skill_read == skill_to_set
+
+puts "✓ Crystal Enum and Flag property dispatch verified!"
 puts "All new features passed specifications cleanly!"

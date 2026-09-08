@@ -295,10 +295,25 @@ module Docs
   # ```
   #
   # #### 3. Enumerations & Choices (`@[ExportEnum]`)
-  # Displays a dropdown list of options:
+  # Displays a dropdown list of options in the Inspector. Supports string choices or Crystal `Enum` types directly:
   # ```crystal
+  # enum CharacterClass
+  #   Warrior = 0
+  #   Mage    = 1
+  #   Rogue   = 5
+  # end
+  #
+  # # Direct strongly-typed Crystal enum:
+  # @[ExportEnum(CharacterClass)]
+  # property character_class : CharacterClass = CharacterClass::Warrior
+  #
+  # # Integer property with enum dropdown:
+  # @[ExportEnum(CharacterClass)]
+  # property class_id : Int32 = 0
+  #
+  # # String choice list:
   # @[ExportEnum("Warrior", "Mage", "Rogue", "Paladin")]
-  # property character_class : String = "Warrior"
+  # property character_class_name : String = "Warrior"
   # ```
   #
   # #### 4. File & Directory Selectors
@@ -337,9 +352,24 @@ module Docs
   # ```
   #
   # #### 6. Bitmask Flags (`@[ExportFlags]`)
-  # Renders multiple checkbox toggles representing an integer bitmask:
+  # Renders multiple checkbox toggles representing an integer bitmask. Supports string flags or Crystal `@[Flags] enum` types directly:
   # ```crystal
-  # # Custom named flags
+  # @[Flags]
+  # enum CombatFlags
+  #   Melee
+  #   Ranged
+  #   Magic
+  # end
+  #
+  # # Strongly-typed flag enum:
+  # @[ExportFlags(CombatFlags)]
+  # property flags : CombatFlags = CombatFlags::Melee
+  #
+  # # Integer bitmask property with enum flags:
+  # @[ExportFlags(CombatFlags)]
+  # property flags_mask : Int32 = 0
+  #
+  # # Custom named flags:
   # @[ExportFlags("Fire", "Water", "Earth", "Air")]
   # property elemental_affinities : Int32 = 0
   #

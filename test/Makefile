@@ -95,4 +95,4 @@ editor: all
 
 clean:
 	@$(RM) $(BIN_DIR)/*
-	@$(PWSH_CMD) "Remove-Item -Path 'tests.exe', 'tests' -Force -ErrorAction SilentlyContinue"
+	@$(PWSH_CMD) "Remove-Item -Path 'tests.exe', 'tests', 'game.exe', 'game', 'test_report.md', 'test_report.json', '.tool_tests_passed', '.tool_tests_failed', '.runtime_tests_passed', '.runtime_tests_failed', '.runtime_test_results.txt' -Force -ErrorAction SilentlyContinue"

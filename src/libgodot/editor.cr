@@ -35,6 +35,17 @@ module Godot
     Godot.print("==================================================================")
 
     if Godot.editor_hint?
+      # Disable 'Highlight Type Safe Lines' to prevent engine bug in TextEdit (p_gutter = -1 out of bounds)
+      if !Godot::EditorInterface.singleton_ptr.null?
+        ed_interface = Godot::EditorInterface.new(Godot::EditorInterface.singleton_ptr)
+        ed_settings = ed_interface.get_editor_settings
+        if !ed_settings.pointer.null?
+          ed_settings.call("set_setting", "text_editor/appearance/gutters/highlight_type_safe_lines", false)
+          ed_settings.call("set_initial_value", "text_editor/appearance/gutters/highlight_type_safe_lines", false, false)
+          ed_settings.call("set_setting", "text_editor/appearance/guidelines/highlight_type_safe_lines", false)
+        end
+      end
+
       if lang = Godot.create(Godot::CrystalLanguage)
         @@crystal_language = lang
         engine = Godot::Engine.new(Godot::Engine.singleton_ptr)
@@ -117,7 +128,14 @@ module Godot
     Godot.print("  [CrystalIntegrationPlugin] Native Crystal editor plugin unloaded.")
   end
 
+  CRYSTAL_ICON_SVG = <<-SVG
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 193.2 206.7" width="16" height="16">
+    <path fill="#e0e0e0" d="m165.4 122-50 49.9c-.2.2-.5.3-.7.2l-68.3-18.3c-.3-.1-.5-.3-.5-.5L27.5 85.1c-.1-.3 0-.5.2-.7l50-49.9c.2-.2.5-.3.7-.2l68.3 18.3c.3.1.5.3.5.5l18.3 68.2c.2.3.1.5-.1.7zm-67-54.3L31.3 85.6c-.1 0-.2.2-.1.3l49.1 49c.1.1.3.1.3-.1l18-67c.1 0-.1-.2-.2-.1z"/>
+  </svg>
+  SVG
+
   private def setup_toolbar_button : Void
+    return if @@compile_button
     return if Godot::EditorInterface.singleton_ptr.null?
     ed_iface = Godot::EditorInterface.new(Godot::EditorInterface.singleton_ptr)
     base_ctrl = ed_iface.get_base_control
@@ -131,7 +149,46 @@ module Godot
     btn = Godot.create(Godot::Button)
     return unless btn
     btn.call("set_flat", true)
-    btn.call("set_text", "Build Crystal")
+
+    # Load Crystal button icon texture
+    icon_tex : Godot::Texture2D? = nil
+    ["res://addons/crystal_integration/crystal_icon.svg", "res://crystal_icon.svg"].each do |p|
+      res = Godot.load(p, "Texture2D")
+      if res && !res.pointer.null?
+        icon_tex = Godot::Texture2D.new(res.pointer)
+        break
+      end
+    end
+
+    # Guaranteed fallback: render embedded SVG string directly into an ImageTexture
+    if !icon_tex || icon_tex.pointer.null?
+      img = Godot.create(Godot::Image)
+      if img && !img.pointer.null?
+        err = img.load_svg_from_string(CRYSTAL_ICON_SVG, 1.0_f64)
+        if err == 0_i64
+          itex = Godot.create(Godot::ImageTexture)
+          if itex && !itex.pointer.null?
+            itex.set_image(img)
+            icon_tex = itex
+          end
+        end
+      end
+    end
+
+    if icon_tex && !icon_tex.pointer.null?
+      btn.set_button_icon(icon_tex)
+      btn.call("set_button_icon", icon_tex)
+      btn.call("set_text", "")
+    else
+      btn.call("set_text", "Build Crystal")
+    end
+
+    btn.call("set_tooltip_text", "Build Crystal")
+    btn.call("set_focus_mode", 0)
+
+    btn.connect("pressed") do |_args|
+      on_compile_button_pressed
+    end
 
     add_control_to_container(Godot::EditorPlugin::CustomControlContainer::ContainerToolbar.value, btn)
     @@compile_button = btn
