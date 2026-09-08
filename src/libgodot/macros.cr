@@ -445,7 +445,7 @@ macro node(decl, &block)
       {% if s_stripped.starts_with?("#") %}
         {% s_text = s_stripped.gsub(/^#+\s*/, "") %}
         {% comment_accum = comment_accum.empty? ? s_text : comment_accum + " " + s_text %}
-      {% elsif !in_target_node && (s_stripped.starts_with?("node " + class_name.stringify) || s_stripped.includes?("node " + class_name.stringify + " ") || s_stripped.includes?("node " + class_name.stringify + "<")) %}
+      {% elsif !in_target_node && (s_stripped.starts_with?("node " + class_name.stringify) || s_stripped.includes?("node " + class_name.stringify + " ") || s_stripped.includes?("node " + class_name.stringify + "<") || s_stripped.starts_with?("resource " + class_name.stringify) || s_stripped.includes?("resource " + class_name.stringify + " ") || s_stripped.includes?("resource " + class_name.stringify + "<") || s_stripped.starts_with?("gdclass " + class_name.stringify) || s_stripped.includes?("gdclass " + class_name.stringify + " ") || s_stripped.includes?("gdclass " + class_name.stringify + "<")) %}
         {% if class_doc.empty? %}
           {% class_doc = comment_accum %}
         {% end %}
@@ -1468,6 +1468,50 @@ macro node(decl, &block)
     io << "</class>"
   end
   ::Godot::EditorDocRegistry.register(xml_{{class_name}})
+end
+
+# Declares a custom Godot Resource class registered with ClassDB and EditorHelp.
+# Supports @[Export] properties, custom signals, and serialization to `.tres`.
+#
+# ```crystal
+# resource ItemData < Resource do
+#   @[Export]
+#   property item_name : String = "Health Potion"
+#
+#   @[Export]
+#   property value : Int32 = 50
+# end
+# ```
+macro resource(decl, &block)
+  {% if decl.is_a?(Call) && decl.name == "<" %}
+    node {{decl}} do
+      {{yield}}
+    end
+  {% else %}
+    node {{decl}} < Resource do
+      {{yield}}
+    end
+  {% end %}
+end
+
+# Declares a custom RefCounted or generic Godot engine class registered with ClassDB.
+#
+# ```crystal
+# gdclass StateMachine < RefCounted do
+#   @[Export]
+#   property current_state : String = "idle"
+# end
+# ```
+macro gdclass(decl, &block)
+  {% if decl.is_a?(Call) && decl.name == "<" %}
+    node {{decl}} do
+      {{yield}}
+    end
+  {% else %}
+    node {{decl}} < RefCounted do
+      {{yield}}
+    end
+  {% end %}
 end
 
 # Declares a custom Godot signal and generates a type-safe `emit_<signal_name>` helper method.

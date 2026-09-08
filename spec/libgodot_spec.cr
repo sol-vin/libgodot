@@ -83,5 +83,49 @@ end
 
 abort "Failed: get_node? should return nil for invalid path" unless test_node.get_node?("non_existent_node").nil?
 abort "Failed: get_node_or_null should return nil for invalid path" unless test_node.get_node_or_null("non_existent_node").nil?
+abort "Failed: []? should return nil for invalid path" unless test_node["non_existent_node"]?.nil?
 
-puts "All verification checks (including get_node and Range type cohesion) passed successfully!"
+# 6. Test Godot::Channel
+chan = Godot::Channel.new(4)
+abort "Failed: Initial channel size should be 0" unless chan.size == 0
+abort "Failed: Channel should be empty" unless chan.empty?
+chan.send("spec_msg_1")
+chan.send("spec_msg_2")
+abort "Failed: Channel size should be 2" unless chan.size == 2
+abort "Failed: Channel try_receive mismatch" unless chan.try_receive.to_s == "spec_msg_1"
+abort "Failed: Channel try_receive mismatch 2" unless chan.try_receive.to_s == "spec_msg_2"
+abort "Failed: Channel should be empty after receives" unless chan.empty?
+chan.close
+abort "Failed: Channel should be closed" unless chan.is_closed
+
+# 7. Test resource and gdclass macros
+resource SampleWeapon < Resource do
+  @[Export]
+  property damage : Int32 = 42
+end
+
+gdclass ActionQueue < RefCounted do
+  @[Export]
+  property priority : Int32 = 1
+end
+
+weapon_entry = entries.find { |e| e.class_name == "SampleWeapon" }
+abort "Failed: SampleWeapon resource not registered" unless weapon_entry
+abort "Failed: SampleWeapon parent should be Resource" unless weapon_entry.parent_name == "Resource"
+
+queue_entry = entries.find { |e| e.class_name == "ActionQueue" }
+abort "Failed: ActionQueue gdclass not registered" unless queue_entry
+abort "Failed: ActionQueue parent should be RefCounted" unless queue_entry.parent_name == "RefCounted"
+
+# 8. Test Godot Collections
+h = {"a" => "1", "b" => "2"}
+g_dict = h.to_godot_dict
+abort "Failed: Dictionary size" unless g_dict.size == 2
+abort "Failed: Dictionary lookup" unless g_dict["a"] == "1" && g_dict["b"] == "2"
+
+arr = [100, 200, 300]
+g_arr = arr.to_godot_array
+abort "Failed: Array size" unless g_arr.size == 3
+abort "Failed: Array lookup" unless g_arr[0] == 100 && g_arr[2] == 300
+
+puts "All verification checks (including Channels, Collections, Resource/GDClass DSL) passed successfully!"

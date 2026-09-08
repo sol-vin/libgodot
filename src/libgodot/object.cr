@@ -243,6 +243,79 @@ module Godot
     await(span.total_seconds)
   end
 
+  # Cooperatively pauses execution for the given duration in seconds.
+  # Alias to `Godot.await(seconds)`.
+  def self.delay(seconds : Number) : Void
+    await(seconds)
+  end
+
+  # Cooperatively pauses execution for the given Time::Span duration.
+  def self.delay(span : ::Time::Span) : Void
+    await(span.total_seconds)
+  end
+
+  # Spawns a cooperative gameplay fiber with managed exception logging.
+  def self.spawn(&block : -> Void) : Fiber
+    ::spawn do
+      begin
+        block.call
+      rescue ex
+        Godot.printerr("[LibGodot Fiber Error] #{ex.message}\n#{ex.backtrace.join("\n")}")
+      end
+    end
+  end
+
+  @@mb_engine_get_process_frames : Void* = Pointer(Void).null
+  @@mb_engine_get_physics_frames : Void* = Pointer(Void).null
+
+  # Returns the total number of frames rendered since the engine started.
+  def self.process_frame_count : Int64
+    engine = Bridge.get_singleton("Engine")
+    return 0_i64 if engine.null?
+    if @@mb_engine_get_process_frames.null?
+      @@mb_engine_get_process_frames = Bridge.get_method_bind("Engine", "get_process_frames", 3905245786_i64)
+    end
+    ret = 0_i64
+    Bridge.ptrcall(@@mb_engine_get_process_frames, engine, Pointer(Pointer(Void)).null, pointerof(ret).as(Void*))
+    ret
+  end
+
+  # Returns the total number of physics process steps executed since the engine started.
+  def self.physics_frame_count : Int64
+    engine = Bridge.get_singleton("Engine")
+    return 0_i64 if engine.null?
+    if @@mb_engine_get_physics_frames.null?
+      @@mb_engine_get_physics_frames = Bridge.get_method_bind("Engine", "get_physics_frames", 3905245786_i64)
+    end
+    ret = 0_i64
+    Bridge.ptrcall(@@mb_engine_get_physics_frames, engine, Pointer(Pointer(Void)).null, pointerof(ret).as(Void*))
+    ret
+  end
+
+  # Cooperatively yields until the next process (render/idle) frame has completed.
+  def self.next_frame : Void
+    start_frame = process_frame_count
+    if start_frame > 0
+      while process_frame_count == start_frame
+        Fiber.yield
+      end
+    else
+      Fiber.yield
+    end
+  end
+
+  # Cooperatively yields until the next physics process frame has completed.
+  def self.physics_frame : Void
+    start_frame = physics_frame_count
+    if start_frame > 0
+      while physics_frame_count == start_frame
+        Fiber.yield
+      end
+    else
+      Fiber.yield
+    end
+  end
+
   # Represents a signal bound to a specific Godot object instance.
   # Enables first-class signal handling, inspection, connection, emission, and non-blocking `await`.
   #
@@ -767,6 +840,26 @@ module Godot
       if node = get_node?(path)
         T.new(node.pointer)
       end
+    end
+
+    # Indexer syntactic sugar for retrieving a child node by path (e.g. self["Camera3D"])
+    def [](path : String) : Node
+      get_node(path)
+    end
+
+    # Safe indexer returning nil if node not found (e.g. self["Camera3D"]?)
+    def []?(path : String) : Node?
+      get_node?(path)
+    end
+
+    # Shorthand for get_node_as
+    def node_as(type : T.class, path : String) : T forall T
+      get_node_as(type, path)
+    end
+
+    # Shorthand for get_node_as?
+    def node_as?(type : T.class, path : String) : T? forall T
+      get_node_as?(type, path)
     end
 
     # Finds an existing child node matching `pattern`.

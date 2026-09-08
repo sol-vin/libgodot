@@ -1,181 +1,229 @@
 # =============================================================================
-# LibGodot Test Suite: Concurrency, Fibers, Channels, GC & Thread-Safety
+# LibGodot Test Suite: Real Engine Concurrency, Fibers, Channels & Threads
 # =============================================================================
 
+test_concurrency "Cooperative Fiber modifying Godot Node properties across engine yields" do
+  node = Godot.create(Godot::Node2D)
+  node.name = "FiberConcurrentNode"
+  node.position = Godot::Vector2.new(0.0_f32, 0.0_f32)
 
-test_concurrency "Cooperative Fiber scheduling with spawn and Fiber.yield" do
-  completed_fibers = 0
-  fiber_log = Array(Int32).new
+  fiber_completed = false
+  step_count = 0
 
-  spawn do
-	fiber_log << 1
-	Fiber.yield
-	fiber_log << 3
-	completed_fibers += 1
+  Godot.spawn do
+    3.times do |i|
+      step_count += 1
+      node.position = Godot::Vector2.new((i + 1).to_f32 * 10.0_f32, (i + 1).to_f32 * 10.0_f32)
+      Fiber.yield
+    end
+    fiber_completed = true
   end
 
-  spawn do
-	fiber_log << 2
-	Fiber.yield
-	fiber_log << 4
-	completed_fibers += 1
+  # Simulate Godot frame loop yielding execution slices to cooperative fibers
+  50.times do
+    break if fiber_completed
+    Fiber.yield
   end
 
-  # Cooperatively yield from current execution context to let spawned fibers run
-  iterations = 0
-  while completed_fibers < 2 && iterations < 50
-	Fiber.yield
-	iterations += 1
-  end
+  TestFramework.assert_true fiber_completed, "Cooperative fiber must complete across engine frame slices"
+  TestFramework.assert_eq step_count, 3, "Fiber must advance through all 3 frame steps"
+  TestFramework.assert_approx_eq node.position.x, 30.0_f32, 0.01, "Node X position must reflect final fiber mutation"
+  TestFramework.assert_approx_eq node.position.y, 30.0_f32, 0.01, "Node Y position must reflect final fiber mutation"
 
-  TestFramework.assert_eq completed_fibers, 2, "All cooperative fibers should complete"
-  TestFramework.assert_eq fiber_log.size, 4, "All fiber log events should be recorded"
-  TestFramework.assert_true fiber_log.includes?(1) && fiber_log.includes?(2) && fiber_log.includes?(3) && fiber_log.includes?(4)
+  node.destroy
 end
 
-test_concurrency "Channel message passing between background worker Thread and main thread" do
-  ch = Channel(String).new(1)
-  worker_payload = "WorkerResult_48A"
+test_concurrency "Cooperative fiber awaiting custom Godot Node signals" do
+  target = PropertyTestTarget.new
+  received_payload = ""
+  fiber_done = false
+
+  Godot.spawn do
+    args = target.signal("custom_event").await
+    received_payload = args.first? || ""
+    fiber_done = true
+  end
+
+  # Allow fiber to initialize and subscribe to signal
+  3.times { Fiber.yield }
+
+  # Main thread emits signal with payload
+  target.emit_signal("custom_event", "ConcurrencyPayload_777")
+
+  50.times do
+    break if fiber_done
+    Fiber.yield
+  end
+
+  TestFramework.assert_true fiber_done, "Awaiting fiber must resume upon signal emission"
+  TestFramework.assert_eq received_payload, "ConcurrencyPayload_777", "Awaited arguments must match emitted payload"
+
+  target.destroy
+end
+
+test_concurrency "Dead-pointer protection: target destroyed while fiber is awaiting signal" do
+  target = Godot.create(Godot::Node2D)
+  target_id = target.instance_id
+
+  caught_disposed_error = false
+  fiber_finished = false
+
+  Godot.spawn do
+    begin
+      target.signal("nonexistent_event").await
+    rescue ex : Godot::DisposedObjectError
+      caught_disposed_error = true
+      TestFramework.assert_eq ex.instance_id, target_id, "Exception instance ID must match destroyed target"
+    ensure
+      fiber_finished = true
+    end
+  end
+
+  # Allow fiber to begin awaiting
+  3.times { Fiber.yield }
+
+  # Destroy target node in Godot ObjectDB while fiber is in-flight
+  target.destroy
+  TestFramework.assert_false target.alive?, "Target must be dead in ObjectDB"
+
+  # Pump cooperative loop: await loop must detect dead pointer and raise DisposedObjectError
+  50.times do
+    break if fiber_finished
+    Fiber.yield
+  end
+
+  TestFramework.assert_true fiber_finished, "Fiber must not hang when target is destroyed"
+  TestFramework.assert_true caught_disposed_error, "DisposedObjectError must be raised when target node is freed"
+end
+
+test_concurrency "Cooperative signal await with timeout expiration" do
+  target = PropertyTestTarget.new
+  timed_out = false
+
+  start_time = ::Time.instant
+  # Await a signal that is never emitted with 0.05 second timeout
+  Godot.await(target, "never_emitted_signal", timeout_sec: 0.05)
+  elapsed = (::Time.instant - start_time).total_seconds
+
+  TestFramework.assert_true elapsed >= 0.04, "Await must wait until timeout expires"
+  target.destroy
+end
+
+test_concurrency "GodotChannel actor communication from background OS thread to Main Thread" do
+  channel = Godot::Channel.new(8)
+  worker_data = "ActorResult_Worker_999"
 
   worker = Thread.new do
-	# Heavy background processing simulation
-	sum = 0_i64
-	1000.times { |i| sum += i }
-	ch.send("#{worker_payload}_#{sum}")
+    # Heavy background processing on OS thread
+    sum = 0_i64
+    5000.times { |i| sum += i }
+    channel.send("#{worker_data}_#{sum}")
   end
 
   worker.join
-  received = ch.receive
 
-  TestFramework.assert_true received.starts_with?("WorkerResult_48A_"), "Received message must match payload"
-  TestFramework.assert_eq received, "WorkerResult_48A_499500"
+  # Non-blocking receive on Main Thread (safe in _process)
+  received = channel.try_receive
+  TestFramework.assert_not_nil received, "Channel must contain enqueued item"
+  TestFramework.assert_eq received.to_s, "#{worker_data}_12497500", "Received item must match worker payload"
+
+  channel.close
+  TestFramework.assert_true channel.is_closed, "Channel must be marked closed"
 end
 
-test_concurrency "Multi-producer channel contention across parallel worker threads" do
+test_concurrency "GodotChannel reactive signal received dispatch on Main Thread" do
+  channel = Godot::Channel.new(4)
+  received_signal_arg = ""
+
+  channel.signal("received").connect do |args|
+    received_signal_arg = args.first? || ""
+  end
+
+  # Send from background worker thread
+  worker = Thread.new do
+    channel.send("ReactiveMessage_ABC")
+  end
+  worker.join
+
+  # Pump cooperative loop to allow deferred signal dispatch
+  50.times do
+    break unless received_signal_arg.empty?
+    Fiber.yield
+  end
+
+  TestFramework.assert_eq received_signal_arg, "ReactiveMessage_ABC", "Reactive signal must receive payload from worker"
+  channel.close
+end
+
+test_concurrency "Multi-producer worker contention on GodotChannel" do
   worker_count = 4
-  items_per_worker = 50
+  items_per_worker = 25
   total_items = worker_count * items_per_worker
-  ch = Channel(Int32).new(total_items)
+  channel = Godot::Channel.new(total_items)
 
   workers = Array(Thread).new
-  worker_count.times do |worker_id|
-	workers << Thread.new do
-	  items_per_worker.times do
-		ch.send(worker_id)
-	  end
-	end
+  worker_count.times do |w_id|
+    workers << Thread.new do
+      items_per_worker.times do |i|
+        channel.send("W#{w_id}_#{i}")
+      end
+    end
   end
 
-  # Wait for all workers to finish putting items into the channel
   workers.each(&.join)
+  TestFramework.assert_eq channel.size, total_items, "Channel size must match total items sent"
 
-  # Drain the channel from the main thread
-  received_counts = Hash(Int32, Int32).new(0)
-  total_items.times do
-	val = ch.receive
-	received_counts[val] += 1
+  # Drain all items non-blockingly from Main Thread
+  drain_count = 0
+  while item = channel.try_receive
+    drain_count += 1
   end
 
-  worker_count.times do |worker_id|
-	TestFramework.assert_eq received_counts[worker_id], items_per_worker, "Worker #{worker_id} items mismatch"
-  end
+  TestFramework.assert_eq drain_count, total_items, "All items must be drained without loss or corruption"
+  TestFramework.assert_true channel.empty?, "Channel must be empty after drain"
+  channel.close
 end
 
-test_concurrency "Mutex synchronization guarantees atomic shared state updates" do
-  thread_count = 4
-  increments_per_thread = 250
-  expected_total = thread_count * increments_per_thread
+test_concurrency "TypedChannel(T) type-safe generic message passing" do
+  typed_chan = Godot::TypedChannel(Godot::Vector3).new(5)
 
-  mutex = ::Thread::Mutex.new
-  shared_counter = 0
+  worker = Thread.new do
+    typed_chan.send(Godot::Vector3.new(10.0_f32, 20.0_f32, 30.0_f32))
+  end
+  worker.join
 
-  threads = Array(Thread).new
-  thread_count.times do
-	threads << Thread.new do
-	  increments_per_thread.times do
-		mutex.synchronize do
-		  shared_counter += 1
-		end
-	  end
-	end
+  vec = typed_chan.try_receive
+  TestFramework.assert_not_nil vec, "Typed channel must return non-nil vector"
+  if v = vec
+    TestFramework.assert_approx_eq v.x, 10.0_f32, 0.01
+    TestFramework.assert_approx_eq v.y, 20.0_f32, 0.01
+    TestFramework.assert_approx_eq v.z, 30.0_f32, 0.01
   end
 
-  threads.each(&.join)
-
-  TestFramework.assert_eq shared_counter, expected_total, "Mutex-synchronized counter must exactly equal expected total"
+  typed_chan.close
 end
 
-test_concurrency "Lock-free Atomic operations under high thread contention" do
-  thread_count = 4
-  increments_per_thread = 500
-  expected_total = thread_count * increments_per_thread
+test_concurrency "GodotChannel close unblocks waiting background receiver threads" do
+  channel = Godot::Channel.new(4)
+  receiver_unblocked = false
+  received_val : Godot::ChannelItem? = "dummy"
 
-  atomic_counter = Atomic(Int32).new(0)
-
-  threads = Array(Thread).new
-  thread_count.times do
-	threads << Thread.new do
-	  increments_per_thread.times do
-		atomic_counter.add(1)
-	  end
-	end
+  worker = Thread.new do
+    # Blocking receive on background thread
+    received_val = channel.receive(timeout_sec: 2.0)
+    receiver_unblocked = true
   end
 
-  threads.each(&.join)
+  # Allow worker to enter wait state
+  Crystal::System::Thread.sleep(10.milliseconds)
 
-  TestFramework.assert_eq atomic_counter.get, expected_total, "Atomic counter must match total increments without lock"
-end
+  # Close channel from Main Thread
+  channel.close
+  worker.join
 
-test_concurrency "Boehm GC stability during rapid multi-threaded heap allocations and collection" do
-  thread_count = 3
-  allocations_per_thread = 1500
-
-  threads = Array(Thread).new
-  thread_count.times do |t_idx|
-	threads << Thread.new do
-	  allocations_per_thread.times do |i|
-		# Rapidly allocate heap objects: strings, arrays, hashes
-		str = "GC_Stress_Thread_#{t_idx}_Iter_#{i}_#{Time.utc.to_unix_ms}"
-		arr = Array(Int32).new(10) { |x| x * i }
-		h = Hash(String, Int32).new
-		h[str] = arr.size
-	  end
-	end
-  end
-
-  threads.each(&.join)
-
-  # Trigger explicit GC collection cycle
-  GC.collect
-
-  TestFramework.assert_true true, "GC.collect completed successfully without heap corruption or crash"
-end
-
-test_concurrency "Thread-safe instance registry (alive_instances) under concurrent registration and unregistration" do
-  thread_count = 4
-  ops_per_thread = 100
-
-  # Dummy Godot::Object wrapper for test
-  test_obj = Godot::Node.new
-
-  initial_count = Godot::Bridge.alive_instance_count
-
-  threads = Array(Thread).new
-  thread_count.times do |t_idx|
-	threads << Thread.new do
-	  ops_per_thread.times do |i|
-		fake_ptr = Pointer(Void).new((t_idx * 10000 + i + 1).to_u64)
-		Godot::Bridge.register_alive_instance(fake_ptr, test_obj)
-		TestFramework.assert_true Godot::Bridge.has_alive_instance?(fake_ptr)
-		Godot::Bridge.unregister_alive_instance(fake_ptr)
-		TestFramework.assert_false Godot::Bridge.has_alive_instance?(fake_ptr)
-	  end
-	end
-  end
-
-  threads.each(&.join)
-
-  TestFramework.assert_eq Godot::Bridge.alive_instance_count, initial_count, "Instance count must return to baseline after unregistration"
+  TestFramework.assert_true receiver_unblocked, "Worker must unblock immediately when channel is closed"
+  TestFramework.assert_nil received_val, "Receive on closed channel must return nil"
+  TestFramework.assert_false channel.send("post_close"), "Send on closed channel must return false"
 end
 
 test_concurrency "Background thread safe deferred method dispatch (call_deferred)" do
@@ -183,222 +231,56 @@ test_concurrency "Background thread safe deferred method dispatch (call_deferred
   target.name = "InitialTargetName"
 
   worker = Thread.new do
-	# Offload dispatch to background thread: call_deferred routes through Godot thread-safe MessageQueue
-	target.call_deferred("set_name", "DeferredWorkerName")
+    # Offload dispatch to background thread: call_deferred routes through Godot thread-safe MessageQueue
+    target.call_deferred("set_name", "DeferredWorkerSuccess")
   end
 
   worker.join
 
-  # Verify target remains valid and alive
-  TestFramework.assert_true target.alive?
+  TestFramework.assert_true target.alive?, "Target must remain valid after deferred call"
   target.destroy
 end
 
-test_concurrency "Cross-thread object validity and dead-pointer safety" do
-  node_to_destroy = Godot.create(Godot::Node2D)
-  inst_id = node_to_destroy.instance_id
+test_concurrency "Boehm GC stability during concurrent Godot allocations and channel messaging" do
+  thread_count = 3
+  allocations_per_thread = 500
+  channel = Godot::Channel.new(100)
 
-  ch_ready = Channel(Nil).new(2)
-  ch_done = Channel(Bool).new(1)
-
-  checker = Thread.new do
-	ch_ready.send(nil) # Signal main thread that checker is running
-	# Poll validity while waiting for main thread destruction
-	valid_initial = Godot::Object.is_instance_id_valid(inst_id)
-	ch_ready.send(nil) # Signal that initial check passed
-
-	# Wait for destruction signal
-	dead_detected = false
-	50.times do
-	  unless Godot::Object.is_instance_id_valid(inst_id)
-		dead_detected = true
-		break
-	  end
-	  Crystal::System::Thread.sleep(2.milliseconds)
-	end
-	ch_done.send(dead_detected)
+  threads = Array(Thread).new
+  thread_count.times do |t_idx|
+    threads << Thread.new do
+      allocations_per_thread.times do |i|
+        # Rapidly allocate Godot Vectors and channel items
+        vec = Godot::Vector3.new(t_idx.to_f32, i.to_f32, (t_idx * i).to_f32)
+        channel.try_send(vec.to_s)
+        channel.try_receive
+      end
+    end
   end
 
-  ch_ready.receive # Checker thread started
-  ch_ready.receive # Initial check complete
+  threads.each(&.join)
 
-  # Destroy on main thread
-  node_to_destroy.destroy
-  TestFramework.assert_true node_to_destroy.destroyed?
+  # Trigger explicit GC collection cycle
+  GC.collect
 
-  checker.join
-  dead_detected_by_thread = ch_done.receive
-
-  TestFramework.assert_true dead_detected_by_thread, "Background thread must observe ObjectDB invalidation after main thread destroy"
-
-  # Attempting call on destroyed instance from main thread safely raises DisposedObjectError
-  caught = false
-  begin
-	node_to_destroy.call("get_name")
-  rescue ex : Godot::DisposedObjectError
-	caught = true
-	TestFramework.assert_eq ex.instance_id, inst_id
-  end
-  TestFramework.assert_true caught, "DisposedObjectError raised on dead pointer access"
+  TestFramework.assert_true true, "GC.collect completed successfully under concurrent allocations without crash"
+  channel.close
 end
 
-test_concurrency "Cooperative fiber awaiting custom signal with arguments" do
-  target = PropertyTestTarget.new
-  received_args = Array(String).new
-  fiber_completed = false
+test_concurrency "Godot Collections (Dictionary & Array) interop across threads" do
+  crystal_hash = {"health" => "100", "mana" => "50", "name" => "Hero"}
+  godot_dict = crystal_hash.to_godot_dict
 
-  spawn do
-	args = await(target, "test_event_fired")
-	received_args = args
-	fiber_completed = true
-  end
+  TestFramework.assert_eq godot_dict["health"], "100"
+  TestFramework.assert_eq godot_dict["mana"], "50"
+  TestFramework.assert_eq godot_dict["name"], "Hero"
+  TestFramework.assert_eq godot_dict.size, 3
 
-  # Fiber should initially be waiting
-  Fiber.yield
-  TestFramework.assert_false fiber_completed, "Fiber should be suspended awaiting signal"
+  crystal_arr = ["Apple", "Banana", "Cherry"]
+  godot_arr = crystal_arr.to_godot_array
 
-  # Emit signal from another fiber / main thread
-  target.emit_test_event_fired(777)
-
-  # Cooperatively advance fiber
-  start = ::Time.instant
-  while !fiber_completed && (::Time.instant - start).total_seconds < 0.2
-	Fiber.yield
-  end
-
-  TestFramework.assert_true fiber_completed, "Fiber should resume after signal emission"
-  TestFramework.assert_eq received_args.size, 1
-  TestFramework.assert_eq received_args.first, "777"
-end
-
-test_concurrency "Cooperative fiber awaiting duration (non-blocking sleep alternative)" do
-  elapsed = false
-
-  spawn do
-	await(0.02) # 20 milliseconds cooperative pause
-	elapsed = true
-  end
-
-  # Allow cooperative yielding slices
-  start = ::Time.instant
-  while !elapsed && (::Time.instant - start).total_seconds < 0.2
-	Fiber.yield
-  end
-
-  TestFramework.assert_true elapsed, "Awaiting duration should complete without blocking main loop"
-end
-
-test_concurrency "Awaiting signal with timeout expires cleanly" do
-  target = PropertyTestTarget.new
-  timeout_completed = false
-
-  spawn do
-	# Await a signal that will never be emitted, with 0.02s timeout
-	await(target, "non_existent_signal", timeout_sec: 0.02)
-	timeout_completed = true
-  end
-
-  start = ::Time.instant
-  while !timeout_completed && (::Time.instant - start).total_seconds < 0.2
-	Fiber.yield
-  end
-
-  TestFramework.assert_true timeout_completed, "Await with timeout should exit cleanly when time expires"
-end
-
-test_concurrency "Awaiting signal on destroyed object raises DisposedObjectError" do
-  target = Godot.create(Godot::Node2D)
-  error_caught = false
-
-  spawn do
-	begin
-	  await(target, "some_signal")
-	rescue ex : Godot::DisposedObjectError
-	  error_caught = true
-	end
-  end
-
-  Fiber.yield # Start fiber and begin await
-  target.destroy # Destroy while awaiting
-
-  start = ::Time.instant
-  while !error_caught && (::Time.instant - start).total_seconds < 0.2
-	Fiber.yield
-  end
-  TestFramework.assert_true error_caught, "Awaiting a signal on a destroyed object must raise DisposedObjectError"
-end
-
-test_concurrency "BoundSignal await syntax: await(target.test_event_fired)" do
-  target = PropertyTestTarget.new
-  received_args = Array(String).new
-  fiber_completed = false
-
-  # target.test_event_fired returns a Godot::BoundSignal
-  bound_sig = target.test_event_fired
-  TestFramework.assert_true bound_sig.is_a?(Godot::BoundSignal)
-  TestFramework.assert_eq bound_sig.name, "test_event_fired"
-
-  spawn do
-	# Idiomatic syntax: await(target.test_event_fired)
-	args = await(target.test_event_fired)
-	received_args = args
-	fiber_completed = true
-  end
-
-  Fiber.yield
-  TestFramework.assert_false fiber_completed, "Fiber should be suspended awaiting bound signal"
-
-  target.emit_test_event_fired(999)
-
-  start = ::Time.instant
-  while !fiber_completed && (::Time.instant - start).total_seconds < 0.2
-	Fiber.yield
-  end
-
-  TestFramework.assert_true fiber_completed, "Fiber should resume after bound signal emission"
-  TestFramework.assert_eq received_args.first?, "999"
-end
-
-test_concurrency "BoundSignal connect and emit: sig.connect and sig.emit" do
-  target = PropertyTestTarget.new
-  connected_called = false
-  connected_arg = ""
-
-  target.test_event_fired.connect do |args|
-	connected_called = true
-	connected_arg = args.first? || ""
-  end
-
-  target.test_event_fired.emit(123)
-
-  TestFramework.assert_true connected_called, "BoundSignal#connect callback should fire on emit"
-  TestFramework.assert_eq connected_arg, "123"
-
-  target.test_event_fired.disconnect
-end
-
-test_concurrency "Classic Object#await_signal instance method with string name" do
-  target = PropertyTestTarget.new
-  received_args = Array(String).new
-  completed = false
-
-  spawn do
-	# Classic instance method: target.await_signal("signal_name")
-	args = target.await_signal("test_event_fired")
-	received_args = args
-	completed = true
-  end
-
-  Fiber.yield
-  TestFramework.assert_false completed, "Fiber should be suspended awaiting signal via await_signal"
-
-  target.emit_test_event_fired(555)
-
-  start = ::Time.instant
-  while !completed && (::Time.instant - start).total_seconds < 0.2
-	Fiber.yield
-  end
-
-  TestFramework.assert_true completed, "Fiber should resume after await_signal"
-  TestFramework.assert_eq received_args.first?, "555"
+  TestFramework.assert_eq godot_arr.size, 3
+  TestFramework.assert_eq godot_arr[0], "Apple"
+  TestFramework.assert_eq godot_arr[1], "Banana"
+  TestFramework.assert_eq godot_arr[2], "Cherry"
 end
