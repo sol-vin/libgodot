@@ -509,27 +509,37 @@ jobs:
       - name: Configure Godot Executable
         shell: bash
         run: |
+          GODOT_EXEC=""
           if [ -n "$GODOT4" ] && [ -f "$GODOT4" ]; then
-            cp "$GODOT4" ./godot
-            chmod +x ./godot
+            GODOT_EXEC="$GODOT4"
           elif [ -n "$GODOT4_BIN" ] && [ -f "$GODOT4_BIN" ]; then
-            cp "$GODOT4_BIN" ./godot
-            chmod +x ./godot
+            GODOT_EXEC="$GODOT4_BIN"
           elif command -v godot >/dev/null 2>&1; then
-            cp "$(command -v godot)" ./godot
-            chmod +x ./godot
+            GODOT_EXEC="$(command -v godot)"
           else
             echo "Fallback: Downloading Godot 4.8-dev4 macos.universal..."
             curl -sSL "https://github.com/godotengine/godot-builds/releases/download/4.8-dev4/Godot_v4.8-dev4_macos.universal.zip" -o godot.zip
             unzip -q godot.zip
             if [ -d "Godot.app" ]; then
-              cp Godot.app/Contents/MacOS/Godot ./godot
-            elif [ -f "Godot_v4.8-dev4_macos.universal" ]; then
-              mv Godot_v4.8-dev4_macos.universal ./godot
+              GODOT_EXEC="$(pwd)/Godot.app/Contents/MacOS/Godot"
             fi
-            chmod +x ./godot
             rm -f godot.zip
           fi
+
+          if [[ "$GODOT_EXEC" == *".app/Contents/MacOS/"* ]]; then
+            GODOT_APP="${GODOT_EXEC%%.app/*}.app"
+            echo "De-quarantining and ad-hoc signing $GODOT_APP..."
+            xattr -dr com.apple.quarantine "$GODOT_APP" 2>/dev/null || true
+            codesign --force --deep --sign - "$GODOT_APP" 2>/dev/null || true
+          fi
+
+          cat << EOF > ./godot
+#!/usr/bin/env bash
+exec "$GODOT_EXEC" "\$@"
+EOF
+          chmod +x ./godot
+          xattr -d com.apple.quarantine ./godot 2>/dev/null || true
+
           ./godot --version
 
       - name: Ensure Godot Export Templates
