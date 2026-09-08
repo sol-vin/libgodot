@@ -2,18 +2,34 @@ param(
     [string]$Version = "4.8.dev4",
     [string]$DownloadUrl = "https://github.com/godotengine/godot-builds/releases/download/4.8-dev4/Godot_v4.8-dev4_export_templates.tpz",
     [switch]$PackageZip,
-    [string]$ZipOutput = "bin/windows/godot-crystal-export-templates-4.8-dev4.zip"
+    [string]$ZipOutput = ""
 )
 
 $ErrorActionPreference = "Stop"
 
 $onWindows = ($env:OS -eq "Windows_NT" -or [System.IO.Path]::PathSeparator -eq ';')
+$isMac = $false
+try {
+    if ($IsMacOS -or [System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform([System.Runtime.InteropServices.OSPlatform]::OSX)) {
+        $isMac = $true
+    }
+} catch {}
+if (-not $isMac -and -not $onWindows) {
+    if ((Get-Command uname -ErrorAction SilentlyContinue) -and ((& uname) -eq "Darwin")) { $isMac = $true }
+}
+
+if (-not $ZipOutput) {
+    $platformFolder = if ($onWindows) { "windows" } elseif ($isMac) { "macos" } else { "linux" }
+    $ZipOutput = "bin/$platformFolder/godot-crystal-export-templates-$Version.zip"
+}
 
 # 1. Determine template target directory
+$userHome = if ($env:HOME) { $env:HOME } else { [System.Environment]::GetFolderPath('UserProfile') }
 $templateBase = if ($onWindows) {
     Join-Path $env:APPDATA "Godot/export_templates"
+} elseif ($isMac) {
+    Join-Path $userHome "Library/Application Support/Godot/export_templates"
 } else {
-    $userHome = if ($env:HOME) { $env:HOME } else { [System.Environment]::GetFolderPath('UserProfile') }
     Join-Path $userHome ".local/share/godot/export_templates"
 }
 $targetDir = Join-Path $templateBase $Version
@@ -23,6 +39,8 @@ $hasTemplates = $false
 if (Test-Path $targetDir) {
     $candidates = if ($onWindows) {
         Get-ChildItem -Path $targetDir -Filter "windows_release_*.exe" -ErrorAction SilentlyContinue
+    } elseif ($isMac) {
+        Get-ChildItem -Path $targetDir -Filter "macos.zip" -ErrorAction SilentlyContinue
     } else {
         Get-ChildItem -Path $targetDir -Filter "linux_release_*" -ErrorAction SilentlyContinue
     }

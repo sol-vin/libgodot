@@ -480,10 +480,158 @@ jobs:
           name: release-android-artifacts
           path: bin/android/
 
+  build-macos:
+    name: Build & Release macOS
+    needs: [init-release]
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install Crystal
+        uses: crystal-lang/install-crystal@v1
+        with:
+          crystal: latest
+
+      - name: Verify Crystal & Toolchain
+        run: |
+          crystal -v
+          clang++ --version
+
+      - name: Setup Godot Engine (4.8-dev4)
+        uses: appsinacup/action_setup_godot@main
+        with:
+          repo: godotengine/godot-builds
+          version: 4.8-dev4
+          enable_cache: true
+
+      - name: Configure Godot Executable
+        shell: bash
+        run: |
+          if [ -n "$GODOT4" ] && [ -f "$GODOT4" ]; then
+            cp "$GODOT4" ./godot
+            chmod +x ./godot
+          elif [ -n "$GODOT4_BIN" ] && [ -f "$GODOT4_BIN" ]; then
+            cp "$GODOT4_BIN" ./godot
+            chmod +x ./godot
+          elif command -v godot >/dev/null 2>&1; then
+            cp "$(command -v godot)" ./godot
+            chmod +x ./godot
+          else
+            echo "Fallback: Downloading Godot 4.8-dev4 macos.universal..."
+            curl -sSL "https://github.com/godotengine/godot-builds/releases/download/4.8-dev4/Godot_v4.8-dev4_macos.universal.zip" -o godot.zip
+            unzip -q godot.zip
+            if [ -d "Godot.app" ]; then
+              cp Godot.app/Contents/MacOS/Godot ./godot
+            elif [ -f "Godot_v4.8-dev4_macos.universal" ]; then
+              mv Godot_v4.8-dev4_macos.universal ./godot
+            fi
+            chmod +x ./godot
+            rm -f godot.zip
+          fi
+          ./godot --version
+
+      - name: Ensure Godot Export Templates
+        shell: pwsh
+        run: |
+          $macBin = "bin/macos"
+          if (-not (Test-Path $macBin)) { New-Item -ItemType Directory -Force -Path $macBin | Out-Null }
+          & pwsh -NoProfile -File scripts/ensure_export_templates.ps1 -PackageZip -ZipOutput "$macBin/godot-crystal-export-templates-4.8-dev4.zip"
+
+      - name: Compile Release Binaries & Run Test Suite
+        shell: bash
+        run: |
+          make all RELEASE=1
+
+      - name: Upload Test Status Report & Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-status-report-macos
+          path: |
+            test/test_report.md
+            test/test_report.json
+            test/.runtime_test_results.txt
+            test/.tool_tests_passed
+            test/.tool_tests_failed
+            test/.runtime_tests_passed
+            test/.runtime_tests_failed
+          if-no-files-found: ignore
+
+      - name: Package macOS Examples (examples-macos.zip)
+        shell: pwsh
+        run: |
+          $examplesDir = "bin/macos/examples"
+          if (Test-Path $examplesDir) { Remove-Item $examplesDir -Recurse -Force }
+          New-Item -ItemType Directory -Force -Path $examplesDir | Out-Null
+
+          if (Test-Path "examples") {
+            foreach ($ex in Get-ChildItem -Path "examples" -Directory) {
+              Write-Host "Packaging standalone playable macOS example for $($ex.Name)..." -ForegroundColor Cyan
+              & pwsh -NoProfile -File scripts/package_game.ps1 -ProjectPath $ex.FullName -Name $ex.Name -TargetDir $examplesDir -Release 1
+            }
+          }
+
+          Get-ChildItem -Path $examplesDir -Filter "*_loaded_*" -Recurse | Remove-Item -Force -ErrorAction SilentlyContinue
+          Compress-Archive -Path "$examplesDir/*" -DestinationPath "bin/macos/examples-macos.zip" -Force
+
+      - name: Package macOS Core LibGodot Distribution
+        shell: bash
+        run: |
+          ROOT_DIR="$(pwd)"
+          LIB_DIR="$ROOT_DIR/bin/macos/libgodot_macos"
+          rm -rf "$LIB_DIR"
+          mkdir -p "$LIB_DIR/bin"
+
+          cp -r src "$LIB_DIR/"
+          cp -r addons "$LIB_DIR/"
+          cp -r template "$LIB_DIR/"
+          if [ -f "bin/crystal_bridge.dylib" ]; then
+            cp "bin/crystal_bridge.dylib" "$LIB_DIR/bin/"
+          fi
+          if [ -f "bin/libgodot.dylib" ]; then
+            cp "bin/libgodot.dylib" "$LIB_DIR/bin/"
+          fi
+
+          cp shard.yml "$LIB_DIR/"
+          cp README.md "$LIB_DIR/"
+          [ -f LICENSE ] && cp LICENSE "$LIB_DIR/"
+
+          TAG="${{ needs.init-release.outputs.tag_name }}"
+          ARCHIVE_PATH="$ROOT_DIR/bin/macos/libgodot-crystal-macos-$TAG.zip"
+          (cd "$LIB_DIR" && zip -r "$ARCHIVE_PATH" ./*)
+
+      - name: Collect macOS Staging Artifacts
+        shell: bash
+        run: |
+          MAC_BIN="bin/macos"
+          mkdir -p "$MAC_BIN"
+
+          if [ -f "bin/crystal_bridge.dylib" ]; then cp "bin/crystal_bridge.dylib" "$MAC_BIN/"; fi
+          if [ -f "template/bin/game.dylib" ]; then cp "template/bin/game.dylib" "$MAC_BIN/"; fi
+          if [ -f "bin/libgodot.dylib" ]; then cp "bin/libgodot.dylib" "$MAC_BIN/"; fi
+
+      - name: Publish macOS Assets to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.init-release.outputs.tag_name }}
+          name: ${{ needs.init-release.outputs.release_title }}
+          files: |
+            bin/macos/examples-macos.zip
+            bin/macos/libgodot-crystal-macos-${{ needs.init-release.outputs.tag_name }}.zip
+          fail_on_unmatched_files: false
+
+      - name: Upload macOS Staging Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-macos-artifacts
+          path: bin/macos/
+
   finalize-release:
     name: Finalize Universal Packages & Release Notes
-    needs: [init-release, build-windows, build-linux, build-android]
-    if: always() && !cancelled() && (needs.build-windows.result == 'success' || needs.build-linux.result == 'success' || needs.build-android.result == 'success')
+    needs: [init-release, build-windows, build-linux, build-android, build-macos]
+    if: always() && !cancelled() && (needs.build-windows.result == 'success' || needs.build-linux.result == 'success' || needs.build-android.result == 'success' || needs.build-macos.result == 'success')
     runs-on: ubuntu-latest
 
     steps:
@@ -510,6 +658,13 @@ jobs:
         with:
           name: release-android-artifacts
           path: staging/android
+
+      - name: Download macOS Artifacts
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: release-macos-artifacts
+          path: staging/macos
 
       - name: Package Universal Addon (godot-crystal-addon.zip)
         shell: bash
@@ -538,6 +693,14 @@ jobs:
           if [ -f "$LINUX_DIR/crystal_bridge.so" ]; then
             cp "$LINUX_DIR/crystal_bridge.so" "$ADDON_DIST/bin/"
             [ -f "$LINUX_DIR/libgodot.so" ] && cp "$LINUX_DIR/libgodot.so" "$ADDON_DIST/bin/"
+          fi
+
+          # Locate macOS dylibs
+          MAC_DIR="staging/macos"
+          [ -d "staging/macos/bin" ] && MAC_DIR="staging/macos/bin"
+          if [ -f "$MAC_DIR/crystal_bridge.dylib" ]; then
+            cp "$MAC_DIR/crystal_bridge.dylib" "$ADDON_DIST/bin/"
+            [ -f "$MAC_DIR/libgodot.dylib" ] && cp "$MAC_DIR/libgodot.dylib" "$ADDON_DIST/bin/"
           fi
 
           # Locate Android shared objects
@@ -587,6 +750,15 @@ jobs:
             [ -f "$LINUX_DIR/libgodot.so" ] && cp "$LINUX_DIR/libgodot.so" "$TEMPLATE_DIST/bin/"
           fi
 
+          # Bundle macOS binaries if available
+          MAC_DIR="staging/macos"
+          [ -d "staging/macos/bin" ] && MAC_DIR="staging/macos/bin"
+          if [ -f "$MAC_DIR/crystal_bridge.dylib" ]; then
+            cp "$MAC_DIR/crystal_bridge.dylib" "$TEMPLATE_DIST/bin/"
+            [ -f "$MAC_DIR/game.dylib" ] && cp "$MAC_DIR/game.dylib" "$TEMPLATE_DIST/bin/"
+            [ -f "$MAC_DIR/libgodot.dylib" ] && cp "$MAC_DIR/libgodot.dylib" "$TEMPLATE_DIST/bin/"
+          fi
+
           # Bundle Android binaries if available
           ANDROID_ARM="staging/android/arm64-v8a"
           [ -d "staging/android/bin/android/arm64-v8a" ] && ANDROID_ARM="staging/android/bin/android/arm64-v8a"
@@ -624,27 +796,31 @@ jobs:
 
           ### 📦 Addon & Starter Template
           - **`godot-crystal-addon.zip`**:
-            The official Godot editor addon (`addons/crystal_integration`) with pre-compiled GDExtension loader bridge binaries for **Windows** (`crystal_bridge.dll`), **Linux** (`crystal_bridge.so`), and **Android** (`arm64-v8a/libcrystal_bridge.so`). Drop the `addons/` folder directly into your existing Godot 4.8+ project to enable Crystal node authoring, inspector properties, and hot-reload.
+            The official Godot editor addon (`addons/crystal_integration`) with pre-compiled GDExtension loader bridge binaries for **Windows** (`crystal_bridge.dll`), **macOS** (`crystal_bridge.dylib`), **Linux** (`crystal_bridge.so`), and **Android** (`arm64-v8a/libcrystal_bridge.so`). Drop the `addons/` folder directly into your existing Godot 4.8+ project to enable Crystal node authoring, inspector properties, and hot-reload.
           - **`template-project.zip`**:
-            A clean, ready-to-use Godot project skeleton powered by Crystal. Contains pre-configured scenes, sample 3D nodes (`src/main.cr`), automated specifications (`spec/main_spec.cr`), GDExtension configuration, Android export presets, and pre-wired **GitHub Actions CI/CD workflows** (`.github/workflows/`) for automated testing (`crystal spec`) and multi-platform release deployment (Windows, Linux, and Android).
+            A clean, ready-to-use Godot project skeleton powered by Crystal. Contains pre-configured scenes, sample 3D nodes (`src/main.cr`), automated specifications (`spec/main_spec.cr`), GDExtension configuration, multi-platform export presets (Windows, macOS, Linux, Android), and pre-wired **GitHub Actions CI/CD workflows** (`.github/workflows/`) for automated testing (`crystal spec`) and multi-platform release deployment.
 
           ### 🛠️ Export Templates
           - **`godot-crystal-export-templates-4.8-dev4.zip`**:
-            Official Godot 4.8-dev4 export templates package ready for Crystal standalone game project distribution.
+            Official Godot 4.8-dev4 export templates package ready for Crystal standalone game project distribution across Windows, macOS, and Linux.
 
           ### 📦 Standalone Toolchain Distributions
           - **`libgodot-crystal-windows-x86_64.zip`**:
             Complete LibGodot Crystal package for **Windows (x86_64)**. Contains the full Crystal bindings library source (`src/`), GDExtension bridge DLL (`crystal_bridge.dll`), and Windows runtime dependencies (`libgodot.dll`, `gc.dll`, `iconv-2.dll`, `pcre2-8.dll`).
+          - **`libgodot-crystal-macos-${TAG}.zip`**:
+            Complete LibGodot Crystal package for **macOS**. Contains the full Crystal bindings library source (`src/`), GDExtension bridge dylib (`crystal_bridge.dylib`), and macOS GDExtension configurations.
           - **`libgodot-crystal-linux-x86_64.zip`**:
             Complete LibGodot Crystal package for **Linux (x86_64)**. Contains the full Crystal bindings library source (`src/`), GDExtension bridge shared object (`crystal_bridge.so`), and Linux GDExtension configurations for native Linux exports and development.
 
-          ### 🎮 Pre-Compiled Example Games & Standalone APKs
+          ### 🎮 Pre-Compiled Example Games & Standalone Packages
           - **`basic_demo.apk`**:
             Standalone installable Android APK for the `basic_demo` 3D showcase game. Built for `arm64-v8a` devices (Android 10+ / API 29+) with statically embedded Boehm GC, PCRE2, and Crystal runtime. Ready to install via `adb install -r basic_demo.apk`.
           - **`examples-android-arm64.zip`**:
             Collection of all pre-compiled example game APKs packaged for Android (`arm64-v8a`).
           - **`examples-windows-x86_64.zip`**:
             Standalone compiled game executables for all examples on **Windows (x86_64)**, bundled with all required runtime DLLs (`libgodot.dll`, `crystal_bridge.dll`, `gc.dll`, `iconv-2.dll`, `pcre2-8.dll`). Ready to extract and run immediately without needing compiler setup.
+          - **`examples-macos.zip`**:
+            Standalone compiled game packages and dynamic libraries for all examples on **macOS**.
           - **`examples-linux-x86_64.zip`**:
             Standalone compiled game executables and shared libraries for all examples on **Linux (x86_64)**. Ready to extract and execute on Linux distributions.
 

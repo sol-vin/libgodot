@@ -80,4 +80,28 @@ if (Test-Path $binLibgodotSo) {
         }
     }
 }
+
+$godotSrcDylibCandidates = @(
+    (Join-Path $RootDir "godot-src/bin/godot.macos.template_debug.universal.dylib"),
+    (Join-Path $RootDir "godot-src/bin/godot.macos.template_debug.arm64.dylib"),
+    (Join-Path $RootDir "godot-src/bin/godot.macos.template_debug.x86_64.dylib")
+)
+$binLibgodotDylib = Join-Path $RootDir "bin/libgodot.dylib"
+foreach ($cand in $godotSrcDylibCandidates) {
+    if ((Test-Path $cand) -and (-not (Test-Path $binLibgodotDylib))) {
+        Copy-Item $cand $binLibgodotDylib -Force -ErrorAction SilentlyContinue
+        break
+    }
+}
+
+if (Test-Path $binLibgodotDylib) {
+    foreach ($d in $binDirs) {
+        if (Test-Path $d) {
+            $dst = Join-Path $d "libgodot.dylib"
+            if (-not (Test-Path $dst)) {
+                Copy-Item $binLibgodotDylib $dst -Force -ErrorAction SilentlyContinue
+            }
+        }
+    }
+}
 exit 0

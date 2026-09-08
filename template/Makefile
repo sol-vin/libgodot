@@ -2,6 +2,8 @@
 # Crystal Godot Template Makefile
 # =============================================================================
 
+UNAME_S := $(shell uname -s 2>/dev/null)
+
 # Platform and OS detection
 ifeq ($(OS),Windows_NT)
 	PLATFORM        = windows
@@ -11,6 +13,14 @@ ifeq ($(OS),Windows_NT)
 	PWSH_CMD        ?= powershell -NoProfile -ExecutionPolicy Bypass -Command
 	PWSH_FILE       ?= powershell -NoProfile -ExecutionPolicy Bypass -File
 	LINK_FLAGS      ?= /DLL /ENTRY:_DllMainCRTStartup /EXPORT:crystal_godot_init
+else ifeq ($(UNAME_S),Darwin)
+	PLATFORM        = macos
+	SO_EXT          = dylib
+	EXE_EXT         =
+	GODOT           ?= ../godot
+	PWSH_CMD        ?= pwsh -NoProfile -Command
+	PWSH_FILE       ?= pwsh -NoProfile -File
+	LINK_FLAGS      ?= -dynamiclib
 else
 	PLATFORM        = linux
 	SO_EXT          = so

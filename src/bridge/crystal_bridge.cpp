@@ -2232,6 +2232,10 @@ static void load_crystal_game_library() {
     const char *candidate_names[] = { "libgame.so", "libplugin.so", "libcrystal_addon.so" };
     const char *path_sep = "/";
     const char *shadow_ext = "so";
+#elif defined(__APPLE__)
+    const char *candidate_names[] = { "game.dylib", "libgame.dylib", "plugin.dylib", "crystal_addon.dylib" };
+    const char *path_sep = "/";
+    const char *shadow_ext = "dylib";
 #else
     const char *candidate_names[] = { "game.so", "plugin.so", "crystal_addon.so" };
     const char *path_sep = "/";
@@ -2320,10 +2324,12 @@ static void load_crystal_game_library() {
         const char *fallbacks[] = { "demo/bin/game.dll", "bin/game.dll", "game.dll" };
 #elif defined(__ANDROID__) || defined(ANDROID)
         const char *fallbacks[] = { "libgame.so", "bin/android/arm64-v8a/libgame.so", "game.so" };
+#elif defined(__APPLE__)
+        const char *fallbacks[] = { "demo/bin/game.dylib", "bin/game.dylib", "game.dylib", "bin/libgame.dylib", "libgame.dylib" };
 #else
         const char *fallbacks[] = { "demo/bin/game.so", "bin/game.so", "game.so" };
 #endif
-        for (int i = 0; i < 3; i++) {
+        for (size_t i = 0; i < sizeof(fallbacks) / sizeof(fallbacks[0]); i++) {
             if (!bridge_file_exists(fallbacks[i])) continue;
             if (use_shadow) {
                 do {

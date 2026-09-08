@@ -34,6 +34,8 @@ GODOT        ?= ./godot.exe
 ENTRY        ?= test/src/main.cr
 SCONS_JOBS   ?= 7
 
+UNAME_S := $(shell uname -s 2>/dev/null)
+
 # Platform and OS detection
 ifeq ($(OS),Windows_NT)
 	PLATFORM        = windows
@@ -41,9 +43,19 @@ ifeq ($(OS),Windows_NT)
 	EXE_EXT         = .exe
 	GODOT           ?= ./godot.exe
 	PWSH_CMD        ?= powershell -NoProfile -ExecutionPolicy Bypass -Command
-	PWSH_FILE       ?= powershell -NoProfile -ExecutionPolicy Bypass -File
+	PWSH_FILE       ?= powershell -NoProfile -File
 	CXXFLAGS        ?= -std=c++17 -O2 -I rsrc -static -static-libgcc -static-libstdc++
 	LINK_FLAGS      ?= /DLL /ENTRY:_DllMainCRTStartup /EXPORT:crystal_godot_init
+else ifeq ($(UNAME_S),Darwin)
+	PLATFORM        = macos
+	SO_EXT          = dylib
+	EXE_EXT         =
+	GODOT           ?= ./godot
+	PWSH_CMD        ?= pwsh -NoProfile -Command
+	PWSH_FILE       ?= pwsh -NoProfile -File
+	CXX             ?= clang++
+	CXXFLAGS        ?= -std=c++17 -O2 -fPIC -I rsrc
+	LINK_FLAGS      ?= -dynamiclib
 else
 	PLATFORM        = linux
 	SO_EXT          = so
@@ -96,7 +108,11 @@ dirs:
 # Compile C++ GDExtension bridge and sync to consumer projects
 bridge: dirs
 	@echo [Bridge] Compiling GDExtension bridge $(BRIDGE_LIB)...
+ifeq ($(PLATFORM),macos)
+	$(CXX) -dynamiclib $(CXXFLAGS) src/bridge/crystal_bridge.cpp -o $(BRIDGE_LIB)
+else
 	$(CXX) -shared $(CXXFLAGS) src/bridge/crystal_bridge.cpp -o $(BRIDGE_LIB)
+endif
 	@$(PWSH_FILE) scripts/sync_bins.ps1
 
 # Synchronize addons across root, test, template, and examples

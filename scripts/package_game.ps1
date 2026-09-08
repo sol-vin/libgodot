@@ -13,8 +13,17 @@ if (-not $Name) {
 }
 
 $onWindows = ($env:OS -eq "Windows_NT" -or [System.IO.Path]::PathSeparator -eq ';')
+$isMac = $false
+try {
+    if ($IsMacOS -or [System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform([System.Runtime.InteropServices.OSPlatform]::OSX)) {
+        $isMac = $true
+    }
+} catch {}
+if (-not $isMac -and -not $onWindows) {
+    if ((Get-Command uname -ErrorAction SilentlyContinue) -and ((& uname) -eq "Darwin")) { $isMac = $true }
+}
 $exeExt = if ($onWindows) { ".exe" } else { "" }
-$soExt = if ($onWindows) { "dll" } else { "so" }
+$soExt = if ($onWindows) { "dll" } elseif ($isMac) { "dylib" } else { "so" }
 
 Write-Host "[PackageGame] Packaging playable Godot game for '$Name' in '$projFull'..." -ForegroundColor Cyan
 
@@ -118,7 +127,7 @@ if (Test-Path $mainCr) {
 }
 if ($needsCompile) {
     $buildScript = Join-Path $rootDir "scripts/build_crystal.ps1"
-    $linkFlags = if ($onWindows) { "/DLL /ENTRY:_DllMainCRTStartup /EXPORT:crystal_godot_init" } else { "-shared" }
+    $linkFlags = if ($onWindows) { "/DLL /ENTRY:_DllMainCRTStartup /EXPORT:crystal_godot_init" } elseif ($isMac) { "-dynamiclib" } else { "-shared" }
     $srcPath = Join-Path $rootDir "src"
     
     Write-Host "[PackageGame] Compiling game.$soExt..." -ForegroundColor Cyan
@@ -174,16 +183,40 @@ if ($TargetDir) {
 
     # Attempt native Godot standalone export with embedded PCK
     if ($godotExe -and (Test-Path $godotExe) -and (Test-Path $presetCfg)) {
-        $preset = if ($onWindows) { "Windows Desktop" } else { "Linux" }
-        $destExe = [System.IO.Path]::GetFullPath((Join-Path $gameDir "game$exeExt"))
-        $destDir = Split-Path -Parent $destExe
+        $preset = if ($onWindows) { "Windows Desktop" } elseif ($isMac) { "macOS" } else { "Linux" }
+        $destFile = if ($isMac) {
+            [System.IO.Path]::GetFullPath((Join-Path $gameDir "$Name.zip"))
+        } else {
+            [System.IO.Path]::GetFullPath((Join-Path $gameDir "game$exeExt"))
+        }
+        $destDir = Split-Path -Parent $destFile
         if (-not (Test-Path $destDir)) { New-Item -ItemType Directory -Force -Path $destDir | Out-Null }
-        if (Test-Path $destExe) { Remove-Item $destExe -Force }
+        if (Test-Path $destFile) { Remove-Item $destFile -Force }
 
-        Write-Host "  -> Running Godot standalone export (Preset: $preset) -> $destExe..." -ForegroundColor Cyan
-        $exportProc = Start-Process -FilePath $godotExe -ArgumentList @("--headless", "--path", "`"$projFull`"", "--export-release", "`"$preset`"", "`"$destExe`"") -NoNewWindow -Wait -PassThru
+        Write-Host "  -> Running Godot standalone export (Preset: $preset) -> $destFile..." -ForegroundColor Cyan
+        $exportProc = Start-Process -FilePath $godotExe -ArgumentList @("--headless", "--path", "`"$projFull`"", "--export-release", "`"$preset`"", "`"$destFile`"") -NoNewWindow -Wait -PassThru
 
-        if ((Test-Path $destExe) -and ((Get-Item $destExe).Length -gt 1000000)) {
+        if ($isMac -and (Test-Path $destFile) -and ((Get-Item $destFile).Length -gt 100000)) {
+            $exportedSuccessfully = $true
+            # Unpack .app bundle
+            Expand-Archive -Path $destFile -DestinationPath $gameDir -Force
+            $appDir = (Get-ChildItem -Path $gameDir -Filter "*.app" -Directory | Select-Object -First 1).FullName
+            if ($appDir) {
+                $frameworksDir = Join-Path $appDir "Contents/Frameworks"
+                $macosDir = Join-Path $appDir "Contents/MacOS"
+                if (-not (Test-Path $frameworksDir)) { New-Item -ItemType Directory -Force -Path $frameworksDir | Out-Null }
+                foreach ($libName in @("crystal_bridge.dylib", "game.dylib", "libgodot.dylib")) {
+                    $srcLib = Join-Path $binDir $libName
+                    if (Test-Path $srcLib) {
+                        Copy-Item $srcLib (Join-Path $frameworksDir $libName) -Force
+                        Copy-Item $srcLib (Join-Path $macosDir $libName) -Force
+                        Copy-Item $srcLib (Join-Path $gameDir $libName) -Force
+                    }
+                }
+            }
+            Write-Host "  [OK] Standalone Godot macOS export complete in '$gameDir'." -ForegroundColor Green
+        } elseif ((Test-Path $destFile) -and ((Get-Item $destFile).Length -gt 1000000)) {
+            $destExe = $destFile
             $exportedSuccessfully = $true
             if (-not $onWindows -and (Get-Command chmod -ErrorAction SilentlyContinue)) {
                 & chmod +x $destExe

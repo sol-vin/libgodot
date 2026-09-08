@@ -28,7 +28,21 @@ if ($Release) {
 # On Linux, shared library linking requires hiding static runtime symbols
 # and using a version script to avoid "version node not found for symbol" errors on mangled names containing '@'.
 $onWindows = ($env:OS -eq "Windows_NT" -or [System.IO.Path]::PathSeparator -eq ';')
-if (-not $onWindows -and ($Output -match '\.so$' -or $LinkFlags -match '-shared')) {
+$isMac = $false
+try {
+    if ($IsMacOS -or [System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform([System.Runtime.InteropServices.OSPlatform]::OSX)) {
+        $isMac = $true
+    }
+} catch {}
+if (-not $isMac -and -not $onWindows) {
+    if ((Get-Command uname -ErrorAction SilentlyContinue) -and ((& uname) -eq "Darwin")) { $isMac = $true }
+}
+
+if ($isMac -and ($Output -match '\.dylib$' -or $LinkFlags -match '-dynamiclib')) {
+    if ($LinkFlags -notmatch '-dynamiclib') {
+        $LinkFlags = if ([string]::IsNullOrWhiteSpace($LinkFlags)) { "-dynamiclib" } else { "$LinkFlags -dynamiclib" }
+    }
+} elseif (-not $onWindows -and -not $isMac -and ($Output -match '\.so$' -or $LinkFlags -match '-shared')) {
     # Crystal passes -rdynamic when invoking cc, which translates to -export-dynamic.
     # On Linux, this forces internal Crystal symbols containing '@' into .dynsym,
     # causing linkers (LLD and GNU ld) to fail with "has undefined version" or "version node not found".

@@ -41,6 +41,10 @@ if (-not [string]::IsNullOrWhiteSpace($GodotPath) -and (Test-Path $GodotPath)) {
     $GodotExe = Join-Path $RootDir "godot.exe"
 } elseif (Test-Path (Join-Path $RootDir "godot")) {
     $GodotExe = Join-Path $RootDir "godot"
+} elseif (Test-Path (Join-Path $RootDir "Godot.app/Contents/MacOS/Godot")) {
+    $GodotExe = Join-Path $RootDir "Godot.app/Contents/MacOS/Godot"
+} elseif (Test-Path "/Applications/Godot.app/Contents/MacOS/Godot") {
+    $GodotExe = "/Applications/Godot.app/Contents/MacOS/Godot"
 } elseif (Get-Command godot -ErrorAction SilentlyContinue) {
     $GodotExe = (Get-Command godot).Source
 }
@@ -91,7 +95,18 @@ function Invoke-TestCommand {
         (Join-Path $RootDir "test/bin")
     ) | Where-Object { Test-Path $_ }
     if ($binCandidates) {
-        $env:PATH = ($binCandidates -join [System.IO.Path]::PathSeparator) + [System.IO.Path]::PathSeparator + $env:PATH
+        $binJoined = $binCandidates -join [System.IO.Path]::PathSeparator
+        $env:PATH = $binJoined + [System.IO.Path]::PathSeparator + $env:PATH
+        if ($env:DYLD_LIBRARY_PATH) {
+            $env:DYLD_LIBRARY_PATH = $binJoined + ":" + $env:DYLD_LIBRARY_PATH
+        } else {
+            $env:DYLD_LIBRARY_PATH = $binJoined
+        }
+        if ($env:DYLD_FALLBACK_LIBRARY_PATH) {
+            $env:DYLD_FALLBACK_LIBRARY_PATH = $binJoined + ":" + $env:DYLD_FALLBACK_LIBRARY_PATH
+        } else {
+            $env:DYLD_FALLBACK_LIBRARY_PATH = $binJoined
+        }
     }
 
     Push-Location $WorkingDirectory
@@ -305,7 +320,19 @@ if (-not $SkipSmokeTests) {
 # -----------------------------------------------------------------------------
 $Duration = [math]::Round(((Get-Date) - $StartTime).TotalSeconds, 2)
 $onWindows = ($env:OS -eq "Windows_NT" -or [System.IO.Path]::PathSeparator -eq ';')
-$platformName = if ($onWindows) { "Windows (x86_64)" } else { "Linux (x86_64)" }
+$isMac = $false
+try {
+    if ($IsMacOS -or [System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform([System.Runtime.InteropServices.OSPlatform]::OSX)) {
+        $isMac = $true
+    }
+} catch {}
+if (-not $isMac -and -not $onWindows) {
+    if ((Get-Command uname -ErrorAction SilentlyContinue) -and ((& uname) -eq "Darwin")) { $isMac = $true }
+}
+$platformArch = if ([System.Environment]::Is64BitProcess) {
+    if ($isMac -and [System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture -eq "Arm64") { "arm64" } else { "x86_64" }
+} else { "x86" }
+$platformName = if ($onWindows) { "Windows ($platformArch)" } elseif ($isMac) { "macOS ($platformArch)" } else { "Linux ($platformArch)" }
 $crystalVer = (crystal -v 2>$null | Select-Object -First 1)
 $godotVer = (& $GodotExe --version 2>$null | Select-Object -First 1)
 

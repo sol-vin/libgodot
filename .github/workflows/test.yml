@@ -181,6 +181,77 @@ jobs:
             test/.runtime_tests_failed
           if-no-files-found: ignore
 
+  test-macos:
+    name: Run Test Suite (macOS)
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install Crystal
+        uses: crystal-lang/install-crystal@v1
+        with:
+          crystal: latest
+
+      - name: Verify Crystal & Toolchain
+        run: |
+          crystal -v
+          clang++ --version
+
+      - name: Setup Godot Engine (4.8-dev4)
+        uses: appsinacup/action_setup_godot@main
+        with:
+          repo: godotengine/godot-builds
+          version: 4.8-dev4
+          enable_cache: true
+
+      - name: Configure Godot Executable
+        shell: bash
+        run: |
+          if [ -n "$GODOT4" ] && [ -f "$GODOT4" ]; then
+            cp "$GODOT4" ./godot
+            chmod +x ./godot
+          elif [ -n "$GODOT4_BIN" ] && [ -f "$GODOT4_BIN" ]; then
+            cp "$GODOT4_BIN" ./godot
+            chmod +x ./godot
+          elif command -v godot >/dev/null 2>&1; then
+            cp "$(command -v godot)" ./godot
+            chmod +x ./godot
+          else
+            echo "Fallback: Downloading Godot 4.8-dev4 macos.universal..."
+            curl -sSL "https://github.com/godotengine/godot-builds/releases/download/4.8-dev4/Godot_v4.8-dev4_macos.universal.zip" -o godot.zip
+            unzip -q godot.zip
+            if [ -d "Godot.app" ]; then
+              cp Godot.app/Contents/MacOS/Godot ./godot
+            elif [ -f "Godot_v4.8-dev4_macos.universal" ]; then
+              mv Godot_v4.8-dev4_macos.universal ./godot
+            fi
+            chmod +x ./godot
+            rm -f godot.zip
+          fi
+          ./godot --version
+
+      - name: Build and Run LibGodot Test Suite
+        shell: bash
+        run: |
+          make all
+
+      - name: Upload Test Status Report & Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-status-report-macos
+          path: |
+            test/test_report.md
+            test/test_report.json
+            test/.runtime_test_results.txt
+            test/.tool_tests_passed
+            test/.tool_tests_failed
+            test/.runtime_tests_passed
+            test/.runtime_tests_failed
+          if-no-files-found: ignore
+
   test-android:
     name: Build & Verify Android Target (arm64-v8a)
     runs-on: ubuntu-latest
