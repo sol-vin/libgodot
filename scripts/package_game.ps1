@@ -56,9 +56,11 @@ $godotExe = ""
 foreach ($cand in $godotCandidates) {
     if ($cand) {
         $cleanCand = $cand -replace '^/([a-zA-Z])/', '$1:/'
-        $mainCand = $cleanCand -replace '(_console|\.console)\.exe$', '.exe'
-        if (Test-Path $mainCand) {
+        if ($mainCand -match '\.exe$' -and (Test-Path $mainCand)) {
             $cleanCand = $mainCand
+        }
+        if ($onWindows -and $cleanCand -notmatch '\.exe$') {
+            continue
         }
         if (Test-Path $cleanCand) {
             $item = Get-Item $cleanCand
@@ -202,9 +204,14 @@ if ($TargetDir) {
         if (Test-Path $destFile) { Remove-Item $destFile -Force }
 
         Write-Host "  -> Running Godot standalone export (Preset: $preset) -> $destFile..." -ForegroundColor Cyan
-        $exportArgs = @("--headless", "--path", $projFull, "--export-release", $preset, $destFile)
-        & $godotExe $exportArgs
-        $exportExitCode = $LASTEXITCODE
+        if ($onWindows) {
+            $exportProc = Start-Process -FilePath $godotExe -ArgumentList @("--headless", "--path", "`"$projFull`"", "--export-release", "`"$preset`"", "`"$destFile`"") -NoNewWindow -Wait -PassThru
+            $exportExitCode = $exportProc.ExitCode
+        } else {
+            $exportArgs = @("--headless", "--path", $projFull, "--export-release", $preset, $destFile)
+            & $godotExe $exportArgs
+            $exportExitCode = $LASTEXITCODE
+        }
         if ($exportExitCode -ne 0) {
             Write-Warning "  [PackageGame] Godot export exited with code $exportExitCode"
         }
