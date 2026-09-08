@@ -62,11 +62,9 @@ foreach ($cand in $godotCandidates) {
         }
         if (Test-Path $cleanCand) {
             $item = Get-Item $cleanCand
-            if ($item.Length -gt 1000000) {
+            if ($item.Length -gt 0) {
                 $godotExe = $item.FullName
                 break
-            } elseif (-not $godotExe) {
-                $godotExe = $item.FullName
             }
         }
     }
@@ -181,6 +179,16 @@ if ($TargetDir) {
         }
     }
 
+    # Ensure macOS preset in export_presets.cfg has application/bundle_identifier
+    if ($isMac -and (Test-Path $presetCfg)) {
+        $cfgContent = Get-Content $presetCfg -Raw
+        if ($cfgContent -match 'platform="macOS"' -and $cfgContent -notmatch 'application/bundle_identifier=') {
+            $cleanName = ($Name -replace '[^a-zA-Z0-9]', '').ToLower()
+            $cfgContent = $cfgContent -replace '(\[preset\.\d+\.options\]\r?\n)', "`$1application/bundle_identifier=`"org.godotengine.$cleanName`"`n"
+            Set-Content -Path $presetCfg -Value $cfgContent -Force
+        }
+    }
+
     # Attempt native Godot standalone export with embedded PCK
     if ($godotExe -and (Test-Path $godotExe) -and (Test-Path $presetCfg)) {
         $preset = if ($onWindows) { "Windows Desktop" } elseif ($isMac) { "macOS" } else { "Linux" }
@@ -194,7 +202,12 @@ if ($TargetDir) {
         if (Test-Path $destFile) { Remove-Item $destFile -Force }
 
         Write-Host "  -> Running Godot standalone export (Preset: $preset) -> $destFile..." -ForegroundColor Cyan
-        $exportProc = Start-Process -FilePath $godotExe -ArgumentList @("--headless", "--path", "`"$projFull`"", "--export-release", "`"$preset`"", "`"$destFile`"") -NoNewWindow -Wait -PassThru
+        $exportArgs = @("--headless", "--path", $projFull, "--export-release", $preset, $destFile)
+        & $godotExe $exportArgs
+        $exportExitCode = $LASTEXITCODE
+        if ($exportExitCode -ne 0) {
+            Write-Warning "  [PackageGame] Godot export exited with code $exportExitCode"
+        }
 
         if ($isMac -and (Test-Path $destFile) -and ((Get-Item $destFile).Length -gt 100000)) {
             $exportedSuccessfully = $true
