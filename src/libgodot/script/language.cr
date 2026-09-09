@@ -14,8 +14,6 @@ module Godot
   # Provides language metadata, templates, and code completion to Godot's ScriptServer.
   @[Tool]
   node CrystalLanguage < ScriptLanguageExtension do
-    tool
-
     @@instance : CrystalLanguage? = nil
 
     def self.singleton_instance : CrystalLanguage
@@ -57,8 +55,8 @@ module Godot
 
     def get_reserved_words : Array(String)
       [
-        "node", "class", "module", "struct", "def", "end", "property", "getter", "setter",
-        "signal", "alias", "enum", "lib", "fun", "macro", "onready", "tool",
+        "node", "resource", "gdclass", "class", "module", "struct", "def", "end", "property", "getter", "setter",
+        "signal", "alias", "enum", "lib", "fun", "macro", "onready",
         "if", "else", "elsif", "unless", "while", "until", "for", "in", "case", "when",
         "return", "break", "next", "yield", "begin", "rescue", "ensure", "raise", "do",
         "self", "super", "nil", "true", "false", "await", "spawn", "select"
@@ -138,8 +136,8 @@ module Godot
         Bridge.ret_packed_string_array(ret, ["cr"])
       when "_get_reserved_words"
         words = [
-          "node", "class", "module", "struct", "def", "end", "property", "getter", "setter",
-          "signal", "alias", "enum", "lib", "fun", "macro", "onready", "tool",
+          "node", "resource", "gdclass", "class", "module", "struct", "def", "end", "property", "getter", "setter",
+          "signal", "alias", "enum", "lib", "fun", "macro", "onready",
           "if", "else", "elsif", "unless", "while", "until", "for", "in", "case", "when",
           "return", "break", "next", "yield", "begin", "rescue", "ensure", "raise", "do",
           "self", "super", "nil", "true", "false", "await", "spawn", "select"

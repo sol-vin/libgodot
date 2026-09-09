@@ -8,8 +8,6 @@
 module Godot
   @[Tool]
   node CrystalIntegrationPlugin < EditorPlugin do
-    tool
-
   # Version of the compiled LibGodot library
   getter version : String = ::Godot::VERSION
 

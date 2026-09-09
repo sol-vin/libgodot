@@ -26,8 +26,6 @@ end
 # (Project Settings -> Plugins), it hooks into editor events and lifecycle.
 @[Tool]
 node CrystalAddonPlugin < EditorPlugin do
-  tool
-
   # Called when the plugin is activated or added to the editor scene tree
   def _enter_tree : Void
     Godot.print("==================================================================")

@@ -2,8 +2,6 @@ module Godot
   # Loader connecting .cr files in Godot's FileSystem dock to CrystalScript resources.
   @[Tool]
   node ResourceFormatLoaderCrystal < ResourceFormatLoader do
-    tool
-
     @@instance : ResourceFormatLoaderCrystal? = nil
 
     def self.instance : ResourceFormatLoaderCrystal
@@ -114,8 +112,6 @@ module Godot
   # Saver that persists modified CrystalScript source code back to .cr files on disk
   @[Tool]
   node ResourceFormatSaverCrystal < ResourceFormatSaver do
-    tool
-
     @@instance : ResourceFormatSaverCrystal? = nil
 
     def self.instance : ResourceFormatSaverCrystal

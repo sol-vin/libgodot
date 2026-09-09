@@ -76,28 +76,27 @@ abort "Failed: Singleton Engine exists" unless Godot::Engine
 
 puts "✓ Global Enums & Singletons verified!"
 
-# 4. Test Tool Scripts (tool keyword and @[Tool] annotation)
-node TestToolKeywordNode do
-  tool
-
+# 4. Test Tool Scripts (@[Tool] annotation above node and inside block)
+@[Tool]
+node TestToolPrefixNode do
   def _ready
   end
 end
 
-node TestToolAnnotationNode do
+node TestToolInsideNode do
   @[Tool]
 
   def _ready
   end
 end
 
-entry_kw = Godot::ClassRegistry.find("TestToolKeywordNode")
-abort "Failed: TestToolKeywordNode not registered" unless entry_kw
-abort "Failed: TestToolKeywordNode is_tool should be true" unless entry_kw.is_tool
+entry_prefix = Godot::ClassRegistry.find("TestToolPrefixNode")
+abort "Failed: TestToolPrefixNode not registered" unless entry_prefix
+abort "Failed: TestToolPrefixNode is_tool should be true" unless entry_prefix.is_tool
 
-entry_anno = Godot::ClassRegistry.find("TestToolAnnotationNode")
-abort "Failed: TestToolAnnotationNode not registered" unless entry_anno
-abort "Failed: TestToolAnnotationNode is_tool should be true" unless entry_anno.is_tool
+entry_inside = Godot::ClassRegistry.find("TestToolInsideNode")
+abort "Failed: TestToolInsideNode not registered" unless entry_inside
+abort "Failed: TestToolInsideNode is_tool should be true" unless entry_inside.is_tool
 
 puts "✓ Tool scripts verified!"
 
@@ -381,10 +380,9 @@ abort "Failed: SpecStateMachine properties" unless state_entry.properties.any? {
 # Verify zero-block and default inheritance macros
 resource ShortResource
 gdclass ShortClass
-class_name ShortClassName
 node ShortNode
 
-class_name CustomCharacter < CharacterBody3D do
+gdclass CustomCharacter < CharacterBody3D do
   @[Export]
   property speed : Float32 = 10.0_f32
 end
@@ -395,15 +393,12 @@ abort "Failed: ShortResource missing or wrong parent" unless sr_entry && sr_entr
 sc_entry = Godot::ClassRegistry.find("ShortClass")
 abort "Failed: ShortClass missing or wrong parent" unless sc_entry && sc_entry.parent_name == "RefCounted"
 
-scn_entry = Godot::ClassRegistry.find("ShortClassName")
-abort "Failed: ShortClassName missing or wrong parent" unless scn_entry && scn_entry.parent_name == "RefCounted"
-
 sn_entry = Godot::ClassRegistry.find("ShortNode")
 abort "Failed: ShortNode missing or wrong parent" unless sn_entry && sn_entry.parent_name == "Node"
 
 cc_entry = Godot::ClassRegistry.find("CustomCharacter")
 abort "Failed: CustomCharacter missing or wrong parent" unless cc_entry && cc_entry.parent_name == "CharacterBody3D"
 
-puts "✓ resource, gdclass, class_name, and node zero-block and default inheritance verified!"
+puts "✓ resource, gdclass, and node zero-block and default inheritance verified!"
 puts "All new features passed specifications cleanly!"
 

@@ -10,8 +10,6 @@ require "../libgodot"
 module Godot
   @[Tool]
   node CrystalPanel < Control do
-    tool
-
     property auto_recompile_addons : Bool = true
 
     @@instance : CrystalPanel? = nil

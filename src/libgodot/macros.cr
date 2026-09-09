@@ -239,14 +239,6 @@ annotation WarningIgnoreStart; end
 # Restores normal warning behavior following a suppression block.
 annotation WarningIgnoreRestore; end
 
-# Convenience macro to mark a class as a tool script executing inside the Godot editor.
-#
-# ```crystal
-# class TerrainGenerator < Godot::Node3D
-#   tool
-# end
-# ```
-macro tool; end
 
 # Convenience macro to mark extension library unloading behavior.
 macro static_unload; end
@@ -586,8 +578,6 @@ macro node(decl, &block)
       {% else %}
         {% last_anno = stmt %}
       {% end %}
-    {% elsif stmt.is_a?(Call) && stmt.name.stringify == "tool" %}
-      {% is_tool_class = true %}
     {% elsif stmt.is_a?(Call) && stmt.name.stringify == "icon" %}
       {% class_icon_path = stmt.args[0].is_a?(StringLiteral) ? stmt.args[0] : stmt.args[0].id.stringify %}
     {% elsif stmt.is_a?(Call) && stmt.name.stringify == "abstract_class" %}
@@ -625,7 +615,7 @@ macro node(decl, &block)
         {% pfx = stmt.args[1].is_a?(StringLiteral) ? stmt.args[1] : stmt.args[1].id.stringify %}
       {% end %}
       {% props << {:subgroup, sub_name, pfx} %}
-    {% elsif stmt.is_a?(Call) && (stmt.name.stringify == "group" || stmt.name.stringify == "groups") %}
+    {% elsif stmt.is_a?(Call) && stmt.name.stringify == "group" %}
       {% for g in stmt.args %}
         {% node_groups << (g.is_a?(StringLiteral) ? g : g.id.stringify) %}
       {% end %}
@@ -1613,29 +1603,6 @@ macro gdclass(decl, &block)
   {% end %}
 end
 
-# Declares a custom Godot class registered with ClassDB (alias to `gdclass`).
-# Defaults to inheriting `RefCounted` when no parent is specified.
-# Can be called with or without a block (e.g. `class_name MyClass`).
-#
-# ```crystal
-# class_name PlayerController < CharacterBody3D do
-#   @[Export]
-#   property speed : Float32 = 10.0_f32
-# end
-#
-# class_name SimpleModel
-# ```
-macro class_name(decl)
-  gdclass {{decl}} do
-  end
-end
-
-macro class_name(decl, &block)
-  gdclass {{decl}} do
-    {{yield}}
-  end
-end
-
 # Declares a custom Godot signal and generates a type-safe `emit_<signal_name>` helper method.
 #
 # ```crystal
@@ -1815,9 +1782,5 @@ macro group(*group_names)
   # Declarative registration is extracted by the `node` macro
 end
 
-# Alias for `group`
-macro groups(*group_names)
-  # Declarative registration is extracted by the `node` macro
-end
 
 

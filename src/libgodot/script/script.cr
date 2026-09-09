@@ -28,8 +28,6 @@ module Godot
   # Bridges source text, AST reflection, and Inspector property presentation.
   @[Tool]
   node CrystalScript < ScriptExtension do
-    tool
-
     @script_path : String = ""
     @source_code : String = ""
     @script_class_name : String = ""

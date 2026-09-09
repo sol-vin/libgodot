@@ -78,8 +78,8 @@ node SpecAnnotationsSuite < CharacterBody3D do
   end
 end
 
-node SpecToolKeywordNode do
-  tool
+@[Tool]
+node SpecToolPrefixNode do
   def _ready; end
 end
 
@@ -134,10 +134,10 @@ describe "LibGodot Features & Reflection" do
       Godot::Key::Enter.value.should eq(4194309_i64)
     end
 
-    it "registers tool scripts using tool keyword and @[Tool] annotation" do
-      kw_entry = Godot::ClassRegistry.find("SpecToolKeywordNode")
-      kw_entry.should_not be_nil
-      kw_entry.not_nil!.is_tool.should be_true
+    it "registers tool scripts using @[Tool] prefix and inside node annotations" do
+      prefix_entry = Godot::ClassRegistry.find("SpecToolPrefixNode")
+      prefix_entry.should_not be_nil
+      prefix_entry.not_nil!.is_tool.should be_true
 
       anno_entry = Godot::ClassRegistry.find("SpecToolAnnotationNode")
       anno_entry.should_not be_nil

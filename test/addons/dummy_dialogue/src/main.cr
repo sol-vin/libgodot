@@ -3,8 +3,6 @@ require "libgodot"
 # Interactive dialogue box UI control rendering narrator and character dialogue
 @[Tool]
 node DialogueBox < Control do
-  tool
-
   # Name of the active speaker currently delivering dialogue
   @[Export]
   property speaker_name : String = "Narrator"
@@ -26,8 +24,6 @@ end
 # Editor plugin providing narrative dialogue graph inspection and validation tools
 @[Tool]
 node DummyDialoguePlugin < EditorPlugin do
-  tool
-
   # Tracks whether the narrative dialogue editor dock is currently open
   @[Export]
   property editor_panel_open : Bool = false

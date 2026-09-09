@@ -1816,12 +1816,6 @@ module Docs
   #       <td><code>gdclass Name</code> or <code>gdclass Name &lt; Parent</code></td>
   #       <td>Declares a reference-counted engine class managed by ObjectDB.</td>
   #     </tr>
-  #     <tr>
-  #       <td><code>class_name Name &lt; Parent do ... end</code></td>
-  #       <td><code>RefCounted</code></td>
-  #       <td><code>class_name Name</code> or <code>class_name Name &lt; Parent</code></td>
-  #       <td>GDScript-style alias for <code>gdclass</code>, defaulting to RefCounted.</td>
-  #     </tr>
   #   </tbody>
   # </table>
   #
@@ -1863,8 +1857,8 @@ module Docs
   #   property state : String = "idle"
   # end
   #
-  # # 7. RefCounted class using class_name (zero-block)
-  # class_name DataPacket
+  # # 7. RefCounted class using gdclass (zero-block)
+  # gdclass DataPacket
   # ```
   #
   # ---
@@ -2083,7 +2077,7 @@ module Docs
       [
         "node macro for scene nodes defaulting to Godot::Node",
         "resource macro for custom resources defaulting to Resource",
-        "gdclass and class_name macros for RefCounted engine classes",
+        "gdclass macro for RefCounted engine classes",
         "Complete @[Export] annotations: ranges, enums, files, flags, groups, buttons",
         "Type-safe signal emission, ergonomic on_<signal> listeners, and first-class await",
         "@[Tool] in-editor execution, @[RPC] networking, and onready lazy node binding"

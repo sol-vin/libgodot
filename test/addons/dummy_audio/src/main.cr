@@ -3,8 +3,6 @@ require "libgodot"
 # Audio playback node implemented in Crystal for multi-addon audio testing
 @[Tool]
 node AudioStreamPlayerCrystal < Node do
-  tool
-
   # Playback volume attenuation in decibels
   @[Export]
   property volume_db : Float32 = 0.0_f32
@@ -35,8 +33,6 @@ end
 # Editor plugin providing audio preview and bus inspection tools for LibGodot
 @[Tool]
 node DummyAudioPlugin < EditorPlugin do
-  tool
-
   # Indicates whether an audio preview is currently playing in the editor
   @[Export]
   property preview_playing : Bool = false

@@ -3,8 +3,6 @@ require "libgodot"
 # Grid container managing item slots, capacity limits, and inventory additions
 @[Tool]
 node InventoryGrid < Control do
-  tool
-
   # Maximum total number of item storage slots in the grid
   @[Export]
   property capacity : Int32 = 20
@@ -28,8 +26,6 @@ end
 # Editor plugin providing item database management and inventory slot debugging
 @[Tool]
 node DummyInventoryPlugin < EditorPlugin do
-  tool
-
   # Currently selected inventory slot index in the editor inspector
   @[Export]
   property active_slot : Int32 = 0

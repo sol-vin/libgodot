@@ -211,7 +211,7 @@ end
 - **`node ClassName < ParentNode do ... end`**: Declares a Godot class registered in `ClassDB`.
 - **`@[Export]` annotations**: Full support for ranges (`@[ExportRange]`), enums (`@[ExportEnum]`), file pickers (`@[ExportFile]`, `@[ExportDir]`), bitmasks (`@[ExportFlags]`), easing curves (`@[ExportExpEasing]`), and buttons (`@[ExportToolButton]`).
 - **`signal name(arg : Type)`**: Automatically registers signal with `ClassDB` and synthesizes type-safe helper `emit_<name>(...)`.
-- **`@[Tool]` or `tool`**: Marks the class to execute inside the Godot Editor in real time.
+- **`@[Tool]`**: Marks the class to execute inside the Godot Editor in real time.
 - **`@[RPC]`**: Configures multiplayer network replication mode, transfer mode, and channels.
 - **Automated Doc Comment Harvesting**:
   - Regular `# comments` above classes, properties, signals, and methods are extracted at compile time and registered into Godot's `EditorHelp` XML database for in-editor tooltips and offline F1 Help.

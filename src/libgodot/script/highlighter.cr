@@ -15,8 +15,6 @@ module Godot
   # Operates completely independently of any external language servers or daemons.
   @[Tool]
   node CrystalHighlighter < EditorSyntaxHighlighter do
-    tool
-
     # Theme color palettes for Godot's script editor
     COLOR_DEFAULT      = {0.85_f32, 0.85_f32, 0.85_f32, 1.0_f32}
     COLOR_KEYWORD      = {0.85_f32, 0.45_f32, 0.90_f32, 1.0_f32} # Magenta / Purple
@@ -30,9 +28,9 @@ module Godot
     COLOR_ANNOTATION   = {0.95_f32, 0.55_f32, 0.80_f32, 1.0_f32} # Pink / Gold
 
     KEYWORDS_DEF = Set{
-      "node", "class", "module", "struct", "def", "end", "property", "getter",
+      "node", "resource", "gdclass", "class", "module", "struct", "def", "end", "property", "getter",
       "setter", "signal", "alias", "enum", "lib", "fun", "macro", "onready",
-      "tool", "abstract_class", "static_unload"
+      "abstract_class", "static_unload"
     }
 
     KEYWORDS_CONTROL = Set{
