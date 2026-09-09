@@ -189,6 +189,11 @@ jobs:
           $archiveName = "bin/windows/libgodot-crystal-windows-x86_64-$tag.zip"
           Compress-Archive -Path "$libDir/*" -DestinationPath $archiveName -Force
 
+      - name: Package Windows Performance Benchmark (perf-windows.zip)
+        shell: pwsh
+        run: |
+          & pwsh -NoProfile -File scripts/package_perf.ps1 -TargetDir "bin/windows" -Release 1
+
       - name: Collect Windows Staging Artifacts
         shell: pwsh
         run: |
@@ -209,6 +214,7 @@ jobs:
             bin/windows/examples-windows-x86_64.zip
             bin/windows/libgodot-crystal-windows-x86_64-${{ needs.init-release.outputs.tag_name }}.zip
             bin/windows/godot-crystal-export-templates-4.8-dev4.zip
+            bin/windows/perf-windows.zip
           fail_on_unmatched_files: false
 
       - name: Upload Windows Staging Artifact
@@ -338,6 +344,11 @@ jobs:
           ARCHIVE_PATH="$ROOT_DIR/bin/linux/libgodot-crystal-linux-x86_64-$TAG.zip"
           (cd "$LIB_DIR" && zip -r "$ARCHIVE_PATH" ./*)
 
+      - name: Package Linux Performance Benchmark (perf-linux.zip)
+        shell: bash
+        run: |
+          pwsh -NoProfile -File scripts/package_perf.ps1 -TargetDir "bin/linux" -Release 1
+
       - name: Collect Linux Staging Artifacts
         shell: bash
         run: |
@@ -356,6 +367,7 @@ jobs:
           files: |
             bin/linux/examples-linux-x86_64.zip
             bin/linux/libgodot-crystal-linux-x86_64-${{ needs.init-release.outputs.tag_name }}.zip
+            bin/linux/perf-linux.zip
           fail_on_unmatched_files: false
 
       - name: Upload Linux Staging Artifact
@@ -616,6 +628,11 @@ jobs:
           ARCHIVE_PATH="$ROOT_DIR/bin/macos/libgodot-crystal-macos-$TAG.zip"
           (cd "$LIB_DIR" && zip -r "$ARCHIVE_PATH" ./*)
 
+      - name: Package macOS Performance Benchmark (perf-macos.zip)
+        shell: bash
+        run: |
+          pwsh -NoProfile -File scripts/package_perf.ps1 -TargetDir "bin/macos" -Release 1
+
       - name: Collect macOS Staging Artifacts
         shell: bash
         run: |
@@ -634,6 +651,7 @@ jobs:
           files: |
             bin/macos/examples-macos.zip
             bin/macos/libgodot-crystal-macos-${{ needs.init-release.outputs.tag_name }}.zip
+            bin/macos/perf-macos.zip
           fail_on_unmatched_files: false
 
       - name: Upload macOS Staging Artifact

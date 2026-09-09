@@ -24,6 +24,13 @@ godot.exe
 /test/addons/*/bin/
 /test/addons/crystal_integration/
 
+/performance/.godot/
+/performance/bin/
+/performance/*.exe
+/performance/perf
+/performance/addons/*/bin/
+/performance/addons/crystal_integration/
+
 /docs/
 /scratch/
 *.obj

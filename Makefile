@@ -95,10 +95,10 @@ PLUGIN_DLL       = $(PLUGIN_LIB)
 GAME_DLL         = $(GAME_LIB)
 LIBGODOT_DLL     = $(LIBGODOT_LIB)
 
-.PHONY: all bridge plugin test_project test_standalone package_tests examples examples_exe template template_addon game_dll game_exe android package_android generate dump_api deps addons sync engine spec test tests docs run editor clean help
+.PHONY: all bridge plugin test_project test_standalone package_tests examples examples_exe template template_addon perf perf_standalone perf_run perf_editor package_perf game_dll game_exe android package_android generate dump_api deps addons sync engine spec test tests docs run editor clean help
 
-# Default target: compile bridge, plugin, test project, standalone runner, examples, template, template_addon, sync DLLs, and run test suite
-all: dirs deps bridge plugin addons dummy_addons test_project test_standalone examples template template_addon sync test
+# Default target: compile bridge, plugin, test project, standalone runner, examples, template, template_addon, perf, sync DLLs, and run test suite
+all: dirs deps bridge plugin addons dummy_addons test_project test_standalone examples template template_addon perf perf_standalone sync test
 	@echo ===================================================================
 	@echo   LibGodot Crystal library build completed successfully!
 	@echo   Run 'make run' to launch test runner or 'make editor' for editor.
@@ -166,8 +166,31 @@ template_addon: dirs deps bridge
 	@echo [TemplateAddon] Building template-addon project...
 	$(MAKE) -C template-addon RELEASE=$(RELEASE)
 
+# Dedicated performance stress testing project
+perf: dirs deps bridge addons
+	@echo [Performance] Building performance stress benchmark...
+	$(MAKE) -C performance RELEASE=$(RELEASE)
+
+# Build standalone performance suite executable
+perf_standalone: dirs deps bridge addons
+	@echo [Performance] Building standalone performance benchmark executable...
+	$(MAKE) -C performance standalone RELEASE=$(RELEASE)
+
+# Package standalone performance benchmark into perf-<platform>.zip
+package_perf: perf_standalone
+	@echo [Package] Packaging standalone performance benchmark...
+	@$(PWSH_FILE) scripts/package_perf.ps1 $(if $(filter 1,$(RELEASE)),-Release 1,)
+
+perf_run: perf
+	@echo [Performance] Launching performance stress benchmark...
+	$(MAKE) -C performance run ARGS="$(ARGS)"
+
+perf_editor: perf
+	@echo [Performance] Opening performance project in Godot Editor...
+	$(MAKE) -C performance editor
+
 # Compile game_dll for all consumers and synchronize
-game_dll: dirs deps bridge addons test_project examples template template_addon sync
+game_dll: dirs deps bridge addons test_project examples template template_addon perf sync
 	@echo [Build] All game library targets compiled and synced!
 
 game_exe: dirs deps bridge

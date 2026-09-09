@@ -7,6 +7,8 @@ $templateBinDir = Join-Path $RootDir "template/bin"
 $templateIntBinDir = Join-Path $RootDir "template/addons/crystal_integration/bin"
 $templateAddonBinDir = Join-Path $RootDir "template-addon/addons/crystal_addon/bin"
 $templateAddonIntBinDir = Join-Path $RootDir "template-addon/addons/crystal_integration/bin"
+$perfBinDir = Join-Path $RootDir "performance/bin"
+$perfAddonBinDir = Join-Path $RootDir "performance/addons/crystal_integration/bin"
 $examplesDir = Join-Path $RootDir "examples"
 
 $targetDirs = [System.Collections.Generic.List[string]]::new()
@@ -17,6 +19,8 @@ $targetDirs.Add($templateBinDir)
 $targetDirs.Add($templateIntBinDir)
 $targetDirs.Add($templateAddonBinDir)
 $targetDirs.Add($templateAddonIntBinDir)
+$targetDirs.Add($perfBinDir)
+$targetDirs.Add($perfAddonBinDir)
 
 $testAddons = Join-Path $RootDir "test/addons"
 if (Test-Path $testAddons) {
@@ -69,6 +73,16 @@ $foreignPatterns = if ($onWindows) {
     @('*.dll', '*.dylib', 'gc.dll', 'iconv-2.dll', 'pcre2-8.dll', '*.cr', '*.cr.uid')
 }
 
+function Safe-Copy([string]$Src, [string]$Dst) {
+    if (Test-Path $Src) {
+        try {
+            Copy-Item $Src $Dst -Force -ErrorAction Stop
+        } catch {
+            # File locked by running process; safely continue
+        }
+    }
+}
+
 foreach ($dir in $targetDirs) {
     if (-not (Test-Path $dir)) {
         New-Item -ItemType Directory -Force -Path $dir | Out-Null
@@ -77,9 +91,7 @@ foreach ($dir in $targetDirs) {
     foreach ($binFile in $platformBinFiles) {
         $src = Join-Path $binDir $binFile
         $dst = Join-Path $dir $binFile
-        if (Test-Path $src) {
-            Copy-Item $src $dst -Force -ErrorAction SilentlyContinue
-        }
+        Safe-Copy $src $dst
     }
     # Purge foreign OS binaries and stray files from destination
     foreach ($pattern in $foreignPatterns) {
@@ -112,9 +124,7 @@ foreach ($piDir in $pluginDirs) {
         New-Item -ItemType Directory -Force -Path $piDir | Out-Null
     }
     $srcP = Join-Path $binDir $platformPluginFile
-    if (Test-Path $srcP) {
-        Copy-Item $srcP (Join-Path $piDir $platformPluginFile) -Force -ErrorAction SilentlyContinue
-    }
+    Safe-Copy $srcP (Join-Path $piDir $platformPluginFile)
     # Remove foreign plugin extensions
     foreach ($pattern in $foreignPatterns) {
         Get-ChildItem -Path $piDir -Filter $pattern -File -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue
@@ -173,11 +183,11 @@ $testGameLib = if ($onWindows) { "game.dll" } elseif ($isMac) { "game.dylib" } e
 $testTarget = Join-Path $testBinDir $testGameLib
 $testAddonTarget = Join-Path $testAddonBinDir $testGameLib
 if (Test-Path $testTarget) {
-    Copy-Item $testTarget (Join-Path $binDir $testGameLib) -Force -ErrorAction SilentlyContinue
-    Copy-Item $testTarget $testAddonTarget -Force -ErrorAction SilentlyContinue
+    Safe-Copy $testTarget (Join-Path $binDir $testGameLib)
+    Safe-Copy $testTarget $testAddonTarget
 } elseif (Test-Path $testAddonTarget) {
-    Copy-Item $testAddonTarget $testTarget -Force -ErrorAction SilentlyContinue
-    Copy-Item $testAddonTarget (Join-Path $binDir $testGameLib) -Force -ErrorAction SilentlyContinue
+    Safe-Copy $testAddonTarget $testTarget
+    Safe-Copy $testAddonTarget (Join-Path $binDir $testGameLib)
 }
 
 # The test project executable follows export_presets.cfg (tests.exe / tests), NOT game.exe.
@@ -194,9 +204,9 @@ foreach ($targetName in $platformGameFiles) {
     $tplTarget = Join-Path $templateBinDir $targetName
     $tplAddonTarget = Join-Path $templateIntBinDir $targetName
     if (Test-Path $tplTarget) {
-        Copy-Item $tplTarget $tplAddonTarget -Force -ErrorAction SilentlyContinue
+        Safe-Copy $tplTarget $tplAddonTarget
     } elseif (Test-Path $tplAddonTarget) {
-        Copy-Item $tplAddonTarget $tplTarget -Force -ErrorAction SilentlyContinue
+        Safe-Copy $tplAddonTarget $tplTarget
     }
 }
 
@@ -209,9 +219,9 @@ if (Test-Path $examplesDir) {
             $srcGame = Join-Path $exBin $targetName
             $dstGame = Join-Path $exAddonBin $targetName
             if (Test-Path $srcGame) {
-                Copy-Item $srcGame $dstGame -Force -ErrorAction SilentlyContinue
+                Safe-Copy $srcGame $dstGame
             } elseif (Test-Path $dstGame) {
-                Copy-Item $dstGame $srcGame -Force -ErrorAction SilentlyContinue
+                Safe-Copy $dstGame $srcGame
             }
         }
     }

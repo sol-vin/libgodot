@@ -10,6 +10,7 @@ if ($Destinations.Count -eq 0) {
     $dests.Add("test/addons")
     $dests.Add("template/addons")
     $dests.Add("template-addon/addons")
+    $dests.Add("performance/addons")
     if (Test-Path "examples") {
         foreach ($ex in Get-ChildItem -Path "examples" -Directory) {
             $dests.Add("examples/$($ex.Name)/addons")
