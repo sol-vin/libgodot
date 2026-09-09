@@ -3160,29 +3160,39 @@ static void init_gc_library() {
             if (gd_gc_allow_register_threads) gd_gc_allow_register_threads();
         }
 #else
-        void *hGc = RTLD_DEFAULT;
-        gd_gc_register_my_thread = (GCRegisterMyThreadFn)dlsym(hGc, "GC_register_my_thread");
+        void *hGc = nullptr;
+        if (g_hGame) {
+            gd_gc_register_my_thread = (GCRegisterMyThreadFn)dlsym(g_hGame, "GC_register_my_thread");
+            if (gd_gc_register_my_thread) hGc = g_hGame;
+        }
+        if (!gd_gc_register_my_thread) {
+            gd_gc_register_my_thread = (GCRegisterMyThreadFn)dlsym(RTLD_DEFAULT, "GC_register_my_thread");
+            if (gd_gc_register_my_thread) hGc = RTLD_DEFAULT;
+        }
         if (!gd_gc_register_my_thread) {
             const char *gc_libs[] = { "libgc.so.1", "libgc.so", "libgc.dylib" };
             for (size_t i = 0; i < sizeof(gc_libs) / sizeof(gc_libs[0]); i++) {
-                hGc = dlopen(gc_libs[i], RTLD_LAZY | RTLD_GLOBAL);
-                if (hGc) {
-                    gd_gc_register_my_thread = (GCRegisterMyThreadFn)dlsym(hGc, "GC_register_my_thread");
-                    if (gd_gc_register_my_thread) break;
+                void *hLib = dlopen(gc_libs[i], RTLD_LAZY | RTLD_GLOBAL);
+                if (hLib) {
+                    gd_gc_register_my_thread = (GCRegisterMyThreadFn)dlsym(hLib, "GC_register_my_thread");
+                    if (gd_gc_register_my_thread) {
+                        hGc = hLib;
+                        break;
+                    }
                 }
             }
-        }
-        if (!gd_gc_register_my_thread && g_hGame) {
-            hGc = g_hGame;
-            gd_gc_register_my_thread = (GCRegisterMyThreadFn)dlsym(hGc, "GC_register_my_thread");
         }
         if (gd_gc_register_my_thread && hGc) {
             gd_gc_init = (GCInitFn)dlsym(hGc, "GC_init");
             gd_gc_allow_register_threads = (GCAllowRegisterThreadsFn)dlsym(hGc, "GC_allow_register_threads");
             gd_gc_get_stack_base = (GCGetStackBaseFn)dlsym(hGc, "GC_get_stack_base");
             gd_gc_thread_is_registered = (GCThreadIsRegisteredFn)dlsym(hGc, "GC_thread_is_registered");
-            if (gd_gc_init) gd_gc_init();
-            if (gd_gc_allow_register_threads) gd_gc_allow_register_threads();
+            static bool s_gc_initialized = false;
+            if (!s_gc_initialized) {
+                if (gd_gc_init) gd_gc_init();
+                if (gd_gc_allow_register_threads) gd_gc_allow_register_threads();
+                s_gc_initialized = true;
+            }
         }
 #endif
     }

@@ -135,17 +135,9 @@ test_lifecycle "RefCounted atomic lifecycle: reference, unreference, and automat
 end
 
 test_lifecycle "Quantitative zero-leak verification using Performance monitors and GC.collect" do
-  engine = Godot::Bridge.get_singleton("Performance")
-  mb_get_monitor = Godot::Bridge.get_method_bind("Performance", "get_monitor", 1943275655_i64)
-
-  # Monitor 9 is OBJECT_NODE_COUNT
+  # Query SceneTree node count directly via native typed method
   get_node_count = -> {
-    arg_val = 9_i64 # Performance::OBJECT_NODE_COUNT
-    arg_p = pointerof(arg_val).as(Void*)
-    args = [arg_p]
-    ret = 0.0_f64
-    Godot::Bridge.ptrcall(mb_get_monitor, engine, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
-    ret.to_i64
+    root.get_tree.get_node_count
   }
 
   baseline_nodes = get_node_count.call
