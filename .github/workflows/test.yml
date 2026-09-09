@@ -115,7 +115,7 @@ jobs:
             test/.runtime_tests_failed
           if-no-files-found: ignore
 
-      - name: Package Standalone Test Suite (tests-windows.zip)
+      - name: Package Standalone Test Suite (test-suite-windows.zip)
         shell: pwsh
         run: |
           powershell -NoProfile -File scripts/package_test_suite.ps1 -Platform windows
@@ -123,8 +123,8 @@ jobs:
       - name: Upload Standalone Test Suite Artifact (Windows)
         uses: actions/upload-artifact@v4
         with:
-          name: tests-windows
-          path: bin/tests-windows.zip
+          name: test-suite-windows
+          path: bin/test-suite-windows.zip
           if-no-files-found: error
 
   test-linux:
@@ -204,7 +204,7 @@ jobs:
             test/.runtime_tests_failed
           if-no-files-found: ignore
 
-      - name: Package Standalone Test Suite (tests-linux.zip)
+      - name: Package Standalone Test Suite (test-suite-linux.zip)
         shell: pwsh
         run: |
           pwsh -NoProfile -File scripts/package_test_suite.ps1 -Platform linux
@@ -212,8 +212,8 @@ jobs:
       - name: Upload Standalone Test Suite Artifact (Linux)
         uses: actions/upload-artifact@v4
         with:
-          name: tests-linux
-          path: bin/tests-linux.zip
+          name: test-suite-linux
+          path: bin/test-suite-linux.zip
           if-no-files-found: error
 
   test-macos:
@@ -298,7 +298,7 @@ jobs:
             test/.runtime_tests_failed
           if-no-files-found: ignore
 
-      - name: Package Standalone Test Suite (tests-macos.zip)
+      - name: Package Standalone Test Suite (test-suite-macos.zip)
         shell: pwsh
         run: |
           pwsh -NoProfile -File scripts/package_test_suite.ps1 -Platform macos
@@ -306,8 +306,8 @@ jobs:
       - name: Upload Standalone Test Suite Artifact (macOS)
         uses: actions/upload-artifact@v4
         with:
-          name: tests-macos
-          path: bin/tests-macos.zip
+          name: test-suite-macos
+          path: bin/test-suite-macos.zip
           if-no-files-found: error
 
   test-android:

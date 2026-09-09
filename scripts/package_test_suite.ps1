@@ -2,6 +2,7 @@ param(
     [string]$TargetDir = "bin",
     [string]$Platform = "",
     [string]$Release = "",
+    [string]$ZipName = "",
     [switch]$SkipVerify,
     [switch]$Force
 )
@@ -45,7 +46,7 @@ $platformName = if ($Platform) { $Platform.ToLower() } else { $detectedPlatform 
 $exeExt = if ($onWindows) { ".exe" } else { "" }
 $soExt = if ($onWindows) { "dll" } elseif ($isMac) { "dylib" } else { "so" }
 
-$zipFileName = "tests-$platformName.zip"
+$zipFileName = if ($ZipName) { $ZipName } else { "test-suite-$platformName.zip" }
 $targetFullDir = if ([System.IO.Path]::IsPathRooted($TargetDir)) { $TargetDir } else { Join-Path $rootDir $TargetDir }
 if (-not (Test-Path $targetFullDir)) {
     New-Item -ItemType Directory -Force -Path $targetFullDir | Out-Null

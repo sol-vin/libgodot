@@ -194,6 +194,11 @@ jobs:
         run: |
           & pwsh -NoProfile -File scripts/package_perf.ps1 -TargetDir "bin/windows" -Release 1
 
+      - name: Package Windows Test Suite (test-suite-windows.zip)
+        shell: pwsh
+        run: |
+          & pwsh -NoProfile -File scripts/package_test_suite.ps1 -TargetDir "bin/windows" -Platform "windows" -Release 1 -SkipVerify
+
       - name: Collect Windows Staging Artifacts
         shell: pwsh
         run: |
@@ -215,6 +220,7 @@ jobs:
             bin/windows/libgodot-crystal-windows-x86_64-${{ needs.init-release.outputs.tag_name }}.zip
             bin/windows/godot-crystal-export-templates-4.8-dev4.zip
             bin/windows/perf-windows.zip
+            bin/windows/test-suite-windows.zip
           fail_on_unmatched_files: false
 
       - name: Upload Windows Staging Artifact
@@ -349,6 +355,11 @@ jobs:
         run: |
           pwsh -NoProfile -File scripts/package_perf.ps1 -TargetDir "bin/linux" -Release 1
 
+      - name: Package Linux Test Suite (test-suite-linux.zip)
+        shell: bash
+        run: |
+          pwsh -NoProfile -File scripts/package_test_suite.ps1 -TargetDir "bin/linux" -Platform "linux" -Release 1 -SkipVerify
+
       - name: Collect Linux Staging Artifacts
         shell: bash
         run: |
@@ -368,6 +379,7 @@ jobs:
             bin/linux/examples-linux-x86_64.zip
             bin/linux/libgodot-crystal-linux-x86_64-${{ needs.init-release.outputs.tag_name }}.zip
             bin/linux/perf-linux.zip
+            bin/linux/test-suite-linux.zip
           fail_on_unmatched_files: false
 
       - name: Upload Linux Staging Artifact
@@ -483,6 +495,12 @@ jobs:
             bin/android/android_audit_report.txt
           if-no-files-found: ignore
 
+      - name: Package Android Test Suite APK (test-suite-android.zip)
+        shell: pwsh
+        run: |
+          & pwsh -NoProfile -File scripts/package_android.ps1 -ProjectPath test -Name test-suite-android -Release
+          Compress-Archive -Path "bin/android/test-suite-android.apk" -DestinationPath "bin/android/test-suite-android.zip" -Force
+
       - name: Publish Android Assets to Release
         uses: softprops/action-gh-release@v2
         with:
@@ -491,6 +509,8 @@ jobs:
           files: |
             bin/android/examples-android-arm64.zip
             bin/android/template.apk
+            bin/android/test-suite-android.apk
+            bin/android/test-suite-android.zip
           fail_on_unmatched_files: false
 
       - name: Upload Android Staging Artifact
@@ -633,6 +653,11 @@ jobs:
         run: |
           pwsh -NoProfile -File scripts/package_perf.ps1 -TargetDir "bin/macos" -Release 1
 
+      - name: Package macOS Test Suite (test-suite-macos.zip)
+        shell: bash
+        run: |
+          pwsh -NoProfile -File scripts/package_test_suite.ps1 -TargetDir "bin/macos" -Platform "macos" -Release 1 -SkipVerify
+
       - name: Collect macOS Staging Artifacts
         shell: bash
         run: |
@@ -652,6 +677,7 @@ jobs:
             bin/macos/examples-macos.zip
             bin/macos/libgodot-crystal-macos-${{ needs.init-release.outputs.tag_name }}.zip
             bin/macos/perf-macos.zip
+            bin/macos/test-suite-macos.zip
           fail_on_unmatched_files: false
 
       - name: Upload macOS Staging Artifact
@@ -886,7 +912,15 @@ jobs:
           [ -f "$ROOT_DIR/bin/template-project.zip" ] && cp "$ROOT_DIR/bin/template-project.zip" "$ROOT_DIR/bin/release_assets/"
           [ -f "$ROOT_DIR/bin/template-addon-project.zip" ] && cp "$ROOT_DIR/bin/template-addon-project.zip" "$ROOT_DIR/bin/release_assets/"
 
-          (cd "$ROOT_DIR/bin/release_assets" && sha256sum *.zip > checksums.txt && cat checksums.txt)
+          # Copy all platform archives and APKs to compute unified checksums
+          for d in staging/*; do
+            if [ -d "$d" ]; then
+              find "$d" -maxdepth 2 -type f \( -name "*.zip" -o -name "*.apk" \) -exec cp {} "$ROOT_DIR/bin/release_assets/" \;
+            fi
+          done
+
+          (cd "$ROOT_DIR/bin/release_assets" && sha256sum *.zip *.apk 2>/dev/null > checksums.txt || sha256sum *.zip > checksums.txt)
+          cat "$ROOT_DIR/bin/release_assets/checksums.txt"
 
       - name: Generate Descriptive Release Notes
         id: notes
@@ -915,6 +949,16 @@ jobs:
             Complete LibGodot Crystal package for **macOS**. Contains the full Crystal bindings library source (`src/`), GDExtension bridge dylib (`crystal_bridge.dylib`), and macOS GDExtension configurations.
           - **`libgodot-crystal-linux-x86_64.zip`**:
             Complete LibGodot Crystal package for **Linux (x86_64)**. Contains the full Crystal bindings library source (`src/`), GDExtension bridge shared object (`crystal_bridge.so`), and Linux GDExtension configurations for native Linux exports and development.
+
+          ### 🧪 Standalone Test Suites
+          - **`test-suite-linux.zip`**:
+            Standalone Godot test suite package for **Linux (x86_64)**. Bundles the complete verification test project, GDExtension bridge (`crystal_bridge.so`), compiled game logic (`game.so`), and runtime libraries (`libgodot.so`). Ready to extract and run headless or in Godot on Linux.
+          - **`test-suite-windows.zip`**:
+            Standalone Godot test suite package for **Windows (x86_64)**. Bundles the complete verification test project with all runtime DLLs (`game.dll`, `crystal_bridge.dll`, `libgodot.dll`, `gc.dll`, `iconv-2.dll`, `pcre2-8.dll`). Ready to extract and run on Windows.
+          - **`test-suite-macos.zip`**:
+            Standalone Godot test suite package for **macOS**. Bundles the complete verification test project with all dylibs (`game.dylib`, `crystal_bridge.dylib`, `libgodot.dylib`).
+          - **`test-suite-android.zip`** / **`test-suite-android.apk`**:
+            Standalone Godot test suite packaged and signed for **Android (arm64-v8a)**. Ready to install on Android devices or emulators via `adb install -r test-suite-android.apk`.
 
           ### 🎮 Pre-Compiled Example Games & Standalone Packages
           - **`examples-android-arm64.zip`**:
