@@ -205,6 +205,7 @@ $strayPatterns = if ($onWindows) {
 foreach ($sp in $strayPatterns) {
     Get-ChildItem -Path $binDir -Filter $sp -File -ErrorAction SilentlyContinue | Where-Object { $_.Name -ne "libgodot.lib" } | Remove-Item -Force -ErrorAction SilentlyContinue
 }
+Get-ChildItem -Path $binDir -Filter "*.gdextension*" -Recurse -File -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue
 $binAndroid = Join-Path $binDir "android"
 if (Test-Path $binAndroid) {
     Remove-Item $binAndroid -Recurse -Force -ErrorAction SilentlyContinue

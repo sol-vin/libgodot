@@ -639,7 +639,6 @@ static bool is_editor_active() {
 // ==============================================================================
 // Boehm GC Multi-Threading & Foreign Engine Thread Registration
 // ==============================================================================
-#ifdef _WIN32
 struct GC_stack_base {
     void *mem_base;
 };
@@ -656,21 +655,7 @@ static GCThreadIsRegisteredFn gd_gc_thread_is_registered = nullptr;
 static GCAllowRegisterThreadsFn gd_gc_allow_register_threads = nullptr;
 static GCInitFn gd_gc_init = nullptr;
 
-static void init_gc_library() {
-    if (!gd_gc_register_my_thread) {
-        HMODULE hGc = GetModuleHandleA("gc.dll");
-        if (!hGc) hGc = LoadLibraryA("gc.dll");
-        if (hGc) {
-            gd_gc_init = (GCInitFn)GetProcAddress(hGc, "GC_init");
-            gd_gc_allow_register_threads = (GCAllowRegisterThreadsFn)GetProcAddress(hGc, "GC_allow_register_threads");
-            gd_gc_get_stack_base = (GCGetStackBaseFn)GetProcAddress(hGc, "GC_get_stack_base");
-            gd_gc_register_my_thread = (GCRegisterMyThreadFn)GetProcAddress(hGc, "GC_register_my_thread");
-            gd_gc_thread_is_registered = (GCThreadIsRegisteredFn)GetProcAddress(hGc, "GC_thread_is_registered");
-            if (gd_gc_init) gd_gc_init();
-            if (gd_gc_allow_register_threads) gd_gc_allow_register_threads();
-        }
-    }
-}
+static void init_gc_library();
 
 static thread_local bool t_gc_thread_registered = false;
 
@@ -690,10 +675,6 @@ static void ensure_gc_thread_registered() {
         }
     }
 }
-#else
-static inline void init_gc_library() {}
-static inline void ensure_gc_thread_registered() {}
-#endif
 
 // ==============================================================================
 // Generic ClassDB Lifecycle & Virtual Callbacks
@@ -3159,8 +3140,53 @@ static HMODULE g_hGame = NULL;
 static std::vector<HMODULE> g_loaded_modules;
 /** Set of absolute library file paths that have already been loaded */
 static std::unordered_set<std::string> g_loaded_module_paths;
+/** Set of crystal_godot_init entry function pointers already invoked */
+static std::unordered_set<void*> g_initialized_init_fns;
 /** Count of active GDExtension initializations sharing this bridge */
 static int g_active_extension_count = 0;
+
+static void init_gc_library() {
+    if (!gd_gc_register_my_thread) {
+#ifdef _WIN32
+        HMODULE hGc = GetModuleHandleA("gc.dll");
+        if (!hGc) hGc = LoadLibraryA("gc.dll");
+        if (hGc) {
+            gd_gc_init = (GCInitFn)GetProcAddress(hGc, "GC_init");
+            gd_gc_allow_register_threads = (GCAllowRegisterThreadsFn)GetProcAddress(hGc, "GC_allow_register_threads");
+            gd_gc_get_stack_base = (GCGetStackBaseFn)GetProcAddress(hGc, "GC_get_stack_base");
+            gd_gc_register_my_thread = (GCRegisterMyThreadFn)GetProcAddress(hGc, "GC_register_my_thread");
+            gd_gc_thread_is_registered = (GCThreadIsRegisteredFn)GetProcAddress(hGc, "GC_thread_is_registered");
+            if (gd_gc_init) gd_gc_init();
+            if (gd_gc_allow_register_threads) gd_gc_allow_register_threads();
+        }
+#else
+        void *hGc = RTLD_DEFAULT;
+        gd_gc_register_my_thread = (GCRegisterMyThreadFn)dlsym(hGc, "GC_register_my_thread");
+        if (!gd_gc_register_my_thread) {
+            const char *gc_libs[] = { "libgc.so.1", "libgc.so", "libgc.dylib" };
+            for (size_t i = 0; i < sizeof(gc_libs) / sizeof(gc_libs[0]); i++) {
+                hGc = dlopen(gc_libs[i], RTLD_LAZY | RTLD_GLOBAL);
+                if (hGc) {
+                    gd_gc_register_my_thread = (GCRegisterMyThreadFn)dlsym(hGc, "GC_register_my_thread");
+                    if (gd_gc_register_my_thread) break;
+                }
+            }
+        }
+        if (!gd_gc_register_my_thread && g_hGame) {
+            hGc = g_hGame;
+            gd_gc_register_my_thread = (GCRegisterMyThreadFn)dlsym(hGc, "GC_register_my_thread");
+        }
+        if (gd_gc_register_my_thread && hGc) {
+            gd_gc_init = (GCInitFn)dlsym(hGc, "GC_init");
+            gd_gc_allow_register_threads = (GCAllowRegisterThreadsFn)dlsym(hGc, "GC_allow_register_threads");
+            gd_gc_get_stack_base = (GCGetStackBaseFn)dlsym(hGc, "GC_get_stack_base");
+            gd_gc_thread_is_registered = (GCThreadIsRegisteredFn)dlsym(hGc, "GC_thread_is_registered");
+            if (gd_gc_init) gd_gc_init();
+            if (gd_gc_allow_register_threads) gd_gc_allow_register_threads();
+        }
+#endif
+    }
+}
 
 /**
  * Unloads the Crystal game library reference.
@@ -3173,6 +3199,7 @@ static void unload_crystal_game_library() {
     g_loaded_modules.clear();
     g_loaded_module_paths.clear();
     g_crystal_signal_callbacks.clear();
+    g_initialized_init_fns.clear();
 }
 
 /**
@@ -3476,6 +3503,20 @@ static void load_crystal_game_library() {
             g_loaded_module_paths.insert(canonical_path);
             continue;
         }
+#else
+        void *hExisting = dlopen(canonical_path, RTLD_NOLOAD | RTLD_NOW);
+        if (!hExisting) {
+            hExisting = dlopen(candidate_path.c_str(), RTLD_NOLOAD | RTLD_NOW);
+        }
+        if (!hExisting) {
+            const char *leaf = strrchr(canonical_path, '/');
+            if (leaf) hExisting = dlopen(leaf + 1, RTLD_NOLOAD | RTLD_NOW);
+        }
+        if (hExisting) {
+            dlclose(hExisting);
+            g_loaded_module_paths.insert(canonical_path);
+            continue;
+        }
 #endif
         HMODULE hModule = NULL;
 
@@ -3524,9 +3565,14 @@ static void load_crystal_game_library() {
             g_loaded_module_paths.insert(canonical_path);
             g_hGame = hModule;
             g_loaded_modules.push_back(hModule);
+            init_gc_library();
+            ensure_gc_thread_registered();
             CrystalInitFn init_fn = (CrystalInitFn)bridge_get_proc(hModule, "crystal_godot_init");
             if (init_fn) {
-                init_fn(&g_bridge_api);
+                if (g_initialized_init_fns.find((void*)init_fn) == g_initialized_init_fns.end()) {
+                    g_initialized_init_fns.insert((void*)init_fn);
+                    init_fn(&g_bridge_api);
+                }
             } else {
                 godot_log_error("Failed to find 'crystal_godot_init' in loaded library", nullptr, "load_crystal_game_library", __FILE__, __LINE__);
             }
