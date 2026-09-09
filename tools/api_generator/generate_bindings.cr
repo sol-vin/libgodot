@@ -4,17 +4,31 @@ require "yaml"
 puts "=== LibGodot Crystal Binding Generator ==="
 puts "Loading extension_api.json..."
 
-unless File.exists?("extension_api.json")
+api_file = if File.exists?("extension_api.json")
+  "extension_api.json"
+elsif File.exists?(File.join(__DIR__, "..", "..", "extension_api.json"))
+  File.join(__DIR__, "..", "..", "extension_api.json")
+else
   puts "Error: extension_api.json not found! Run godot.exe --headless --dump-extension-api first."
   exit 1
 end
 
-api_json = File.read("extension_api.json")
+api_json = File.read(api_file)
 api_data = JSON.parse(api_json)
 
 # Load overrides
-overrides = if File.exists?("scripts/overrides.yml")
-  YAML.parse(File.read("scripts/overrides.yml"))
+overrides_file = if File.exists?("tools/api_generator/overrides.yml")
+  "tools/api_generator/overrides.yml"
+elsif File.exists?(File.join(__DIR__, "overrides.yml"))
+  File.join(__DIR__, "overrides.yml")
+elsif File.exists?("scripts/overrides.yml")
+  "scripts/overrides.yml"
+else
+  nil
+end
+
+overrides = if overrides_file && File.exists?(overrides_file)
+  YAML.parse(File.read(overrides_file))
 else
   YAML.parse("{}")
 end

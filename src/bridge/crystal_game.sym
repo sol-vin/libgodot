@@ -1,6 +1,0 @@
-{
-  global:
-    crystal_godot_init;
-  local:
-    *;
-};
