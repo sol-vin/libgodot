@@ -355,7 +355,7 @@ module Godot
       end
     end
 
-    private def variant_type_from_string(type_str : String) : Int32
+    def variant_type_from_string(type_str : String) : Int32
       case type_str
       when "Bool"
         1 # BOOL

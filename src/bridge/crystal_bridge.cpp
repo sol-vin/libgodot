@@ -119,6 +119,9 @@ static GDExtensionInterfaceClassdbUnregisterExtensionClass gd_classdb_unregister
 /** Registers an exported property (inspector variable) for a registered extension class */
 static GDExtensionInterfaceClassdbRegisterExtensionClassProperty gd_classdb_register_extension_class_property = nullptr;
 
+/** Registers an integer or enum constant for an extension class in ClassDB */
+static GDExtensionInterfaceClassdbRegisterExtensionClassIntegerConstant gd_classdb_register_extension_class_integer_constant = nullptr;
+
 /** Registers a custom signal for a registered extension class */
 static GDExtensionInterfaceClassdbRegisterExtensionClassSignal gd_classdb_register_extension_class_signal = nullptr;
 
@@ -254,6 +257,9 @@ static GDExtensionMethodBindPtr mb_object_disconnect = nullptr;
  */
 static GDExtensionObjectPtr bridge_object_from_variant(const void *variant) {
     if (!variant) return nullptr;
+    if (gd_variant_get_type && gd_variant_get_type((GDExtensionConstVariantPtr)variant) != GDEXTENSION_VARIANT_TYPE_OBJECT) {
+        return nullptr;
+    }
     if (gd_variant_get_internal_ptr_object) {
         void *internal_ptr = gd_variant_get_internal_ptr_object((GDExtensionVariantPtr)variant);
         if (internal_ptr) {
@@ -519,6 +525,13 @@ struct CrystalSignalDesc {
     const CrystalSignalArgDesc *args;   /** Array of argument descriptors */
 };
 
+struct CrystalConstantDesc {
+    const char *enum_name;     /** Name of the enum or empty string */
+    const char *constant_name; /** Name of the constant */
+    int64_t value;             /** Value of the constant */
+    bool is_bitfield;          /** True if part of a bitfield */
+};
+
 /**
  * Comprehensive metadata describing a Crystal class exposed to Godot's ClassDB.
  *
@@ -565,6 +578,9 @@ struct CrystalClassDesc {
 
     int signal_count;                       /** Number of custom signals */
     const CrystalSignalDesc *signals;       /** Array of signal descriptors */
+
+    int constant_count;                     /** Number of integer/enum constants */
+    const CrystalConstantDesc *constants;   /** Array of constant descriptors */
 
     const CrystalClassDesc *parent_desc;    /** Linked parent CrystalClassDesc if parent is also Crystal */
 };
@@ -1131,6 +1147,126 @@ static bool is_class_registered_in_engine(const char *name) {
     return (ret != 0);
 }
 
+static void channel_method_call(
+    void *method_userdata,
+    GDExtensionClassInstancePtr p_instance,
+    const GDExtensionConstVariantPtr *p_args,
+    GDExtensionInt p_argument_count,
+    GDExtensionVariantPtr r_return,
+    GDExtensionCallError *r_error
+) {
+    ensure_gc_thread_registered();
+    GenericExtensionInstance *inst = (GenericExtensionInstance*)p_instance;
+    if (!inst || !inst->desc || !inst->crystal_instance || !inst->desc->call_virtual_with_data) {
+        if (r_error) r_error->error = GDEXTENSION_CALL_ERROR_INSTANCE_IS_NULL;
+        return;
+    }
+    if (r_error) r_error->error = GDEXTENSION_CALL_OK;
+
+    const char *mname = (const char*)method_userdata;
+    if (!mname) return;
+
+    if (strcmp(mname, "send") == 0 || strcmp(mname, "try_send") == 0) {
+        const char *s_val = "";
+        char str_buf[1024] = {};
+        if (p_argument_count > 0 && p_args && p_args[0]) {
+            const char *p_s = str_buf;
+            bridge_type_from_variant(GDEXTENSION_VARIANT_TYPE_STRING, &p_s, p_args[0]);
+            s_val = p_s ? p_s : "";
+        }
+        const void *c_args[1] = { s_val };
+        uint8_t ret_bool = 0;
+        inst->desc->call_virtual_with_data(inst->crystal_instance, mname, c_args, &ret_bool);
+        bool b = (ret_bool != 0);
+        bridge_variant_from_type(GDEXTENSION_VARIANT_TYPE_BOOL, r_return, &b);
+    } else if (strcmp(mname, "receive") == 0 || strcmp(mname, "try_receive") == 0) {
+        const char *ret_str = nullptr;
+        inst->desc->call_virtual_with_data(inst->crystal_instance, mname, nullptr, &ret_str);
+        if (ret_str) {
+            bridge_variant_from_type(GDEXTENSION_VARIANT_TYPE_STRING, r_return, &ret_str);
+        } else {
+            if (gd_variant_new_nil) gd_variant_new_nil(r_return);
+        }
+    } else if (strcmp(mname, "close") == 0) {
+        inst->desc->call_virtual_with_data(inst->crystal_instance, "close", nullptr, nullptr);
+        if (gd_variant_new_nil) gd_variant_new_nil(r_return);
+    } else if (strcmp(mname, "size") == 0) {
+        int32_t ret_size = 0;
+        inst->desc->call_virtual_with_data(inst->crystal_instance, "size", nullptr, &ret_size);
+        int64_t ret_i64 = ret_size;
+        bridge_variant_from_type(GDEXTENSION_VARIANT_TYPE_INT, r_return, &ret_i64);
+    } else if (strcmp(mname, "is_empty") == 0 || strcmp(mname, "is_full") == 0 || strcmp(mname, "is_closed") == 0) {
+        uint8_t ret_bool = 0;
+        inst->desc->call_virtual_with_data(inst->crystal_instance, mname, nullptr, &ret_bool);
+        bool b = (ret_bool != 0);
+        bridge_variant_from_type(GDEXTENSION_VARIANT_TYPE_BOOL, r_return, &b);
+    }
+}
+
+static void register_channel_methods(void *class_sn) {
+    if (!gd_classdb_register_extension_class_method || !g_library) return;
+
+    auto reg_method = [&](const char *name, int ret_type, int arg_count, const char *arg_name, int arg_type) {
+        void *sn_name = make_string_name(name);
+        std::string ret_name = std::string(name) + "_ret";
+        GDExtensionPropertyInfo ret_info = {};
+        ret_info.type = (GDExtensionVariantType)ret_type;
+        ret_info.name = make_string_name(ret_name.c_str());
+        ret_info.class_name = make_string_name("");
+        ret_info.hint = 0;
+        ret_info.hint_string = make_string("");
+        ret_info.usage = 0; // PROPERTY_USAGE_NONE
+
+        GDExtensionPropertyInfo arg_info = {};
+        GDExtensionClassMethodArgumentMetadata arg_meta = GDEXTENSION_METHOD_ARGUMENT_METADATA_NONE;
+        if (arg_count > 0 && arg_name) {
+            arg_info.type = (GDExtensionVariantType)arg_type;
+            arg_info.name = make_string_name(arg_name);
+            arg_info.class_name = make_string_name("");
+            arg_info.hint = 0;
+            arg_info.hint_string = make_string("");
+            arg_info.usage = 0; // PROPERTY_USAGE_NONE
+        }
+
+        GDExtensionClassMethodInfo minfo = {};
+        minfo.name = sn_name;
+        minfo.method_userdata = (void*)name;
+        minfo.call_func = channel_method_call;
+        minfo.ptrcall_func = nullptr;
+        minfo.method_flags = GDEXTENSION_METHOD_FLAG_NORMAL;
+        minfo.has_return_value = (ret_type != GDEXTENSION_VARIANT_TYPE_NIL) ? 1 : 0;
+        minfo.return_value_info = (ret_type != GDEXTENSION_VARIANT_TYPE_NIL) ? &ret_info : nullptr;
+        minfo.return_value_metadata = GDEXTENSION_METHOD_ARGUMENT_METADATA_NONE;
+        minfo.argument_count = arg_count;
+        minfo.arguments_info = (arg_count > 0) ? &arg_info : nullptr;
+        minfo.arguments_metadata = (arg_count > 0) ? &arg_meta : nullptr;
+        minfo.default_argument_count = 0;
+        minfo.default_arguments = nullptr;
+
+        gd_classdb_register_extension_class_method(g_library, class_sn, &minfo);
+
+        free_string_name(sn_name);
+        free_string_name(ret_info.name);
+        free_string_name(ret_info.class_name);
+        free_string(ret_info.hint_string);
+        if (arg_count > 0) {
+            free_string_name(arg_info.name);
+            free_string_name(arg_info.class_name);
+            free_string(arg_info.hint_string);
+        }
+    };
+
+    reg_method("send", GDEXTENSION_VARIANT_TYPE_BOOL, 1, "value", GDEXTENSION_VARIANT_TYPE_STRING);
+    reg_method("try_send", GDEXTENSION_VARIANT_TYPE_BOOL, 1, "value", GDEXTENSION_VARIANT_TYPE_STRING);
+    reg_method("receive", GDEXTENSION_VARIANT_TYPE_STRING, 0, nullptr, 0);
+    reg_method("try_receive", GDEXTENSION_VARIANT_TYPE_STRING, 0, nullptr, 0);
+    reg_method("close", GDEXTENSION_VARIANT_TYPE_NIL, 0, nullptr, 0);
+    reg_method("size", GDEXTENSION_VARIANT_TYPE_INT, 0, nullptr, 0);
+    reg_method("is_empty", GDEXTENSION_VARIANT_TYPE_BOOL, 0, nullptr, 0);
+    reg_method("is_full", GDEXTENSION_VARIANT_TYPE_BOOL, 0, nullptr, 0);
+    reg_method("is_closed", GDEXTENSION_VARIANT_TYPE_BOOL, 0, nullptr, 0);
+}
+
 /**
  * Internal helper that executes ClassDB registration with Godot.
  */
@@ -1208,6 +1344,29 @@ static void do_classdb_register(CrystalClassDesc *desc) {
         for (int a = 0; a < s.arg_count; a++) {
             free_string_name(sargs[a].name); free_string_name(sargs[a].class_name); free_string(sargs[a].hint_string);
         }
+    }
+
+    // Register class integer / enum constants
+    if (gd_classdb_register_extension_class_integer_constant) {
+        for (int i = 0; i < desc->constant_count; i++) {
+            const CrystalConstantDesc &c = desc->constants[i];
+            void *enum_sn = make_string_name(c.enum_name ? c.enum_name : "");
+            void *const_sn = make_string_name(c.constant_name ? c.constant_name : "");
+            gd_classdb_register_extension_class_integer_constant(
+                g_library,
+                class_sn,
+                enum_sn,
+                const_sn,
+                (GDExtensionInt)c.value,
+                c.is_bitfield ? 1 : 0
+            );
+            free_string_name(enum_sn);
+            free_string_name(const_sn);
+        }
+    }
+
+    if (strcmp(desc->name, "GodotChannel") == 0) {
+        register_channel_methods(class_sn);
     }
 
     char log_buf[128];
@@ -3520,6 +3679,7 @@ extern "C" GDE_EXPORT GDExtensionBool crystal_library_init(
     gd_classdb_register_extension_class6 = (GDExtensionInterfaceClassdbRegisterExtensionClass6)p_get_proc_address("classdb_register_extension_class6");
     gd_classdb_unregister_extension_class = (GDExtensionInterfaceClassdbUnregisterExtensionClass)p_get_proc_address("classdb_unregister_extension_class");
     gd_classdb_register_extension_class_property = (GDExtensionInterfaceClassdbRegisterExtensionClassProperty)p_get_proc_address("classdb_register_extension_class_property");
+    gd_classdb_register_extension_class_integer_constant = (GDExtensionInterfaceClassdbRegisterExtensionClassIntegerConstant)p_get_proc_address("classdb_register_extension_class_integer_constant");
     gd_classdb_register_extension_class_signal = (GDExtensionInterfaceClassdbRegisterExtensionClassSignal)p_get_proc_address("classdb_register_extension_class_signal");
     gd_classdb_register_extension_class_method = (GDExtensionInterfaceClassdbRegisterExtensionClassMethod)p_get_proc_address("classdb_register_extension_class_method");
     gd_classdb_get_method_bind = (GDExtensionInterfaceClassdbGetMethodBind)p_get_proc_address("classdb_get_method_bind");

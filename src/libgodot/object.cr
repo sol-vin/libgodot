@@ -573,7 +573,13 @@ module Godot
     def call_obj_as(type : T.class, method : String, *args) : T? forall T
       check_alive!
       ptr = Bridge.object_call_ret_object(@pointer, method, *args)
-      ptr.null? ? nil : T.new(ptr)
+      return nil if ptr.null?
+      if inst = Bridge.find_alive_instance(ptr)
+        if casted = inst.as?(T)
+          return casted
+        end
+      end
+      T.new(ptr)
     end
 
     # Calls the named method and returns the result as Int64

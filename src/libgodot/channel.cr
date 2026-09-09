@@ -16,21 +16,47 @@ module Godot
   # safety across all threads by utilizing native OS synchronization (`Thread::Mutex` +
   # `Thread::ConditionVariable`) and cooperative yielding (`Fiber.yield`) on the Main Thread.
   class Channel < RefCounted
-    getter capacity : Int32
+    property capacity : Int32
     getter? closed : Bool = false
     @buffer : Deque(ChannelItem)
     @mutex : ::Thread::Mutex = ::Thread::Mutex.new
     @not_empty : ::Thread::ConditionVariable = ::Thread::ConditionVariable.new
     @not_full : ::Thread::ConditionVariable = ::Thread::ConditionVariable.new
+    @last_received_cache : String? = nil
 
     def initialize(@capacity : Int32 = 16)
       super()
       @buffer = Deque(ChannelItem).new
     end
 
+    def initialize(pointer : Void*, @capacity : Int32 = 16)
+      super(pointer)
+      @buffer = Deque(ChannelItem).new
+    end
+
     def self.new(capacity : Int32 = 16) : Channel
+      ptr = Bridge.construct_object("GodotChannel")
+      if !ptr.null?
+        if inst = Bridge.find_alive_instance(ptr)
+          if ch = inst.as?(Channel)
+            ch.init_ref
+            ch.capacity = capacity
+            return ch
+          end
+        end
+        inst = allocate
+        inst.initialize(ptr, capacity)
+        inst.init_ref
+        return inst
+      end
       inst = allocate
       inst.initialize(capacity)
+      inst
+    end
+
+    def self.new(pointer : Void*) : Channel
+      inst = allocate
+      inst.initialize(pointer)
       inst
     end
 
@@ -158,7 +184,7 @@ module Godot
         @not_full.broadcast
       end
       if alive? && !@pointer.null?
-        call_deferred("emit_signal", "closed")
+        emit_signal("closed")
       else
         Godot.notify_signal(signal_target_id, "closed", [] of String)
       end
@@ -168,9 +194,71 @@ module Godot
     private def notify_received(val : ChannelItem) : Void
       val_str = val.is_a?(Godot::Object) ? (val.alive? ? "<Godot::Object #{val.instance_id}>" : "<DeadObject>") : val.to_s
       if alive? && !@pointer.null?
-        call_deferred("emit_signal", "received", val_str)
+        emit_signal("received", val_str)
       else
         Godot.notify_signal(signal_target_id, "received", [val_str])
+      end
+    end
+
+    # Dispatches generic virtual methods and ClassDB method calls with raw arguments and return buffer
+    def _godot_call_virtual_with_data(method_name : String, args : Void**, ret : Void*) : Void
+      case method_name
+      when "send"
+        if args && !args[0].null?
+          str = String.new(args[0].as(LibC::Char*))
+          success = send(str)
+          if ret
+            ret.as(UInt8*).value = success ? 1_u8 : 0_u8
+          end
+        end
+      when "try_send"
+        if args && !args[0].null?
+          str = String.new(args[0].as(LibC::Char*))
+          success = try_send(str)
+          if ret
+            ret.as(UInt8*).value = success ? 1_u8 : 0_u8
+          end
+        end
+      when "receive"
+        item = try_receive
+        if ret
+          if item
+            @last_received_cache = item.to_s
+            ret.as(LibC::Char**).value = @last_received_cache.not_nil!.to_unsafe
+          else
+            ret.as(LibC::Char**).value = Pointer(LibC::Char).null
+          end
+        end
+      when "try_receive"
+        item = try_receive
+        if ret
+          if item
+            @last_received_cache = item.to_s
+            ret.as(LibC::Char**).value = @last_received_cache.not_nil!.to_unsafe
+          else
+            ret.as(LibC::Char**).value = Pointer(LibC::Char).null
+          end
+        end
+      when "close"
+        close
+      when "size"
+        if ret
+          ret.as(Int32*).value = size
+        end
+      when "is_empty"
+        if ret
+          ret.as(UInt8*).value = empty? ? 1_u8 : 0_u8
+        end
+      when "is_full"
+        if ret
+          ret.as(UInt8*).value = full? ? 1_u8 : 0_u8
+        end
+      when "is_closed"
+        if ret
+          ret.as(UInt8*).value = is_closed ? 1_u8 : 0_u8
+        end
+      else
+        super
       end
     end
 
@@ -283,14 +371,14 @@ module Godot
   end
 end
 
+{% unless flag?(:libgodot_addon) %}
 # Register GodotChannel with LibGodot ClassRegistry so Godot discovers it in ClassDB
 ::Godot::ClassRegistry.register(
   ::Godot::ClassRegistry::Entry.new(
     "GodotChannel",
     "RefCounted",
     ->(godot_ptr : Void*) {
-      inst = ::Godot::Channel.new
-      inst.pointer = godot_ptr
+      inst = ::Godot::Channel.new(godot_ptr)
       inst.as(::Godot::Object)
     },
     false, # is_tool
@@ -301,7 +389,6 @@ end
     false, # has_exit_tree
     [
       ::Godot::PropertyInfo.new("capacity", "Int32", 2, 0_u32, "", 6_u32),
-      ::Godot::PropertyInfo.new("size", "Int32", 2, 0_u32, "", 6_u32),
     ],
     [
       ::Godot::SignalInfo.new("received", [::Godot::SignalArgInfo.new("value", 4)]),
@@ -312,3 +399,4 @@ end
     [] of NamedTuple(name: String, rpc_mode: Int32, transfer_mode: Int32, call_local: Bool, channel: Int32)
   )
 )
+{% end %}

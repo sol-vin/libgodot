@@ -33,6 +33,81 @@ node EnumDslTestNode < Godot::Node do
 
   @[ExportEnum(DslTestRole)]
   property role_id : Int32 = 0
+
+  signal role_changed(new_role : Int32)
+
+  def advance_role(next_val : Int32) : Int32
+    @role = DslTestRole.from_value?(next_val.to_i64) || @role
+    emit_role_changed(@role.to_i64.to_i32)
+    @role.to_i64.to_i32
+  end
+end
+
+node LifecycleMacroTestNode < Godot::Node do
+  property enter_tree_called : Bool = false
+  property exit_tree_called : Bool = false
+
+  def _enter_tree : Void
+    @enter_tree_called = true
+  end
+
+  def _exit_tree : Void
+    @exit_tree_called = true
+  end
+end
+
+@[Flags]
+enum DslTestSkills
+  Melee   = 1
+  Magic   = 2
+  Archery = 4
+end
+
+node ExhaustiveExportMacroNode < Godot::Node do
+  @[ExportFlags(DslTestSkills)]
+  property skills : DslTestSkills = DslTestSkills::Melee
+
+  @[ExportRange(0.0..100.0, step: 2.5)]
+  property range_val : Float64 = 50.0
+
+  @[ExportFile("*.tres")]
+  property file_val : String = "res://item.tres"
+
+  @[ExportDir]
+  property dir_val : String = "res://scenes"
+
+  @[ExportMultiline]
+  property multiline_val : String = "Hello\nWorld"
+
+  @[ExportPlaceholder("Enter name...")]
+  property placeholder_val : String = ""
+
+  @[ExportColorNoAlpha]
+  property opaque_color : Godot::Color = Godot::Color.new(1.0, 0.0, 0.0, 1.0)
+
+  @[ExportExpEasing]
+  property easing_val : Float32 = 1.5_f32
+
+  @[ExportNodePath("Camera3D")]
+  property camera_path : Godot::NodePath = Godot::NodePath.new("Camera3D")
+
+  @[ExportStorage]
+  property hidden_storage : Int32 = 42
+
+  @[ExportFlags2DRender]
+  property render2d_flags : Int32 = 1
+
+  @[ExportFlags2DPhysics]
+  property physics2d_flags : Int32 = 2
+
+  @[ExportFlags3DPhysics]
+  property physics3d_flags : Int32 = 4
+
+  @[ExportGroup("Combat", prefix: "combat_")]
+  property combat_power : Int32 = 100
+
+  @[ExportSubgroup("Defenses", prefix: "combat_def_")]
+  property combat_def_armor : Int32 = 50
 end
 
 test_macros_dsl "Type-safe signal listeners with converted arguments (on_<signal>)" do
@@ -234,4 +309,137 @@ test_macros_dsl "Direct Crystal enum property binding and property dispatch" do
 
   node.destroy
 end
+
+test_macros_dsl "Transferring Crystal enum node to GDScript: reading, setting, and inspecting property metadata" do
+  enum_node = Godot.create(EnumDslTestNode)
+  root.add_child(enum_node)
+
+  scene = Godot.load_as(Godot::PackedScene, "res://scenes/test_gdscript_interop.tscn")
+  controller = scene.instantiate
+  root.add_child(controller)
+
+  # GDScript reads initial enum value (Knight = 0)
+  val = controller.call_i64("inspect_enum_property", enum_node, "role")
+  TestFramework.assert_eq val, 0_i64, "GDScript should read enum value 0 for Knight"
+
+  # GDScript checks PROPERTY_HINT_ENUM
+  hint = controller.call_i64("get_enum_property_hint", enum_node, "role")
+  TestFramework.assert_eq hint, 2_i64, "GDScript should identify PROPERTY_HINT_ENUM (2)"
+
+  # GDScript checks enum hint_string format
+  hint_str = controller.call_str("get_enum_property_hint_string", enum_node, "role")
+  TestFramework.assert_true hint_str.includes?("Knight:0"), "Hint string must include Knight:0"
+  TestFramework.assert_true hint_str.includes?("Wizard:1"), "Hint string must include Wizard:1"
+  TestFramework.assert_true hint_str.includes?("Thief:5"), "Hint string must include Thief:5"
+
+  # GDScript writes new enum value (Thief = 5)
+  success = controller.call_bool("set_enum_property", enum_node, "role", 5_i64)
+  TestFramework.assert_true success, "GDScript set_enum_property should succeed"
+  TestFramework.assert_eq enum_node.role, DslTestRole::Thief, "Crystal node must reflect updated enum state"
+
+  # Test ClassDB integer constant registration
+  classdb_val = controller.call_i64("query_classdb_enum_constant", "EnumDslTestNode", "Thief")
+  TestFramework.assert_eq classdb_val, 5_i64, "ClassDB should return 5 for EnumDslTestNode.Thief"
+
+  enum_node.queue_free
+  controller.queue_free
+end
+
+test_macros_dsl "Exhaustive @Export property annotation metadata and hint validation in ClassDB" do
+  entry = Godot::ClassRegistry.find("ExhaustiveExportMacroNode")
+  TestFramework.assert_not_nil entry, "ExhaustiveExportMacroNode must be registered"
+  props = entry.not_nil!.properties
+
+  # Range
+  p_range = props.find { |p| p.name == "range_val" }
+  TestFramework.assert_not_nil p_range
+  TestFramework.assert_eq p_range.not_nil!.hint, 1_u32 # PROPERTY_HINT_RANGE
+  TestFramework.assert_eq p_range.not_nil!.hint_string, "0.0,100.0,2.5"
+
+  # File
+  p_file = props.find { |p| p.name == "file_val" }
+  TestFramework.assert_not_nil p_file
+  TestFramework.assert_eq p_file.not_nil!.hint, 13_u32 # PROPERTY_HINT_FILE
+  TestFramework.assert_eq p_file.not_nil!.hint_string, "*.tres"
+
+  # Dir
+  p_dir = props.find { |p| p.name == "dir_val" }
+  TestFramework.assert_not_nil p_dir
+  TestFramework.assert_eq p_dir.not_nil!.hint, 14_u32 # PROPERTY_HINT_DIR
+
+  # Multiline
+  p_multi = props.find { |p| p.name == "multiline_val" }
+  TestFramework.assert_not_nil p_multi
+  TestFramework.assert_eq p_multi.not_nil!.hint, 18_u32 # PROPERTY_HINT_MULTILINE_TEXT
+
+  # Placeholder
+  p_place = props.find { |p| p.name == "placeholder_val" }
+  TestFramework.assert_not_nil p_place
+  TestFramework.assert_eq p_place.not_nil!.hint, 20_u32 # PROPERTY_HINT_PLACEHOLDER_TEXT
+  TestFramework.assert_eq p_place.not_nil!.hint_string, "Enter name..."
+
+  # ColorNoAlpha
+  p_color = props.find { |p| p.name == "opaque_color" }
+  TestFramework.assert_not_nil p_color
+  TestFramework.assert_eq p_color.not_nil!.hint, 21_u32 # PROPERTY_HINT_COLOR_NO_ALPHA
+
+  # ExpEasing
+  p_ease = props.find { |p| p.name == "easing_val" }
+  TestFramework.assert_not_nil p_ease
+  TestFramework.assert_eq p_ease.not_nil!.hint, 4_u32 # PROPERTY_HINT_EXP_EASING
+
+  # NodePath
+  p_npath = props.find { |p| p.name == "camera_path" }
+  TestFramework.assert_not_nil p_npath
+  TestFramework.assert_eq p_npath.not_nil!.hint, 26_u32 # PROPERTY_HINT_NODE_PATH_VALID_TYPES
+  TestFramework.assert_eq p_npath.not_nil!.hint_string, "Camera3D"
+
+  # Storage
+  p_stor = props.find { |p| p.name == "hidden_storage" }
+  TestFramework.assert_not_nil p_stor
+  TestFramework.assert_eq p_stor.not_nil!.usage, 2_u32 # PROPERTY_USAGE_STORAGE
+
+  # Flags 2D/3D Layers
+  p_r2d = props.find { |p| p.name == "render2d_flags" }
+  TestFramework.assert_not_nil p_r2d
+  TestFramework.assert_eq p_r2d.not_nil!.hint, 7_u32 # PROPERTY_HINT_LAYERS_2D_RENDER
+
+  p_p2d = props.find { |p| p.name == "physics2d_flags" }
+  TestFramework.assert_not_nil p_p2d
+  TestFramework.assert_eq p_p2d.not_nil!.hint, 8_u32 # PROPERTY_HINT_LAYERS_2D_PHYSICS
+
+  p_p3d = props.find { |p| p.name == "physics3d_flags" }
+  TestFramework.assert_not_nil p_p3d
+  TestFramework.assert_eq p_p3d.not_nil!.hint, 11_u32 # PROPERTY_HINT_LAYERS_3D_PHYSICS
+
+  # Bitflags enum
+  p_flags = props.find { |p| p.name == "skills" }
+  TestFramework.assert_not_nil p_flags
+  TestFramework.assert_eq p_flags.not_nil!.hint, 6_u32 # PROPERTY_HINT_FLAGS
+  TestFramework.assert_eq p_flags.not_nil!.hint_string, "Melee,Magic,Archery"
+
+  # Grouping
+  grp = props.find { |p| p.usage == 64_u32 && p.name == "Combat" }
+  TestFramework.assert_not_nil grp
+
+  sub = props.find { |p| p.usage == 256_u32 && p.name == "Defenses" }
+  TestFramework.assert_not_nil sub
+end
+
+test_macros_dsl "Lifecycle hooks: _enter_tree and _exit_tree callbacks" do
+  node = Godot.create(LifecycleMacroTestNode)
+  TestFramework.assert_false node.enter_tree_called
+  TestFramework.assert_false node.exit_tree_called
+
+  root.add_child(node)
+  node._godot_call_virtual("_enter_tree", 0.0)
+  TestFramework.assert_true node.enter_tree_called, "_enter_tree should be invoked"
+
+  root.remove_child(node)
+  node._godot_call_virtual("_exit_tree", 0.0)
+  TestFramework.assert_true node.exit_tree_called, "_exit_tree should be invoked"
+
+  node.destroy
+end
+
 

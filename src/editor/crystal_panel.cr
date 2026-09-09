@@ -46,7 +46,7 @@ module Godot
     # UI Layout Construction
     # =========================================================================
 
-    private def setup_ui : Void
+    def setup_ui : Void
       # Margin wrapper
       margin = Godot.create(Godot::MarginContainer)
       return unless margin
@@ -152,7 +152,7 @@ module Godot
     end
 
     # --- Tab 1: Build & Project Management ---
-    private def create_build_tab(tabs : Node) : Void
+    def create_build_tab(tabs : Node) : Void
       vbox = Godot.create(Godot::VBoxContainer)
       return unless vbox
       vbox.call("set_name", "Build & Project")
@@ -257,7 +257,7 @@ module Godot
     end
 
     # --- Tab 2: Addon Manager ---
-    private def create_addons_tab(tabs : Node) : Void
+    def create_addons_tab(tabs : Node) : Void
       vbox = Godot.create(Godot::VBoxContainer)
       return unless vbox
       vbox.call("set_name", "Addon Manager")
@@ -324,7 +324,7 @@ module Godot
     end
 
     # --- Tab 3: Crystal Unit Test Runner ---
-    private def create_test_runner_tab(tabs : Node) : Void
+    def create_test_runner_tab(tabs : Node) : Void
       vbox = Godot.create(Godot::VBoxContainer)
       return unless vbox
       vbox.call("set_name", "Unit Test Runner")
@@ -417,7 +417,7 @@ module Godot
     end
 
     # --- Tab 4: Crystal Log ---
-    private def create_log_tab(tabs : Node) : Void
+    def create_log_tab(tabs : Node) : Void
       vbox = Godot.create(Godot::VBoxContainer)
       return unless vbox
       vbox.call("set_name", "Crystal Log")
@@ -495,7 +495,7 @@ module Godot
       Godot.printerr("[CrystalHub] #{msg}")
     end
 
-    private def append_log(line : String) : Void
+    def append_log(line : String) : Void
       if log = @log_output
         if line.includes?("[color=")
           log.call("append_text", "#{line}\n")
@@ -505,7 +505,7 @@ module Godot
       end
     end
 
-    private def clear_log : Void
+    def clear_log : Void
       if log = @log_output
         log.call("clear")
       end
@@ -702,7 +702,7 @@ module Godot
       log_error("Failed to recompile addons: #{ex.message}")
     end
 
-    private def recompile_modified_addons_silent : Void
+    def recompile_modified_addons_silent : Void
       recompile_script = File.exists?("scripts/recompile_addons.ps1") ? "scripts/recompile_addons.ps1" : "../scripts/recompile_addons.ps1"
       return unless File.exists?(recompile_script)
 
@@ -715,7 +715,7 @@ module Godot
     # Crystal Unit Test Runner
     # =========================================================================
 
-    private def resolve_spec_context : Tuple(String, String)
+    def resolve_spec_context : Tuple(String, String)
       # 1. First priority: Check ProjectSettings for res://spec (the open project's spec folder)
       if !Godot::ProjectSettings.singleton_ptr.null?
         ps = Godot::ProjectSettings.new(Godot::ProjectSettings.singleton_ptr)
@@ -740,7 +740,7 @@ module Godot
       end
     end
 
-    private def relative_source_location(path : String, cwd : String) : String
+    def relative_source_location(path : String, cwd : String) : String
       norm_path = path.gsub('\\', '/')
       norm_cwd = cwd.gsub('\\', '/').rstrip('/')
 
@@ -853,7 +853,7 @@ module Godot
       end
     end
 
-    private def update_tree_item_status_recursive(item : Node, status_str : String, status_col : Color) : Void
+    def update_tree_item_status_recursive(item : Node, status_str : String, status_col : Color) : Void
       item.call("set_text", 1, status_str)
       item.call("set_custom_color", 1, status_col)
       child = item.call_obj("get_first_child")
@@ -966,11 +966,11 @@ module Godot
     # Helpers
     # =========================================================================
 
-    private def detect_project_entry : String
+    def detect_project_entry : String
       ["src/main.cr", "test/src/main.cr", "../test/src/main.cr", "demo/src/main.cr"].find { |f| File.exists?(f) } || "src/main.cr"
     end
 
-    private def library_extension : String
+    def library_extension : String
       {% if flag?(:windows) %}
         "dll"
       {% elsif flag?(:darwin) %}
@@ -980,7 +980,7 @@ module Godot
       {% end %}
     end
 
-    private def library_link_flags : String
+    def library_link_flags : String
       {% if flag?(:windows) %}
         "/DLL /ENTRY:_DllMainCRTStartup /EXPORT:crystal_godot_init"
       {% elsif flag?(:darwin) %}

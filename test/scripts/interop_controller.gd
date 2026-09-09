@@ -66,3 +66,160 @@ func queue_free_node_from_gdscript(target: Node) -> bool:
 	target.queue_free()
 	return true
 
+# Resource Interoperability
+func inspect_resource_power(res: Resource) -> int:
+	if res == null:
+		return -1
+	return int(res.get("power"))
+
+func inspect_resource_name(res: Resource) -> String:
+	if res == null:
+		return ""
+	return str(res.get("item_name"))
+
+func modify_resource_power(res: Resource, new_power: int) -> bool:
+	if res == null:
+		return false
+	res.set("power", new_power)
+	return true
+
+func load_resource_from_disk_and_get_power(path: String) -> int:
+	var res = ResourceLoader.load(path)
+	if res == null:
+		return -1
+	return int(res.get("power"))
+
+# Enum Interoperability
+func inspect_enum_property(node: Node, prop_name: String) -> int:
+	if node == null:
+		return -1
+	return int(node.get(prop_name))
+
+func set_enum_property(node: Node, prop_name: String, val: int) -> bool:
+	if node == null:
+		return false
+	node.set(prop_name, val)
+	return true
+
+func get_enum_property_hint_string(node: Node, prop_name: String) -> String:
+	if node == null:
+		return ""
+	for p in node.get_property_list():
+		if p["name"] == prop_name:
+			return str(p["hint_string"])
+	return ""
+
+func get_enum_property_hint(node: Node, prop_name: String) -> int:
+	if node == null:
+		return -1
+	for p in node.get_property_list():
+		if p["name"] == prop_name:
+			return int(p["hint"])
+	return -1
+
+func query_classdb_enum_constant(class_name_str: String, const_name: String) -> int:
+	if ClassDB.class_exists(class_name_str) and ClassDB.class_has_integer_constant(class_name_str, const_name):
+		return ClassDB.class_get_integer_constant(class_name_str, const_name)
+	return -1
+
+# GodotChannel Interoperability
+func create_channel(capacity: int = 16) -> RefCounted:
+	return ClassDB.instantiate("GodotChannel")
+
+func send_to_channel(ch: RefCounted, data: String) -> bool:
+	if ch == null:
+		return false
+	return ch.send(data)
+
+func try_send_to_channel(ch: RefCounted, data: String) -> bool:
+	if ch == null:
+		return false
+	return ch.try_send(data)
+
+func receive_from_channel(ch: RefCounted) -> String:
+	if ch == null:
+		return ""
+	var item = ch.receive()
+	return str(item) if item != null else ""
+
+func try_receive_from_channel(ch: RefCounted) -> String:
+	if ch == null:
+		return ""
+	var item = ch.try_receive()
+	return str(item) if item != null else ""
+
+func get_channel_size(ch: RefCounted) -> int:
+	if ch == null:
+		return -1
+	return int(ch.size())
+
+func is_channel_empty(ch: RefCounted) -> bool:
+	if ch == null:
+		return true
+	return bool(ch.is_empty())
+
+func is_channel_full(ch: RefCounted) -> bool:
+	if ch == null:
+		return false
+	return bool(ch.is_full())
+
+func is_channel_closed(ch: RefCounted) -> bool:
+	if ch == null:
+		return true
+	return bool(ch.is_closed())
+
+func close_channel(ch: RefCounted) -> void:
+	if ch != null:
+		ch.close()
+
+# Channel Signal Listener
+var channel_received_count: int = 0
+var last_channel_received_val: String = ""
+
+func connect_channel_received(ch: RefCounted) -> bool:
+	if ch == null:
+		return false
+	ch.connect("received", Callable(self, "_on_channel_received"))
+	return true
+
+func _on_channel_received(val: String) -> void:
+	channel_received_count += 1
+	last_channel_received_val = val
+
+# Crystal Signal Interoperability
+var last_crystal_signal_name: String = ""
+var last_crystal_signal_data: String = ""
+var signal_call_count: int = 0
+
+func connect_crystal_signals(crystal_node: Node) -> bool:
+	if crystal_node == null:
+		return false
+	if crystal_node.has_signal("crystal_event"):
+		crystal_node.connect("crystal_event", Callable(self, "_on_crystal_event"))
+	if crystal_node.has_signal("health_changed"):
+		crystal_node.connect("health_changed", Callable(self, "_on_health_changed"))
+	if crystal_node.has_signal("data_transferred"):
+		crystal_node.connect("data_transferred", Callable(self, "_on_data_transferred"))
+	return true
+
+func _on_crystal_event(msg: String) -> void:
+	last_crystal_signal_name = "crystal_event"
+	last_crystal_signal_data = msg
+	signal_call_count += 1
+
+func _on_health_changed(current: int, max_val: int) -> void:
+	last_crystal_signal_name = "health_changed"
+	last_crystal_signal_data = "%d/%d" % [current, max_val]
+	signal_call_count += 1
+
+func _on_data_transferred(text: String) -> void:
+	last_crystal_signal_name = "data_transferred"
+	last_crystal_signal_data = text
+	signal_call_count += 1
+
+func emit_crystal_node_signal(crystal_node: Node, signal_name: String, arg: String) -> void:
+	if crystal_node != null:
+		crystal_node.emit_signal(signal_name, arg)
+
+
+

@@ -309,6 +309,16 @@ module Godot
     end
   end
 
+  class ConstantInfo
+    getter enum_name : String
+    getter name : String
+    getter value : Int64
+    getter? is_bitfield : Bool
+
+    def initialize(@enum_name : String, @name : String, @value : Int64, @is_bitfield : Bool = false)
+    end
+  end
+
   # Registry to keep track of all user-defined nodes and classes
   class ClassRegistry
     class Entry
@@ -323,6 +333,7 @@ module Godot
       property has_exit_tree : Bool
       property properties : Array(PropertyInfo)
       property signals : Array(SignalInfo)
+      property constants : Array(ConstantInfo)
       property icon_path : String
       property is_abstract : Bool
       property rpc_methods : Array(NamedTuple(name: String, rpc_mode: Int32, transfer_mode: Int32, call_local: Bool, channel: Int32))
@@ -350,7 +361,8 @@ module Godot
         @icon_path : String = "",
         @is_abstract : Bool = false,
         @rpc_methods : Array(NamedTuple(name: String, rpc_mode: Int32, transfer_mode: Int32, call_local: Bool, channel: Int32)) = [] of NamedTuple(name: String, rpc_mode: Int32, transfer_mode: Int32, call_local: Bool, channel: Int32),
-        @has_virtual_proc : (String -> Bool)? = nil
+        @has_virtual_proc : (String -> Bool)? = nil,
+        @constants : Array(ConstantInfo) = [] of ConstantInfo
       )
       end
     end
@@ -377,13 +389,20 @@ end
 
 # The primary `node` macro:
 # Usage:
+#   node MyNode
 #   node MyNode do
 #     # defaults to Godot::Node
 #   end
 #
+#   node Player < CharacterBody3D
 #   node Player < CharacterBody3D do
 #     # inherits Godot::CharacterBody3D
 #   end
+macro node(decl)
+  node {{decl}} do
+  end
+end
+
 macro node(decl, &block)
   {% if decl.is_a?(Call) && decl.name == "<" %}
     {% class_name = decl.receiver %}
@@ -422,12 +441,21 @@ macro node(decl, &block)
     rpc_methods = [] of Nil
     node_groups = [] of Nil
     user_methods = [] of Nil
+    class_constants = [] of Nil
     class_doc = ""
-    stmts = block.body.is_a?(Expressions) ? block.body.expressions : [block.body]
+    stmts = if block.is_a?(Nop)
+      [] of Nil
+    elsif block.body.is_a?(Expressions)
+      block.body.expressions
+    elsif block.body.is_a?(Nop)
+      [] of Nil
+    else
+      [block.body]
+    end
     last_anno = nil
 
     # Extract source file text to harvest doc comments
-    src_file = block.filename ? block.filename : __FILE__
+    src_file = (!block.is_a?(Nop) && block.filename) ? block.filename : __FILE__
     src_content = read_file(src_file)
     src_lines = src_content.split("\n")
     comment_accum = ""
@@ -702,6 +730,30 @@ macro node(decl, &block)
       {%
         p_name_str = stmt.args[0].var.stringify
         p_doc = extracted_prop_docs[p_name_str] || ""
+        p_decl = stmt.args[0]
+        enum_target = nil
+        if p_decl.type.is_a?(Path) && p_decl.type.resolve? && (p_decl.type.resolve < Enum)
+          enum_target = p_decl.type.resolve
+        elsif last_anno && (last_anno.name.stringify == "ExportEnum" || last_anno.name.stringify == "ExportFlags") && last_anno.args.size > 0 && last_anno.args[0].is_a?(Path) && last_anno.args[0].resolve? && (last_anno.args[0].resolve < Enum)
+          enum_target = last_anno.args[0].resolve
+        end
+
+        if enum_target
+          is_flags = (last_anno && last_anno.name.stringify == "ExportFlags") || enum_target.annotation(Flags) || enum_target.annotation(::Flags)
+          enum_target.constants.each do |c_item|
+            if !is_flags || (c_item.stringify != "None" && c_item.stringify != "All")
+              already_present = false
+              class_constants.each do |existing|
+                if existing[0] == enum_target.name.stringify && existing[1] == c_item.stringify
+                  already_present = true
+                end
+              end
+              if !already_present
+                class_constants << {enum_target.name.stringify, c_item.stringify, enum_target, c_item, is_flags ? true : false}
+              end
+            end
+          end
+        end
       %}
       {% if last_anno && last_anno.name.stringify == "OnReady" %}
         {% onready_path = last_anno.args.size > 0 ? (last_anno.args[0].is_a?(StringLiteral) ? last_anno.args[0] : last_anno.args[0].id.stringify) : p_name_str %}
@@ -933,6 +985,15 @@ macro node(decl, &block)
 
   # Auto-register this node with full property and signal metadata
   properties_{{class_name}} = Array(::Godot::PropertyInfo).new
+  constants_{{class_name}} = Array(::Godot::ConstantInfo).new
+  {% for c in class_constants %}
+    constants_{{class_name}} << ::Godot::ConstantInfo.new(
+      {{c[0]}},
+      {{c[1]}},
+      {{c[2]}}::{{c[3].id}}.to_i64,
+      {{c[4]}}
+    )
+  {% end %}
   {% for item in props %}
     {% if item[0] == :category %}
       properties_{{class_name}} << ::Godot::PropertyInfo.new(
@@ -1134,11 +1195,21 @@ macro node(decl, &block)
           {% end %}
         {% elsif a_name == "ExportRange" %}
           {% hint = 1 %}
+          {% step_val = "" %}
+          {% if anno.named_args %}
+            {% for k, v in anno.named_args %}
+              {% if k.stringify == "step" %}
+                {% step_val = v.id.gsub(/_[a-z0-9]+/, "") %}
+              {% end %}
+            {% end %}
+          {% end %}
           {% if anno.args[0].is_a?(RangeLiteral) %}
             {% b_id = anno.args[0].begin.id.gsub(/_[a-z0-9]+/, "") %}
             {% e_id = anno.args[0].end.id.gsub(/_[a-z0-9]+/, "") %}
             {% hint_str = "#{b_id},#{e_id}" %}
-            {% if anno.args.size > 1 %}
+            {% if !step_val.empty? %}
+              {% hint_str = "#{hint_str.id},#{step_val.id}" %}
+            {% elsif anno.args.size > 1 %}
               {% s_id = anno.args[1].id.gsub(/_[a-z0-9]+/, "") %}
               {% hint_str = "#{hint_str.id},#{s_id}" %}
             {% end %}
@@ -1146,7 +1217,9 @@ macro node(decl, &block)
             {% b_id = anno.args[0].id.gsub(/_[a-z0-9]+/, "") %}
             {% e_id = anno.args[1].id.gsub(/_[a-z0-9]+/, "") %}
             {% hint_str = "#{b_id},#{e_id}" %}
-            {% if anno.args.size > 2 %}
+            {% if !step_val.empty? %}
+              {% hint_str = "#{hint_str.id},#{step_val.id}" %}
+            {% elsif anno.args.size > 2 %}
               {% s_id = anno.args[2].id.gsub(/_[a-z0-9]+/, "") %}
               {% hint_str = "#{hint_str.id},#{s_id}" %}
             {% end %}
@@ -1291,9 +1364,9 @@ macro node(decl, &block)
       "{{class_name}}",
       {{base_godot_name}},
       ->(godot_ptr : Void*) {
-        inst = {{class_name}}.new
-        inst.pointer = godot_ptr
-        inst.as(::Godot::Object)
+        _inst_{{class_name.id}} = {{class_name}}.new
+        _inst_{{class_name.id}}.pointer = godot_ptr
+        _inst_{{class_name.id}}.as(::Godot::Object)
       },
       {{is_tool_class}},
       {{has_ready}},
@@ -1314,7 +1387,8 @@ macro node(decl, &block)
       {% else %}
         ([] of NamedTuple(name: String, rpc_mode: Int32, transfer_mode: Int32, call_local: Bool, channel: Int32)),
       {% end %}
-      has_virtual_proc: ->(m : String) { {{class_name}}._godot_has_virtual_method(m) }
+      has_virtual_proc: ->(m : String) { {{class_name}}._godot_has_virtual_method(m) },
+      constants: constants_{{class_name}}
     )
   )
 
@@ -1478,10 +1552,26 @@ end
 #   @[Export]
 #   property item_name : String = "Health Potion"
 #
+# Declares a custom Resource subclass registered with ClassDB.
+# Defaults to inheriting `Resource` when no parent is specified.
+# Can be called with or without a block (e.g. `resource MyItem`).
+#
+# ```crystal
+# resource CustomPotion do
+#   @[Export]
+#   property item_name : String = "Health Potion"
+#
 #   @[Export]
 #   property value : Int32 = 50
 # end
+#
+# resource ShortItem
 # ```
+macro resource(decl)
+  resource {{decl}} do
+  end
+end
+
 macro resource(decl, &block)
   {% if decl.is_a?(Call) && decl.name == "<" %}
     node {{decl}} do
@@ -1495,13 +1585,22 @@ macro resource(decl, &block)
 end
 
 # Declares a custom RefCounted or generic Godot engine class registered with ClassDB.
+# Defaults to inheriting `RefCounted` when no parent is specified.
+# Can be called with or without a block (e.g. `gdclass MyState`).
 #
 # ```crystal
 # gdclass StateMachine < RefCounted do
 #   @[Export]
 #   property current_state : String = "idle"
 # end
+#
+# gdclass SimpleState
 # ```
+macro gdclass(decl)
+  gdclass {{decl}} do
+  end
+end
+
 macro gdclass(decl, &block)
   {% if decl.is_a?(Call) && decl.name == "<" %}
     node {{decl}} do
@@ -1512,6 +1611,29 @@ macro gdclass(decl, &block)
       {{yield}}
     end
   {% end %}
+end
+
+# Declares a custom Godot class registered with ClassDB (alias to `gdclass`).
+# Defaults to inheriting `RefCounted` when no parent is specified.
+# Can be called with or without a block (e.g. `class_name MyClass`).
+#
+# ```crystal
+# class_name PlayerController < CharacterBody3D do
+#   @[Export]
+#   property speed : Float32 = 10.0_f32
+# end
+#
+# class_name SimpleModel
+# ```
+macro class_name(decl)
+  gdclass {{decl}} do
+  end
+end
+
+macro class_name(decl, &block)
+  gdclass {{decl}} do
+    {{yield}}
+  end
 end
 
 # Declares a custom Godot signal and generates a type-safe `emit_<signal_name>` helper method.

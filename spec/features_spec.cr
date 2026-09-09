@@ -342,4 +342,68 @@ inst._godot_get_property("skills", pointerof(skill_read).as(Void*))
 abort "Failed: skills getter mismatch" unless skill_read == skill_to_set
 
 puts "✓ Crystal Enum and Flag property dispatch verified!"
+
+# Verify ClassDB constants harvested for enums
+abort "Failed: expected constants in suite_entry" if suite_entry.constants.empty?
+c_warrior = suite_entry.constants.find { |c| c.name == "Warrior" }
+abort "Failed: Warrior constant missing" unless c_warrior && c_warrior.value == 0_i64
+c_rogue = suite_entry.constants.find { |c| c.name == "Rogue" }
+abort "Failed: Rogue constant missing" unless c_rogue && c_rogue.value == 5_i64
+c_cast = suite_entry.constants.find { |c| c.name == "Cast" }
+abort "Failed: Cast flag constant missing" unless c_cast && c_cast.value == 4_i64 && c_cast.is_bitfield?
+
+puts "✓ Enum constants harvested for ClassDB registration verified!"
+
+# Verify resource and gdclass macros
+resource SpecWeaponResource < Resource do
+  @[Export]
+  property weapon_name : String = "Excalibur"
+
+  @[Export]
+  property damage : Int32 = 150
+end
+
+gdclass SpecStateMachine < RefCounted do
+  @[Export]
+  property state : String = "idle"
+end
+
+weapon_entry = Godot::ClassRegistry.find("SpecWeaponResource")
+abort "Failed: SpecWeaponResource not found" unless weapon_entry
+abort "Failed: SpecWeaponResource parent" unless weapon_entry.parent_name == "Resource"
+abort "Failed: SpecWeaponResource properties" unless weapon_entry.properties.any? { |p| p.name == "weapon_name" }
+
+state_entry = Godot::ClassRegistry.find("SpecStateMachine")
+abort "Failed: SpecStateMachine not found" unless state_entry
+abort "Failed: SpecStateMachine parent" unless state_entry.parent_name == "RefCounted"
+abort "Failed: SpecStateMachine properties" unless state_entry.properties.any? { |p| p.name == "state" }
+
+# Verify zero-block and default inheritance macros
+resource ShortResource
+gdclass ShortClass
+class_name ShortClassName
+node ShortNode
+
+class_name CustomCharacter < CharacterBody3D do
+  @[Export]
+  property speed : Float32 = 10.0_f32
+end
+
+sr_entry = Godot::ClassRegistry.find("ShortResource")
+abort "Failed: ShortResource missing or wrong parent" unless sr_entry && sr_entry.parent_name == "Resource"
+
+sc_entry = Godot::ClassRegistry.find("ShortClass")
+abort "Failed: ShortClass missing or wrong parent" unless sc_entry && sc_entry.parent_name == "RefCounted"
+
+scn_entry = Godot::ClassRegistry.find("ShortClassName")
+abort "Failed: ShortClassName missing or wrong parent" unless scn_entry && scn_entry.parent_name == "RefCounted"
+
+sn_entry = Godot::ClassRegistry.find("ShortNode")
+abort "Failed: ShortNode missing or wrong parent" unless sn_entry && sn_entry.parent_name == "Node"
+
+cc_entry = Godot::ClassRegistry.find("CustomCharacter")
+abort "Failed: CustomCharacter missing or wrong parent" unless cc_entry && cc_entry.parent_name == "CharacterBody3D"
+
+puts "✓ resource, gdclass, class_name, and node zero-block and default inheritance verified!"
 puts "All new features passed specifications cleanly!"
+

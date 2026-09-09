@@ -90,7 +90,6 @@ test_resources "StyleBoxFlat margins and background color" do
 
   sbf.set_border_width(Godot::Side::Left.to_i64, 4_i64)
   TestFramework.assert_eq sbf.get_border_width(Godot::Side::Left.to_i64), 4_i64
-  sbf.destroy
 end
 
 test_resources "Environment ambient lighting and glow settings" do
@@ -100,5 +99,113 @@ test_resources "Environment ambient lighting and glow settings" do
 
   env.set_glow_enabled(true)
   TestFramework.assert_true env.is_glow_enabled
-  env.destroy
 end
+
+# Custom Resource declared using DSL macro
+resource CustomGameItem < Resource do
+  @[Export]
+  property item_name : String = "Excalibur"
+
+  @[Export]
+  property power : Int32 = 120
+
+  @[Export]
+  property cost : Float64 = 850.0
+
+  @[Export]
+  property is_rare : Bool = true
+end
+
+test_resources "Instantiating and mutating custom Resource subclass in Crystal" do
+  item = Godot.create(CustomGameItem)
+  TestFramework.assert_not_nil item, "CustomGameItem should be instantiated via Godot.create"
+  TestFramework.assert_true item.alive?, "CustomGameItem should be alive in ObjectDB"
+
+  # Verify default exported properties
+  TestFramework.assert_eq item.item_name, "Excalibur"
+  TestFramework.assert_eq item.power, 120
+  TestFramework.assert_approx_eq item.cost, 850.0
+  TestFramework.assert_true item.is_rare
+
+  # Mutate properties in Crystal
+  item.item_name = "Mjolnir"
+  item.power = 250
+  item.cost = 1500.0
+  item.is_rare = false
+
+  TestFramework.assert_eq item.item_name, "Mjolnir"
+  TestFramework.assert_eq item.power, 250
+  TestFramework.assert_approx_eq item.cost, 1500.0
+  TestFramework.assert_false item.is_rare
+end
+
+test_resources "Instantiating and configuring built-in engine resources in Crystal" do
+  # StandardMaterial3D
+  mat = Godot.create(Godot::StandardMaterial3D)
+  mat.call("set", "roughness", 0.65_f64)
+  TestFramework.assert_true mat.alive?
+  TestFramework.assert_approx_eq mat.call_f64("get", "roughness"), 0.65
+
+  # Curve
+  curve = Godot.create(Godot::Curve)
+  curve.call_i64("add_point", Godot::Vector2.new(0.0, 0.0))
+  curve.call_i64("add_point", Godot::Vector2.new(1.0, 1.0))
+  val = curve.call_f64("sample", 0.5_f64)
+  TestFramework.assert_true val >= 0.0 && val <= 1.0, "Curve sample should be valid interpolated float"
+
+  # Gradient
+  grad = Godot.create(Godot::Gradient)
+  grad.call("set_color", 0_i64, Godot::Color.new(1.0, 0.0, 0.0, 1.0))
+  TestFramework.assert_true grad.alive?
+end
+
+test_resources "Saving custom resource to disk via ResourceSaver and loading back via ResourceLoader" do
+  item = Godot.create(CustomGameItem)
+  item.item_name = "AegisShield"
+  item.power = 180
+
+  save_path = "user://test_custom_item.tres"
+  err = Godot.resource_saver.call_i64("save", item, save_path)
+  TestFramework.assert_eq err, 0_i64, "ResourceSaver.save should return 0 (OK)"
+
+  # Load the resource back using ResourceLoader / Godot.load
+  loaded = Godot.load(save_path)
+  TestFramework.assert_not_nil loaded, "ResourceLoader should load saved .tres file"
+  TestFramework.assert_true loaded.alive?, "Loaded resource must be alive"
+
+  # Verify persisted properties on loaded resource
+  loaded_name = loaded.call_str("get", "item_name")
+  loaded_power = loaded.call_i64("get", "power")
+  TestFramework.assert_eq loaded_name, "AegisShield", "Loaded resource must retain item_name"
+  TestFramework.assert_eq loaded_power, 180_i64, "Loaded resource must retain power"
+end
+
+test_resources "Passing custom Resource to GDScript, verifying properties, and mutating across boundary" do
+  scene = Godot.load_as(Godot::PackedScene, "res://scenes/test_gdscript_interop.tscn")
+  controller = scene.instantiate
+  root.add_child(controller)
+
+  item = Godot.create(CustomGameItem)
+  item.item_name = "ShadowDagger"
+  item.power = 75
+
+  # GDScript reads resource name and power
+  gd_name = controller.call_str("inspect_resource_name", item)
+  gd_power = controller.call_i64("inspect_resource_power", item)
+  TestFramework.assert_eq gd_name, "ShadowDagger", "GDScript should read item_name from Crystal resource"
+  TestFramework.assert_eq gd_power, 75_i64, "GDScript should read power from Crystal resource"
+
+  # GDScript modifies resource power
+  success = controller.call_bool("modify_resource_power", item, 140_i64)
+  TestFramework.assert_true success, "GDScript modify_resource_power should succeed"
+  TestFramework.assert_eq item.power, 140, "Crystal resource power must reflect mutation made by GDScript"
+
+  # Save to disk from Crystal, then load from disk in GDScript
+  save_path = "user://gdscript_read_test.tres"
+  Godot.resource_saver.call_i64("save", item, save_path)
+  disk_power = controller.call_i64("load_resource_from_disk_and_get_power", save_path)
+  TestFramework.assert_eq disk_power, 140_i64, "GDScript ResourceLoader should read serialized power from disk"
+
+  controller.queue_free
+end
+

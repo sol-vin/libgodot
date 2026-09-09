@@ -20,6 +20,13 @@ module Godot
       args : CrystalSignalArgDesc*
     end
 
+    struct CrystalConstantDesc
+      enum_name : LibC::Char*
+      constant_name : LibC::Char*
+      value : Int64
+      is_bitfield : Bool
+    end
+
     struct CrystalClassDesc
       name : LibC::Char*
       parent_name : LibC::Char*
@@ -47,6 +54,9 @@ module Godot
 
       signal_count : Int32
       signals : CrystalSignalDesc*
+
+      constant_count : Int32
+      constants : CrystalConstantDesc*
 
       parent_desc : Void*
     end
@@ -311,6 +321,18 @@ module Godot
           sigs[idx] = sig_item
         end
 
+        # Populate class integer / enum constants
+        c_count = entry.constants.size
+        consts = Pointer(LibBridge::CrystalConstantDesc).malloc(c_count > 0 ? c_count : 1)
+        entry.constants.each_with_index do |c, idx|
+          c_item = LibBridge::CrystalConstantDesc.new
+          c_item.enum_name = c.enum_name.to_unsafe
+          c_item.constant_name = c.name.to_unsafe
+          c_item.value = c.value
+          c_item.is_bitfield = c.is_bitfield?
+          consts[idx] = c_item
+        end
+
         desc = LibBridge::CrystalClassDesc.new
         desc.name = entry.class_name.to_unsafe
         desc.parent_name = entry.parent_name.to_unsafe
@@ -337,6 +359,9 @@ module Godot
 
         desc.signal_count = s_count
         desc.signals = sigs
+
+        desc.constant_count = c_count
+        desc.constants = consts
 
         desc_ptr = Pointer(LibBridge::CrystalClassDesc).malloc(1)
         desc_ptr.value = desc

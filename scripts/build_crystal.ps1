@@ -5,7 +5,8 @@ param(
     [string]$Output,
     [string]$LinkFlags = "",
     [switch]$Release,
-    [string]$SourcePath = ""
+    [string]$SourcePath = "",
+    [string]$Flags = ""
 )
 
 $RootDir = Split-Path -Parent $PSScriptRoot
@@ -23,6 +24,14 @@ $buildArgs.Add("build")
 
 if ($Release) {
     $buildArgs.Add("--release")
+}
+
+if (-not [string]::IsNullOrWhiteSpace($Flags)) {
+    foreach ($f in ($Flags -split '\s+')) {
+        if (-not [string]::IsNullOrWhiteSpace($f)) {
+            $buildArgs.Add($f)
+        }
+    }
 }
 
 # On Linux, shared library linking requires hiding static runtime symbols

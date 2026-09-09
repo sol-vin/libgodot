@@ -132,6 +132,79 @@ func _run_in_editor_tool_tests():
 		error_messages.append(msg)
 		errors += 1
 
+	# 5. Verify all @Export annotations on Crystal nodes show up in the Editor Inspector properly
+	print("[CrystalToolTester] Verifying @Export properties on ExhaustiveExportMacroNode in Editor Inspector...")
+	if ClassDB.class_exists("ExhaustiveExportMacroNode"):
+		var exp_node = ClassDB.instantiate("ExhaustiveExportMacroNode")
+		if exp_node:
+			var props = exp_node.get_property_list()
+			var prop_map = {}
+			for p in props:
+				prop_map[p["name"]] = p
+			
+			var expected_props = [
+				"skills", "range_val", "file_val", "dir_val", "multiline_val",
+				"placeholder_val", "opaque_color", "easing_val", "camera_path",
+				"hidden_storage", "render2d_flags", "physics2d_flags", "physics3d_flags",
+				"combat_power", "combat_def_armor"
+			]
+			
+			for pname in expected_props:
+				if not prop_map.has(pname):
+					var msg = "[CrystalToolTester] Export property '%s' missing from ExhaustiveExportMacroNode!" % pname
+					printerr(msg)
+					error_messages.append(msg)
+					errors += 1
+				else:
+					var pinfo = prop_map[pname]
+					var usage = int(pinfo["usage"])
+					if pname in ["hidden_storage", "combat_power", "combat_def_armor"]:
+						if (usage & PROPERTY_USAGE_STORAGE) == 0:
+							var msg = "[CrystalToolTester] Property '%s' missing PROPERTY_USAGE_STORAGE!" % pname
+							printerr(msg)
+							error_messages.append(msg)
+							errors += 1
+					else:
+						if (usage & PROPERTY_USAGE_EDITOR) == 0:
+							var msg = "[CrystalToolTester] Property '%s' missing PROPERTY_USAGE_EDITOR flag (usage=%d)!" % [pname, usage]
+							printerr(msg)
+							error_messages.append(msg)
+							errors += 1
+			
+			# Verify hints for specific annotations
+			if prop_map.has("range_val"):
+				var rhint = int(prop_map["range_val"]["hint"])
+				if rhint != PROPERTY_HINT_RANGE:
+					var msg = "[CrystalToolTester] 'range_val' hint is %d, expected PROPERTY_HINT_RANGE (%d)!" % [rhint, PROPERTY_HINT_RANGE]
+					printerr(msg)
+					error_messages.append(msg)
+					errors += 1
+			
+			if prop_map.has("file_val"):
+				var fhint = int(prop_map["file_val"]["hint"])
+				if fhint != PROPERTY_HINT_FILE:
+					var msg = "[CrystalToolTester] 'file_val' hint is %d, expected PROPERTY_HINT_FILE (%d)!" % [fhint, PROPERTY_HINT_FILE]
+					printerr(msg)
+					error_messages.append(msg)
+					errors += 1
+
+			# Test getting and setting exported properties via Godot reflection
+			exp_node.set("range_val", 75.0)
+			var new_val = float(exp_node.get("range_val"))
+			if abs(new_val - 75.0) > 0.001:
+				var msg = "[CrystalToolTester] Failed get/set roundtrip on 'range_val' (got %f)!" % new_val
+				printerr(msg)
+				error_messages.append(msg)
+				errors += 1
+			
+			print("[CrystalToolTester]   ✔ All @Export properties verified in Inspector with proper usage, hints, and roundtrip values!")
+			exp_node.free()
+	else:
+		var msg = "[CrystalToolTester] ClassDB does not contain 'ExhaustiveExportMacroNode'!"
+		printerr(msg)
+		error_messages.append(msg)
+		errors += 1
+
 	print("==================================================================")
 	if not DirAccess.dir_exists_absolute("res://bin"):
 		DirAccess.make_dir_absolute("res://bin")

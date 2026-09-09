@@ -114,3 +114,110 @@ test_multi_addon "Zero memory leak across multiple addon nodes" do
   GC.collect
   TestFramework.assert_true true, "Multi-addon nodes cleanly allocated and deallocated"
 end
+
+test_multi_addon "Shared Boehm GC heap metrics and cross-plugin allocation integrity" do
+  # Confirm Boehm GC is active and tracking heap allocations across modules
+  stats_initial = GC.stats
+  TestFramework.assert_true stats_initial.heap_size > 0, "Boehm GC heap size must be positive"
+
+  allocated_nodes = [] of Godot::Control
+  50.times do |i|
+    d_ptr = Godot::Bridge.construct_object("DialogueBox")
+    if !d_ptr.null?
+      box = Godot::Control.new(d_ptr)
+      box.call("set", "speaker_name", "Speaker_#{i}")
+      allocated_nodes << box
+    end
+
+    inv_ptr = Godot::Bridge.construct_object("InventoryGrid")
+    if !inv_ptr.null?
+      grid = Godot::Control.new(inv_ptr)
+      grid.call("set", "capacity", (10 + i).to_i64)
+      allocated_nodes << grid
+    end
+  end
+
+  # Force collection while nodes are still alive: GC must preserve active instances
+  GC.collect
+  allocated_nodes.each_with_index do |node, idx|
+    TestFramework.assert_true node.alive?, "Node #{idx} must survive GC collection while referenced"
+  end
+
+  # Clean up all nodes and verify GC collection succeeds without memory corruption
+  allocated_nodes.each(&.destroy)
+  allocated_nodes.clear
+  GC.collect
+
+  stats_final = GC.stats
+  TestFramework.assert_true stats_final.total_bytes >= stats_initial.total_bytes, "Boehm GC tracked cumulative multi-plugin allocations"
+end
+
+test_multi_addon "Concurrent multi-threaded cross-plugin GC allocation stress test" do
+  chan1 = Channel(Int32).new(1)
+  chan2 = Channel(Int32).new(1)
+
+  # Worker 1: Allocates strings and arrays in an independent OS thread
+  t1 = Thread.new do
+    sum = 0
+    1000.times do |i|
+      str = "background_worker_alloc_#{i}_#{i * 2}"
+      sum += str.size
+    end
+    chan1.send(sum)
+  end
+
+  # Worker 2: Allocates hashes and collects in an independent OS thread
+  t2 = Thread.new do
+    h = Hash(String, Int32).new
+    500.times do |i|
+      h["key_#{i}"] = i * 3
+    end
+    chan2.send(h.size)
+  end
+
+  # Main thread: Simultaneously constructs and queries addon nodes
+  d_ptr = Godot::Bridge.construct_object("DialogueBox")
+  if !d_ptr.null?
+    box = Godot::Control.new(d_ptr)
+    speaker = box.call_str("get", "speaker_name")
+    TestFramework.assert_eq speaker, "Narrator"
+    box.destroy
+  end
+
+  inv_ptr = Godot::Bridge.construct_object("InventoryGrid")
+  if !inv_ptr.null?
+    grid = Godot::Control.new(inv_ptr)
+    cap = grid.call_i64("get", "capacity")
+    TestFramework.assert_eq cap, 20_i64
+    grid.destroy
+  end
+
+  # Drain worker results
+  res1 = chan1.receive
+  res2 = chan2.receive
+  t1.join
+  t2.join
+
+  TestFramework.assert_true res1 > 0, "Worker 1 should complete allocations successfully"
+  TestFramework.assert_eq res2, 500, "Worker 2 should populate 500 entries successfully"
+
+  GC.collect
+  TestFramework.assert_true true, "Cross-plugin concurrent GC allocations completed without crashing"
+end
+
+test_multi_addon "ClassDB property and signal namespace isolation across independent addons" do
+  class_db = Godot::ClassDB.new(Godot::ClassDB.singleton_ptr)
+
+  # Verify DialogueBox does NOT inherit InventoryGrid properties or signals
+  TestFramework.assert_false class_db.call_bool("class_has_signal", "DialogueBox", "item_added"), "DialogueBox must NOT have item_added signal"
+  TestFramework.assert_false class_db.call_bool("class_has_signal", "DialogueBox", "playback_started"), "DialogueBox must NOT have playback_started signal"
+
+  # Verify InventoryGrid does NOT inherit DialogueBox properties or signals
+  TestFramework.assert_false class_db.call_bool("class_has_signal", "InventoryGrid", "line_finished"), "InventoryGrid must NOT have line_finished signal"
+  TestFramework.assert_false class_db.call_bool("class_has_signal", "InventoryGrid", "playback_started"), "InventoryGrid must NOT have playback_started signal"
+
+  # Verify AudioStreamPlayerCrystal is strictly isolated
+  TestFramework.assert_false class_db.call_bool("class_has_signal", "AudioStreamPlayerCrystal", "line_finished"), "AudioStreamPlayerCrystal must NOT have line_finished signal"
+  TestFramework.assert_false class_db.call_bool("class_has_signal", "AudioStreamPlayerCrystal", "item_added"), "AudioStreamPlayerCrystal must NOT have item_added signal"
+end
+

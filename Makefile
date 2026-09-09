@@ -121,7 +121,7 @@ endif
 # Compile Crystal editor integration plugin library (plugin.dll)
 plugin: dirs deps bridge
 	@echo [Plugin] Compiling Crystal editor integration plugin $(PLUGIN_LIB)...
-	@$(PWSH_FILE) scripts/build_crystal.ps1 -Entry $(PLUGIN_ENTRY) -Output $(PLUGIN_LIB) -LinkFlags "$(LINK_FLAGS)" $(if $(filter 1,$(RELEASE)),-Release,)
+	@$(PWSH_FILE) scripts/build_crystal.ps1 -Entry $(PLUGIN_ENTRY) -Output $(PLUGIN_LIB) -LinkFlags "$(LINK_FLAGS)" $(if $(filter 1,$(RELEASE)),-Release,) -Flags "-Dlibgodot_addon"
 	@$(PWSH_FILE) scripts/sync_bins.ps1
 
 # Synchronize addons across root, test, template, and examples

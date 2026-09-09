@@ -46,6 +46,7 @@ foreach ($addon in $addons) {
         Entry = $mainCr
         Output = $outLib
         LinkFlags = $linkFlags
+        Flags = "-Dlibgodot_addon"
     }
     if ($Release) { $params["Release"] = $true }
 

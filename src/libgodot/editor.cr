@@ -171,23 +171,27 @@ module Godot
     Godot.print("  [CrystalIntegrationPlugin] Native Crystal editor plugin unloaded.")
   end
 
-  CRYSTAL_ICON_SVG = <<-SVG
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 193.2 206.7" width="16" height="16">
-    <path fill="#e0e0e0" d="m165.4 122-50 49.9c-.2.2-.5.3-.7.2l-68.3-18.3c-.3-.1-.5-.3-.5-.5L27.5 85.1c-.1-.3 0-.5.2-.7l50-49.9c.2-.2.5-.3.7-.2l68.3 18.3c.3.1.5.3.5.5l18.3 68.2c.2.3.1.5-.1.7zm-67-54.3L31.3 85.6c-.1 0-.2.2-.1.3l49.1 49c.1.1.3.1.3-.1l18-67c.1 0-.1-.2-.2-.1z"/>
-  </svg>
-  SVG
+  CRYSTAL_ICON_SVG = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 193.2 206.7' width='16' height='16'><path fill='#e0e0e0' d='m165.4 122-50 49.9c-.2.2-.5.3-.7.2l-68.3-18.3c-.3-.1-.5-.3-.5-.5L27.5 85.1c-.1-.3 0-.5.2-.7l50-49.9c.2-.2.5-.3.7-.2l68.3 18.3c.3.1.5.3.5.5l18.3 68.2c.2.3.1.5-.1.7zm-67-54.3L31.3 85.6c-.1 0-.2.2-.1.3l49.1 49c.1.1.3.1.3-.1l18-67c.1 0-.1-.2-.2-.1z'/></svg>"
 
   # Docks the CrystalPanel into Godot Editor's main screen
-  private def setup_main_screen_panel : Void
-    return if @@crystal_panel
-    return if Godot::EditorInterface.singleton_ptr.null?
+  def setup_main_screen_panel : Void
+    if @@crystal_panel
+      return
+    end
+    if Godot::EditorInterface.singleton_ptr.null?
+      return
+    end
     ed_iface = Godot::EditorInterface.new(Godot::EditorInterface.singleton_ptr)
     main_screen = ed_iface.get_editor_main_screen
-    return if main_screen.pointer.null?
+    if main_screen.pointer.null?
+      return
+    end
 
     if !Godot::DisplayServer.singleton_ptr.null?
       ds = Godot::DisplayServer.new(Godot::DisplayServer.singleton_ptr)
-      return if ds.call_str("get_name") == "headless"
+      if ds.call_str("get_name") == "headless"
+        return
+      end
     end
 
     if panel = Godot.create("CrystalPanel")
@@ -293,7 +297,7 @@ module Godot
     icon_tex
   end
 
-  private def setup_toolbar_button : Void
+  def setup_toolbar_button : Void
     return if @@compile_button
     return if Godot::EditorInterface.singleton_ptr.null?
     ed_iface = Godot::EditorInterface.new(Godot::EditorInterface.singleton_ptr)

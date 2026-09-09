@@ -366,6 +366,14 @@ module Godot
     Performance.instance
   end
 
+  def self.resource_loader : ResourceLoader
+    ResourceLoader.instance
+  end
+
+  def self.resource_saver : ResourceSaver
+    ResourceSaver.instance
+  end
+
   # Resource and Scene loading helpers
   def self.load(path : String, type_hint : String = "", cache_mode : Int64 = 0_i64) : Resource
     ptr = Bridge.resource_loader_load(path, type_hint, cache_mode)
