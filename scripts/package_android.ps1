@@ -106,6 +106,14 @@ if (Test-Path $projGodot) {
         $godotContent = $godotContent -replace '(\[application\][\r\n]+)', "`$1config/icon=`"res://icon.svg`"`n"
         Set-Content -Path $projGodot -Value $godotContent -NoNewline
     }
+    if ($godotContent -notmatch 'import_etc2_astc\s*=') {
+        if ($godotContent -match '\[rendering\]') {
+            $godotContent = $godotContent -replace '(\[rendering\][\r\n]+)', "`$1textures/vram_compression/import_etc2_astc=true`n"
+        } else {
+            $godotContent += "`n[rendering]`n`ntextures/vram_compression/import_etc2_astc=true`n"
+        }
+        Set-Content -Path $projGodot -Value $godotContent -NoNewline
+    }
 }
 
 # 3. Locate Godot 4.8 executable
