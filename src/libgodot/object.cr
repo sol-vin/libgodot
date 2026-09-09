@@ -106,14 +106,14 @@ module Godot
     ptr = Bridge.construct_object(class_name)
     if inst = Bridge.find_alive_instance(ptr)
       if casted = inst.as?(T)
-        if casted.is_a?(RefCounted)
+        if casted.is_a?(RefCounted) && casted.get_reference_count == 0
           casted.init_ref
         end
         return casted
       end
     end
     res = T.new(ptr)
-    if res.is_a?(RefCounted)
+    if res.is_a?(RefCounted) && res.get_reference_count == 0
       res.init_ref
     end
     res
@@ -743,16 +743,46 @@ module Godot
     # Safely destroys or unreferences this RefCounted object.
     def destroy : Void
       return if @destroyed
+      target_ptr = @pointer
+      inst_id = @instance_id
+      target_id = signal_target_id
       @destroyed = true
-      Godot.clear_signal_subscriptions(signal_target_id)
-      if !@pointer.null?
-        target_ptr = @pointer
-        if alive? && is_valid? && get_reference_count > 0
-          unreference
-          @pointer = Pointer(Void).null
-        else
-          @pointer = Pointer(Void).null
-          Bridge.object_destroy(target_ptr)
+      @pointer = Pointer(Void).null
+      Godot.clear_signal_subscriptions(target_id)
+      if !target_ptr.null?
+        is_alive = inst_id > 0 ? Bridge.is_instance_valid(inst_id) : true
+        if is_alive
+          if @@mb_ref_get_reference_count.null?
+            @@mb_ref_get_reference_count = Bridge.get_method_bind("RefCounted", "get_reference_count", 3905245786_i64)
+          end
+          ref_count = 0_i64
+          if !@@mb_ref_get_reference_count.null?
+            Bridge.ptrcall(@@mb_ref_get_reference_count, target_ptr, Pointer(Pointer(Void)).null, pointerof(ref_count).as(Void*))
+          end
+          if ref_count <= 0
+            Bridge.object_destroy(target_ptr)
+          else
+            if @@mb_ref_unreference.null?
+              @@mb_ref_unreference = Bridge.get_method_bind("RefCounted", "unreference", 2240911060_i64)
+            end
+            if !@@mb_ref_unreference.null?
+              should_free = 0_u8
+              Bridge.ptrcall(@@mb_ref_unreference, target_ptr, Pointer(Pointer(Void)).null, pointerof(should_free).as(Void*))
+              if should_free != 0_u8
+                Bridge.object_destroy(target_ptr)
+              else
+                # If an extra reference was held by bridge loader, check remaining count
+                rc = 0_i64
+                Bridge.ptrcall(@@mb_ref_get_reference_count, target_ptr, Pointer(Pointer(Void)).null, pointerof(rc).as(Void*))
+                if rc <= 1
+                  Bridge.ptrcall(@@mb_ref_unreference, target_ptr, Pointer(Pointer(Void)).null, pointerof(should_free).as(Void*))
+                  Bridge.object_destroy(target_ptr)
+                end
+              end
+            else
+              Bridge.object_destroy(target_ptr)
+            end
+          end
         end
       end
     end
@@ -808,6 +838,24 @@ module Godot
       end
     end
 
+    # Returns the scene owner node responsible for serialization packing.
+    def owner : Node?
+      if !@pointer.null?
+        n = get_owner
+        n.pointer.null? ? nil : n
+      else
+        nil
+      end
+    end
+
+    # Sets the scene owner node for serialization packing.
+    def owner=(o : Node?)
+      if !@pointer.null? && o
+        set_owner(o)
+      end
+    end
+
+
     # Returns the SceneTree containing this node.
     def get_tree : SceneTree
       SceneTree.new
@@ -838,12 +886,22 @@ module Godot
     # Returns the node cast to `T`, or produces an error if the node does not exist.
     def get_node_as(type : T.class, path : String) : T forall T
       node = get_node(path)
+      if alive = Bridge.find_alive_instance(node.pointer)
+        if typed = alive.as?(T)
+          return typed
+        end
+      end
       T.new(node.pointer)
     end
 
     # Retrieves a child node cast to the specified Crystal class type `T`, or nil if not found.
     def get_node_as?(type : T.class, path : String) : T? forall T
       if node = get_node?(path)
+        if alive = Bridge.find_alive_instance(node.pointer)
+          if typed = alive.as?(T)
+            return typed
+          end
+        end
         T.new(node.pointer)
       end
     end
@@ -877,6 +935,11 @@ module Godot
     # Finds a child node matching `pattern` and casts to `T`.
     def find_child_as(type : T.class, pattern : String, recursive : Bool = true, owned : Bool = false) : T? forall T
       if node = find_child(pattern, recursive, owned)
+        if alive = Bridge.find_alive_instance(node.pointer)
+          if typed = alive.as?(T)
+            return typed
+          end
+        end
         T.new(node.pointer)
       end
     end

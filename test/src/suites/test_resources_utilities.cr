@@ -90,6 +90,7 @@ test_resources "StyleBoxFlat margins and background color" do
 
   sbf.set_border_width(Godot::Side::Left.to_i64, 4_i64)
   TestFramework.assert_eq sbf.get_border_width(Godot::Side::Left.to_i64), 4_i64
+  sbf.destroy
 end
 
 test_resources "Environment ambient lighting and glow settings" do
@@ -99,6 +100,7 @@ test_resources "Environment ambient lighting and glow settings" do
 
   env.set_glow_enabled(true)
   TestFramework.assert_true env.is_glow_enabled
+  env.destroy
 end
 
 # Custom Resource declared using DSL macro
@@ -137,6 +139,7 @@ test_resources "Instantiating and mutating custom Resource subclass in Crystal" 
   TestFramework.assert_eq item.power, 250
   TestFramework.assert_approx_eq item.cost, 1500.0
   TestFramework.assert_false item.is_rare
+  item.destroy
 end
 
 test_resources "Instantiating and configuring built-in engine resources in Crystal" do
@@ -157,6 +160,10 @@ test_resources "Instantiating and configuring built-in engine resources in Cryst
   grad = Godot.create(Godot::Gradient)
   grad.call("set_color", 0_i64, Godot::Color.new(1.0, 0.0, 0.0, 1.0))
   TestFramework.assert_true grad.alive?
+
+  mat.destroy
+  curve.destroy
+  grad.destroy
 end
 
 test_resources "Saving custom resource to disk via ResourceSaver and loading back via ResourceLoader" do
@@ -169,7 +176,7 @@ test_resources "Saving custom resource to disk via ResourceSaver and loading bac
   TestFramework.assert_eq err, 0_i64, "ResourceSaver.save should return 0 (OK)"
 
   # Load the resource back using ResourceLoader / Godot.load
-  loaded = Godot.load(save_path)
+  loaded = Godot.load(save_path, cache_mode: 0_i64)
   TestFramework.assert_not_nil loaded, "ResourceLoader should load saved .tres file"
   TestFramework.assert_true loaded.alive?, "Loaded resource must be alive"
 
@@ -178,6 +185,11 @@ test_resources "Saving custom resource to disk via ResourceSaver and loading bac
   loaded_power = loaded.call_i64("get", "power")
   TestFramework.assert_eq loaded_name, "AegisShield", "Loaded resource must retain item_name"
   TestFramework.assert_eq loaded_power, 180_i64, "Loaded resource must retain power"
+
+  item.call("take_over_path", "")
+  item.destroy
+  loaded.call("take_over_path", "")
+  loaded.destroy
 end
 
 test_resources "Passing custom Resource to GDScript, verifying properties, and mutating across boundary" do
@@ -206,6 +218,10 @@ test_resources "Passing custom Resource to GDScript, verifying properties, and m
   disk_power = controller.call_i64("load_resource_from_disk_and_get_power", save_path)
   TestFramework.assert_eq disk_power, 140_i64, "GDScript ResourceLoader should read serialized power from disk"
 
-  controller.queue_free
+  root.remove_child(controller)
+  controller.destroy
+  scene.destroy
+  item.call("take_over_path", "")
+  item.destroy
 end
 

@@ -24,10 +24,27 @@ module Godot
       instantiate(0_i64)
     end
 
-    # Instantiates the scene and downcasts directly to type T
+    # Instantiates the scene and casts directly to wrapper type T
     def instantiate_as(type : T.class, edit_state : Int64 = 0_i64) : T forall T
       node = instantiate(edit_state)
-      node.as(T)
+      if alive = Bridge.find_alive_instance(node.pointer)
+        if typed = alive.as?(T)
+          return typed
+        end
+      end
+      T.new(node.pointer)
+    end
+
+    # Packs the node and all owned sub-nodes into this PackedScene via reflection.
+    def pack(path : Node) : Int64
+      call_i64("pack", path)
+    end
+  end
+
+  class ResourceSaver < Object
+    # Saves a resource to disk using dynamic reflection to ensure valid string and variant marshalling.
+    def save(resource : Resource, path : String, flags : Int64 = 0_i64) : Int64
+      call_i64("save", resource, path, flags)
     end
   end
 
@@ -53,6 +70,11 @@ module Godot
   class Node < Object
     getter local_groups : Set(String) = Set(String).new
 
+    # Returns true if this node is currently a member of the active SceneTree.
+    def inside_tree? : Bool
+      is_inside_tree
+    end
+
     # Adds this node to the specified group (with default non-persistent flag)
     def add_to_group(group : String) : Void
       @local_groups.add(group)
@@ -60,7 +82,7 @@ module Godot
       add_to_group(group, false)
     end
 
-    # Returns true if this node is in the specified group
+    # Returns true if this node belongs to the given node group.
     def in_group?(group_name : String) : Bool
       return true if @local_groups.includes?(group_name)
       return false if @pointer.null?
@@ -70,6 +92,11 @@ module Godot
     # Returns the parent node cast to T, or nil if parent is not of type T or is null
     def get_parent_as(type : T.class) : T? forall T
       if parent = get_parent?
+        if alive = Bridge.find_alive_instance(parent.pointer)
+          if typed = alive.as?(T)
+            return typed
+          end
+        end
         T.new(parent.pointer)
       end
     end
@@ -77,6 +104,11 @@ module Godot
     # Finds child node matching pattern and casts to T, returning nil if not found
     def find_child_as(type : T.class, pattern : String, recursive : Bool = true, owned : Bool = false) : T? forall T
       if child = find_child(pattern, recursive, owned)
+        if alive = Bridge.find_alive_instance(child.pointer)
+          if typed = alive.as?(T)
+            return typed
+          end
+        end
         T.new(child.pointer)
       end
     end
@@ -84,9 +116,13 @@ module Godot
     # Returns the scene unique node with name `%unique_name` cast to T
     def get_unique_node_as(type : T.class, unique_name : String) : T? forall T
       path = unique_name.starts_with?("%") ? unique_name : "%#{unique_name}"
-      if node = get_node?(path)
-        T.new(node.pointer)
-      elsif node = find_child(unique_name.lchop("%"))
+      node = get_node?(path) || find_child(unique_name.lchop("%"))
+      if node
+        if alive = Bridge.find_alive_instance(node.pointer)
+          if typed = alive.as?(T)
+            return typed
+          end
+        end
         T.new(node.pointer)
       end
     end

@@ -122,6 +122,7 @@ test_script_first_class "CrystalScript AST reflection and Inspector property ext
 	TestFramework.assert_eq np.type_name, "String"
 	TestFramework.assert_eq np.variant_type, 4 # TYPE_STRING
   end
+  script.destroy
 end
 
 test_script_first_class "ResourceFormatLoader and ResourceFormatSaver for .cr files" do
@@ -131,21 +132,52 @@ test_script_first_class "ResourceFormatLoader and ResourceFormatSaver for .cr fi
   TestFramework.assert_true loader.get_recognized_extensions.includes?("cr"), "Loader recognizes .cr"
   TestFramework.assert_true loader.handles_type("Script"), "Loader handles Script type"
   TestFramework.assert_true loader.handles_type("CrystalScript"), "Loader handles CrystalScript type"
-  TestFramework.assert_eq loader.get_resource_type("res://test/sample_player.cr"), "CrystalScript"
+  TestFramework.assert_eq loader.get_resource_type("res://scripts/player.cr"), "CrystalScript"
 
   TestFramework.assert_true saver.recognize("CrystalScript"), "Saver recognizes CrystalScript"
   TestFramework.assert_true saver.get_recognized_extensions.includes?("cr"), "Saver recognizes .cr"
 
-  # Load actual sample player script
-  script = loader.load("sample_player.cr", "sample_player.cr")
-  if script.nil? || script.source_code.empty?
-	script = loader.load("test/sample_player.cr", "test/sample_player.cr")
+  # Test dynamic script saving and loading end-to-end in sandbox
+  test_path = "user://test_dynamic_script.cr"
+  test_code = <<-CRYSTAL
+  require "libgodot"
+
+  node DynamicPlayer < CharacterBody2D do
+    @[Export]
+    property speed : Float32 = 250.0_f32
+
+    @[Export]
+    property max_health : Int32 = 100
+
+    def _ready : Void
+      Godot.print("DynamicPlayer ready!")
+    end
   end
-  TestFramework.assert_true !script.nil?, "Loader should load sample_player.cr successfully"
-  if sc = script
-	TestFramework.assert_eq sc.class_name, "SamplePlayer"
-	TestFramework.assert_eq sc.base_type, "CharacterBody2D"
-	TestFramework.assert_true sc.properties.any? { |p| p.name == "speed" }, "Loaded script has 'speed' property"
-	TestFramework.assert_true sc.properties.any? { |p| p.name == "max_health" }, "Loaded script has 'max_health' property"
+  CRYSTAL
+
+  test_script = Godot::CrystalScript.new
+  test_script.set_source_code(test_code)
+  test_script.set_script_path(test_path)
+
+  # Verify saver writes file
+  save_err = saver.save(test_script, test_path)
+  TestFramework.assert_eq save_err, 0_i32
+
+  # Verify loader loads file
+  loaded_script = loader.load(test_path, test_path)
+  TestFramework.assert_true !loaded_script.nil?, "Loader should load #{test_path} successfully"
+  if sc = loaded_script
+    TestFramework.assert_eq sc.class_name, "DynamicPlayer"
+    TestFramework.assert_eq sc.base_type, "CharacterBody2D"
+    TestFramework.assert_true sc.properties.any? { |p| p.name == "speed" }, "Loaded script has 'speed' property"
+    TestFramework.assert_true sc.properties.any? { |p| p.name == "max_health" }, "Loaded script has 'max_health' property"
   end
+
+  # Cleanup
+  loaded_script.destroy if loaded_script
+  test_script.destroy
+
+  # Clean up temporary test file from disk
+  fs_path = Godot::ResourceFormatSaverCrystal.resolve_save_path(test_path)
+  LibSystemIO.remove(fs_path.to_unsafe) if !fs_path.empty? && Godot::SystemIO.file_exists?(fs_path)
 end

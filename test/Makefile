@@ -35,11 +35,12 @@ ENTRY        ?= src/main.cr
 
 BIN_DIR       = bin
 GAME_LIB      = $(BIN_DIR)/game.$(SO_EXT)
-GAME_EXE      = $(BIN_DIR)/game$(EXE_EXT)
+TESTS_EXE     = $(BIN_DIR)/tests$(EXE_EXT)
 BRIDGE_SRC    = ../bin/crystal_bridge.$(SO_EXT)
 
 # Backward-compatibility alias
 GAME_DLL      = $(GAME_LIB)
+GAME_EXE      = $(TESTS_EXE)
 
 CP           = $(PWSH_CMD) "Copy-Item -Force"
 RM           = $(PWSH_CMD) "Remove-Item -Force -ErrorAction SilentlyContinue"
@@ -82,12 +83,9 @@ spec:
 
 standalone: dirs deps bridge extension_list addons game_dll
 	@echo [Test] Packaging standalone test runner executable...
-	@$(PWSH_FILE) ../scripts/package_game.ps1 -ProjectPath . -Name tests $(if $(filter 1,$(RELEASE)),-Release 1,) -ForceCompile
+	@$(PWSH_FILE) ../scripts/package_game.ps1 -ProjectPath . $(if $(filter 1,$(RELEASE)),-Release 1,) -ForceCompile
 
-game_exe: dirs deps bridge
-	@echo [Test] Compiling standalone game executable from $(ENTRY)...
-	@$(PWSH_FILE) ../scripts/build_crystal.ps1 -Entry $(ENTRY) -Output $(GAME_EXE) $(if $(filter 1,$(RELEASE)),-Release,) -SourcePath ../src
-	@$(PWSH_CMD) "if (Test-Path '$(GAME_EXE)') { Copy-Item '$(GAME_EXE)' '../bin/game$(EXE_EXT)' -Force -ErrorAction SilentlyContinue }"
+game_exe: standalone
 
 run: all
 	@echo [Test] Running test suite with Godot...

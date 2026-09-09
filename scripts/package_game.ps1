@@ -80,10 +80,14 @@ if (-not $godotExe) {
     Write-Warning "[PackageGame] Godot runner executable not found. Executable wrapper will not be created."
 }
 
-# 3. Ensure bin directory exists
+# 3. Ensure bin directory exists and contains .gdignore so Godot never indexes output binaries
 $binDir = Join-Path $projFull "bin"
 if (-not (Test-Path $binDir)) {
     New-Item -ItemType Directory -Force -Path $binDir | Out-Null
+}
+$gdignoreFile = Join-Path $binDir ".gdignore"
+if (-not (Test-Path $gdignoreFile)) {
+    New-Item -ItemType File -Force -Path $gdignoreFile | Out-Null
 }
 
 # 4. Ensure addons/crystal_integration is synchronized
@@ -164,22 +168,133 @@ if (Test-Path $addonBin) {
     }
 }
 
-# 8. Create playable Godot game executable
+# Mirror project addon binaries to bin/addons for standalone execution
+$projAddons = Join-Path $projFull "addons"
+if (Test-Path $projAddons) {
+    $binAddons = Join-Path $binDir "addons"
+    if (-not (Test-Path $binAddons)) {
+        New-Item -ItemType Directory -Force -Path $binAddons | Out-Null
+    }
+    $addonGdignore = Join-Path $binAddons ".gdignore"
+    if (-not (Test-Path $addonGdignore)) {
+        New-Item -ItemType File -Force -Path $addonGdignore | Out-Null
+    }
+    $libFilter = if ($onWindows) { "*.dll" } elseif ($isMac) { "*.dylib" } else { "*.so*" }
+    foreach ($addonDir in Get-ChildItem -Path $projAddons -Directory) {
+        $addonBinSrc = Join-Path $addonDir.FullName "bin"
+        if (Test-Path $addonBinSrc) {
+            $addonBinDest = Join-Path $binAddons (Join-Path $addonDir.Name "bin")
+            if (-not (Test-Path $addonBinDest)) {
+                New-Item -ItemType Directory -Force -Path $addonBinDest | Out-Null
+            }
+            Get-ChildItem -Path $addonBinSrc -Filter $libFilter -File -ErrorAction SilentlyContinue | ForEach-Object {
+                Copy-Item $_.FullName (Join-Path $addonBinDest $_.Name) -Force -ErrorAction SilentlyContinue
+            }
+        }
+    }
+}
+
+# Clean stray foreign files, source files, and build residue from bin/
+$strayPatterns = if ($onWindows) {
+    @("*.so*", "*.dylib", "*.cr", "*.cr.uid", "*.pdb", "*.exp", "*.lib", "test_report.*", "crash_dump.txt")
+} elseif ($isMac) {
+    @("*.dll", "*.so*", "*.cr", "*.cr.uid", "test_report.*", "crash_dump.txt")
+} else {
+    @("*.dll", "*.dylib", "*.cr", "*.cr.uid", "test_report.*", "crash_dump.txt")
+}
+foreach ($sp in $strayPatterns) {
+    Get-ChildItem -Path $binDir -Filter $sp -File -ErrorAction SilentlyContinue | Where-Object { $_.Name -ne "libgodot.lib" } | Remove-Item -Force -ErrorAction SilentlyContinue
+}
+$binAndroid = Join-Path $binDir "android"
+if (Test-Path $binAndroid) {
+    Remove-Item $binAndroid -Recurse -Force -ErrorAction SilentlyContinue
+}
+
+# 8. Create playable Godot game executable and standalone data pack
 if ($godotExe -and (Test-Path $godotExe)) {
-    # Place runner inside bin/ (e.g. bin/tests.exe or bin/basic_demo.exe)
+    # Ensure export_presets.cfg exists in project
+    $presetCfg = Join-Path $projFull "export_presets.cfg"
+    if (-not (Test-Path $presetCfg)) {
+        $templatePresets = Join-Path $rootDir "template/export_presets.cfg"
+        if (Test-Path $templatePresets) {
+            Copy-Item $templatePresets $presetCfg -Force
+        }
+    }
+
+    $preset = if ($onWindows) { "Windows Desktop" } elseif ($isMac) { "macOS" } else { "Linux" }
+
+    # Parse export_path from preset in export_presets.cfg to follow the configured export preset
+    if (Test-Path $presetCfg) {
+        $cfgLines = Get-Content $presetCfg
+        $inTargetPreset = $false
+        foreach ($line in $cfgLines) {
+            if ($line -match '^\s*name\s*=\s*"([^"]+)"') {
+                $inTargetPreset = ($matches[1] -eq $preset)
+            } elseif ($inTargetPreset -and $line -match '^\s*export_path\s*=\s*"([^"]+)"') {
+                $presetPath = $matches[1]
+                $presetLeaf = Split-Path -Leaf $presetPath
+                $presetBaseName = [System.IO.Path]::GetFileNameWithoutExtension($presetLeaf)
+                if ($presetBaseName.EndsWith(".tar")) {
+                    $presetBaseName = [System.IO.Path]::GetFileNameWithoutExtension($presetBaseName)
+                }
+                if ($presetBaseName) {
+                    $Name = $presetBaseName
+                }
+                break
+            }
+        }
+    }
+
+    # Place runner inside bin/ following the preset name (e.g. bin/tests.exe or bin/basic_demo.exe)
     $binNamedExe = Join-Path $binDir "$Name$exeExt"
     Copy-Item $godotExe $binNamedExe -Force
     if (-not $onWindows -and (Get-Command chmod -ErrorAction SilentlyContinue)) {
         & chmod +x $binNamedExe
     }
+
+    # Generate standalone project data pack ($Name.pck)
+    $pckFile = Join-Path $binDir "$Name.pck"
+    if (Test-Path $presetCfg) {
+        Write-Host "  -> Generating standalone project pack: $pckFile..." -ForegroundColor Cyan
+        if ($onWindows) {
+            $exportProc = Start-Process -FilePath $godotExe -ArgumentList @("--headless", "--path", "`"$projFull`"", "--export-pack", "`"$preset`"", "`"$pckFile`"") -NoNewWindow -Wait -PassThru
+            $packExit = $exportProc.ExitCode
+        } else {
+            & $godotExe @("--headless", "--path", $projFull, "--export-pack", $preset, $pckFile)
+            $packExit = $LASTEXITCODE
+        }
+
+        if ($packExit -eq 0 -and (Test-Path $pckFile)) {
+            if ($onWindows) {
+                Copy-Item $pckFile (Join-Path $binDir "$Name.console.pck") -Force -ErrorAction SilentlyContinue
+            }
+            Write-Host "  -> Standalone pack generated successfully ($([math]::Round((Get-Item $pckFile).Length / 1KB, 1)) KB)" -ForegroundColor Green
+        } else {
+            Write-Warning "  -> Failed to generate standalone pack via --export-pack"
+        }
+
+        # Attempt native export if templates exist to embed PCK and obtain console wrapper
+        $exportMode = if ($Release -eq "1" -or $Release -eq "true") { "--export-release" } else { "--export-debug" }
+        Write-Host "  -> Running standalone export ($exportMode $preset)..." -ForegroundColor Cyan
+        if ($onWindows) {
+            $exportProc2 = Start-Process -FilePath $godotExe -ArgumentList @("--headless", "--path", "`"$projFull`"", $exportMode, "`"$preset`"", "`"$binNamedExe`"") -NoNewWindow -Wait -PassThru
+            if ($exportProc2.ExitCode -eq 0) {
+                Write-Host "  -> Standalone executable exported with embedded PCK!" -ForegroundColor Green
+            }
+        } else {
+            & $godotExe @("--headless", "--path", $projFull, $exportMode, $preset, $binNamedExe)
+        }
+    }
+
     Write-Host "  -> Created playable executable: $binNamedExe" -ForegroundColor Green
 
-    # Also place runner in bin/game.exe for toolchain consistency
-    $binGameExe = Join-Path $binDir "game$exeExt"
-    if ($binGameExe -ne $binNamedExe) {
-        Copy-Item $godotExe $binGameExe -Force
-        if (-not $onWindows -and (Get-Command chmod -ErrorAction SilentlyContinue)) {
-            & chmod +x $binGameExe
+    # If the preset does not name the output "game", remove any stale game.* binaries
+    if ($Name -ne "game") {
+        foreach ($staleFile in @("game.exe", "game.console.exe", "game.pck", "game.console.pck", "game")) {
+            $stalePath = Join-Path $binDir $staleFile
+            if (Test-Path $stalePath) {
+                Remove-Item $stalePath -Force -ErrorAction SilentlyContinue
+            }
         }
     }
 

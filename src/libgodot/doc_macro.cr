@@ -14,6 +14,18 @@ module Godot
       end
     end
   end
+
+  # Helper for safely escaping XML text and attribute content
+  module XML
+    def self.escape(str : String) : String
+      return "" if str.empty?
+      str.gsub('&', "&amp;")
+         .gsub('<', "&lt;")
+         .gsub('>', "&gt;")
+         .gsub('"', "&quot;")
+         .gsub('\'', "&apos;")
+    end
+  end
 end
 
 # Annotation for explicit documentation on methods, properties, or classes

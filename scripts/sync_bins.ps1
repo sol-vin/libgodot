@@ -39,30 +39,56 @@ if (Test-Path $examplesDir) {
     }
 }
 
+$onWindows = ($env:OS -eq "Windows_NT" -or [System.IO.Path]::PathSeparator -eq ';')
+$isMac = $false
+try {
+    if ($IsMacOS -or [System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform([System.Runtime.InteropServices.OSPlatform]::OSX)) {
+        $isMac = $true
+    }
+} catch {}
+if (-not $isMac -and -not $onWindows) {
+    if ((Get-Command uname -ErrorAction SilentlyContinue) -and ((& uname) -eq "Darwin")) { $isMac = $true }
+}
+
+$platformBinFiles = if ($onWindows) {
+    @('crystal_bridge.dll', 'gc.dll', 'iconv-2.dll', 'pcre2-8.dll', 'libgodot.dll', 'libgodot.lib')
+} elseif ($isMac) {
+    @('crystal_bridge.dylib', 'libgodot.dylib')
+} else {
+    @('crystal_bridge.so', 'libgodot.so')
+}
+
+$platformPluginFile = if ($onWindows) { "plugin.dll" } elseif ($isMac) { "plugin.dylib" } else { "plugin.so" }
+$platformGameFiles = if ($onWindows) { @("game.dll", "game.exe") } elseif ($isMac) { @("game.dylib", "game") } else { @("game.so", "game") }
+
+$foreignPatterns = if ($onWindows) {
+    @('*.so*', '*.dylib', '*.cr', '*.cr.uid')
+} elseif ($isMac) {
+    @('*.dll', '*.so*', 'gc.dll', 'iconv-2.dll', 'pcre2-8.dll', '*.cr', '*.cr.uid')
+} else {
+    @('*.dll', '*.dylib', 'gc.dll', 'iconv-2.dll', 'pcre2-8.dll', '*.cr', '*.cr.uid')
+}
+
 foreach ($dir in $targetDirs) {
     if (-not (Test-Path $dir)) {
         New-Item -ItemType Directory -Force -Path $dir | Out-Null
     }
-    foreach ($binFile in @('crystal_bridge.dll', 'crystal_bridge.so', 'crystal_bridge.dylib', 'gc.dll', 'iconv-2.dll', 'pcre2-8.dll', 'libgodot.dll', 'libgodot.so', 'libgodot.dylib', 'libgodot.lib')) {
+    # Sync only platform-relevant binaries
+    foreach ($binFile in $platformBinFiles) {
         $src = Join-Path $binDir $binFile
         $dst = Join-Path $dir $binFile
         if (Test-Path $src) {
             Copy-Item $src $dst -Force -ErrorAction SilentlyContinue
         }
     }
-    $androidSrc = Join-Path $binDir "android"
-    if (Test-Path $androidSrc) {
-        $androidDst = Join-Path $dir "android"
-        if (-not (Test-Path $androidDst)) {
-            New-Item -ItemType Directory -Force -Path $androidDst | Out-Null
-        }
-        Get-ChildItem -Path $androidSrc -Directory | ForEach-Object {
-            $destAbi = Join-Path $androidDst $_.Name
-            if (-not (Test-Path $destAbi)) {
-                New-Item -ItemType Directory -Force -Path $destAbi | Out-Null
-            }
-            Copy-Item -Path (Join-Path $_.FullName "*") -Destination $destAbi -Recurse -Force -ErrorAction SilentlyContinue
-        }
+    # Purge foreign OS binaries and stray files from destination
+    foreach ($pattern in $foreignPatterns) {
+        Get-ChildItem -Path $dir -Filter $pattern -File -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue
+    }
+    # Remove android folder from desktop bin directories if present
+    $desktopAndroid = Join-Path $dir "android"
+    if (Test-Path $desktopAndroid) {
+        Remove-Item $desktopAndroid -Recurse -Force -ErrorAction SilentlyContinue
     }
 }
 
@@ -85,15 +111,17 @@ foreach ($piDir in $pluginDirs) {
     if (-not (Test-Path $piDir)) {
         New-Item -ItemType Directory -Force -Path $piDir | Out-Null
     }
-    foreach ($pLib in @('plugin.dll', 'plugin.so', 'plugin.dylib')) {
-        $srcP = Join-Path $binDir $pLib
-        if (Test-Path $srcP) {
-            Copy-Item $srcP (Join-Path $piDir $pLib) -Force -ErrorAction SilentlyContinue
-        }
+    $srcP = Join-Path $binDir $platformPluginFile
+    if (Test-Path $srcP) {
+        Copy-Item $srcP (Join-Path $piDir $platformPluginFile) -Force -ErrorAction SilentlyContinue
+    }
+    # Remove foreign plugin extensions
+    foreach ($pattern in $foreignPatterns) {
+        Get-ChildItem -Path $piDir -Filter $pattern -File -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue
     }
 }
 
-# Clean up any stray plugin.dll in non-crystal_integration addons
+# Clean up any stray plugin binaries in non-crystal_integration addons and game bin directories
 foreach ($addonParent in @("test/addons", "template-addon/addons")) {
     $parentPath = Join-Path $RootDir $addonParent
     if (Test-Path $parentPath) {
@@ -108,20 +136,61 @@ foreach ($addonParent in @("test/addons", "template-addon/addons")) {
     }
 }
 
-
-# Sync test binaries back to root bin and test addon bin
-foreach ($targetName in @("game.dll", "game.so", "game.dylib", "game.exe", "game")) {
-    $testTarget = Join-Path $testBinDir $targetName
-    $testAddonTarget = Join-Path $testAddonBinDir $targetName
-    if (Test-Path $testTarget) {
-        Copy-Item $testTarget (Join-Path $binDir $targetName) -Force -ErrorAction SilentlyContinue
-        Copy-Item $testTarget $testAddonTarget -Force -ErrorAction SilentlyContinue
-    } elseif (Test-Path $testAddonTarget) {
-        Copy-Item $testAddonTarget $testTarget -Force -ErrorAction SilentlyContinue
-        Copy-Item $testAddonTarget (Join-Path $binDir $targetName) -Force -ErrorAction SilentlyContinue
+foreach ($gameBin in @($testBinDir, $templateBinDir)) {
+    foreach ($pLib in @('plugin.dll', 'plugin.so', 'plugin.dylib')) {
+        $strayPlugin = Join-Path $gameBin $pLib
+        if (Test-Path $strayPlugin) {
+            Remove-Item $strayPlugin -Force -ErrorAction SilentlyContinue
+        }
     }
+    # Clean stale shadow copies and build residue
+    Get-ChildItem -Path $gameBin -Filter "*_loaded_*" -File -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue
+    foreach ($resPattern in @('*.exp', '*.pdb', '*.lib', 'test_report.*', 'crash_dump.txt')) {
+        Get-ChildItem -Path $gameBin -Filter $resPattern -File -ErrorAction SilentlyContinue | Where-Object { $_.Name -ne "libgodot.lib" } | Remove-Item -Force -ErrorAction SilentlyContinue
+    }
+}
 
-    # Also sync template game binaries
+if (Test-Path $examplesDir) {
+    foreach ($ex in Get-ChildItem -Path $examplesDir -Directory) {
+        $exBin = Join-Path $ex.FullName "bin"
+        if (Test-Path $exBin) {
+            foreach ($pLib in @('plugin.dll', 'plugin.so', 'plugin.dylib')) {
+                $strayPlugin = Join-Path $exBin $pLib
+                if (Test-Path $strayPlugin) {
+                    Remove-Item $strayPlugin -Force -ErrorAction SilentlyContinue
+                }
+            }
+            Get-ChildItem -Path $exBin -Filter "*_loaded_*" -File -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue
+            foreach ($resPattern in @('*.exp', '*.pdb', '*.lib', 'test_report.*', 'crash_dump.txt')) {
+                Get-ChildItem -Path $exBin -Filter $resPattern -File -ErrorAction SilentlyContinue | Where-Object { $_.Name -ne "libgodot.lib" } | Remove-Item -Force -ErrorAction SilentlyContinue
+            }
+        }
+    }
+}
+
+# Sync test game library (game.dll / game.so / game.dylib)
+$testGameLib = if ($onWindows) { "game.dll" } elseif ($isMac) { "game.dylib" } else { "game.so" }
+$testTarget = Join-Path $testBinDir $testGameLib
+$testAddonTarget = Join-Path $testAddonBinDir $testGameLib
+if (Test-Path $testTarget) {
+    Copy-Item $testTarget (Join-Path $binDir $testGameLib) -Force -ErrorAction SilentlyContinue
+    Copy-Item $testTarget $testAddonTarget -Force -ErrorAction SilentlyContinue
+} elseif (Test-Path $testAddonTarget) {
+    Copy-Item $testAddonTarget $testTarget -Force -ErrorAction SilentlyContinue
+    Copy-Item $testAddonTarget (Join-Path $binDir $testGameLib) -Force -ErrorAction SilentlyContinue
+}
+
+# The test project executable follows export_presets.cfg (tests.exe / tests), NOT game.exe.
+# Clean any stray game.exe / game.pck from test/bin.
+foreach ($strayGame in @("game.exe", "game.console.exe", "game.pck", "game.console.pck", "game")) {
+    $strayPath = Join-Path $testBinDir $strayGame
+    if (Test-Path $strayPath) {
+        Remove-Item $strayPath -Force -ErrorAction SilentlyContinue
+    }
+}
+
+# Sync template game binaries
+foreach ($targetName in $platformGameFiles) {
     $tplTarget = Join-Path $templateBinDir $targetName
     $tplAddonTarget = Join-Path $templateIntBinDir $targetName
     if (Test-Path $tplTarget) {
@@ -136,7 +205,7 @@ if (Test-Path $examplesDir) {
     foreach ($ex in Get-ChildItem -Path $examplesDir -Directory) {
         $exBin = Join-Path $ex.FullName "bin"
         $exAddonBin = Join-Path $ex.FullName "addons/crystal_integration/bin"
-        foreach ($targetName in @("game.dll", "game.so", "game.dylib")) {
+        foreach ($targetName in $platformGameFiles) {
             $srcGame = Join-Path $exBin $targetName
             $dstGame = Join-Path $exAddonBin $targetName
             if (Test-Path $srcGame) {
@@ -175,6 +244,14 @@ foreach ($p in $projects) {
         $extLines.Add('res://addons/crystal_integration/crystal.gdextension')
     }
     Set-Content -Path (Join-Path $cfgDir "extension_list.cfg") -Value $extLines -Force
+
+    $pBin = Join-Path $p "bin"
+    if (Test-Path $pBin) {
+        $pGdignore = Join-Path $pBin ".gdignore"
+        if (-not (Test-Path $pGdignore)) {
+            New-Item -ItemType File -Force -Path $pGdignore | Out-Null
+        }
+    }
 }
 
 # Ensure extension_list.cfg for template-addon with its custom addon path

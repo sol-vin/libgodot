@@ -294,10 +294,132 @@ if (-not $SkipToolTests) {
 }
 
 # -----------------------------------------------------------------------------
-# Phase 3: Runtime Test Project (All 12 Suites: 2D, 3D, Mesh, Physics, Stress)
+# Phase 3: Standalone Compiled Test Runner (./tests --autorun)
+# -----------------------------------------------------------------------------
+# Ensure dummy addons are compiled and synced for multi-addon isolation tests
+$dummyScript = Join-Path $RootDir "scripts/build_dummy_addons.ps1"
+if (Test-Path $dummyScript) {
+    & $dummyScript
+}
+$syncScript = Join-Path $RootDir "scripts/sync_bins.ps1"
+if (Test-Path $syncScript) {
+    & $syncScript
+}
+
+if (-not $SkipStandaloneTests) {
+    Write-Host "--- Phase 3: Standalone Compiled Test Runner (./tests --autorun) ---" -ForegroundColor Magenta
+
+    $onWindows = ($env:OS -eq "Windows_NT" -or [System.IO.Path]::PathSeparator -eq ';')
+    $exeExt = if ($onWindows) { ".exe" } else { "" }
+    $pkgScript = Join-Path $RootDir "scripts/package_game.ps1"
+    $standaloneExe = Join-Path $TestBinDir "tests$exeExt"
+
+    # 1. Package test suite into standalone executable (Debug)
+    Write-Host "[Standalone Test] Packaging test project into standalone executable (Debug)..." -ForegroundColor Cyan
+    & $pkgScript -ProjectPath $TestDir -Name "tests" -ForceCompile
+
+    if (-not (Test-Path $standaloneExe)) {
+        $candidateExe = Join-Path $TestBinDir "game$exeExt"
+        if (Test-Path $candidateExe) { $standaloneExe = $candidateExe }
+    }
+
+    $runExe = $standaloneExe
+    if ($onWindows) {
+        $consoleExe = Join-Path $TestBinDir "tests.console.exe"
+        if (Test-Path $consoleExe) {
+            $runExe = $consoleExe
+        }
+    }
+
+    if (Test-Path $runExe) {
+        $runPassMarkers = @(
+            (Join-Path $TestBinDir ".runtime_tests_passed"),
+            (Join-Path $TestDir ".runtime_tests_passed")
+        )
+        $runFailMarkers = @(
+            (Join-Path $TestBinDir ".runtime_tests_failed"),
+            (Join-Path $TestDir ".runtime_tests_failed")
+        )
+        $summaryFiles = @(
+            (Join-Path $TestBinDir ".runtime_test_results.txt"),
+            (Join-Path $TestDir ".runtime_test_results.txt")
+        )
+        foreach ($m in ($runPassMarkers + $runFailMarkers + $summaryFiles)) {
+            if (Test-Path $m) { Remove-Item $m -Force }
+        }
+
+        # Standalone exported templates forbid '--path', so we run directly in TestBinDir
+        $standaloneResult = Invoke-TestCommand -Name "Standalone Compiled Test Runner (tests$exeExt --autorun)" `
+            -Executable $runExe `
+            -Arguments @("--headless", "--rendering-driver", "opengl3", "--quit-after", "15", "--", "--autorun") `
+            -WorkingDirectory $TestBinDir `
+            -CustomVerification
+
+        foreach ($sf in $summaryFiles) {
+            if (Test-Path $sf) {
+                $summary = Get-Content $sf -Raw
+                Write-Host "Standalone Test Execution Summary:`n$summary" -ForegroundColor Cyan
+                break
+            }
+        }
+
+        $failedMarkerFound = $runFailMarkers | Where-Object { Test-Path $_ } | Select-Object -First 1
+        $passedMarkerFound = $runPassMarkers | Where-Object { Test-Path $_ } | Select-Object -First 1
+
+        if ($failedMarkerFound) {
+            $standaloneResult["Success"] = $false
+            Write-Host "::error::Standalone runtime test suite reported failures!" -ForegroundColor Red
+            $FailedSteps.Add("Standalone Test Suite (Failures recorded in $failedMarkerFound)")
+            Write-Host "[FAILED] Standalone Compiled Test Runner (tests$exeExt --autorun)`n" -ForegroundColor Red
+        } elseif (-not $standaloneResult["Success"] -and -not $passedMarkerFound) {
+            $standaloneResult["Success"] = $false
+            $FailedSteps.Add("Standalone Test Suite (Process exited with code $($standaloneResult['ExitCode']))")
+            Write-Host "[FAILED] Standalone Compiled Test Runner (tests$exeExt --autorun) (Exit Code: $($standaloneResult['ExitCode']))`n" -ForegroundColor Red
+        } else {
+            $standaloneResult["Success"] = $true
+            Write-Host "[PASSED] Standalone compiled test runner executed and verified with --autorun.`n" -ForegroundColor Green
+        }
+    } else {
+        Write-Host "::error::Standalone tests executable '$runExe' was not created." -ForegroundColor Red
+        $FailedSteps.Add("Standalone Test Suite (Executable not found: $runExe)")
+    }
+
+    # 2. Package and verify in Standalone Release Mode if requested
+    if ($env:RELEASE -eq "1") {
+        Write-Host "[Standalone Test] Packaging test project in RELEASE mode..." -ForegroundColor Cyan
+        & $pkgScript -ProjectPath $TestDir -Name "tests" -Release 1 -ForceCompile
+
+        if (Test-Path $runExe) {
+            foreach ($m in ($runPassMarkers + $runFailMarkers + $summaryFiles)) {
+                if (Test-Path $m) { Remove-Item $m -Force }
+            }
+
+            $relResult = Invoke-TestCommand -Name "Standalone Release Test Runner (tests$exeExt --autorun RELEASE=1)" `
+                -Executable $runExe `
+                -Arguments @("--headless", "--rendering-driver", "opengl3", "--quit-after", "15", "--", "--autorun") `
+                -WorkingDirectory $TestBinDir `
+                -CustomVerification
+
+            $failedRel = $runFailMarkers | Where-Object { Test-Path $_ } | Select-Object -First 1
+            $passedRel = $runPassMarkers | Where-Object { Test-Path $_ } | Select-Object -First 1
+
+            if ($failedRel -or (-not $relResult["Success"] -and -not $passedRel)) {
+                $relResult["Success"] = $false
+                $FailedSteps.Add("Standalone Release Test Suite (Process exited with code $($relResult['ExitCode']))")
+                Write-Host "[FAILED] Standalone Release Test Runner`n" -ForegroundColor Red
+            } else {
+                $relResult["Success"] = $true
+                Write-Host "[PASSED] Standalone release test runner executed and verified with --autorun.`n" -ForegroundColor Green
+            }
+        }
+    }
+}
+
+# -----------------------------------------------------------------------------
+# Phase 3b: In-Project Runtime Test Runner (Godot Engine Host)
 # -----------------------------------------------------------------------------
 if (-not $SkipRuntimeTests) {
-    Write-Host "--- Phase 3: Runtime Test Project (2D, 3D, Mesh, Physics, Stress) ---" -ForegroundColor Magenta
+    Write-Host "--- Phase 3b: In-Project Runtime Test Runner (Godot Engine Host) ---" -ForegroundColor Magenta
 
     # Clear old marker files
     $runPassMarker = Join-Path $TestBinDir ".runtime_tests_passed"
@@ -309,7 +431,8 @@ if (-not $SkipRuntimeTests) {
 
     $runtimeResult = Invoke-TestCommand -Name "Runtime Test Runner (main_test_runner.tscn --autorun)" `
         -Executable $GodotExe `
-        -Arguments @("--headless", "--rendering-driver", "opengl3", "--path", "test", "--quit-after", "15", "--", "--autorun") `
+        -Arguments @("--headless", "--rendering-driver", "opengl3", "--path", ".", "--quit-after", "15", "--", "--autorun") `
+        -WorkingDirectory $TestDir `
         -CustomVerification
 
     if (Test-Path $summaryFile) {
@@ -329,94 +452,6 @@ if (-not $SkipRuntimeTests) {
     } else {
         $runtimeResult["Success"] = $true
         Write-Host "[PASSED] All runtime test suites executed and verified.`n" -ForegroundColor Green
-    }
-}
-
-# -----------------------------------------------------------------------------
-# Phase 3b: Standalone Compiled Test Runner (./tests --autorun)
-# -----------------------------------------------------------------------------
-if (-not $SkipStandaloneTests) {
-    Write-Host "--- Phase 3b: Standalone Compiled Test Runner (./tests --autorun) ---" -ForegroundColor Magenta
-
-    $onWindows = ($env:OS -eq "Windows_NT" -or [System.IO.Path]::PathSeparator -eq ';')
-    $exeExt = if ($onWindows) { ".exe" } else { "" }
-    $pkgScript = Join-Path $RootDir "scripts/package_game.ps1"
-    $standaloneExe = Join-Path $TestBinDir "tests$exeExt"
-
-    # 1. Package test suite into standalone executable (Debug)
-    Write-Host "[Standalone Test] Packaging test project into standalone executable (Debug)..." -ForegroundColor Cyan
-    & $pkgScript -ProjectPath $TestDir -Name "tests" -ForceCompile
-
-    if (-not (Test-Path $standaloneExe)) {
-        $candidateExe = Join-Path $TestBinDir "game$exeExt"
-        if (Test-Path $candidateExe) { $standaloneExe = $candidateExe }
-    }
-
-    if (Test-Path $standaloneExe) {
-        $runPassMarker = Join-Path $TestBinDir ".runtime_tests_passed"
-        $runFailMarker = Join-Path $TestBinDir ".runtime_tests_failed"
-        $summaryFile = Join-Path $TestBinDir ".runtime_test_results.txt"
-        if (Test-Path $runPassMarker) { Remove-Item $runPassMarker -Force }
-        if (Test-Path $runFailMarker) { Remove-Item $runFailMarker -Force }
-        if (Test-Path $summaryFile) { Remove-Item $summaryFile -Force }
-
-        $standaloneResult = Invoke-TestCommand -Name "Standalone Compiled Test Runner (tests$exeExt --autorun)" `
-            -Executable $standaloneExe `
-            -Arguments @("--headless", "--rendering-driver", "opengl3", "--autorun", "--quit-after", "15") `
-            -WorkingDirectory $TestDir `
-            -CustomVerification
-
-        if (Test-Path $summaryFile) {
-            $summary = Get-Content $summaryFile -Raw
-            Write-Host "Standalone Test Execution Summary:`n$summary" -ForegroundColor Cyan
-        }
-
-        if (Test-Path $runFailMarker) {
-            $standaloneResult["Success"] = $false
-            Write-Host "::error::Standalone runtime test suite reported failures!" -ForegroundColor Red
-            $FailedSteps.Add("Standalone Test Suite (Failures recorded in $runFailMarker)")
-            Write-Host "[FAILED] Standalone Compiled Test Runner (tests$exeExt --autorun)`n" -ForegroundColor Red
-        } elseif (-not $standaloneResult["Success"] -and -not (Test-Path $runPassMarker)) {
-            $standaloneResult["Success"] = $false
-            $FailedSteps.Add("Standalone Test Suite (Process exited with code $($standaloneResult['ExitCode']))")
-            Write-Host "[FAILED] Standalone Compiled Test Runner (tests$exeExt --autorun) (Exit Code: $($standaloneResult['ExitCode']))`n" -ForegroundColor Red
-        } else {
-            $standaloneResult["Success"] = $true
-            Write-Host "[PASSED] Standalone compiled test runner executed and verified with --autorun.`n" -ForegroundColor Green
-        }
-    } else {
-        Write-Host "::error::Standalone tests executable '$standaloneExe' was not created." -ForegroundColor Red
-        $FailedSteps.Add("Standalone Test Suite (Executable not found: $standaloneExe)")
-    }
-
-    # 2. Package and verify in Standalone Release Mode if requested
-    if ($env:RELEASE -eq "1") {
-        Write-Host "[Standalone Test] Packaging test project in RELEASE mode..." -ForegroundColor Cyan
-        & $pkgScript -ProjectPath $TestDir -Name "tests" -Release 1 -ForceCompile
-
-        if (Test-Path $standaloneExe) {
-            $runPassMarker = Join-Path $TestBinDir ".runtime_tests_passed"
-            $runFailMarker = Join-Path $TestBinDir ".runtime_tests_failed"
-            $summaryFile = Join-Path $TestBinDir ".runtime_test_results.txt"
-            if (Test-Path $runPassMarker) { Remove-Item $runPassMarker -Force }
-            if (Test-Path $runFailMarker) { Remove-Item $runFailMarker -Force }
-            if (Test-Path $summaryFile) { Remove-Item $summaryFile -Force }
-
-            $relResult = Invoke-TestCommand -Name "Standalone Release Test Runner (tests$exeExt --autorun RELEASE=1)" `
-                -Executable $standaloneExe `
-                -Arguments @("--headless", "--rendering-driver", "opengl3", "--autorun", "--quit-after", "15") `
-                -WorkingDirectory $TestDir `
-                -CustomVerification
-
-            if ((Test-Path $runFailMarker) -or (-not $relResult["Success"] -and -not (Test-Path $runPassMarker))) {
-                $relResult["Success"] = $false
-                $FailedSteps.Add("Standalone Release Test Suite (Process exited with code $($relResult['ExitCode']))")
-                Write-Host "[FAILED] Standalone Release Test Runner`n" -ForegroundColor Red
-            } else {
-                $relResult["Success"] = $true
-                Write-Host "[PASSED] Standalone release test runner executed and verified with --autorun.`n" -ForegroundColor Green
-            }
-        }
     }
 }
 

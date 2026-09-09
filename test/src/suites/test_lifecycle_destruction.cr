@@ -85,6 +85,7 @@ test_lifecycle "GDScript destroying node causes Crystal to detect dead pointer a
   TestFramework.assert_true caught, "Calling GDScript-freed node must raise DisposedObjectError, not segfault"
 
   interop_root.destroy
+  scene.destroy
 end
 
 test_lifecycle "Node hierarchy lifecycle: add_child, reparent, remove_child, and queue_free" do
@@ -105,6 +106,7 @@ test_lifecycle "Node hierarchy lifecycle: add_child, reparent, remove_child, and
 
   child.queue_free
   TestFramework.assert_true child.is_queued_for_deletion
+  child.destroy
 
   parent.destroy
 end

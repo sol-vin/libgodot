@@ -112,6 +112,18 @@ jobs:
             test/.runtime_tests_failed
           if-no-files-found: ignore
 
+      - name: Package Standalone Test Suite (tests-windows.zip)
+        shell: pwsh
+        run: |
+          powershell -NoProfile -File scripts/package_test_suite.ps1 -Platform windows
+
+      - name: Upload Standalone Test Suite Artifact (Windows)
+        uses: actions/upload-artifact@v4
+        with:
+          name: tests-windows
+          path: bin/tests-windows.zip
+          if-no-files-found: error
+
   test-linux:
     name: Run Test Suite (Linux)
     runs-on: ubuntu-latest
@@ -188,6 +200,18 @@ jobs:
             test/.runtime_tests_passed
             test/.runtime_tests_failed
           if-no-files-found: ignore
+
+      - name: Package Standalone Test Suite (tests-linux.zip)
+        shell: pwsh
+        run: |
+          pwsh -NoProfile -File scripts/package_test_suite.ps1 -Platform linux
+
+      - name: Upload Standalone Test Suite Artifact (Linux)
+        uses: actions/upload-artifact@v4
+        with:
+          name: tests-linux
+          path: bin/tests-linux.zip
+          if-no-files-found: error
 
   test-macos:
     name: Run Test Suite (macOS)
@@ -270,6 +294,18 @@ jobs:
             test/.runtime_tests_passed
             test/.runtime_tests_failed
           if-no-files-found: ignore
+
+      - name: Package Standalone Test Suite (tests-macos.zip)
+        shell: pwsh
+        run: |
+          pwsh -NoProfile -File scripts/package_test_suite.ps1 -Platform macos
+
+      - name: Upload Standalone Test Suite Artifact (macOS)
+        uses: actions/upload-artifact@v4
+        with:
+          name: tests-macos
+          path: bin/tests-macos.zip
+          if-no-files-found: error
 
   test-android:
     name: Build & Verify Android Target (arm64-v8a)

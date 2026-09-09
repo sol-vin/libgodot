@@ -143,6 +143,7 @@ module Godot
     @@registered_descs = Array(LibBridge::CrystalClassDesc).new
     # Active instance table rooting living Crystal nodes to protect against premature Boehm GC deallocation
     @@alive_instances = Hash(Void*, Godot::Object).new
+    @@alive_instances_by_ptr = Hash(Void*, Godot::Object).new
     @@alive_mutex = ::Thread::Mutex.new
     @@native_signal_cb : (UInt64, LibC::Char*, LibC::Char**, Int32 -> Void)? = nil
 
@@ -158,12 +159,15 @@ module Godot
     def self.register_alive_instance(boxed : Void*, inst : Godot::Object) : Void
       @@alive_mutex.synchronize do
         @@alive_instances[boxed] = inst
+        @@alive_instances_by_ptr[inst.pointer] = inst if !inst.pointer.null?
       end
     end
 
     def self.unregister_alive_instance(boxed : Void*) : Void
       @@alive_mutex.synchronize do
-        @@alive_instances.delete(boxed)
+        if inst = @@alive_instances.delete(boxed)
+          @@alive_instances_by_ptr.delete(inst.pointer)
+        end
       end
     end
 
@@ -183,7 +187,11 @@ module Godot
       @@api
     end
 
+    @@initialized : Bool = false
+
     def self.init(api : LibBridge::BridgeAPI*)
+      return if @@initialized
+      @@initialized = true
       @@api = api
       print "[CrystalBridge] Initializing Crystal runtime from game.dll..."
 
@@ -231,6 +239,7 @@ module Godot
           boxed = Box(Godot::Object).box(inst)
           @@alive_mutex.synchronize do
             @@alive_instances[boxed] = inst
+            @@alive_instances_by_ptr[godot_obj] = inst
           end
           return boxed
         end
@@ -240,7 +249,9 @@ module Godot
       free_fn = ->(crystal_inst : Void*) {
         if !crystal_inst.null?
           @@alive_mutex.synchronize do
-            @@alive_instances.delete(crystal_inst)
+            if inst = @@alive_instances.delete(crystal_inst)
+              @@alive_instances_by_ptr.delete(inst.pointer)
+            end
           end
         end
       }
@@ -861,8 +872,9 @@ module Godot
     end
 
     def self.find_alive_instance(godot_obj : Void*) : Godot::Object?
+      return nil if godot_obj.null?
       @@alive_mutex.synchronize do
-        @@alive_instances.values.find { |inst| inst.pointer == godot_obj }
+        @@alive_instances_by_ptr[godot_obj]?
       end
     end
 

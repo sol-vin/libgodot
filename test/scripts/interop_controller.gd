@@ -84,10 +84,15 @@ func modify_resource_power(res: Resource, new_power: int) -> bool:
 	return true
 
 func load_resource_from_disk_and_get_power(path: String) -> int:
-	var res = ResourceLoader.load(path)
+	var res = ResourceLoader.load(path, "", ResourceLoader.CACHE_MODE_IGNORE)
 	if res == null:
 		return -1
-	return int(res.get("power"))
+	var p = int(res.get("power"))
+	res.take_over_path("")
+	if res.get_reference_count() > 1:
+		res.unreference()
+	res = null
+	return p
 
 # Enum Interoperability
 func inspect_enum_property(node: Node, prop_name: String) -> int:
@@ -221,5 +226,51 @@ func emit_crystal_node_signal(crystal_node: Node, signal_name: String, arg: Stri
 	if crystal_node != null:
 		crystal_node.emit_signal(signal_name, arg)
 
+func find_property_in_list(node: Node, prop_name: String) -> Dictionary:
+	if node == null:
+		return {}
+	for p in node.get_property_list():
+		if str(p.get("name", "")) == prop_name:
+			return p
+	return {}
+
+func inspect_property_val(node: Node, prop_name: String) -> Variant:
+	if node == null:
+		return null
+	return node.get(prop_name)
+
+func set_property_val(node: Node, prop_name: String, val: Variant) -> bool:
+	if node == null:
+		return false
+	node.set(prop_name, val)
+	return true
+
+func load_and_inspect_crystal_scene(scene_path: String) -> Dictionary:
+	var scene = ResourceLoader.load(scene_path)
+	if scene == null:
+		return {"success": false, "error": "Failed to load scene"}
+	var inst = scene.instantiate()
+	if inst == null:
+		return {"success": false, "error": "Failed to instantiate scene"}
+	var result = {
+		"success": true,
+		"name": inst.name,
+		"class": inst.get_class(),
+		"character_name": str(inst.get("character_name")),
+		"health": float(inst.get("health")),
+		"level": int(inst.get("level"))
+	}
+	inst.free()
+	return result
+
+func verify_crystal_scene_properties(scene_path: String) -> bool:
+	var res = load_and_inspect_crystal_scene(scene_path)
+	if not res.get("success", false):
+		return false
+	if res.get("character_name") != "Arthas":
+		return false
+	if res.get("level") != 25:
+		return false
+	return true
 
 

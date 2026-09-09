@@ -34,77 +34,94 @@ if (Test-Path $examplesDir) {
     }
 }
 
-$crystalCmd = Get-Command crystal -ErrorAction SilentlyContinue
-if ($crystalCmd) {
-    $crystalBin = Split-Path $crystalCmd.Source
-    foreach ($dll in @('gc.dll', 'iconv-2.dll', 'pcre2-8.dll')) {
-        $src = Join-Path $crystalBin $dll
-        if (Test-Path $src) {
-            foreach ($d in $binDirs) {
-                if (Test-Path $d) {
-                    $dst = Join-Path $d $dll
-                    if (-not (Test-Path $dst)) {
-                        Copy-Item $src $dst -Force -ErrorAction SilentlyContinue
+$onWindows = ($env:OS -eq "Windows_NT" -or [System.IO.Path]::PathSeparator -eq ';')
+$isMac = $false
+try {
+    if ($IsMacOS -or [System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform([System.Runtime.InteropServices.OSPlatform]::OSX)) {
+        $isMac = $true
+    }
+} catch {}
+if (-not $isMac -and -not $onWindows) {
+    if ((Get-Command uname -ErrorAction SilentlyContinue) -and ((& uname) -eq "Darwin")) { $isMac = $true }
+}
+
+# 1. Windows Crystal runtime dependencies (gc.dll, iconv-2.dll, pcre2-8.dll)
+if ($onWindows) {
+    $crystalCmd = Get-Command crystal -ErrorAction SilentlyContinue
+    if ($crystalCmd) {
+        $crystalBin = Split-Path $crystalCmd.Source
+        foreach ($dll in @('gc.dll', 'iconv-2.dll', 'pcre2-8.dll')) {
+            $src = Join-Path $crystalBin $dll
+            if (Test-Path $src) {
+                foreach ($d in $binDirs) {
+                    if (Test-Path $d) {
+                        $dst = Join-Path $d $dll
+                        if (-not (Test-Path $dst)) {
+                            Copy-Item $src $dst -Force -ErrorAction SilentlyContinue
+                        }
                     }
                 }
             }
         }
     }
-}
 
-$godotSrcDll = Join-Path $RootDir "godot-src/bin/godot.windows.template_debug.x86_64.dll"
-$binLibgodot = Join-Path $RootDir "bin/libgodot.dll"
-if ((Test-Path $godotSrcDll) -and (-not (Test-Path $binLibgodot))) {
-    Copy-Item $godotSrcDll $binLibgodot -Force -ErrorAction SilentlyContinue
-}
+    # Windows LibGodot engine DLL
+    $godotSrcDll = Join-Path $RootDir "godot-src/bin/godot.windows.template_debug.x86_64.dll"
+    $binLibgodot = Join-Path $RootDir "bin/libgodot.dll"
+    if ((Test-Path $godotSrcDll) -and (-not (Test-Path $binLibgodot))) {
+        Copy-Item $godotSrcDll $binLibgodot -Force -ErrorAction SilentlyContinue
+    }
 
-if (Test-Path $binLibgodot) {
-    foreach ($d in $binDirs) {
-        if (Test-Path $d) {
-            $dst = Join-Path $d "libgodot.dll"
-            if (-not (Test-Path $dst)) {
-                Copy-Item $binLibgodot $dst -Force -ErrorAction SilentlyContinue
+    if (Test-Path $binLibgodot) {
+        foreach ($d in $binDirs) {
+            if (Test-Path $d) {
+                $dst = Join-Path $d "libgodot.dll"
+                if (-not (Test-Path $dst)) {
+                    Copy-Item $binLibgodot $dst -Force -ErrorAction SilentlyContinue
+                }
             }
         }
     }
-}
+} elseif (-not $isMac) {
+    # 2. Linux LibGodot shared object (.so)
+    $godotSrcSo = Join-Path $RootDir "godot-src/bin/godot.linuxbsd.template_debug.x86_64.so"
+    $binLibgodotSo = Join-Path $RootDir "bin/libgodot.so"
+    if ((Test-Path $godotSrcSo) -and (-not (Test-Path $binLibgodotSo))) {
+        Copy-Item $godotSrcSo $binLibgodotSo -Force -ErrorAction SilentlyContinue
+    }
 
-$godotSrcSo = Join-Path $RootDir "godot-src/bin/godot.linuxbsd.template_debug.x86_64.so"
-$binLibgodotSo = Join-Path $RootDir "bin/libgodot.so"
-if ((Test-Path $godotSrcSo) -and (-not (Test-Path $binLibgodotSo))) {
-    Copy-Item $godotSrcSo $binLibgodotSo -Force -ErrorAction SilentlyContinue
-}
-
-if (Test-Path $binLibgodotSo) {
-    foreach ($d in $binDirs) {
-        if (Test-Path $d) {
-            $dst = Join-Path $d "libgodot.so"
-            if (-not (Test-Path $dst)) {
-                Copy-Item $binLibgodotSo $dst -Force -ErrorAction SilentlyContinue
+    if (Test-Path $binLibgodotSo) {
+        foreach ($d in $binDirs) {
+            if (Test-Path $d) {
+                $dst = Join-Path $d "libgodot.so"
+                if (-not (Test-Path $dst)) {
+                    Copy-Item $binLibgodotSo $dst -Force -ErrorAction SilentlyContinue
+                }
             }
         }
     }
-}
-
-$godotSrcDylibCandidates = @(
-    (Join-Path $RootDir "godot-src/bin/godot.macos.template_debug.universal.dylib"),
-    (Join-Path $RootDir "godot-src/bin/godot.macos.template_debug.arm64.dylib"),
-    (Join-Path $RootDir "godot-src/bin/godot.macos.template_debug.x86_64.dylib")
-)
-$binLibgodotDylib = Join-Path $RootDir "bin/libgodot.dylib"
-foreach ($cand in $godotSrcDylibCandidates) {
-    if ((Test-Path $cand) -and (-not (Test-Path $binLibgodotDylib))) {
-        Copy-Item $cand $binLibgodotDylib -Force -ErrorAction SilentlyContinue
-        break
+} else {
+    # 3. macOS LibGodot dynamic library (.dylib)
+    $godotSrcDylibCandidates = @(
+        (Join-Path $RootDir "godot-src/bin/godot.macos.template_debug.universal.dylib"),
+        (Join-Path $RootDir "godot-src/bin/godot.macos.template_debug.arm64.dylib"),
+        (Join-Path $RootDir "godot-src/bin/godot.macos.template_debug.x86_64.dylib")
+    )
+    $binLibgodotDylib = Join-Path $RootDir "bin/libgodot.dylib"
+    foreach ($cand in $godotSrcDylibCandidates) {
+        if ((Test-Path $cand) -and (-not (Test-Path $binLibgodotDylib))) {
+            Copy-Item $cand $binLibgodotDylib -Force -ErrorAction SilentlyContinue
+            break
+        }
     }
-}
 
-if (Test-Path $binLibgodotDylib) {
-    foreach ($d in $binDirs) {
-        if (Test-Path $d) {
-            $dst = Join-Path $d "libgodot.dylib"
-            if (-not (Test-Path $dst)) {
-                Copy-Item $binLibgodotDylib $dst -Force -ErrorAction SilentlyContinue
+    if (Test-Path $binLibgodotDylib) {
+        foreach ($d in $binDirs) {
+            if (Test-Path $d) {
+                $dst = Join-Path $d "libgodot.dylib"
+                if (-not (Test-Path $dst)) {
+                    Copy-Item $binLibgodotDylib $dst -Force -ErrorAction SilentlyContinue
+                }
             }
         }
     }

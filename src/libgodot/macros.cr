@@ -435,7 +435,7 @@ macro node(decl, &block)
     user_methods = [] of Nil
     class_constants = [] of Nil
     class_doc = ""
-    stmts = if block.is_a?(Nop)
+    raw_stmts = if block.is_a?(Nop)
       [] of Nil
     elsif block.body.is_a?(Expressions)
       block.body.expressions
@@ -443,6 +443,121 @@ macro node(decl, &block)
       [] of Nil
     else
       [block.body]
+    end
+
+    stmts_items = [] of Nil
+    raw_stmts.each do |s|
+      if s.is_a?(Call) && s.name.stringify == "export_category" && s.block && !s.block.is_a?(Nop)
+        cat_name = s.args[0].is_a?(StringLiteral) ? s.args[0] : s.args[0].id.stringify
+        stmts_items << {:category_start, cat_name}
+        inner_cat = s.block.body.is_a?(Expressions) ? s.block.body.expressions : (s.block.body.is_a?(Nop) ? [] of Nil : [s.block.body])
+        inner_cat.each do |s2|
+          if s2.is_a?(Call) && s2.name.stringify == "export_group" && s2.block && !s2.block.is_a?(Nop)
+            grp_name = s2.args[0].is_a?(StringLiteral) ? s2.args[0] : s2.args[0].id.stringify
+            pfx = ""
+            if s2.named_args
+              s2.named_args.each do |na|
+                if na.name.stringify == "prefix"
+                  pfx = na.value.is_a?(StringLiteral) ? na.value : na.value.id.stringify
+                end
+              end
+            end
+            if pfx.empty? && s2.args.size > 1
+              pfx = s2.args[1].is_a?(StringLiteral) ? s2.args[1] : s2.args[1].id.stringify
+            end
+            stmts_items << {:group_start, grp_name, pfx}
+            inner_grp = s2.block.body.is_a?(Expressions) ? s2.block.body.expressions : (s2.block.body.is_a?(Nop) ? [] of Nil : [s2.block.body])
+            inner_grp.each do |s3|
+              if s3.is_a?(Call) && s3.name.stringify == "export_subgroup" && s3.block && !s3.block.is_a?(Nop)
+                sub_name = s3.args[0].is_a?(StringLiteral) ? s3.args[0] : s3.args[0].id.stringify
+                sub_pfx = ""
+                if s3.named_args
+                  s3.named_args.each do |sna|
+                    if sna.name.stringify == "prefix"
+                      sub_pfx = sna.value.is_a?(StringLiteral) ? sna.value : sna.value.id.stringify
+                    end
+                  end
+                end
+                if sub_pfx.empty? && s3.args.size > 1
+                  sub_pfx = s3.args[1].is_a?(StringLiteral) ? s3.args[1] : s3.args[1].id.stringify
+                end
+                stmts_items << {:subgroup_start, sub_name, sub_pfx}
+                inner_sub = s3.block.body.is_a?(Expressions) ? s3.block.body.expressions : (s3.block.body.is_a?(Nop) ? [] of Nil : [s3.block.body])
+                inner_sub.each do |s4|
+                  stmts_items << {:stmt, s4}
+                end
+                stmts_items << {:subgroup_end}
+              else
+                stmts_items << {:stmt, s3}
+              end
+            end
+            stmts_items << {:group_end}
+          else
+            stmts_items << {:stmt, s2}
+          end
+        end
+      elsif s.is_a?(Call) && s.name.stringify == "export_group" && s.block && !s.block.is_a?(Nop)
+        grp_name = s.args[0].is_a?(StringLiteral) ? s.args[0] : s.args[0].id.stringify
+        pfx = ""
+        if s.named_args
+          s.named_args.each do |na|
+            if na.name.stringify == "prefix"
+              pfx = na.value.is_a?(StringLiteral) ? na.value : na.value.id.stringify
+            end
+          end
+        end
+        if pfx.empty? && s.args.size > 1
+          pfx = s.args[1].is_a?(StringLiteral) ? s.args[1] : s.args[1].id.stringify
+        end
+        stmts_items << {:group_start, grp_name, pfx}
+        inner_grp = s.block.body.is_a?(Expressions) ? s.block.body.expressions : (s.block.body.is_a?(Nop) ? [] of Nil : [s.block.body])
+        inner_grp.each do |s3|
+          if s3.is_a?(Call) && s3.name.stringify == "export_subgroup" && s3.block && !s3.block.is_a?(Nop)
+            sub_name = s3.args[0].is_a?(StringLiteral) ? s3.args[0] : s3.args[0].id.stringify
+            sub_pfx = ""
+            if s3.named_args
+              s3.named_args.each do |sna|
+                if sna.name.stringify == "prefix"
+                  sub_pfx = sna.value.is_a?(StringLiteral) ? sna.value : sna.value.id.stringify
+                end
+              end
+            end
+            if sub_pfx.empty? && s3.args.size > 1
+              sub_pfx = s3.args[1].is_a?(StringLiteral) ? s3.args[1] : s3.args[1].id.stringify
+            end
+            stmts_items << {:subgroup_start, sub_name, sub_pfx}
+            inner_sub = s3.block.body.is_a?(Expressions) ? s3.block.body.expressions : (s3.block.body.is_a?(Nop) ? [] of Nil : [s3.block.body])
+            inner_sub.each do |s4|
+              stmts_items << {:stmt, s4}
+            end
+            stmts_items << {:subgroup_end}
+          else
+            stmts_items << {:stmt, s3}
+          end
+        end
+        stmts_items << {:group_end}
+      elsif s.is_a?(Call) && s.name.stringify == "export_subgroup" && s.block && !s.block.is_a?(Nop)
+        sub_name = s.args[0].is_a?(StringLiteral) ? s.args[0] : s.args[0].id.stringify
+        sub_pfx = ""
+        if s.named_args
+          s.named_args.each do |sna|
+            if sna.name.stringify == "prefix"
+              sub_pfx = sna.value.is_a?(StringLiteral) ? sna.value : sna.value.id.stringify
+            end
+          end
+        end
+        if sub_pfx.empty? && s.args.size > 1
+          sub_pfx = s.args[1].is_a?(StringLiteral) ? s.args[1] : s.args[1].id.stringify
+        end
+        stmts_items << {:subgroup_start, sub_name, sub_pfx}
+        inner_sub = s.block.body.is_a?(Expressions) ? s.block.body.expressions : (s.block.body.is_a?(Nop) ? [] of Nil : [s.block.body])
+        inner_sub.each do |s4|
+          stmts_items << {:stmt, s4}
+        end
+        stmts_items << {:subgroup_end}
+      else
+        stmts_items << {:stmt, s}
+      end
     end
     last_anno = nil
 
@@ -457,6 +572,22 @@ macro node(decl, &block)
     extracted_prop_docs = {} of StringLiteral => StringLiteral
     extracted_sig_docs = {} of StringLiteral => StringLiteral
     extracted_method_docs = {} of StringLiteral => StringLiteral
+    extracted_aliases = {} of StringLiteral => ArrayLiteral(StringLiteral)
+    src_lines.each do |al_line|
+      al_s = al_line.strip
+      if al_s.starts_with?("alias ") && al_s.includes?("=")
+        al_parts = al_s.gsub(/^alias\s+/, "").split("=")
+        al_name = al_parts[0].strip
+        al_rhs = al_parts[1].strip
+        if al_rhs.includes?("|")
+          al_types = [] of StringLiteral
+          al_rhs.split("|").each do |al_tp|
+            al_types << al_tp.strip
+          end
+          extracted_aliases[al_name] = al_types
+        end
+      end
+    end
   %}
 
   {% for s_line in src_lines %}
@@ -464,7 +595,11 @@ macro node(decl, &block)
       {% s_stripped = s_line.strip %}
       {% if s_stripped.starts_with?("#") %}
         {% s_text = s_stripped.gsub(/^#+\s*/, "") %}
-        {% comment_accum = comment_accum.empty? ? s_text : comment_accum + " " + s_text %}
+        {% if !s_text.starts_with?("=") && !s_text.starts_with?("-") && !s_text.empty? %}
+          {% comment_accum = comment_accum.empty? ? s_text : comment_accum + " " + s_text %}
+        {% end %}
+      {% elsif s_stripped.empty? %}
+        {% comment_accum = "" %}
       {% elsif !in_target_node && (s_stripped.starts_with?("node " + class_name.stringify) || s_stripped.includes?("node " + class_name.stringify + " ") || s_stripped.includes?("node " + class_name.stringify + "<") || s_stripped.starts_with?("resource " + class_name.stringify) || s_stripped.includes?("resource " + class_name.stringify + " ") || s_stripped.includes?("resource " + class_name.stringify + "<") || s_stripped.starts_with?("gdclass " + class_name.stringify) || s_stripped.includes?("gdclass " + class_name.stringify + " ") || s_stripped.includes?("gdclass " + class_name.stringify + "<")) %}
         {% if class_doc.empty? %}
           {% class_doc = comment_accum %}
@@ -525,59 +660,73 @@ macro node(decl, &block)
     {% is_tool_class = true %}
   {% end %}
 
-  {% for stmt in stmts %}
-    {% if stmt.class_name.id == "Annotation" %}
-      {% anno_name = stmt.name.names.last.stringify %}
-      {% if anno_name == "Doc" %}
-        {% class_doc = stmt.args[0].stringify %}
-      {% elsif anno_name == "Tool" %}
-        {% is_tool_class = true %}
-      {% elsif anno_name == "Icon" %}
-        {% class_icon_path = stmt.args[0].stringify %}
-      {% elsif anno_name == "Abstract" %}
-        {% is_abstract_class = true %}
-      {% elsif anno_name == "StaticUnload" %}
-        {% is_static_unload = true %}
-      {% elsif anno_name == "ExportCategory" %}
-        {% cat_name = stmt.args[0].is_a?(StringLiteral) ? stmt.args[0] : stmt.args[0].id.stringify %}
-        {% props << {:category, cat_name, ""} %}
-      {% elsif anno_name == "Group" %}
-        {% for g in stmt.args %}
-          {% node_groups << (g.is_a?(StringLiteral) ? g : g.id.stringify) %}
-        {% end %}
-      {% elsif anno_name == "ExportGroup" %}
-        {% grp_name = stmt.args[0].is_a?(StringLiteral) ? stmt.args[0] : stmt.args[0].id.stringify %}
-        {% pfx = "" %}
-        {% if stmt.named_args %}
-          {% for k, v in stmt.named_args %}
-            {% if k.stringify == "prefix" %}
-              {% pfx = v.is_a?(StringLiteral) ? v : v.id.stringify %}
+  {% for item_entry in stmts_items %}
+    {% if item_entry[0] == :category_start %}
+      {% props << {:category, item_entry[1], ""} %}
+    {% elsif item_entry[0] == :group_start %}
+      {% props << {:group, item_entry[1], item_entry[2]} %}
+    {% elsif item_entry[0] == :group_end %}
+      {% props << {:group, "", ""} %}
+    {% elsif item_entry[0] == :subgroup_start %}
+      {% props << {:subgroup, item_entry[1], item_entry[2]} %}
+    {% elsif item_entry[0] == :subgroup_end %}
+      {% props << {:subgroup, "", ""} %}
+    {% elsif item_entry[0] == :stmt %}
+      {% stmt = item_entry[1] %}
+      {% if stmt.class_name.id == "Annotation" %}
+        {% anno_name = stmt.name.names.last.stringify %}
+        {% if anno_name == "Doc" %}
+          {% class_doc = stmt.args[0].stringify %}
+        {% elsif anno_name == "Tool" %}
+          {% is_tool_class = true %}
+        {% elsif anno_name == "Icon" %}
+          {% class_icon_path = stmt.args[0].stringify %}
+        {% elsif anno_name == "Abstract" %}
+          {% is_abstract_class = true %}
+        {% elsif anno_name == "StaticUnload" %}
+          {% is_static_unload = true %}
+        {% elsif anno_name == "ExportCategory" %}
+          {% cat_name = stmt.args[0].is_a?(StringLiteral) ? stmt.args[0] : stmt.args[0].id.stringify %}
+          {% props << {:category, cat_name, ""} %}
+        {% elsif anno_name == "Group" %}
+          {% for g in stmt.args %}
+            {% node_groups << (g.is_a?(StringLiteral) ? g : g.id.stringify) %}
+          {% end %}
+        {% elsif anno_name == "ExportGroup" %}
+          {% grp_name = stmt.args[0].is_a?(StringLiteral) ? stmt.args[0] : stmt.args[0].id.stringify %}
+          {% pfx = "" %}
+          {% if stmt.named_args %}
+            {% for k, v in stmt.named_args %}
+              {% if k.stringify == "prefix" %}
+                {% pfx = v.is_a?(StringLiteral) ? v : v.id.stringify %}
+              {% end %}
             {% end %}
           {% end %}
-        {% end %}
-        {% if pfx.empty? && stmt.args.size > 1 %}
-          {% pfx = stmt.args[1].is_a?(StringLiteral) ? stmt.args[1] : stmt.args[1].id.stringify %}
-        {% end %}
-        {% props << {:group, grp_name, pfx} %}
-      {% elsif anno_name == "ExportSubgroup" %}
-        {% sub_name = stmt.args[0].is_a?(StringLiteral) ? stmt.args[0] : stmt.args[0].id.stringify %}
-        {% pfx = "" %}
-        {% if stmt.named_args %}
-          {% for k, v in stmt.named_args %}
-            {% if k.stringify == "prefix" %}
-              {% pfx = v.is_a?(StringLiteral) ? v : v.id.stringify %}
+          {% if pfx.empty? && stmt.args.size > 1 %}
+            {% pfx = stmt.args[1].is_a?(StringLiteral) ? stmt.args[1] : stmt.args[1].id.stringify %}
+          {% end %}
+          {% props << {:group, grp_name, pfx} %}
+          {% last_anno = stmt %}
+        {% elsif anno_name == "ExportSubgroup" %}
+          {% sub_name = stmt.args[0].is_a?(StringLiteral) ? stmt.args[0] : stmt.args[0].id.stringify %}
+          {% pfx = "" %}
+          {% if stmt.named_args %}
+            {% for k, v in stmt.named_args %}
+              {% if k.stringify == "prefix" %}
+                {% pfx = v.is_a?(StringLiteral) ? v : v.id.stringify %}
+              {% end %}
             {% end %}
           {% end %}
+          {% if pfx.empty? && stmt.args.size > 1 %}
+            {% pfx = stmt.args[1].is_a?(StringLiteral) ? stmt.args[1] : stmt.args[1].id.stringify %}
+          {% end %}
+          {% props << {:subgroup, sub_name, pfx} %}
+          {% last_anno = stmt %}
+        {% elsif anno_name == "WarningIgnore" || anno_name == "WarningIgnoreStart" || anno_name == "WarningIgnoreRestore" %}
+          # suppressed warning, no-op
+        {% else %}
+          {% last_anno = stmt %}
         {% end %}
-        {% if pfx.empty? && stmt.args.size > 1 %}
-          {% pfx = stmt.args[1].is_a?(StringLiteral) ? stmt.args[1] : stmt.args[1].id.stringify %}
-        {% end %}
-        {% props << {:subgroup, sub_name, pfx} %}
-      {% elsif anno_name == "WarningIgnore" || anno_name == "WarningIgnoreStart" || anno_name == "WarningIgnoreRestore" %}
-        # suppressed warning, no-op
-      {% else %}
-        {% last_anno = stmt %}
-      {% end %}
     {% elsif stmt.is_a?(Call) && stmt.name.stringify == "icon" %}
       {% class_icon_path = stmt.args[0].is_a?(StringLiteral) ? stmt.args[0] : stmt.args[0].id.stringify %}
     {% elsif stmt.is_a?(Call) && stmt.name.stringify == "abstract_class" %}
@@ -776,6 +925,7 @@ macro node(decl, &block)
     {% else %}
       {% last_anno = nil %}
     {% end %}
+    {% end %}
   {% end %}
 
   {% if onready_props.size > 0 || rpc_methods.size > 0 %}
@@ -794,10 +944,13 @@ macro node(decl, &block)
 
     def self._godot_has_virtual_method(method_name : String) : Bool
       case method_name
-      {% for stmt in stmts %}
-        {% if stmt.is_a?(Def) && stmt.name.stringify.starts_with?("_") %}
-        when {{stmt.name.stringify}}
-          return true
+      {% for item_entry in stmts_items %}
+        {% if item_entry[0] == :stmt %}
+          {% stmt = item_entry[1] %}
+          {% if stmt.is_a?(Def) && stmt.name.stringify.starts_with?("_") %}
+          when {{stmt.name.stringify}}
+            return true
+          {% end %}
         {% end %}
       {% end %}
       else
@@ -1168,7 +1321,50 @@ macro node(decl, &block)
                 {% hint = 21 %}
               {% elsif k_str == "node_path" %}
                 {% hint = 26 %}
-                {% hint_str = val.id.stringify %}
+                {%
+                  node_path_queue = [] of ASTNode
+                  node_path_queue << val
+                  extracted_types = [] of StringLiteral
+                %}
+                {% for step in [1, 2, 3, 4, 5, 6, 7, 8] %}
+                  {%
+                    if node_path_queue.size > 0
+                      next_queue = [] of ASTNode
+                      node_path_queue.each do |item|
+                        if item.is_a?(Call) && item.name.stringify == "|"
+                          next_queue << item.receiver
+                          item.args.each { |ca| next_queue << ca }
+                        elsif item.is_a?(ArrayLiteral)
+                          item.each { |elem| next_queue << elem }
+                        elsif item.is_a?(StringLiteral)
+                          extracted_types << item.id.stringify
+                        elsif item.is_a?(Path)
+                          item_name_str = item.stringify.gsub(/^::/, "")
+                          if extracted_aliases[item_name_str]
+                            extracted_aliases[item_name_str].each do |sub_alias_type|
+                              extracted_types << sub_alias_type.gsub(/^(::)?Godot::/, "")
+                            end
+                          elsif item.resolve? == nil
+                            raise "ExportNodePath type '#{item}' does not exist or cannot be resolved"
+                          elsif item.resolve.type_vars.size > 0
+                            item.resolve.type_vars.each do |tv|
+                              extracted_types << tv.stringify.gsub(/^(::)?Godot::/, "")
+                            end
+                          else
+                            resolved_str = item.resolve.stringify
+                            resolved_str.gsub(/[()]/, "").split("|").each do |part|
+                              extracted_types << part.strip.gsub(/^(::)?Godot::/, "")
+                            end
+                          end
+                        else
+                          extracted_types << item.stringify.gsub(/^(::)?Godot::/, "")
+                        end
+                      end
+                      node_path_queue = next_queue
+                    end
+                  %}
+                {% end %}
+                {% hint_str = extracted_types.uniq.join(",") %}
               {% elsif k_str == "storage" %}
                 {% prop_usage = 2 %}
               {% elsif k_str == "tool_button" %}
@@ -1276,7 +1472,50 @@ macro node(decl, &block)
           {% hint = 21 %}
         {% elsif a_name == "ExportNodePath" %}
           {% hint = 26 %}
-          {% hint_str = anno.args.size > 0 ? anno.args[0].id.stringify : "" %}
+          {%
+            node_path_queue = [] of ASTNode
+            anno.args.each { |a| node_path_queue << a }
+            extracted_types = [] of StringLiteral
+          %}
+          {% for step in [1, 2, 3, 4, 5, 6, 7, 8] %}
+            {%
+              if node_path_queue.size > 0
+                next_queue = [] of ASTNode
+                node_path_queue.each do |item|
+                  if item.is_a?(Call) && item.name.stringify == "|"
+                    next_queue << item.receiver
+                    item.args.each { |ca| next_queue << ca }
+                  elsif item.is_a?(ArrayLiteral)
+                    item.each { |elem| next_queue << elem }
+                  elsif item.is_a?(StringLiteral)
+                    extracted_types << item.id.stringify
+                  elsif item.is_a?(Path)
+                    item_name_str = item.stringify.gsub(/^::/, "")
+                    if extracted_aliases[item_name_str]
+                      extracted_aliases[item_name_str].each do |sub_alias_type|
+                        extracted_types << sub_alias_type.gsub(/^(::)?Godot::/, "")
+                      end
+                    elsif item.resolve? == nil
+                      raise "ExportNodePath type '#{item}' does not exist or cannot be resolved"
+                    elsif item.resolve.type_vars.size > 0
+                      item.resolve.type_vars.each do |tv|
+                        extracted_types << tv.stringify.gsub(/^(::)?Godot::/, "")
+                      end
+                    else
+                      resolved_str = item.resolve.stringify
+                      resolved_str.gsub(/[()]/, "").split("|").each do |part|
+                        extracted_types << part.strip.gsub(/^(::)?Godot::/, "")
+                      end
+                    end
+                  else
+                    extracted_types << item.stringify.gsub(/^(::)?Godot::/, "")
+                  end
+                end
+                node_path_queue = next_queue
+              end
+            %}
+          {% end %}
+          {% hint_str = extracted_types.uniq.join(",") %}
         {% elsif a_name == "ExportStorage" %}
           {% prop_usage = 2 %}
         {% elsif a_name == "ExportToolButton" %}
@@ -1388,12 +1627,12 @@ macro node(decl, &block)
     io << "<class name=\"{{class_name.id}}\" inherits=\"" << {{base_godot_name}} << "\">\n"
     io << "  <brief_description>\n"
     {% if class_doc != "" %}
-      io << "    " << {{class_doc}} << "\n"
+      io << "    " << ::Godot::XML.escape({{class_doc}}) << "\n"
     {% end %}
     io << "  </brief_description>\n"
     io << "  <description>\n"
     {% if class_doc != "" %}
-      io << "    " << {{class_doc}} << "\n"
+      io << "    " << ::Godot::XML.escape({{class_doc}}) << "\n"
     {% end %}
     io << "  </description>\n"
     io << "  <tutorials>\n  </tutorials>\n"
@@ -1425,7 +1664,7 @@ macro node(decl, &block)
         %}
         io << "    <member name=\"{{arg.var.id}}\" type=\"{{gtype.id}}\" setter=\"\" getter=\"\">"
         {% if p_doc && p_doc != "" %}
-          io << {{p_doc.stringify}}
+          io << ::Godot::XML.escape({{p_doc.stringify}})
         {% end %}
         io << "</member>\n"
       {% end %}
@@ -1445,7 +1684,7 @@ macro node(decl, &block)
       io << "    <signal name=\"{{sig_name.id}}\">\n"
       io << "      <description>"
       {% if sig_doc && sig_doc != "" %}
-        io << {{sig_doc.stringify}}
+        io << ::Godot::XML.escape({{sig_doc.stringify}})
       {% end %}
       io << "</description>\n"
       {% for a, a_idx in sig_args %}
@@ -1454,7 +1693,7 @@ macro node(decl, &block)
         {% end %}
       {% end %}
       io << "    </signal>\n"
-    {% end %}
+      {% end %}
     io << "  </signals>\n"
     {% if methods_doc.size > 0 %}
     io << "  <methods>\n"
@@ -1515,14 +1754,14 @@ macro node(decl, &block)
           end
         %}
         {% if a.default_value %}
-          io << "      <param index=\"" << {{a_idx}} << "\" name=\"{{a.name.id}}\" type=\"" << {{a_gtype}} << "\" default=\"{{a.default_value.id}}\" />\n"
+          io << "      <param index=\"" << {{a_idx}} << "\" name=\"{{a.name.id}}\" type=\"" << {{a_gtype}} << "\" default=\"" << ::Godot::XML.escape({{a.default_value.id.stringify}}) << "\" />\n"
         {% else %}
           io << "      <param index=\"" << {{a_idx}} << "\" name=\"{{a.name.id}}\" type=\"" << {{a_gtype}} << "\" />\n"
         {% end %}
       {% end %}
       io << "      <description>"
       {% if m_doc && m_doc != "" %}
-        io << {{m_doc.stringify}}
+        io << ::Godot::XML.escape({{m_doc.stringify}})
       {% end %}
       io << "</description>\n"
       io << "    </method>\n"
@@ -1782,5 +2021,53 @@ macro group(*group_names)
   # Declarative registration is extracted by the `node` macro
 end
 
+# Groups exported properties in the Godot inspector.
+#
+# May be used standalone or as a block scoping exported properties:
+# ```crystal
+# export_group "Movement", prefix: "move_" do
+#   @[Export]
+#   property move_speed : Float32 = 5.0_f32
+# end
+# ```
+macro export_group(name, prefix = "")
+  # Declarative registration is extracted by the `node` / `resource` macro
+end
 
+macro export_group(name, prefix = "", &block)
+  {{ yield }}
+end
 
+# Subgroups exported properties under the current inspector group.
+#
+# May be used standalone or as a block scoping exported properties:
+# ```crystal
+# export_subgroup "Advanced", prefix: "adv_" do
+#   @[Export]
+#   property adv_friction : Float32 = 0.1_f32
+# end
+# ```
+macro export_subgroup(name, prefix = "")
+  # Declarative registration is extracted by the `node` / `resource` macro
+end
+
+macro export_subgroup(name, prefix = "", &block)
+  {{ yield }}
+end
+
+# Categories group top-level inspector sections in Godot.
+#
+# May be used standalone or as a block scoping exported properties:
+# ```crystal
+# export_category "Combat" do
+#   @[Export]
+#   property health : Int32 = 100
+# end
+# ```
+macro export_category(name)
+  # Declarative registration is extracted by the `node` / `resource` macro
+end
+
+macro export_category(name, &block)
+  {{ yield }}
+end

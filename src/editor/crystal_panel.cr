@@ -725,11 +725,7 @@ module Godot
       end
 
       # 2. Candidate directories relative to current working directory
-      if Dir.exists?("test/spec")
-        {File.expand_path("test/spec").gsub('\\', '/'), File.expand_path("test").gsub('\\', '/')}
-      elsif Dir.exists?("../test/spec")
-        {File.expand_path("../test/spec").gsub('\\', '/'), File.expand_path("../test").gsub('\\', '/')}
-      elsif Dir.exists?("spec")
+      if Dir.exists?("spec")
         {File.expand_path("spec").gsub('\\', '/'), File.expand_path(".").gsub('\\', '/')}
       elsif Dir.exists?("../spec")
         {File.expand_path("../spec").gsub('\\', '/'), File.expand_path("..").gsub('\\', '/')}
@@ -965,7 +961,13 @@ module Godot
     # =========================================================================
 
     def detect_project_entry : String
-      ["src/main.cr", "test/src/main.cr", "../test/src/main.cr", "demo/src/main.cr"].find { |f| File.exists?(f) } || "src/main.cr"
+      return "src/main.cr" if File.exists?("src/main.cr")
+      if !Godot::ProjectSettings.singleton_ptr.null?
+        ps = Godot::ProjectSettings.new(Godot::ProjectSettings.singleton_ptr)
+        global_entry = ps.call_str("globalize_path", "res://src/main.cr").gsub('\\', '/')
+        return global_entry if !global_entry.empty? && File.exists?(global_entry)
+      end
+      "src/main.cr"
     end
 
     def library_extension : String

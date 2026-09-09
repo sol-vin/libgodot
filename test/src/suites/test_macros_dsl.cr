@@ -110,6 +110,75 @@ node ExhaustiveExportMacroNode < Godot::Node do
   property combat_def_armor : Int32 = 50
 end
 
+alias MacroTestCameraAlias = Godot::Camera3D
+alias MacroTestMultiCameraUnionAlias = Godot::Camera3D | Godot::Camera2D
+
+node ComprehensiveGroupingTestNode < Godot::Node do
+  @[Export]
+  property pre_group_stat : Int32 = 10
+
+  export_category "Combat Systems" do
+    export_group "Attributes", prefix: "attr_" do
+      @[ExportRange(0.0..100.0, step: 1.0)]
+      property attr_health : Float64 = 100.0
+
+      @[ExportEnum(DslTestRole)]
+      property attr_role : DslTestRole = DslTestRole::Knight
+
+      @[ExportFlags(DslTestSkills)]
+      property attr_skills : DslTestSkills = DslTestSkills::Melee
+
+      @[ExportFile("*.tres")]
+      property attr_config : String = "res://config.tres"
+
+      @[ExportMultiline]
+      property attr_bio : String = "Hero character bio"
+
+      @[ExportColorNoAlpha]
+      property attr_tint : Godot::Color = Godot::Color.new(1.0, 1.0, 1.0, 1.0)
+
+      @[ExportExpEasing]
+      property attr_curve : Float32 = 1.0_f32
+
+      @[ExportStorage]
+      property attr_cache_id : Int32 = 99
+
+      export_subgroup "Defenses", prefix: "attr_def_" do
+        @[Export]
+        property attr_def_armor : Int32 = 25
+
+        @[Export]
+        property attr_def_shield : Float32 = 50.0_f32
+      end
+
+      # Post-subgroup property inside the "Attributes" group
+      @[Export]
+      property attr_speed : Float32 = 7.5_f32
+    end
+
+    # Post-group property inside "Combat Systems" category (outside Attributes group)
+    @[Export]
+    property category_unscoped : String = "standalone"
+
+    # ExportNodePath variants with typed classes, unions, aliases, and strings
+    @[ExportNodePath(Godot::Camera3D)]
+    property cam_single : Godot::NodePath = Godot::NodePath.new("CamSingle")
+
+    @[ExportNodePath(Godot::Camera3D | Godot::Camera2D)]
+    property cam_union : Godot::NodePath = Godot::NodePath.new("CamUnion")
+
+    @[ExportNodePath(MacroTestCameraAlias)]
+    property cam_alias : Godot::NodePath = Godot::NodePath.new("CamAlias")
+
+    @[ExportNodePath(MacroTestMultiCameraUnionAlias)]
+    property cam_union_alias : Godot::NodePath = Godot::NodePath.new("CamUnionAlias")
+
+    @[ExportNodePath("Camera3D", "Camera2D")]
+    property cam_strings : Godot::NodePath = Godot::NodePath.new("CamStrings")
+  end
+end
+
+
 test_macros_dsl "Type-safe signal listeners with converted arguments (on_<signal>)" do
   target = PropertyTestTarget.new
   received_code = 0
@@ -245,6 +314,8 @@ test_macros_dsl "Hierarchy cast helpers on Node (get_parent_as, find_child_as, g
   unique_child = parent.get_unique_node_as(Godot::Node2D, "MyUniqueChild")
   TestFramework.assert_not_nil unique_child
 
+  parent.remove_child(child)
+  child.destroy
   parent.destroy
 end
 
@@ -341,8 +412,11 @@ test_macros_dsl "Transferring Crystal enum node to GDScript: reading, setting, a
   classdb_val = controller.call_i64("query_classdb_enum_constant", "EnumDslTestNode", "Thief")
   TestFramework.assert_eq classdb_val, 5_i64, "ClassDB should return 5 for EnumDslTestNode.Thief"
 
-  enum_node.queue_free
-  controller.queue_free
+  root.remove_child(enum_node)
+  root.remove_child(controller)
+  enum_node.destroy
+  controller.destroy
+  scene.destroy
 end
 
 test_macros_dsl "Exhaustive @Export property annotation metadata and hint validation in ClassDB" do
@@ -442,4 +516,164 @@ test_macros_dsl "Lifecycle hooks: _enter_tree and _exit_tree callbacks" do
   node.destroy
 end
 
+test_macros_dsl "Comprehensive grouping DSL: category, group, subgroup boundaries and sentinels in ClassRegistry" do
+  entry = Godot::ClassRegistry.find("ComprehensiveGroupingTestNode")
+  TestFramework.assert_not_nil entry, "ComprehensiveGroupingTestNode must be registered in ClassRegistry"
+  props = entry.not_nil!.properties
 
+  # Verify initial ungrouped property
+  p_pre = props.find { |p| p.name == "pre_group_stat" }
+  TestFramework.assert_not_nil p_pre
+  TestFramework.assert_eq p_pre.not_nil!.usage, 6_u32
+
+  # Category "Combat Systems"
+  p_cat = props.find { |p| p.usage == 128_u32 && p.name == "Combat Systems" }
+  TestFramework.assert_not_nil p_cat, "Category 'Combat Systems' must be registered with usage 128"
+
+  # Group "Attributes"
+  p_grp = props.find { |p| p.usage == 64_u32 && p.name == "Attributes" }
+  TestFramework.assert_not_nil p_grp, "Group 'Attributes' must be registered with usage 64"
+  TestFramework.assert_eq p_grp.not_nil!.hint_string, "attr_"
+
+  # Subgroup "Defenses"
+  p_sub = props.find { |p| p.usage == 256_u32 && p.name == "Defenses" }
+  TestFramework.assert_not_nil p_sub, "Subgroup 'Defenses' must be registered with usage 256"
+  TestFramework.assert_eq p_sub.not_nil!.hint_string, "attr_def_"
+
+  # Verify subgroup boundary closure sentinel (name: "", usage: 256)
+  sub_sentinels = props.select { |p| p.usage == 256_u32 && p.name == "" }
+  TestFramework.assert_eq sub_sentinels.size, 1, "Subgroup boundary must emit an empty sentinel with usage 256"
+
+  # Verify group boundary closure sentinel (name: "", usage: 64)
+  grp_sentinels = props.select { |p| p.usage == 64_u32 && p.name == "" }
+  TestFramework.assert_eq grp_sentinels.size, 1, "Group boundary must emit an empty sentinel with usage 64"
+
+  # Verify relative ordering across boundaries:
+  sub_idx = props.index { |p| p.usage == 256_u32 && p.name == "Defenses" }.not_nil!
+  armor_idx = props.index { |p| p.name == "attr_def_armor" }.not_nil!
+  sub_sentinel_idx = props.index { |p| p.usage == 256_u32 && p.name == "" }.not_nil!
+  speed_idx = props.index { |p| p.name == "attr_speed" }.not_nil!
+  grp_sentinel_idx = props.index { |p| p.usage == 64_u32 && p.name == "" }.not_nil!
+  unscoped_idx = props.index { |p| p.name == "category_unscoped" }.not_nil!
+
+  TestFramework.assert_true sub_idx < armor_idx, "Defenses subgroup must precede its properties"
+  TestFramework.assert_true armor_idx < sub_sentinel_idx, "attr_def_armor must precede subgroup sentinel"
+  TestFramework.assert_true sub_sentinel_idx < speed_idx, "attr_speed must follow subgroup sentinel (restored to Attributes group)"
+  TestFramework.assert_true speed_idx < grp_sentinel_idx, "attr_speed must precede group sentinel"
+  TestFramework.assert_true grp_sentinel_idx < unscoped_idx, "category_unscoped must follow group sentinel (restored to category)"
+
+  # Verify all diverse export types inside group
+  p_health = props.find { |p| p.name == "attr_health" }.not_nil!
+  TestFramework.assert_eq p_health.hint, 1_u32 # PROPERTY_HINT_RANGE
+  TestFramework.assert_eq p_health.hint_string, "0.0,100.0,1.0"
+
+  p_role = props.find { |p| p.name == "attr_role" }.not_nil!
+  TestFramework.assert_eq p_role.hint, 2_u32 # PROPERTY_HINT_ENUM
+
+  p_skills = props.find { |p| p.name == "attr_skills" }.not_nil!
+  TestFramework.assert_eq p_skills.hint, 6_u32 # PROPERTY_HINT_FLAGS
+
+  p_config = props.find { |p| p.name == "attr_config" }.not_nil!
+  TestFramework.assert_eq p_config.hint, 13_u32 # PROPERTY_HINT_FILE
+
+  p_bio = props.find { |p| p.name == "attr_bio" }.not_nil!
+  TestFramework.assert_eq p_bio.hint, 18_u32 # PROPERTY_HINT_MULTILINE_TEXT
+
+  p_tint = props.find { |p| p.name == "attr_tint" }.not_nil!
+  TestFramework.assert_eq p_tint.hint, 21_u32 # PROPERTY_HINT_COLOR_NO_ALPHA
+
+  p_curve = props.find { |p| p.name == "attr_curve" }.not_nil!
+  TestFramework.assert_eq p_curve.hint, 4_u32 # PROPERTY_HINT_EXP_EASING
+
+  p_cache = props.find { |p| p.name == "attr_cache_id" }.not_nil!
+  TestFramework.assert_eq p_cache.usage, 2_u32 # PROPERTY_USAGE_STORAGE
+end
+
+test_macros_dsl "ExportNodePath type resolution: classes, unions, aliases, and strings" do
+  entry = Godot::ClassRegistry.find("ComprehensiveGroupingTestNode").not_nil!
+  props = entry.properties
+
+
+  # Direct Godot class type
+  p_single = props.find { |p| p.name == "cam_single" }.not_nil!
+  TestFramework.assert_eq p_single.hint, 26_u32 # PROPERTY_HINT_NODE_PATH_VALID_TYPES
+  TestFramework.assert_eq p_single.hint_string, "Camera3D"
+
+  # Union of Godot classes
+  p_union = props.find { |p| p.name == "cam_union" }.not_nil!
+  TestFramework.assert_eq p_union.hint, 26_u32
+  TestFramework.assert_eq p_union.hint_string, "Camera3D,Camera2D"
+
+  # Type alias to single class
+  p_alias = props.find { |p| p.name == "cam_alias" }.not_nil!
+  TestFramework.assert_eq p_alias.hint, 26_u32
+  TestFramework.assert_eq p_alias.hint_string, "Camera3D"
+
+  # Type alias to union
+  p_union_alias = props.find { |p| p.name == "cam_union_alias" }.not_nil!
+  TestFramework.assert_eq p_union_alias.hint, 26_u32
+  TestFramework.assert_eq p_union_alias.hint_string, "Camera3D,Camera2D"
+
+  # Classical comma-separated strings
+  p_strings = props.find { |p| p.name == "cam_strings" }.not_nil!
+  TestFramework.assert_eq p_strings.hint, 26_u32
+  TestFramework.assert_eq p_strings.hint_string, "Camera3D,Camera2D"
+end
+
+test_macros_dsl "Runtime property mutation and state integrity on ComprehensiveGroupingTestNode" do
+  node = Godot.create(ComprehensiveGroupingTestNode)
+  root.add_child(node)
+
+  # Verify properties can be read and set at runtime
+  TestFramework.assert_eq node.attr_def_armor, 25
+  node.attr_def_armor = 80
+  TestFramework.assert_eq node.attr_def_armor, 80
+
+  TestFramework.assert_eq node.category_unscoped, "standalone"
+  node.category_unscoped = "updated"
+  TestFramework.assert_eq node.category_unscoped, "updated"
+
+  TestFramework.assert_eq node.attr_speed, 7.5_f32
+  node.attr_speed = 12.0_f32
+  TestFramework.assert_eq node.attr_speed, 12.0_f32
+
+  root.remove_child(node)
+  node.destroy
+end
+
+test_macros_dsl "GDScript interop: inspecting grouped node properties and ExportNodePath hints" do
+  node = Godot.create(ComprehensiveGroupingTestNode)
+  root.add_child(node)
+
+  scene = Godot.load_as(Godot::PackedScene, "res://scenes/test_gdscript_interop.tscn")
+  controller = scene.instantiate
+  root.add_child(controller)
+
+  # Inspect crystal node
+  status = controller.call_str("inspect_crystal_node", node)
+  TestFramework.assert_true status.starts_with?("OK:"), "GDScript must inspect ComprehensiveGroupingTestNode"
+
+  # Verify GDScript can inspect ExportNodePath hints using helper
+  cam_hint = controller.call_i64("get_enum_property_hint", node, "cam_union")
+  TestFramework.assert_eq cam_hint, 26_i64, "cam_union hint must be PROPERTY_HINT_NODE_PATH_VALID_TYPES (26)"
+
+  cam_hint_str = controller.call_str("get_enum_property_hint_string", node, "cam_union")
+  TestFramework.assert_eq cam_hint_str, "Camera3D,Camera2D", "cam_union hint_string must be Camera3D,Camera2D"
+
+  alias_hint_str = controller.call_str("get_enum_property_hint_string", node, "cam_union_alias")
+  TestFramework.assert_eq alias_hint_str, "Camera3D,Camera2D", "cam_union_alias hint_string must resolve alias to Camera3D,Camera2D"
+
+  # Verify GDScript can read and write grouped properties
+  armor_val = controller.call_i64("inspect_enum_property", node, "attr_def_armor")
+  TestFramework.assert_eq armor_val, 25_i64, "GDScript should read initial attr_def_armor value 25"
+
+  write_ok = controller.call_bool("set_enum_property", node, "attr_def_armor", 95_i64)
+  TestFramework.assert_true write_ok, "GDScript set_enum_property should succeed for attr_def_armor"
+  TestFramework.assert_eq node.attr_def_armor, 95, "Crystal node must reflect updated attr_def_armor"
+
+  root.remove_child(node)
+  root.remove_child(controller)
+  node.destroy
+  controller.destroy
+  scene.destroy
+end

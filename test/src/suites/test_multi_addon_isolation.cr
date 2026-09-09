@@ -89,16 +89,15 @@ test_multi_addon "EditorPlugin documentation and public methods registration" do
 end
 
 test_multi_addon "Zero memory leak across multiple addon nodes" do
-  container = Godot.create(Godot::Node)
-  root.add_child(container)
-
+  addon_nodes = Array(Godot::Control).new
   5.times do |i|
     # Add dummy dialogue boxes
     d_ptr = Godot::Bridge.construct_object("DialogueBox")
     if !d_ptr.null?
       d_node = Godot::Control.new(d_ptr)
       d_node.name = "DialogueBox_#{i}"
-      container.add_child(d_node)
+      root.add_child(d_node)
+      addon_nodes << d_node
     end
 
     # Add dummy inventory grids
@@ -106,11 +105,17 @@ test_multi_addon "Zero memory leak across multiple addon nodes" do
     if !inv_ptr.null?
       inv_node = Godot::Control.new(inv_ptr)
       inv_node.name = "InventoryGrid_#{i}"
-      container.add_child(inv_node)
+      root.add_child(inv_node)
+      addon_nodes << inv_node
     end
   end
 
-  container.queue_free
+  addon_nodes.each do |n|
+    root.remove_child(n)
+    n.destroy
+  end
+  addon_nodes.clear
+
   GC.collect
   TestFramework.assert_true true, "Multi-addon nodes cleanly allocated and deallocated"
 end

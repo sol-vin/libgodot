@@ -403,10 +403,75 @@ module Docs
   # @[ExportColorNoAlpha]
   # property base_color : Color = Color::RED
   #
-  # # NodePath selector restricted to Camera3D nodes in the scene tree
+  # # NodePath selector restricted to specific scene node types
   # @[ExportNodePath("Camera3D")]
   # property target_camera : NodePath = NodePath.new
   # ```
+  #
+  # ##### Strongly-Typed NodePath Filtering (`@[ExportNodePath]`)
+  #
+  # Godot allows `NodePath` properties to restrict user selection in the editor scene tree
+  # inspector to specific node classes. LibGodot supports string names, direct Godot class
+  # types, union types, and type aliases with compile-time type validation:
+  #
+  # ```crystal
+  # alias CameraTarget = Godot::Camera3D | Godot::Camera2D
+  #
+  # node PlayerFollowCam < Node3D do
+  #   # 1. Direct Godot class reference:
+  #   @[ExportNodePath(Godot::Camera3D)]
+  #   property primary_cam : NodePath = NodePath.new
+  #
+  #   # 2. Union types (allows selecting Camera3D OR Camera2D in inspector):
+  #   @[ExportNodePath(Godot::Camera3D | Godot::Camera2D)]
+  #   property secondary_cam : NodePath = NodePath.new
+  #
+  #   # 3. Type alias representing a union or single class:
+  #   @[ExportNodePath(CameraTarget)]
+  #   property tertiary_cam : NodePath = NodePath.new
+  #
+  #   # 4. Classical string literal or array of strings:
+  #   @[ExportNodePath("Camera3D", "Camera2D")]
+  #   property fallback_cam : NodePath = NodePath.new
+  # end
+  # ```
+  #
+  # <table>
+  #   <thead>
+  #     <tr>
+  #       <th>Annotation Variant</th>
+  #       <th>Example Syntax</th>
+  #       <th>Godot Hint String</th>
+  #       <th>Compile-Time Validation</th>
+  #     </tr>
+  #   </thead>
+  #   <tbody>
+  #     <tr>
+  #       <td><strong>Direct Class</strong></td>
+  #       <td><code>@[ExportNodePath(Godot::Camera3D)]</code></td>
+  #       <td><code>"Camera3D"</code></td>
+  #       <td>Verified against Crystal type system; typo raises compiler error</td>
+  #     </tr>
+  #     <tr>
+  #       <td><strong>Union Type</strong></td>
+  #       <td><code>@[ExportNodePath(Godot::Camera3D | Godot::Camera2D)]</code></td>
+  #       <td><code>"Camera3D,Camera2D"</code></td>
+  #       <td>Each union branch is checked for existence at compile time</td>
+  #     </tr>
+  #     <tr>
+  #       <td><strong>Type Alias</strong></td>
+  #       <td><code>@[ExportNodePath(CameraTarget)]</code></td>
+  #       <td><code>"Camera3D,Camera2D"</code></td>
+  #       <td>Resolved alias types are checked and stripped into engine class names</td>
+  #     </tr>
+  #     <tr>
+  #       <td><strong>String Literal</strong></td>
+  #       <td><code>@[ExportNodePath("Camera3D")]</code></td>
+  #       <td><code>"Camera3D"</code></td>
+  #       <td>Permits arbitrary custom GDExtension or script class names</td>
+  #     </tr>
+  #   </tbody>
+  # </table>
   #
   # #### 8. Storage Without Inspector Display (`@[ExportStorage]`)
   # Serializes the property into the scene `.tscn` file without displaying it in the inspector:
@@ -416,20 +481,80 @@ module Docs
   # ```
   #
   # #### 9. Inspector Groups, Subgroups, and Categories
-  # Organizes properties into collapsible sections inside the Godot inspector:
+  #
+  # Godot's inspector supports organizing properties into collapsible groups, nested subgroups,
+  # and top-level category headers. LibGodot supports both block-scoped DSL declarations and
+  # sequential macro / annotation directives.
+  #
+  # ##### Block-Scoped Grouping DSL (Recommended)
+  #
+  # Wrapping exported properties inside `export_group`, `export_subgroup`, or `export_category`
+  # blocks automatically scopes properties and **enforces boundary closure**:
+  #
   # ```crystal
   # node Player < CharacterBody3D do
-  #   export_category "Player Statistics"
+  #   # Top-level category tab:
+  #   export_category "Player Systems" do
+  #     # Primary collapsible group:
+  #     export_group "Locomotion", prefix: "move_" do
+  #       @[Export] property move_speed : Float32 = 5.0_f32
+  #       @[Export] property move_acceleration : Float32 = 20.0_f32
   #
-  #   export_group "Locomotion", prefix: "move_"
-  #   @[Export] property move_speed : Float32 = 5.0_f32
-  #   @[Export] property move_acceleration : Float32 = 20.0_f32
+  #       # Nested subgroup with its own prefix:
+  #       export_subgroup "Jump Mechanics", prefix: "jump_" do
+  #         @[Export] property jump_velocity : Float32 = 8.0_f32
+  #         @[Export] property jump_cut_multiplier : Float32 = 0.5_f32
+  #       end
   #
-  #   export_subgroup "Jump Mechanics"
-  #   @[Export] property jump_velocity : Float32 = 8.0_f32
-  #   @[Export] property jump_cut_multiplier : Float32 = 0.5_f32
+  #       # Properties here are automatically back in the "Locomotion" group!
+  #       @[Export] property move_friction : Float32 = 0.1_f32
+  #     end
+  #
+  #     # Properties outside the block are cleanly un-grouped (sentinel emitted):
+  #     @[Export] property active_state : String = "idle"
+  #   end
   # end
   # ```
+  #
+  # ##### Boundary Scoping & Sentinel Emittance
+  #
+  # When Godot encounters a property group in `ClassDB`, all subsequent exported properties are
+  # placed into that group until another group or an empty terminator is encountered.
+  # LibGodot's block DSL automatically emits boundary termination sentinels (properties with empty
+  # `name: ""` and `usage: 64` for groups or `usage: 256` for subgroups) upon exiting blocks,
+  # ensuring that enclosing scopes and following properties are never accidentally grouped.
+  #
+  # <table>
+  #   <thead>
+  #     <tr>
+  #       <th>Construct</th>
+  #       <th>Block Syntax</th>
+  #       <th>Sequential / Annotation Syntax</th>
+  #       <th>Boundary Behavior</th>
+  #     </tr>
+  #   </thead>
+  #   <tbody>
+  #     <tr>
+  #       <td><strong>Category</strong></td>
+  #       <td><code>export_category "Name" do ... end</code></td>
+  #       <td><code>export_category "Name"</code> or <code>@[ExportCategory("Name")]</code></td>
+  #       <td>Emits <code>PROPERTY_USAGE_CATEGORY</code> (128). Groups following properties until next category.</td>
+  #     </tr>
+  #     <tr>
+  #       <td><strong>Group</strong></td>
+  #       <td><code>export_group "Name", prefix: "pfx_" do ... end</code></td>
+  #       <td><code>export_group "Name", "pfx_"</code> or <code>@[ExportGroup("Name", "pfx_")]</code></td>
+  #       <td>Emits <code>PROPERTY_USAGE_GROUP</code> (64). Block closure emits empty sentinel to restore scope.</td>
+  #     </tr>
+  #     <tr>
+  #       <td><strong>Subgroup</strong></td>
+  #       <td><code>export_subgroup "Name", prefix: "pfx_" do ... end</code></td>
+  #       <td><code>export_subgroup "Name", "pfx_"</code> or <code>@[ExportSubgroup("Name", "pfx_")]</code></td>
+  #       <td>Emits <code>PROPERTY_USAGE_SUBGROUP</code> (256). Block closure restores enclosing group scope.</td>
+  #     </tr>
+  #   </tbody>
+  # </table>
+
   #
   # #### 10. Interactive Inspector Tool Buttons (`@[ExportToolButton]`)
   # Creates a clickable button in the Godot inspector that triggers a method when pressed:

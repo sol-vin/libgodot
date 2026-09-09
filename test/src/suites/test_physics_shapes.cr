@@ -41,6 +41,7 @@ test_physics "CollisionShape2D shape assignment and disabled flag" do
   ret_shape = cs2d.get_shape
   TestFramework.assert_not_nil ret_shape
   TestFramework.assert_false ret_shape.pointer.null?
+  ret_shape.destroy
 
   cs2d.set_disabled(true)
   TestFramework.assert_true cs2d.is_disabled
@@ -90,6 +91,7 @@ test_physics "CollisionShape3D shape assignment and debug color" do
   ret = cs3d.get_shape
   TestFramework.assert_not_nil ret
   TestFramework.assert_false ret.pointer.null?
+  ret.destroy
 
   cs3d.set_disabled(false)
   TestFramework.assert_false cs3d.is_disabled

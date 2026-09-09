@@ -4,28 +4,25 @@ godot.exe
 /addons/*/bin/
 
 /examples/*/.godot/
-/examples/*/bin
-/examples/*/addons
+/examples/*/bin/
+/examples/*/addons/
 /examples/*/*.exe
 
 /template/.godot/
-/template/bin
-/template/addons
+/template/bin/
+/template/addons/
 /template/*.exe
 
 /template-addon/.godot/
-/template-addon/addons/*/bin
+/template-addon/addons/*/bin/
 /template-addon/dist/
 
 /test/.godot/
 /test/bin
 /test/*.exe
 /test/tests
-/test/addons/*
-!/test/addons/test_runner/
-!/test/addons/dummy_*/
 /test/addons/*/bin/
-/test/addons/*/bin
+/test/addons/crystal_integration/
 
 /docs/
 /scratch/

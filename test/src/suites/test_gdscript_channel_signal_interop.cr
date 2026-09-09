@@ -58,7 +58,10 @@ test_gdscript "Crystal signal emitted from Crystal is received by GDScript liste
   TestFramework.assert_eq sig_data2, "75/100", "GDScript listener must format multi-arg health payload"
   TestFramework.assert_eq sig_count2, 2_i64, "Signal call count must be incremented to 2"
 
-  root.queue_free
+  root.remove_child(emitter)
+  emitter.destroy
+  root.destroy
+  scene.destroy
 end
 
 test_gdscript "Crystal signal emitted from GDScript is received by Crystal listener" do
@@ -83,7 +86,10 @@ test_gdscript "Crystal signal emitted from GDScript is received by Crystal liste
   TestFramework.assert_true listener_called, "Crystal on_crystal_event listener must be invoked"
   TestFramework.assert_eq received_payload, "PayloadFromGDScript", "Crystal listener must receive payload emitted by GDScript"
 
-  root.queue_free
+  root.remove_child(emitter)
+  emitter.destroy
+  root.destroy
+  scene.destroy
 end
 
 test_gdscript "GodotChannel created in GDScript passed to Crystal: GDScript sends -> Crystal receives" do
@@ -107,7 +113,9 @@ test_gdscript "GodotChannel created in GDScript passed to Crystal: GDScript send
   TestFramework.assert_eq received_item.to_s, "GDScriptMessage_Alfa", "Received item content must match"
   TestFramework.assert_true actual_ch.empty?, "Channel must be empty after receiving item"
 
-  root.queue_free
+  actual_ch.destroy
+  root.destroy
+  scene.destroy
 end
 
 test_gdscript "GodotChannel created in Crystal passed to GDScript: Crystal sends -> GDScript receives" do
@@ -127,7 +135,9 @@ test_gdscript "GodotChannel created in Crystal passed to GDScript: Crystal sends
   TestFramework.assert_eq received_str, "CrystalMessage_Bravo", "GDScript receive_from_channel must return Crystal's message"
   TestFramework.assert_true ch.empty?, "Channel must be empty after GDScript receives item"
 
-  root.queue_free
+  ch.destroy
+  root.destroy
+  scene.destroy
 end
 
 test_gdscript "Bidirectional multi-message Ping-Pong conversation over channels" do
@@ -161,7 +171,10 @@ test_gdscript "Bidirectional multi-message Ping-Pong conversation over channels"
   TestFramework.assert_true ch_cr_to_gd.empty?
   TestFramework.assert_true ch_gd_to_cr.empty?
 
-  root.queue_free
+  ch_cr_to_gd.destroy
+  ch_gd_to_cr.destroy
+  root.destroy
+  scene.destroy
 end
 
 test_gdscript "Channel state inspection from GDScript (empty, full, size, close)" do
@@ -192,7 +205,9 @@ test_gdscript "Channel state inspection from GDScript (empty, full, size, close)
   TestFramework.assert_true root.call_bool("is_channel_closed", ch), "Channel must report closed after close_channel"
   TestFramework.assert_true ch.closed?, "Crystal getter must also report closed"
 
-  root.queue_free
+  ch.destroy
+  root.destroy
+  scene.destroy
 end
 
 test_gdscript "GodotChannel received signal notifies GDScript reactive listener" do
@@ -217,5 +232,7 @@ test_gdscript "GodotChannel received signal notifies GDScript reactive listener"
   TestFramework.assert_eq last_val, "ReactivePayload", "GDScript channel listener must receive value"
   TestFramework.assert_true received_count >= 1_i64, "Received count must be at least 1"
 
-  root.queue_free
+  ch.destroy
+  root.destroy
+  scene.destroy
 end

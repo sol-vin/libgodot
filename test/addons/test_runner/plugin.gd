@@ -118,10 +118,8 @@ func _run_in_editor_tool_tests():
 			print("[CrystalToolTester]   ✔ %s registered as EditorPlugin" % cls)
 
 	# 4. Open a .cr script in the editor to verify Script tab integration
-	print("[CrystalToolTester] Testing Script Tab: Loading and editing res://sample_player.cr...")
-	var cr_script = load("res://sample_player.cr")
-	if not cr_script:
-		cr_script = load("res://src/main.cr")
+	print("[CrystalToolTester] Testing Script Tab: Loading and editing res://src/main.cr...")
+	var cr_script = load("res://src/main.cr")
 	if cr_script:
 		print("[CrystalToolTester]   ✔ Loaded %s as %s" % [cr_script.resource_path, cr_script.get_class()])
 		EditorInterface.edit_script(cr_script, -1, 0, false)

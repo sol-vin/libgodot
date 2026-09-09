@@ -129,6 +129,8 @@ test_concurrency "GodotChannel actor communication from background OS thread to 
 
   channel.close
   TestFramework.assert_true channel.is_closed, "Channel must be marked closed"
+  puts "DEBUG CHANNEL DESTROY: ref_count=#{channel.get_reference_count}, id=#{channel.instance_id}"
+  channel.destroy
 end
 
 test_concurrency "GodotChannel reactive signal received dispatch on Main Thread" do
@@ -153,6 +155,7 @@ test_concurrency "GodotChannel reactive signal received dispatch on Main Thread"
 
   TestFramework.assert_eq received_signal_arg, "ReactiveMessage_ABC", "Reactive signal must receive payload from worker"
   channel.close
+  channel.destroy
 end
 
 test_concurrency "Multi-producer worker contention on GodotChannel" do
@@ -182,6 +185,7 @@ test_concurrency "Multi-producer worker contention on GodotChannel" do
   TestFramework.assert_eq drain_count, total_items, "All items must be drained without loss or corruption"
   TestFramework.assert_true channel.empty?, "Channel must be empty after drain"
   channel.close
+  channel.destroy
 end
 
 test_concurrency "TypedChannel(T) type-safe generic message passing" do
@@ -201,6 +205,7 @@ test_concurrency "TypedChannel(T) type-safe generic message passing" do
   end
 
   typed_chan.close
+  typed_chan.destroy
 end
 
 test_concurrency "GodotChannel close unblocks waiting background receiver threads" do
@@ -224,6 +229,7 @@ test_concurrency "GodotChannel close unblocks waiting background receiver thread
   TestFramework.assert_true receiver_unblocked, "Worker must unblock immediately when channel is closed"
   TestFramework.assert_nil received_val, "Receive on closed channel must return nil"
   TestFramework.assert_false channel.send("post_close"), "Send on closed channel must return false"
+  channel.destroy
 end
 
 test_concurrency "Background thread safe deferred method dispatch (call_deferred)" do
@@ -265,6 +271,7 @@ test_concurrency "Boehm GC stability during concurrent Godot allocations and cha
 
   TestFramework.assert_true true, "GC.collect completed successfully under concurrent allocations without crash"
   channel.close
+  channel.destroy
 end
 
 test_concurrency "Godot Collections (Dictionary & Array) interop across threads" do

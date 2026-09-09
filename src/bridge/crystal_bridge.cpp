@@ -67,7 +67,8 @@
 #include <deque>
 #include <string>
 #include <unordered_set>
-
+#include <unordered_map>
+#include <utility>
 
 #include "gdextension_interface.h"
 
@@ -118,6 +119,12 @@ static GDExtensionInterfaceClassdbUnregisterExtensionClass gd_classdb_unregister
 
 /** Registers an exported property (inspector variable) for a registered extension class */
 static GDExtensionInterfaceClassdbRegisterExtensionClassProperty gd_classdb_register_extension_class_property = nullptr;
+
+/** Registers a property group for an extension class in ClassDB */
+static GDExtensionInterfaceClassdbRegisterExtensionClassPropertyGroup gd_classdb_register_extension_class_property_group = nullptr;
+
+/** Registers a property subgroup for an extension class in ClassDB */
+static GDExtensionInterfaceClassdbRegisterExtensionClassPropertySubgroup gd_classdb_register_extension_class_property_subgroup = nullptr;
 
 /** Registers an integer or enum constant for an extension class in ClassDB */
 static GDExtensionInterfaceClassdbRegisterExtensionClassIntegerConstant gd_classdb_register_extension_class_integer_constant = nullptr;
@@ -238,6 +245,7 @@ static std::vector<CrystalSignalCallbackFn> g_crystal_signal_callbacks;
 static GDExtensionMethodBindPtr mb_object_connect = nullptr;
 static GDExtensionMethodBindPtr mb_object_is_connected = nullptr;
 static GDExtensionMethodBindPtr mb_object_disconnect = nullptr;
+static GDExtensionMethodBindPtr mb_object_has_signal = nullptr;
 
 // ==============================================================================
 // Variant & Object Marshaling Helpers
@@ -598,9 +606,9 @@ struct GenericExtensionInstance {
 /** Global list of registered classes for unregistration on shutdown (deque ensures pointer stability) */
 static std::deque<CrystalClassDesc> g_registered_classes;
 static GDExtensionInitializationLevel g_current_init_level = GDEXTENSION_INITIALIZATION_SCENE;
-static std::vector<CrystalClassDesc*> g_deferred_editor_classes;
-static std::vector<std::string> g_registered_editor_class_names;
-static std::vector<std::string> g_registered_scene_class_names;
+static std::vector<std::pair<GDExtensionClassLibraryPtr, CrystalClassDesc*>> g_deferred_editor_classes;
+static std::unordered_map<GDExtensionClassLibraryPtr, std::vector<std::string>> g_library_editor_classes;
+static std::unordered_map<GDExtensionClassLibraryPtr, std::vector<std::string>> g_library_scene_classes;
 static std::unordered_set<std::string> g_all_registered_class_names;
 static bool is_editor_class(const CrystalClassDesc *desc);
 
@@ -1071,13 +1079,14 @@ static GDExtensionBool generic_class_set(GDExtensionClassInstancePtr p_instance,
     GenericExtensionInstance *inst = (GenericExtensionInstance*)p_instance;
     if (!inst || !inst->desc || !inst->desc->set_property || !inst->crystal_instance) return 0;
 
+    char prop_name_buf[128];
+    if (!string_name_to_cstr(p_name, prop_name_buf, sizeof(prop_name_buf))) return 0;
+
     const CrystalClassDesc *curr = inst->desc;
     while (curr) {
         for (int i = 0; i < curr->property_count; i++) {
-            void *prop_sn = make_string_name(curr->properties[i].name);
-            bool match = (memcmp(p_name, prop_sn, sizeof(void*)) == 0);
-            free_string_name(prop_sn);
-            if (match) {
+            if (curr->properties[i].usage & (64 | 128 | 256)) continue;
+            if (strcmp(prop_name_buf, curr->properties[i].name) == 0) {
                 alignas(void*) char raw_buf[128] = {};
                 bridge_type_from_variant(curr->properties[i].variant_type, raw_buf, p_value);
                 inst->desc->set_property(inst->crystal_instance, curr->properties[i].name, raw_buf);
@@ -1102,13 +1111,14 @@ static GDExtensionBool generic_class_get(GDExtensionClassInstancePtr p_instance,
     GenericExtensionInstance *inst = (GenericExtensionInstance*)p_instance;
     if (!inst || !inst->desc || !inst->desc->get_property || !inst->crystal_instance) return 0;
 
+    char prop_name_buf[128];
+    if (!string_name_to_cstr(p_name, prop_name_buf, sizeof(prop_name_buf))) return 0;
+
     const CrystalClassDesc *curr = inst->desc;
     while (curr) {
         for (int i = 0; i < curr->property_count; i++) {
-            void *prop_sn = make_string_name(curr->properties[i].name);
-            bool match = (memcmp(p_name, prop_sn, sizeof(void*)) == 0);
-            free_string_name(prop_sn);
-            if (match) {
+            if (curr->properties[i].usage & (64 | 128 | 256)) continue;
+            if (strcmp(prop_name_buf, curr->properties[i].name) == 0) {
                 alignas(void*) char raw_buf[128] = {};
                 inst->desc->get_property(inst->crystal_instance, curr->properties[i].name, raw_buf);
                 bridge_variant_from_type(curr->properties[i].variant_type, r_ret, raw_buf);
@@ -1307,6 +1317,25 @@ static void do_classdb_register(CrystalClassDesc *desc) {
     // Register properties dynamically without arbitrary limits
     for (int i = 0; i < desc->property_count; i++) {
         const CrystalPropertyDesc &p = desc->properties[i];
+
+        if ((p.usage & 64) && gd_classdb_register_extension_class_property_group) {
+            void *grp_str = make_string(p.name ? p.name : "");
+            void *pfx_str = make_string(p.hint_string ? p.hint_string : "");
+            gd_classdb_register_extension_class_property_group(g_library, class_sn, grp_str, pfx_str);
+            free_string(grp_str);
+            free_string(pfx_str);
+            continue;
+        }
+
+        if ((p.usage & 256) && gd_classdb_register_extension_class_property_subgroup) {
+            void *sub_str = make_string(p.name ? p.name : "");
+            void *pfx_str = make_string(p.hint_string ? p.hint_string : "");
+            gd_classdb_register_extension_class_property_subgroup(g_library, class_sn, sub_str, pfx_str);
+            free_string(sub_str);
+            free_string(pfx_str);
+            continue;
+        }
+
         GDExtensionPropertyInfo pinfo = {};
         pinfo.type = (GDExtensionVariantType)p.variant_type;
         pinfo.name = make_string_name(p.name);
@@ -1374,9 +1403,9 @@ static void do_classdb_register(CrystalClassDesc *desc) {
     godot_log_print(log_buf);
 
     if (g_current_init_level == GDEXTENSION_INITIALIZATION_EDITOR || is_editor_class(desc)) {
-        g_registered_editor_class_names.push_back(std::string(desc->name));
+        g_library_editor_classes[g_library].push_back(std::string(desc->name));
     } else {
-        g_registered_scene_class_names.push_back(std::string(desc->name));
+        g_library_scene_classes[g_library].push_back(std::string(desc->name));
     }
 
     free_string_name(class_sn);
@@ -1426,7 +1455,7 @@ static int bridge_register_class(const CrystalClassDesc *p_desc) {
         char log_buf[128];
         snprintf(log_buf, sizeof(log_buf), "  [ClassDB] Deferring editor class %s < %s to EDITOR level", desc->name, desc->parent_name);
         godot_log_print(log_buf);
-        g_deferred_editor_classes.push_back(desc);
+        g_deferred_editor_classes.push_back({g_library, desc});
         return 1;
     }
 
@@ -2715,13 +2744,28 @@ static void bridge_object_connect_signal(GDExtensionObjectPtr instance, const ch
         mb_object_is_connected = gd_classdb_get_method_bind(sn_obj, sn_is_conn, 768136979ULL);
         void *sn_disconn = make_string_name("disconnect");
         mb_object_disconnect = gd_classdb_get_method_bind(sn_obj, sn_disconn, 1874754934ULL);
+        void *sn_has_sig = make_string_name("has_signal");
+        mb_object_has_signal = gd_classdb_get_method_bind(sn_obj, sn_has_sig, 2619796661ULL);
 
         free_string_name(sn_obj);
         free_string_name(sn_conn);
         free_string_name(sn_is_conn);
         free_string_name(sn_disconn);
+        free_string_name(sn_has_sig);
     }
     if (!mb_object_connect) return;
+
+    void *sn_sig = make_string_name(signal_name);
+
+    if (mb_object_has_signal) {
+        uint8_t signal_exists = 0;
+        const void *has_args[1] = { sn_sig };
+        gd_object_method_bind_ptrcall(mb_object_has_signal, instance, (GDExtensionConstTypePtr*)has_args, &signal_exists);
+        if (!signal_exists) {
+            free_string_name(sn_sig);
+            return;
+        }
+    }
 
     CustomSignalBinding *binding = new CustomSignalBinding{ target_id, signal_name };
     alignas(void*) char callable_buf[32] = {0};
@@ -2755,8 +2799,6 @@ static void bridge_object_connect_signal(GDExtensionObjectPtr instance, const ch
         info.to_string_func = custom_callable_to_string;
         gd_callable_custom_create(callable_buf, &info);
     }
-
-    void *sn_sig = make_string_name(signal_name);
 
     uint8_t already_connected = 0;
     if (mb_object_is_connected) {
@@ -3115,6 +3157,10 @@ static uint64_t get_file_mtime(const char *path) {
 static HMODULE g_hGame = NULL;
 /** List of all loaded Crystal module handles (plugin.dll, game.dll, etc.) */
 static std::vector<HMODULE> g_loaded_modules;
+/** Set of absolute library file paths that have already been loaded */
+static std::unordered_set<std::string> g_loaded_module_paths;
+/** Count of active GDExtension initializations sharing this bridge */
+static int g_active_extension_count = 0;
 
 /**
  * Unloads the Crystal game library reference.
@@ -3125,6 +3171,7 @@ static std::vector<HMODULE> g_loaded_modules;
 static void unload_crystal_game_library() {
     g_hGame = NULL;
     g_loaded_modules.clear();
+    g_loaded_module_paths.clear();
     g_crystal_signal_callbacks.clear();
 }
 
@@ -3185,6 +3232,9 @@ static bool bridge_should_use_shadow_copy() {
 #if defined(LIBGODOT_RELEASE) || defined(NDEBUG) || defined(__ANDROID__) || defined(ANDROID)
     return false;
 #else
+    if (!is_editor_active()) {
+        return false;
+    }
     const char *no_shadow = getenv("LIBGODOT_NO_SHADOW");
     if (no_shadow && (strcmp(no_shadow, "1") == 0 || strcmp(no_shadow, "true") == 0)) {
         return false;
@@ -3214,8 +3264,6 @@ static bool bridge_should_use_shadow_copy() {
  * 7. Resolves the exported `crystal_godot_init` symbol and passes `&g_bridge_api`.
  */
 static void load_crystal_game_library() {
-    unload_crystal_game_library();
-
     char bridge_dir[MAX_PATH] = {0};
 #ifdef _WIN32
     HMODULE hBridge = NULL;
@@ -3253,19 +3301,19 @@ static void load_crystal_game_library() {
     unsigned long pid = bridge_get_pid();
 
 #ifdef _WIN32
-    const char *candidate_names[] = { "plugin.dll", "game.dll", "crystal_addon.dll" };
+    const char *candidate_names[] = { "game.dll", "crystal_addon.dll", "plugin.dll" };
     const char *path_sep = "\\";
     const char *shadow_ext = "dll";
 #elif defined(__ANDROID__) || defined(ANDROID)
-    const char *candidate_names[] = { "libplugin.so", "libgame.so", "libcrystal_addon.so" };
+    const char *candidate_names[] = { "libgame.so", "libcrystal_addon.so", "libplugin.so" };
     const char *path_sep = "/";
     const char *shadow_ext = "so";
 #elif defined(__APPLE__)
-    const char *candidate_names[] = { "plugin.dylib", "game.dylib", "libgame.dylib", "crystal_addon.dylib" };
+    const char *candidate_names[] = { "game.dylib", "libgame.dylib", "crystal_addon.dylib", "plugin.dylib" };
     const char *path_sep = "/";
     const char *shadow_ext = "dylib";
 #else
-    const char *candidate_names[] = { "plugin.so", "game.so", "crystal_addon.so" };
+    const char *candidate_names[] = { "game.so", "crystal_addon.so", "plugin.so" };
     const char *path_sep = "/";
     const char *shadow_ext = "so";
 #endif
@@ -3278,6 +3326,9 @@ static void load_crystal_game_library() {
         SetDllDirectoryA(bridge_dir);
 #endif
         for (size_t c = 0; c < sizeof(candidate_names) / sizeof(candidate_names[0]); c++) {
+            if (!is_editor_active() && strstr(candidate_names[c], "plugin") != nullptr) {
+                continue;
+            }
             char test_path[MAX_PATH] = {0};
             snprintf(test_path, sizeof(test_path), "%s%s%s", bridge_dir, path_sep, candidate_names[c]);
             if (bridge_file_exists(test_path)) {
@@ -3352,13 +3403,13 @@ static void load_crystal_game_library() {
     // Fallback search paths if none found in bridge_dir
     if (to_load.empty()) {
 #ifdef _WIN32
-        const char *fallbacks[] = { "addons/crystal_integration/bin/plugin.dll", "addons/crystal_integration/bin/game.dll", "addons/crystal_addon/bin/game.dll", "demo/bin/game.dll", "bin/game.dll", "game.dll" };
+        const char *fallbacks[] = { "addons/crystal_integration/bin/plugin.dll", "addons/crystal_integration/bin/game.dll", "addons/crystal_addon/bin/game.dll", "bin/game.dll", "game.dll" };
 #elif defined(__ANDROID__) || defined(ANDROID)
         const char *fallbacks[] = { "libplugin.so", "libgame.so", "addons/crystal_integration/bin/android/arm64-v8a/libgame.so", "bin/android/arm64-v8a/libgame.so", "game.so" };
 #elif defined(__APPLE__)
-        const char *fallbacks[] = { "addons/crystal_integration/bin/plugin.dylib", "addons/crystal_integration/bin/game.dylib", "addons/crystal_addon/bin/game.dylib", "demo/bin/game.dylib", "bin/game.dylib", "game.dylib", "bin/libgame.dylib", "libgame.dylib" };
+        const char *fallbacks[] = { "addons/crystal_integration/bin/plugin.dylib", "addons/crystal_integration/bin/game.dylib", "addons/crystal_addon/bin/game.dylib", "bin/game.dylib", "game.dylib", "bin/libgame.dylib", "libgame.dylib" };
 #else
-        const char *fallbacks[] = { "addons/crystal_integration/bin/plugin.so", "addons/crystal_integration/bin/game.so", "addons/crystal_addon/bin/game.so", "demo/bin/game.so", "bin/game.so", "game.so" };
+        const char *fallbacks[] = { "addons/crystal_integration/bin/plugin.so", "addons/crystal_integration/bin/game.so", "addons/crystal_addon/bin/game.so", "bin/game.so", "game.so" };
 #endif
         for (size_t i = 0; i < sizeof(fallbacks) / sizeof(fallbacks[0]); i++) {
             if (bridge_file_exists(fallbacks[i])) {
@@ -3393,6 +3444,39 @@ static void load_crystal_game_library() {
 
     for (size_t i = 0; i < to_load.size(); i++) {
         const std::string &candidate_path = to_load[i];
+        char canonical_path[MAX_PATH] = {0};
+#ifdef _WIN32
+        if (_fullpath(canonical_path, candidate_path.c_str(), MAX_PATH)) {
+            for (char *p = canonical_path; *p; p++) {
+                if (*p == '/') *p = '\\';
+                *p = (char)tolower(*p);
+            }
+        } else {
+            snprintf(canonical_path, sizeof(canonical_path), "%s", candidate_path.c_str());
+        }
+#else
+        if (realpath(candidate_path.c_str(), canonical_path) == nullptr) {
+            snprintf(canonical_path, sizeof(canonical_path), "%s", candidate_path.c_str());
+        }
+#endif
+        if (g_loaded_module_paths.find(canonical_path) != g_loaded_module_paths.end()) {
+            continue;
+        }
+
+#ifdef _WIN32
+        HMODULE hExisting = GetModuleHandleA(candidate_path.c_str());
+        if (!hExisting) {
+            hExisting = GetModuleHandleA(canonical_path);
+        }
+        if (!hExisting) {
+            const char *leaf = strrchr(canonical_path, '\\');
+            if (leaf) hExisting = GetModuleHandleA(leaf + 1);
+        }
+        if (hExisting) {
+            g_loaded_module_paths.insert(canonical_path);
+            continue;
+        }
+#endif
         HMODULE hModule = NULL;
 
         if (use_shadow) {
@@ -3437,6 +3521,7 @@ static void load_crystal_game_library() {
         }
 
         if (hModule) {
+            g_loaded_module_paths.insert(canonical_path);
             g_hGame = hModule;
             g_loaded_modules.push_back(hModule);
             CrystalInitFn init_fn = (CrystalInitFn)bridge_get_proc(hModule, "crystal_godot_init");
@@ -3504,20 +3589,20 @@ static void init_common_method_binds() {
  * Initializes common method binds and boots the Crystal runtime at GDEXTENSION_INITIALIZATION_SCENE.
  */
 static void initialize_crystal_module(void *p_userdata, GDExtensionInitializationLevel p_level) {
+    if (p_userdata) {
+        g_library = (GDExtensionClassLibraryPtr)p_userdata;
+    }
     g_current_init_level = p_level;
     if (p_level == GDEXTENSION_INITIALIZATION_SCENE) {
-        g_registered_classes.clear();
-        g_registered_editor_class_names.clear();
-        g_registered_scene_class_names.clear();
-        g_deferred_editor_classes.clear();
         init_common_method_binds();
         godot_log_print("[CrystalBridge] Initializing generic Crystal GDExtension host...");
         load_crystal_game_library();
     } else if (p_level == GDEXTENSION_INITIALIZATION_EDITOR) {
         if (!g_deferred_editor_classes.empty()) {
             godot_log_print("[CrystalBridge] Registering deferred Editor classes at EDITOR level...");
-            for (auto *desc : g_deferred_editor_classes) {
-                do_classdb_register(desc);
+            for (auto &pair : g_deferred_editor_classes) {
+                g_library = pair.first;
+                do_classdb_register(pair.second);
             }
             g_deferred_editor_classes.clear();
         }
@@ -3532,40 +3617,54 @@ static void initialize_crystal_module(void *p_userdata, GDExtensionInitializatio
  * Scene classes are unregistered at SCENE level.
  */
 static void deinitialize_crystal_module(void *p_userdata, GDExtensionInitializationLevel p_level) {
+    GDExtensionClassLibraryPtr lib = (GDExtensionClassLibraryPtr)p_userdata;
+    if (p_userdata) {
+        g_library = lib;
+    }
     if (p_level == GDEXTENSION_INITIALIZATION_EDITOR) {
-        if (!g_registered_editor_class_names.empty()) {
-            godot_log_print("[CrystalBridge] Unregistering Editor classes at EDITOR level...");
-            if (gd_classdb_unregister_extension_class) {
-                for (int i = (int)g_registered_editor_class_names.size() - 1; i >= 0; i--) {
-                    void *sn = make_string_name(g_registered_editor_class_names[i].c_str());
-                    gd_classdb_unregister_extension_class(g_library, sn);
+        if (lib && g_library_editor_classes.find(lib) != g_library_editor_classes.end()) {
+            auto &classes = g_library_editor_classes[lib];
+            if (!classes.empty() && gd_classdb_unregister_extension_class) {
+                godot_log_print("[CrystalBridge] Unregistering Editor classes at EDITOR level...");
+                for (int i = (int)classes.size() - 1; i >= 0; i--) {
+                    void *sn = make_string_name(classes[i].c_str());
+                    gd_classdb_unregister_extension_class(lib, sn);
                     free_string_name(sn);
                 }
             }
-            g_registered_editor_class_names.clear();
+            g_library_editor_classes.erase(lib);
         }
     } else if (p_level == GDEXTENSION_INITIALIZATION_SCENE) {
-        godot_log_print("[CrystalBridge] Unregistering Crystal classes...");
-        if (gd_classdb_unregister_extension_class) {
-            for (int i = (int)g_registered_scene_class_names.size() - 1; i >= 0; i--) {
-                void *sn = make_string_name(g_registered_scene_class_names[i].c_str());
-                gd_classdb_unregister_extension_class(g_library, sn);
-                free_string_name(sn);
+        if (lib && g_library_scene_classes.find(lib) != g_library_scene_classes.end()) {
+            auto &classes = g_library_scene_classes[lib];
+            if (!classes.empty() && gd_classdb_unregister_extension_class) {
+                godot_log_print("[CrystalBridge] Unregistering Crystal classes...");
+                for (int i = (int)classes.size() - 1; i >= 0; i--) {
+                    void *sn = make_string_name(classes[i].c_str());
+                    gd_classdb_unregister_extension_class(lib, sn);
+                    free_string_name(sn);
+                }
             }
+            g_library_scene_classes.erase(lib);
         }
-        g_registered_scene_class_names.clear();
-        g_registered_classes.clear();
-        g_deferred_editor_classes.clear();
-        g_editor_doc_xmls.clear();
-        g_all_registered_class_names.clear();
-        if (g_sn_pp) { free_string_name(g_sn_pp); g_sn_pp = nullptr; }
-        if (g_sn_p) { free_string_name(g_sn_p); g_sn_p = nullptr; }
-        if (g_sn_r) { free_string_name(g_sn_r); g_sn_r = nullptr; }
-        if (g_sn_et) { free_string_name(g_sn_et); g_sn_et = nullptr; }
-        if (g_sn_xt) { free_string_name(g_sn_xt); g_sn_xt = nullptr; }
-        if (g_sn_b) { free_string_name(g_sn_b); g_sn_b = nullptr; }
-        unload_crystal_game_library();
-        godot_log_print("[CrystalBridge] Crystal module deinitialized.");
+        g_active_extension_count--;
+        if (g_active_extension_count <= 0) {
+            g_active_extension_count = 0;
+            g_library_scene_classes.clear();
+            g_library_editor_classes.clear();
+            g_registered_classes.clear();
+            g_deferred_editor_classes.clear();
+            g_editor_doc_xmls.clear();
+            g_all_registered_class_names.clear();
+            if (g_sn_pp) { free_string_name(g_sn_pp); g_sn_pp = nullptr; }
+            if (g_sn_p) { free_string_name(g_sn_p); g_sn_p = nullptr; }
+            if (g_sn_r) { free_string_name(g_sn_r); g_sn_r = nullptr; }
+            if (g_sn_et) { free_string_name(g_sn_et); g_sn_et = nullptr; }
+            if (g_sn_xt) { free_string_name(g_sn_xt); g_sn_xt = nullptr; }
+            if (g_sn_b) { free_string_name(g_sn_b); g_sn_b = nullptr; }
+            unload_crystal_game_library();
+            godot_log_print("[CrystalBridge] Crystal module deinitialized.");
+        }
     }
 }
 
@@ -3632,11 +3731,6 @@ static LONG WINAPI custom_crash_handler(PEXCEPTION_POINTERS pExceptionInfo) {
             fputs(report, f);
             fclose(f);
         }
-        FILE *f2 = fopen("test/crash_dump.txt", "w");
-        if (f2) {
-            fputs(report, f2);
-            fclose(f2);
-        }
 
         DWORD written = 0;
         HANDLE hErr = GetStdHandle(STD_ERROR_HANDLE);
@@ -3659,6 +3753,7 @@ extern "C" GDE_EXPORT GDExtensionBool crystal_library_init(
     GDExtensionClassLibraryPtr p_library,
     GDExtensionInitialization *r_initialization
 ) {
+    g_active_extension_count++;
     init_gc_library();
     ensure_gc_thread_registered();
 #ifdef _WIN32
@@ -3679,6 +3774,8 @@ extern "C" GDE_EXPORT GDExtensionBool crystal_library_init(
     gd_classdb_register_extension_class6 = (GDExtensionInterfaceClassdbRegisterExtensionClass6)p_get_proc_address("classdb_register_extension_class6");
     gd_classdb_unregister_extension_class = (GDExtensionInterfaceClassdbUnregisterExtensionClass)p_get_proc_address("classdb_unregister_extension_class");
     gd_classdb_register_extension_class_property = (GDExtensionInterfaceClassdbRegisterExtensionClassProperty)p_get_proc_address("classdb_register_extension_class_property");
+    gd_classdb_register_extension_class_property_group = (GDExtensionInterfaceClassdbRegisterExtensionClassPropertyGroup)p_get_proc_address("classdb_register_extension_class_property_group");
+    gd_classdb_register_extension_class_property_subgroup = (GDExtensionInterfaceClassdbRegisterExtensionClassPropertySubgroup)p_get_proc_address("classdb_register_extension_class_property_subgroup");
     gd_classdb_register_extension_class_integer_constant = (GDExtensionInterfaceClassdbRegisterExtensionClassIntegerConstant)p_get_proc_address("classdb_register_extension_class_integer_constant");
     gd_classdb_register_extension_class_signal = (GDExtensionInterfaceClassdbRegisterExtensionClassSignal)p_get_proc_address("classdb_register_extension_class_signal");
     gd_classdb_register_extension_class_method = (GDExtensionInterfaceClassdbRegisterExtensionClassMethod)p_get_proc_address("classdb_register_extension_class_method");
@@ -3742,7 +3839,7 @@ extern "C" GDE_EXPORT GDExtensionBool crystal_library_init(
     r_initialization->initialize = initialize_crystal_module;
     r_initialization->deinitialize = deinitialize_crystal_module;
     r_initialization->minimum_initialization_level = GDEXTENSION_INITIALIZATION_SCENE;
-    r_initialization->userdata = nullptr;
+    r_initialization->userdata = p_library;
 
     return 1;
 }

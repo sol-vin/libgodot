@@ -197,12 +197,13 @@ test_classdb "ClassDB coverage: all 16 Meshes, 11 Materials, and 17 Physics Shap
 	TestFramework.assert_false ptr.null?, "Failed to instantiate Resource class #{cls_name}"
 
 	res = Godot::Resource.new(ptr)
+	res.init_ref
 	TestFramework.assert_true res.alive?
 	inst_id = res.instance_id
-
 	res.destroy
+
 	TestFramework.assert_true res.destroyed?
-	TestFramework.assert_false Godot::Object.is_instance_id_valid(inst_id)
+	TestFramework.assert_false Godot::Object.is_instance_id_valid(inst_id), "Resource #{cls_name} still valid in ObjectDB after destroy"
   end
 end
 
@@ -220,11 +221,12 @@ test_classdb "ClassDB coverage: core RefCounted utility classes instantiation an
 	TestFramework.assert_false ptr.null?, "Failed to instantiate RefCounted class #{cls_name}"
 
 	rc = Godot::RefCounted.new(ptr)
+	rc.init_ref
 	TestFramework.assert_true rc.alive?
 	inst_id = rc.instance_id
 
 	rc.destroy
 	TestFramework.assert_true rc.destroyed?
-	TestFramework.assert_false Godot::Object.is_instance_id_valid(inst_id)
+	TestFramework.assert_false Godot::Object.is_instance_id_valid(inst_id), "RefCounted #{cls_name} still valid in ObjectDB after destroy"
   end
 end

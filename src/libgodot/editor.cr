@@ -116,14 +116,14 @@ module Godot
       if !script_editor.pointer.null?
         script_editor.unregister_syntax_highlighter(highlighter)
       end
-      highlighter.unreference
+      highlighter.destroy
       @@crystal_highlighter = nil
     end
 
     if loader = @@resource_loader
       r_loader = Godot::ResourceLoader.new(Godot::ResourceLoader.singleton_ptr)
       r_loader.remove_resource_format_loader(loader)
-      loader.unreference
+      loader.destroy
       @@resource_loader = nil
       ResourceFormatLoaderCrystal.clear_instance
     end
@@ -131,13 +131,13 @@ module Godot
     if saver = @@resource_saver
       r_saver = Godot::ResourceSaver.new(Godot::ResourceSaver.singleton_ptr)
       r_saver.remove_resource_format_saver(saver)
-      saver.unreference
+      saver.destroy
       @@resource_saver = nil
       ResourceFormatSaverCrystal.clear_instance
     end
 
     if tex = @@cached_icon_texture
-      tex.unreference
+      tex.destroy
       @@cached_icon_texture = nil
     end
 
@@ -411,9 +411,11 @@ module Godot
   # Compiles project Crystal code with optional release optimizations
   def execute_crystal_build_with_options(is_release : Bool = false) : Bool
     entry_file = "src/main.cr"
-    entry_file = "test/src/main.cr" unless Godot::SystemIO.file_exists?(entry_file)
-    entry_file = "../test/src/main.cr" unless Godot::SystemIO.file_exists?(entry_file)
-    entry_file = "demo/src/main.cr" unless Godot::SystemIO.file_exists?(entry_file)
+    if !Godot::SystemIO.file_exists?(entry_file) && !Godot::ProjectSettings.singleton_ptr.null?
+      ps = Godot::ProjectSettings.new(Godot::ProjectSettings.singleton_ptr)
+      global_entry = ps.call_str("globalize_path", "res://src/main.cr").gsub('\\', '/')
+      entry_file = global_entry if !global_entry.empty? && Godot::SystemIO.file_exists?(global_entry)
+    end
 
     out_dll = {% if flag?(:windows) %}
       "bin/game.dll"

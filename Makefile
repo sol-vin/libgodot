@@ -95,10 +95,10 @@ PLUGIN_DLL       = $(PLUGIN_LIB)
 GAME_DLL         = $(GAME_LIB)
 LIBGODOT_DLL     = $(LIBGODOT_LIB)
 
-.PHONY: all bridge plugin test_project test_standalone examples examples_exe template template_addon game_dll game_exe android package_android generate dump_api deps addons sync engine spec test tests docs run editor clean help
+.PHONY: all bridge plugin test_project test_standalone package_tests examples examples_exe template template_addon game_dll game_exe android package_android generate dump_api deps addons sync engine spec test tests docs run editor clean help
 
-# Default target: compile bridge, plugin, test project, examples, template, template_addon, sync DLLs, and run test suite
-all: dirs deps bridge plugin addons test_project examples template template_addon sync test
+# Default target: compile bridge, plugin, test project, standalone runner, examples, template, template_addon, sync DLLs, and run test suite
+all: dirs deps bridge plugin addons dummy_addons test_project test_standalone examples template template_addon sync test
 	@echo ===================================================================
 	@echo   LibGodot Crystal library build completed successfully!
 	@echo   Run 'make run' to launch test runner or 'make editor' for editor.
@@ -143,6 +143,11 @@ test_standalone: dirs deps bridge addons dummy_addons
 	@echo [Test] Building standalone test suite executable...
 	$(MAKE) -C test standalone RELEASE=$(RELEASE)
 
+# Package standalone test suite into tests-<platform>.zip
+package_tests: test_standalone
+	@echo [Package] Packaging standalone test suite...
+	@$(PWSH_FILE) scripts/package_test_suite.ps1 $(if $(filter 1,$(RELEASE)),-Release 1,)
+
 # Build all example projects in examples/
 examples: dirs deps bridge addons
 	@echo [Examples] Building all projects in $(EXAMPLES_DIR)...
@@ -165,11 +170,9 @@ template_addon: dirs deps bridge
 game_dll: dirs deps bridge addons test_project examples template template_addon sync
 	@echo [Build] All game library targets compiled and synced!
 
-# Compile standalone game executable for LibGodot host paradigm
 game_exe: dirs deps bridge
 	@echo [Standalone] Compiling standalone game executable from $(ENTRY)...
 	@$(PWSH_FILE) scripts/build_crystal.ps1 -Entry $(ENTRY) -Output $(GAME_EXE) $(if $(filter 1,$(RELEASE)),-Release,)
-	@$(PWSH_CMD) "Copy-Item '$(GAME_EXE)' '$(TEST_BIN_DIR)/game$(EXE_EXT)' -Force -ErrorAction SilentlyContinue"
 
 # Cross-compile for Android (libcrystal_bridge.so and libgame.so)
 android: dirs
@@ -220,8 +223,8 @@ spec:
 	@echo [Spec] Running Crystal specifications in test/spec...
 	$(CRYSTAL) spec test/spec
 
-# Run complete test suites and verification (Crystal specs, in-editor @tool tests, runtime project tests, smoke tests)
-test:
+# Run complete test suites and verification (Crystal specs, in-editor @tool tests, standalone runner, runtime project tests, smoke tests)
+test: test_standalone
 	@$(PWSH_FILE) scripts/run_tests.ps1
 
 tests: test

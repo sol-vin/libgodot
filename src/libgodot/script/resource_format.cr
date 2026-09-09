@@ -30,19 +30,28 @@ module Godot
       path.ends_with?(".cr") ? "CrystalScript" : ""
     end
 
+    # Resolves a virtual path (res:// or user://) or relative path to a readable file on disk
+    def self.resolve_file_path(target_path : String) : String
+      return "" if target_path.empty?
+
+      if target_path.starts_with?("res://") || target_path.starts_with?("user://")
+        if !Godot::ProjectSettings.singleton_ptr.null?
+          ps = Godot::ProjectSettings.new(Godot::ProjectSettings.singleton_ptr)
+          global_path = ps.call_str("globalize_path", target_path).gsub('\\', '/')
+          return global_path if !global_path.empty? && Godot::SystemIO.file_exists?(global_path)
+        end
+        stripped = target_path.sub(/^(res|user):\/\//, "")
+        return stripped if Godot::SystemIO.file_exists?(stripped)
+      end
+
+      return target_path if Godot::SystemIO.file_exists?(target_path)
+      ""
+    end
+
     def load(path : String, original_path : String = "") : CrystalScript?
       target_path = original_path.empty? ? path : original_path
-      fs_path = target_path.starts_with?("res://") ? target_path.sub("res://", "") : target_path
-      code = ""
-      if Godot::SystemIO.file_exists?(fs_path)
-        code = Godot::SystemIO.read_file(fs_path)
-      elsif Godot::SystemIO.file_exists?(target_path)
-        code = Godot::SystemIO.read_file(target_path)
-      elsif Godot::SystemIO.file_exists?("test/#{fs_path}")
-        code = Godot::SystemIO.read_file("test/#{fs_path}")
-      elsif Godot::SystemIO.file_exists?("../test/#{fs_path}")
-        code = Godot::SystemIO.read_file("../test/#{fs_path}")
-      end
+      resolved = ResourceFormatLoaderCrystal.resolve_file_path(target_path)
+      code = resolved.empty? ? "" : Godot::SystemIO.read_file(resolved)
 
       script = Godot.create(Godot::CrystalScript)
       if script
@@ -82,17 +91,8 @@ module Godot
         orig_path = Bridge.arg_to_string(args[1])
         target_path = orig_path.empty? ? path : orig_path
 
-        fs_path = target_path.starts_with?("res://") ? target_path.sub("res://", "") : target_path
-        code = ""
-        if Godot::SystemIO.file_exists?(fs_path)
-          code = Godot::SystemIO.read_file(fs_path)
-        elsif Godot::SystemIO.file_exists?(target_path)
-          code = Godot::SystemIO.read_file(target_path)
-        elsif Godot::SystemIO.file_exists?("test/#{fs_path}")
-          code = Godot::SystemIO.read_file("test/#{fs_path}")
-        elsif Godot::SystemIO.file_exists?("../test/#{fs_path}")
-          code = Godot::SystemIO.read_file("../test/#{fs_path}")
-        end
+        resolved = ResourceFormatLoaderCrystal.resolve_file_path(target_path)
+        code = resolved.empty? ? "" : Godot::SystemIO.read_file(resolved)
 
         script = Godot.create(Godot::CrystalScript)
         if script
@@ -136,6 +136,30 @@ module Godot
       ["cr"]
     end
 
+    def self.resolve_save_path(target_path : String) : String
+      return "" if target_path.empty?
+
+      if target_path.starts_with?("res://") || target_path.starts_with?("user://")
+        if !Godot::ProjectSettings.singleton_ptr.null?
+          ps = Godot::ProjectSettings.new(Godot::ProjectSettings.singleton_ptr)
+          global_path = ps.call_str("globalize_path", target_path).gsub('\\', '/')
+          return global_path unless global_path.empty?
+        end
+        return target_path.sub(/^(res|user):\/\//, "")
+      end
+
+      target_path
+    end
+
+    def save(script : CrystalScript, path : String) : Int32
+      fs_path = ResourceFormatSaverCrystal.resolve_save_path(path)
+      if Godot::SystemIO.write_file(fs_path, script.source_code)
+        0_i32
+      else
+        1_i32
+      end
+    end
+
     def self._godot_has_virtual_method(method_name : String) : Bool
       case method_name
       when "_recognize", "_get_recognized_extensions", "_save"
@@ -164,7 +188,7 @@ module Godot
       when "_save"
         res_ptr = args[0].as(Void**).value
         path = Bridge.arg_to_string(args[1])
-        fs_path = path.starts_with?("res://") ? path.sub("res://", "") : path
+        fs_path = ResourceFormatSaverCrystal.resolve_save_path(path)
 
         code = ""
         if inst = Bridge.find_alive_instance(res_ptr)

@@ -86,7 +86,8 @@ module TestFramework
 	  rescue ex : AssertionError
 		TestResult.new(@category, @name, false, ex.message || "Assertion failed")
 	  rescue ex : Exception
-		TestResult.new(@category, @name, false, "ERROR: #{ex.class.name}: #{ex.message}")
+		Godot.print("[ERROR] #{ex.inspect_with_backtrace}")
+		TestResult.new(@category, @name, false, "ERROR: #{ex.class.name}: #{ex.message}\n#{ex.backtrace.join("\n")}")
 	  end
 	end
   end
@@ -507,29 +508,30 @@ node RunTesterPanel < Godot::Control do
 	if suite_label == "All"
 	  begin
 		summary = "TOTAL=#{total}\nPASSED=#{passed}\nFAILED=#{total - passed}\n"
-		Godot::SystemIO.write_file("bin/.runtime_test_results.txt", summary)
-		Godot::SystemIO.write_file("test/bin/.runtime_test_results.txt", summary)
-		Godot::SystemIO.delete_file(".runtime_test_results.txt") if Godot::SystemIO.file_exists?(".runtime_test_results.txt")
+		Godot::SystemIO.write_file(".runtime_test_results.txt", summary) rescue nil
+		Godot::SystemIO.write_file("bin/.runtime_test_results.txt", summary) rescue nil
+		Godot::SystemIO.write_file("test/bin/.runtime_test_results.txt", summary) rescue nil
 		if passed == total
-		  Godot::SystemIO.write_file("bin/.runtime_tests_passed", "PASSED\n")
-		  Godot::SystemIO.write_file("test/bin/.runtime_tests_passed", "PASSED\n")
+		  Godot::SystemIO.write_file(".runtime_tests_passed", "PASSED\n") rescue nil
+		  Godot::SystemIO.write_file("bin/.runtime_tests_passed", "PASSED\n") rescue nil
+		  Godot::SystemIO.write_file("test/bin/.runtime_tests_passed", "PASSED\n") rescue nil
+		  Godot::SystemIO.delete_file(".runtime_tests_failed") if Godot::SystemIO.file_exists?(".runtime_tests_failed")
 		  Godot::SystemIO.delete_file("bin/.runtime_tests_failed") if Godot::SystemIO.file_exists?("bin/.runtime_tests_failed")
 		  Godot::SystemIO.delete_file("test/bin/.runtime_tests_failed") if Godot::SystemIO.file_exists?("test/bin/.runtime_tests_failed")
-		  Godot::SystemIO.delete_file(".runtime_tests_passed") if Godot::SystemIO.file_exists?(".runtime_tests_passed")
-		  Godot::SystemIO.delete_file(".runtime_tests_failed") if Godot::SystemIO.file_exists?(".runtime_tests_failed")
 		else
 		  failed_lines = results.reject(&.passed).map { |r| "FAILED: [#{r.category}] #{r.name} - #{r.message}" }.join("\n")
-		  Godot::SystemIO.write_file("bin/.runtime_tests_failed", "FAILED: #{total - passed} test(s) failed\n#{failed_lines}\n")
-		  Godot::SystemIO.write_file("test/bin/.runtime_tests_failed", "FAILED: #{total - passed} test(s) failed\n#{failed_lines}\n")
+		  Godot::SystemIO.write_file(".runtime_tests_failed", "FAILED: #{total - passed} test(s) failed\n#{failed_lines}\n") rescue nil
+		  Godot::SystemIO.write_file("bin/.runtime_tests_failed", "FAILED: #{total - passed} test(s) failed\n#{failed_lines}\n") rescue nil
+		  Godot::SystemIO.write_file("test/bin/.runtime_tests_failed", "FAILED: #{total - passed} test(s) failed\n#{failed_lines}\n") rescue nil
+		  Godot::SystemIO.delete_file(".runtime_tests_passed") if Godot::SystemIO.file_exists?(".runtime_tests_passed")
 		  Godot::SystemIO.delete_file("bin/.runtime_tests_passed") if Godot::SystemIO.file_exists?("bin/.runtime_tests_passed")
 		  Godot::SystemIO.delete_file("test/bin/.runtime_tests_passed") if Godot::SystemIO.file_exists?("test/bin/.runtime_tests_passed")
-		  Godot::SystemIO.delete_file(".runtime_tests_passed") if Godot::SystemIO.file_exists?(".runtime_tests_passed")
-		  Godot::SystemIO.delete_file(".runtime_tests_failed") if Godot::SystemIO.file_exists?(".runtime_tests_failed")
 		end
 	  rescue
 	  end
 
 	  if should_autorun?
+		GC.collect
 		tree = get_tree
 		tree.quit(passed == total ? 0_i64 : 1_i64) unless tree.pointer.null?
 	  end
@@ -672,6 +674,9 @@ test_core "Resource loading (Godot.load & preload)" do
   TestFramework.assert_not_nil inst
   TestFramework.assert_false inst.pointer.null?, "inst.pointer is null"
   TestFramework.assert_eq inst.name, "TestDummy2D"
+  inst.destroy
+  scene.destroy
+  res.destroy
 end
 
 test_core "Input singleton method verification" do
@@ -699,6 +704,7 @@ test_2d "Node2D position, rotation, and scale" do
 	n = Godot.create(Godot::Node2D)
 	n.position = Godot::Vector2.new(50.0, 60.0)
 	TestFramework.assert_approx_eq n.position.x, 50.0_f32
+	n.destroy
   end
 end
 
@@ -715,6 +721,7 @@ test_3d "Node3D position, rotation, and scale" do
 	n = Godot.create(Godot::Node3D)
 	n.position = Godot::Vector3.new(1.0, 2.0, 3.0)
 	TestFramework.assert_approx_eq n.position.x, 1.0_f32
+	n.destroy
   end
 end
 
@@ -753,6 +760,7 @@ test_nodes "add_child establishes parent-child relationship" do
   TestFramework.assert_eq parent.get_child_count, 1_i64
   TestFramework.assert_not_nil child.get_parent
   TestFramework.assert_eq child.get_parent.not_nil!.name, "TestParentNode"
+  parent.destroy
 end
 
 test_nodes "remove_child decouples child into orphan state" do
@@ -766,6 +774,8 @@ test_nodes "remove_child decouples child into orphan state" do
   parent.remove_child(child)
   TestFramework.assert_eq parent.get_child_count, 0_i64
   TestFramework.assert_nil child.get_parent?
+  child.destroy
+  parent.destroy
 end
 
 test_nodes "reparent relocates child to new parent" do
@@ -783,6 +793,9 @@ test_nodes "reparent relocates child to new parent" do
   TestFramework.assert_eq child.get_parent.not_nil!.name, "Parent2"
   TestFramework.assert_eq p1.get_child_count, 0_i64
   TestFramework.assert_eq p2.get_child_count, 1_i64
+  child.destroy
+  p1.destroy
+  p2.destroy
 end
 
 test_nodes "get_child and get_child_count accurately index children" do
@@ -802,6 +815,7 @@ test_nodes "get_child and get_child_count accurately index children" do
   TestFramework.assert_eq container.get_child(0).name, "First"
   TestFramework.assert_eq container.get_child(1).name, "Second"
   TestFramework.assert_eq container.get_child(2).name, "Third"
+  container.destroy
 end
 
 test_nodes "queue_free flags node for deletion" do
@@ -811,6 +825,7 @@ test_nodes "queue_free flags node for deletion" do
 
   temp_node.queue_free
   TestFramework.assert_true temp_node.is_queued_for_deletion
+  temp_node.destroy
 end
 
 test_nodes "is_inside_tree accurately reflects tree membership" do
@@ -823,6 +838,7 @@ test_nodes "is_inside_tree accurately reflects tree membership" do
 	root.remove_child(orphan)
 	TestFramework.assert_false orphan.is_inside_tree
   end
+  orphan.destroy
 end
 
 # =============================================================================
@@ -903,12 +919,14 @@ test_deferred "call_deferred dispatches method call cleanly" do
   target.call_deferred("set_name", "DeferredNameUpdate")
   # Execution is deferred to idle time without crashing
   TestFramework.assert_not_nil target
+  target.destroy
 end
 
 test_deferred "call_deferred accepts multiple typed arguments" do
   target = PropertyTestTarget.new
   target.call_deferred("emit_signal", "test_event_fired", 777)
   TestFramework.assert_not_nil target
+  target.destroy
 end
 
 test_deferred "call_deferred on node hierarchy operation" do
@@ -916,6 +934,8 @@ test_deferred "call_deferred on node hierarchy operation" do
   child = Godot.create(Godot::Node)
   parent.call_deferred("add_child", child)
   TestFramework.assert_not_nil parent
+  child.destroy
+  parent.destroy
 end
 
 # =============================================================================
@@ -932,18 +952,21 @@ test_signals "SignalSpy records signal emissions" do
   spy.record(42.to_s)
   TestFramework.assert_true spy.emitted?
   TestFramework.assert_eq spy.count, 1
+  target.destroy
 end
 
 test_signals "Multi-argument signal emission" do
   target = PropertyTestTarget.new
   target.emit_multi_arg_event(200, "Success", 0.95)
   TestFramework.assert_not_nil target
+  target.destroy
 end
 
 test_signals "GDScriptInteropTarget signal declaration and emission" do
   target = GDScriptInteropTarget.new
   target.emit_crystal_ping(99)
   TestFramework.assert_not_nil target
+  target.destroy
 end
 
 # =============================================================================
@@ -956,6 +979,8 @@ test_gdscript "Instantiating GDScript scene and accessing controller" do
   root = scene.instantiate
   TestFramework.assert_not_nil root
   TestFramework.assert_eq root.name, "InteropRoot"
+  root.destroy
+  scene.destroy
 end
 
 test_gdscript "Calling GDScript arithmetic add_numbers returns Int64" do
@@ -963,6 +988,8 @@ test_gdscript "Calling GDScript arithmetic add_numbers returns Int64" do
   root = scene.instantiate
   sum = root.call_i64("add_numbers", 15, 27)
   TestFramework.assert_eq sum, 42_i64
+  root.destroy
+  scene.destroy
 end
 
 test_gdscript "Calling GDScript format_greeting returns formatted String" do
@@ -970,6 +997,8 @@ test_gdscript "Calling GDScript format_greeting returns formatted String" do
   root = scene.instantiate
   greeting = root.call_str("format_greeting", "CrystalDeveloper")
   TestFramework.assert_eq greeting, "Hello from GDScript, CrystalDeveloper!"
+  root.destroy
+  scene.destroy
 end
 
 test_gdscript "Calling GDScript compute_distance returns Float64" do
@@ -977,6 +1006,8 @@ test_gdscript "Calling GDScript compute_distance returns Float64" do
   root = scene.instantiate
   dist = root.call_f64("compute_distance", Godot::Vector2.new(0.0, 0.0), Godot::Vector2.new(3.0, 4.0))
   TestFramework.assert_approx_eq dist, 5.0
+  root.destroy
+  scene.destroy
 end
 
 test_gdscript "Calling GDScript spawn_node_for_crystal returns Node" do
@@ -985,6 +1016,9 @@ test_gdscript "Calling GDScript spawn_node_for_crystal returns Node" do
   spawned = root.call_obj("spawn_node_for_crystal", "SpawnedByGDScript")
   TestFramework.assert_not_nil spawned
   TestFramework.assert_eq spawned.not_nil!.name, "SpawnedByGDScript"
+  spawned.not_nil!.destroy
+  root.destroy
+  scene.destroy
 end
 
 test_gdscript "Passing Crystal node into GDScript inspect_crystal_node" do
@@ -997,6 +1031,8 @@ test_gdscript "Passing Crystal node into GDScript inspect_crystal_node" do
 
   result = root.call_str("inspect_crystal_node", crystal_child)
   TestFramework.assert_true result.starts_with?("OK:CrystalWorkerNode:"), "Expected OK:CrystalWorkerNode, got #{result}"
+  root.destroy
+  scene.destroy
 end
 
 test_gdscript "GDScript reparents Crystal node via reparent_node_from_crystal" do
@@ -1011,6 +1047,8 @@ test_gdscript "GDScript reparents Crystal node via reparent_node_from_crystal" d
   reparented = root.call_bool("reparent_node_from_crystal", crystal_sub, target_child)
   TestFramework.assert_true reparented
   TestFramework.assert_eq crystal_sub.get_parent.not_nil!.name, "StaticChild"
+  root.destroy
+  scene.destroy
 end
 
 test_gdscript "GDScript state increment_counter updates across calls" do
@@ -1022,6 +1060,8 @@ test_gdscript "GDScript state increment_counter updates across calls" do
 
   c2 = root.call_i64("increment_counter", 10)
   TestFramework.assert_eq c2, 15_i64
+  root.destroy
+  scene.destroy
 end
 
 # =============================================================================
@@ -1032,12 +1072,14 @@ test_mesh "Godot.create instantiates native MeshInstance3D" do
   mi = Godot.create(Godot::MeshInstance3D)
   TestFramework.assert_not_nil mi
   TestFramework.assert_false mi.pointer.null?
+  mi.destroy
 end
 
 test_mesh "Godot.create instantiates native BoxMesh" do
   box = Godot.create(Godot::BoxMesh)
   TestFramework.assert_not_nil box
   TestFramework.assert_false box.pointer.null?
+  box.destroy
 end
 
 test_mesh "BoxMesh size configuration and assignment to MeshInstance3D" do
@@ -1053,6 +1095,9 @@ test_mesh "BoxMesh size configuration and assignment to MeshInstance3D" do
   ret_mesh = mi.get_mesh
   TestFramework.assert_not_nil ret_mesh
   TestFramework.assert_false ret_mesh.pointer.null?
+  ret_mesh.destroy
+  mi.destroy
+  box.destroy
 end
 
 test_mesh "StandardMaterial3D creation and color assignment" do
@@ -1060,6 +1105,7 @@ test_mesh "StandardMaterial3D creation and color assignment" do
   mat.set_albedo(Godot::Color.new(0.8, 0.2, 0.2, 1.0))
   TestFramework.assert_approx_eq mat.get_albedo.r, 0.8_f32
   TestFramework.assert_approx_eq mat.get_albedo.g, 0.2_f32
+  mat.destroy
 end
 
 test_mesh "Instantiating 3D mesh scene (test_mesh_3d.tscn)" do
@@ -1074,6 +1120,8 @@ test_mesh "Instantiating 3D mesh scene (test_mesh_3d.tscn)" do
 
   anchor = root.get_node("BoxMeshInstance/AnchorMarker3D")
   TestFramework.assert_not_nil anchor
+  root.destroy
+  scene.destroy
 end
 
 # =============================================================================
@@ -1092,6 +1140,8 @@ test_physics "Instantiating test_area_2d.tscn and checking hierarchy" do
 
   marker = root.get_node("SensorMarker2D")
   TestFramework.assert_not_nil marker
+  root.destroy
+  scene.destroy
 end
 
 test_physics "Area2D collision_layer and collision_mask validation" do
@@ -1101,6 +1151,8 @@ test_physics "Area2D collision_layer and collision_mask validation" do
   TestFramework.assert_eq area.get_collision_mask, 3_i64
   TestFramework.assert_true area.is_monitoring
   TestFramework.assert_true area.is_monitorable
+  area.destroy
+  scene.destroy
 end
 
 test_physics "Instantiating test_area_3d.tscn and checking hierarchy" do
@@ -1115,6 +1167,8 @@ test_physics "Instantiating test_area_3d.tscn and checking hierarchy" do
 
   marker = root.get_node("SensorMarker3D")
   TestFramework.assert_not_nil marker
+  root.destroy
+  scene.destroy
 end
 
 test_physics "Area3D collision_layer and collision_mask validation" do
@@ -1124,6 +1178,8 @@ test_physics "Area3D collision_layer and collision_mask validation" do
   TestFramework.assert_eq area.get_collision_mask, 5_i64
   TestFramework.assert_true area.is_monitoring
   TestFramework.assert_true area.is_monitorable
+  area.destroy
+  scene.destroy
 end
 
 # =============================================================================
@@ -1158,9 +1214,10 @@ test_stress "Spawning and moving 100 Node2D nodes in 2D grid" do
   # Clean batch disposal
   nodes.each do |n|
 	container.remove_child(n)
-	n.queue_free
+	n.destroy
   end
   TestFramework.assert_eq container.get_child_count, 0_i64
+  container.destroy
 end
 
 test_stress "Spawning, transforming, and freeing 1,000 Node3D instances" do
@@ -1191,9 +1248,10 @@ test_stress "Spawning, transforming, and freeing 1,000 Node3D instances" do
   # Batch free all 1,000 nodes
   nodes.each do |n|
 	arena.remove_child(n)
-	n.queue_free
+	n.destroy
   end
   TestFramework.assert_eq arena.get_child_count, 0_i64
+  arena.destroy
 end
 
 # =============================================================================
@@ -1206,6 +1264,8 @@ test_scenes "Loading and instantiating test_dummy_2d.tscn" do
   inst = scene.instantiate
   TestFramework.assert_not_nil inst
   TestFramework.assert_eq inst.name, "TestDummy2D"
+  inst.destroy
+  scene.destroy
 end
 
 test_scenes "Loading and instantiating test_dummy_3d.tscn" do
@@ -1214,6 +1274,8 @@ test_scenes "Loading and instantiating test_dummy_3d.tscn" do
   inst = scene.instantiate
   TestFramework.assert_not_nil inst
   TestFramework.assert_eq inst.name, "TestDummy3D"
+  inst.destroy
+  scene.destroy
 end
 
 test_scenes "Loading and instantiating test_stress_1000.tscn" do
@@ -1224,6 +1286,8 @@ test_scenes "Loading and instantiating test_stress_1000.tscn" do
   TestFramework.assert_eq inst.name, "StressArena"
   TestFramework.assert_not_nil inst.get_node("SpawnOrigin2D")
   TestFramework.assert_not_nil inst.get_node("SpawnOrigin3D")
+  inst.destroy
+  scene.destroy
 end
 
 # =============================================================================
@@ -1262,11 +1326,13 @@ test_prop "Export Property Getters and Setters round-trip" do
 
   target.rect2_val = Godot::Rect2.new(5.0, 5.0, 50.0, 50.0)
   TestFramework.assert_eq target.rect2_val.size.x, 50.0_f32
+  target.destroy
 end
 
 test_prop "Custom computed getter returns calculated value" do
   target = PropertyTestTarget.new
   TestFramework.assert_approx_eq target.health_percentage, 100.0_f32
+  target.destroy
 end
 
 test_prop "Custom setter clamps input within bounds" do
@@ -1280,6 +1346,7 @@ test_prop "Custom setter clamps input within bounds" do
 
   target.clamped_health = 75.0_f32
   TestFramework.assert_approx_eq target.clamped_health, 75.0_f32
+  target.destroy
 end
 
 test_prop "Custom setter triggers side-effects" do
@@ -1291,6 +1358,7 @@ test_prop "Custom setter triggers side-effects" do
 
   target.dirty_trigger = 2
   TestFramework.assert_eq target.dirty_trigger, 5
+  target.destroy
 end
 
 test_prop "Custom tool button setter acts as action trigger" do
@@ -1299,6 +1367,7 @@ test_prop "Custom tool button setter acts as action trigger" do
 
   target.tool_button_trigger = true
   TestFramework.assert_true target.tool_button_trigger
+  target.destroy
 end
 
 test_prop "Property hints registered correctly in ClassDB" do
@@ -1373,6 +1442,7 @@ test_prop "Signal registration and type-safe emission" do
   TestFramework.assert_eq sig.not_nil!.args.size, 1
 
   target.emit_test_event_fired(100)
+  target.destroy
 end
 
 # =============================================================================
@@ -1393,4 +1463,5 @@ require "./suites/test_macros_dsl"
 require "./suites/test_multi_addon_isolation"
 require "./suites/test_script_first_class"
 require "./suites/test_gdscript_channel_signal_interop"
+require "./suites/test_scenes_persistence"
 
