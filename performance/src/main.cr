@@ -18,6 +18,7 @@ require "./tests/alignment_stress"
 require "./tests/refcounted_stress"
 require "./tests/signal_stress"
 require "./tests/worker_stress"
+require "./tests/crystal_balloon_stress"
 
 # Interactive Menu
 require "./menu/perf_menu"

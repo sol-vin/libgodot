@@ -7,18 +7,28 @@ require "./perf_metrics"
 require "./perf_base"
 
 module PerfFramework
-  # Graph renderer for a single metric line using Line2D with dynamic viewport scaling
+  # Graph renderer for metric lines using Line2D with dynamic viewport scaling.
+  # Supports dual-trace plotting (e.g. Engine Static RAM vs Crystal GC Active RAM).
   class MetricGraphView
     getter container : Godot::PanelContainer
     getter graph_area : Godot::Control
     getter line : Godot::Line2D
+    getter line2 : Godot::Line2D?
     getter title_label : Godot::Label
     getter value_label : Godot::Label
     getter color : Godot::Color
+    getter color2 : Godot::Color?
     getter max_samples : Int32
 
-    def initialize(parent : Godot::Node, title : String, color : Godot::Color, max_samples : Int32 = 80)
+    def initialize(
+      parent : Godot::Node,
+      title : String,
+      color : Godot::Color,
+      max_samples : Int32 = 80,
+      color2 : Godot::Color? = nil
+    )
       @color = color
+      @color2 = color2
       @max_samples = max_samples
 
       @container = Godot.create(Godot::PanelContainer)
@@ -56,16 +66,26 @@ module PerfFramework
       @graph_area.set_custom_minimum_size(Godot::Vector2.new(140.0, 60.0))
       vbox.add_child(@graph_area)
 
-      # Plot line
+      # Primary plot line
       @line = Godot.create(Godot::Line2D)
       @line.set_width(2.0)
       @line.set_default_color(color)
       @graph_area.add_child(@line)
+
+      # Optional secondary plot line
+      if c2 = color2
+        l2 = Godot.create(Godot::Line2D)
+        l2.set_width(2.0)
+        l2.set_default_color(c2)
+        @graph_area.add_child(l2)
+        @line2 = l2
+      end
     end
 
     def update(samples : Array(Float64), current_text : String, min_val : Float64? = nil, max_val : Float64? = nil)
       @value_label.call("set_text", current_text)
       @line.clear_points
+      @line2.try &.clear_points
 
       return if samples.empty?
 
@@ -85,6 +105,61 @@ module PerfFramework
         px = (idx * step_x).to_f32 + 2.0_f32
         py = (graph_h - (norm * graph_h)).to_f32 + 2.0_f32
         @line.add_point(Godot::Vector2.new(px, py), -1_i64)
+      end
+    end
+
+    # Dual-trace update plotting two synchronized series on the same normalized scale
+    def update_dual(
+      samples1 : Array(Float64),
+      samples2 : Array(Float64),
+      current_text : String,
+      min_val : Float64? = nil,
+      max_val : Float64? = nil
+    )
+      @value_label.call("set_text", current_text)
+      @line.clear_points
+      @line2.try &.clear_points
+
+      return if samples1.empty? && samples2.empty?
+
+      all_min = Float64::MAX
+      all_max = Float64::MIN
+
+      unless samples1.empty?
+        all_min = {all_min, samples1.min}.min
+        all_max = {all_max, samples1.max}.max
+      end
+
+      unless samples2.empty?
+        all_min = {all_min, samples2.min}.min
+        all_max = {all_max, samples2.max}.max
+      end
+
+      actual_min = min_val || all_min
+      actual_max = max_val || all_max
+      actual_max = actual_min + 0.001 if (actual_max - actual_min).abs < 0.0001
+
+      area_size = @graph_area.get_size
+      graph_w = area_size.x > 30.0 ? (area_size.x - 4.0) : 240.0
+      graph_h = area_size.y > 20.0 ? (area_size.y - 4.0) : 60.0
+      step_x = graph_w / @max_samples.to_f64
+
+      samples1.each_with_index do |val, idx|
+        norm = (val - actual_min) / (actual_max - actual_min)
+        norm = norm.clamp(0.0, 1.0)
+        px = (idx * step_x).to_f32 + 2.0_f32
+        py = (graph_h - (norm * graph_h)).to_f32 + 2.0_f32
+        @line.add_point(Godot::Vector2.new(px, py), -1_i64)
+      end
+
+      if l2 = @line2
+        samples2.each_with_index do |val, idx|
+          norm = (val - actual_min) / (actual_max - actual_min)
+          norm = norm.clamp(0.0, 1.0)
+          px = (idx * step_x).to_f32 + 2.0_f32
+          py = (graph_h - (norm * graph_h)).to_f32 + 2.0_f32
+          l2.add_point(Godot::Vector2.new(px, py), -1_i64)
+        end
       end
     end
   end
@@ -121,31 +196,39 @@ module PerfFramework
     end
 
     def build_ui : Void
-      # Dock dynamically to top with margins that stretch across entire window
-      set_anchors_preset(10_i64, false) # PRESET_TOP_WIDE
       set_anchor(0_i64, 0.0, false, false) # Left
       set_anchor(1_i64, 0.0, false, false) # Top
       set_anchor(2_i64, 1.0, false, false) # Right
       set_anchor(3_i64, 0.0, false, false) # Bottom
-      set_offset(0_i64, 16.0)  # Left margin
-      set_offset(1_i64, 10.0)  # Top margin
-      set_offset(2_i64, -16.0) # Right margin
-      set_offset(3_i64, 195.0) # Height
+      set_offset(0_i64, 12.0)
+      set_offset(1_i64, 12.0)
+      set_offset(2_i64, -12.0)
+      set_offset(3_i64, 200.0)
+      set_custom_minimum_size(Godot::Vector2.new(0.0, 195.0))
       set_h_size_flags(3_i64) # SIZE_EXPAND_FILL
 
-      # Root Panel Container matching full PerfHUD bounds
-      root_panel = Godot.create(Godot::PanelContainer)
-      root_panel.set_anchors_preset(15_i64, false) # PRESET_FULL_RECT
-      root_panel.set_h_size_flags(3_i64)
-      root_panel.set_v_size_flags(3_i64)
-      add_child(root_panel)
+      # Root panel background
+      bg = Godot.create(Godot::Panel)
+      bg.set_anchor(0_i64, 0.0, false, false)
+      bg.set_anchor(1_i64, 0.0, false, false)
+      bg.set_anchor(2_i64, 1.0, false, false)
+      bg.set_anchor(3_i64, 1.0, false, false)
+      add_child(bg)
 
+      # Main vertical layout
       vbox = Godot.create(Godot::VBoxContainer)
+      vbox.set_anchor(0_i64, 0.0, false, false)
+      vbox.set_anchor(1_i64, 0.0, false, false)
+      vbox.set_anchor(2_i64, 1.0, false, false)
+      vbox.set_anchor(3_i64, 1.0, false, false)
+      vbox.set_offset(0_i64, 8.0)
+      vbox.set_offset(1_i64, 8.0)
+      vbox.set_offset(2_i64, -8.0)
+      vbox.set_offset(3_i64, -8.0)
       vbox.set_h_size_flags(3_i64)
-      vbox.set_v_size_flags(3_i64)
-      root_panel.add_child(vbox)
+      add_child(vbox)
 
-      # Top Bar: Title, Duration Badge, Warning Badge, and Action Buttons
+      # Top Status Bar
       top_bar = Godot.create(Godot::HBoxContainer)
       top_bar.set_h_size_flags(3_i64)
       vbox.add_child(top_bar)
@@ -198,14 +281,14 @@ module PerfFramework
       end
       top_bar.add_child(btn_toggle)
 
-      btn_back = Godot.create(Godot::Button)
-      btn_back.call("set_text", "⎋ Menu (Esc)")
-      btn_back.connect("pressed") do
+      btn_menu = Godot.create(Godot::Button)
+      btn_menu.call("set_text", "⎋ Menu (Esc)")
+      btn_menu.connect("pressed") do
         return_to_menu
       end
-      top_bar.add_child(btn_back)
+      top_bar.add_child(btn_menu)
 
-      # Finite Progress Bar
+      # Duration Progress Bar
       @progress_bar = Godot.create(Godot::ProgressBar)
       @progress_bar.not_nil!.set_h_size_flags(3_i64)
       @progress_bar.not_nil!.set_custom_minimum_size(Godot::Vector2.new(0.0, 6.0))
@@ -226,11 +309,12 @@ module PerfFramework
         Godot::Color.new(0.3, 0.9, 0.5, 1.0) # Emerald
       )
 
-      # Graph 2: RAM & GC Heap
+      # Graph 2: Dual Trace RAM (Engine Static vs Crystal Boehm GC Active)
       @graph_ram = MetricGraphView.new(
         @graphs_box.not_nil!,
-        "Engine RAM / GC",
-        Godot::Color.new(0.2, 0.8, 1.0, 1.0) # Cyan
+        "RAM: Engine / GC",
+        Godot::Color.new(0.2, 0.8, 1.0, 1.0),       # Cyan = Godot Static RAM
+        color2: Godot::Color.new(1.0, 0.4, 0.8, 1.0) # Magenta = Crystal GC Active RAM
       )
 
       # Graph 3: ObjectDB & Nodes
@@ -258,13 +342,10 @@ module PerfFramework
     def detach_test : Void
       @active_test = nil
       if lbl = @lbl_title
-        lbl.call("set_text", "LibGodot Performance Monitor")
+        lbl.call("set_text", "LibGodot Performance Monitor - Standby")
       end
-      if lbl_s = @lbl_status
-        lbl_s.call("set_text", "[STANDBY]")
-      end
-      if lbl_d = @lbl_duration
-        lbl_d.call("set_text", "Mode: --")
+      if lbl = @lbl_status
+        lbl.call("set_text", "[STANDBY]")
       end
       if pb = @progress_bar
         pb.set_visible(false)
@@ -276,26 +357,28 @@ module PerfFramework
       if box = @graphs_box
         box.set_visible(!@hud_minimized)
       end
+      if pb = @progress_bar
+        pb.set_visible(!@hud_minimized && @active_test != nil)
+      end
+      set_offset(3_i64, @hud_minimized ? 42.0 : 200.0)
+      set_custom_minimum_size(Godot::Vector2.new(0.0, @hud_minimized ? 38.0 : 195.0))
     end
 
     def return_to_menu : Void
-      if test = @active_test
-        test.stop_and_teardown
-      end
-      detach_test
       if cb = @on_return_menu
         cb.call
-      else
-        tree = get_tree
-        unless tree.pointer.null?
-          tree.call("change_scene_to_file", "res://scenes/perf_main.tscn")
-        end
       end
     end
 
     def _process(delta : Float64) : Void
+      # ESC key quick return to menu
+      if Godot.input.is_physical_key_pressed(4194305_i64) # KEY_ESCAPE
+        return_to_menu
+        return
+      end
+
       @sample_timer += delta
-      return if @sample_timer < 0.05 # Sample at ~20Hz for clean rolling charts
+      return if @sample_timer < 0.1 # Sample at 10 Hz for responsive charts
 
       @sample_timer = 0.0
       snap = @sampler.sample_now
@@ -304,7 +387,7 @@ module PerfFramework
       push_sample(@samples_fps, snap.fps)
       push_sample(@samples_frame_time, snap.frame_time_ms)
       push_sample(@samples_ram, snap.static_ram_mb)
-      push_sample(@samples_gc, snap.crystal_gc_mb)
+      push_sample(@samples_gc, snap.crystal_gc_active_mb)
       push_sample(@samples_objects, snap.object_count.to_f64)
       push_sample(@samples_nodes, snap.node_count.to_f64)
 
@@ -319,12 +402,11 @@ module PerfFramework
       end
 
       if g_ram = @graph_ram
-        delta_mb = @sampler.ram_delta_mb
-        delta_str = delta_mb >= 0 ? "+#{delta_mb.round(1)}" : "#{delta_mb.round(1)}"
-        g_ram.update(
+        g_ram.update_dual(
           @samples_ram,
-          "#{snap.static_ram_mb.round(1)} MB (Δ #{delta_str})",
-          min_val: @sampler.baseline.static_ram_mb * 0.9
+          @samples_gc,
+          "Godot: #{snap.static_ram_mb.round(1)}M | GC: #{snap.crystal_gc_active_mb.round(1)}M",
+          min_val: 0.0
         )
       end
 
@@ -344,10 +426,27 @@ module PerfFramework
         )
       end
 
-      # Orphan node leak alert
+      # Crystal GC Memory Ballooning Detection
+      # Check if GC active memory exhibits sustained upward creep (>5MB growth over history window)
+      gc_ballooning = false
+      gc_growth = 0.0
+      if @samples_gc.size >= 30
+        initial_avg = @samples_gc[0..9].sum / 10.0
+        latest_avg = @samples_gc[-10..-1].sum / 10.0
+        gc_growth = latest_avg - initial_avg
+        if gc_growth > 5.0
+          gc_ballooning = true
+        end
+      end
+
+      # Warning alerts for orphans and GC ballooning
       if lbl_w = @lbl_warning
-        if snap.orphan_count > 0
+        if snap.orphan_count > 0 && gc_ballooning
+          lbl_w.call("set_text", " ⚠️ #{snap.orphan_count} ORPHANS | GC BALLOON (+#{gc_growth.round(1)}M) ")
+        elsif snap.orphan_count > 0
           lbl_w.call("set_text", " ⚠️ #{snap.orphan_count} ORPHAN NODES ")
+        elsif gc_ballooning
+          lbl_w.call("set_text", " ⚠️ CRYSTAL GC BALLOONING (+#{gc_growth.round(1)}M) ")
         else
           lbl_w.call("set_text", "")
         end
@@ -368,22 +467,21 @@ module PerfFramework
           end
         end
 
-        # Progress bar update
         if pb = @progress_bar
-          if test.is_infinite || !test.is_running
-            pb.set_visible(false)
+          unless test.is_infinite
+            pb.set_visible(!@hud_minimized)
+            ratio = (test.elapsed_time / test.finite_duration).clamp(0.0, 1.0)
+            pb.set_value(ratio * 100.0)
           else
-            pb.set_visible(true)
-            pct = (test.elapsed_time / test.finite_duration) * 100.0
-            pb.set_value(pct.clamp(0.0, 100.0))
+            pb.set_visible(false)
           end
         end
       end
     end
 
     private def push_sample(arr : Array(Float64), val : Float64) : Void
+      arr.shift if arr.size >= 80
       arr << val
-      arr.shift if arr.size > 80
     end
   end
 end

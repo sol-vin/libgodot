@@ -4,6 +4,28 @@
 
 require "../../../src/libgodot"
 
+{% if flag?(:windows) %}
+@[Link("kernel32")]
+@[Link("psapi")]
+lib LibPsapi
+  struct PROCESS_MEMORY_COUNTERS
+    cb : UInt32
+    page_fault_count : UInt32
+    peak_working_set_size : LibC::SizeT
+    working_set_size : LibC::SizeT
+    quota_peak_paged_pool_usage : LibC::SizeT
+    quota_paged_pool_usage : LibC::SizeT
+    quota_peak_non_paged_pool_usage : LibC::SizeT
+    quota_non_paged_pool_usage : LibC::SizeT
+    pagefile_usage : LibC::SizeT
+    peak_pagefile_usage : LibC::SizeT
+  end
+
+  fun GetCurrentProcess : Void*
+  fun GetProcessMemoryInfo(hProcess : Void*, ppsmps : PROCESS_MEMORY_COUNTERS*, cb : UInt32) : LibC::BOOL
+end
+{% end %}
+
 module PerfFramework
   struct MetricSnapshot
     property fps : Float64
@@ -12,6 +34,12 @@ module PerfFramework
     property static_ram_mb : Float64
     property peak_ram_mb : Float64
     property crystal_gc_mb : Float64
+    property crystal_gc_active_mb : Float64
+    property crystal_gc_heap_mb : Float64
+    property crystal_gc_free_mb : Float64
+    property crystal_total_alloc_mb : Float64
+    property os_working_set_mb : Float64
+    property os_commit_mb : Float64
     property object_count : Int64
     property node_count : Int64
     property orphan_count : Int64
@@ -25,6 +53,12 @@ module PerfFramework
       @static_ram_mb : Float64 = 0.0,
       @peak_ram_mb : Float64 = 0.0,
       @crystal_gc_mb : Float64 = 0.0,
+      @crystal_gc_active_mb : Float64 = 0.0,
+      @crystal_gc_heap_mb : Float64 = 0.0,
+      @crystal_gc_free_mb : Float64 = 0.0,
+      @crystal_total_alloc_mb : Float64 = 0.0,
+      @os_working_set_mb : Float64 = 0.0,
+      @os_commit_mb : Float64 = 0.0,
       @object_count : Int64 = 0_i64,
       @node_count : Int64 = 0_i64,
       @orphan_count : Int64 = 0_i64,
@@ -65,12 +99,41 @@ module PerfFramework
       orphan_count = perf.get_monitor(10_i64).to_i64 # ObjectOrphanNodeCount
 
       # Crystal Boehm GC heap metrics
-      gc_mb = 0.0_f64
+      gc_heap_mb = 0.0_f64
+      gc_active_mb = 0.0_f64
+      gc_free_mb = 0.0_f64
+      gc_total_mb = 0.0_f64
+
       begin
-        gc_mb = GC.stats.heap_size.to_f64 / (1024.0 * 1024.0)
+        stats = GC.stats
+        heap_bytes = stats.heap_size
+        free_bytes = stats.free_bytes
+        active_bytes = heap_bytes >= free_bytes ? (heap_bytes - free_bytes) : 0_u64
+
+        gc_heap_mb = heap_bytes.to_f64 / (1024.0 * 1024.0)
+        gc_free_mb = free_bytes.to_f64 / (1024.0 * 1024.0)
+        gc_active_mb = active_bytes.to_f64 / (1024.0 * 1024.0)
+        gc_total_mb = stats.total_bytes.to_f64 / (1024.0 * 1024.0)
       rescue
-        gc_mb = 0.0_f64
+        gc_heap_mb = 0.0_f64
+        gc_active_mb = 0.0_f64
       end
+
+      # Operating System physical working set and commit metrics
+      os_ws_mb = 0.0_f64
+      os_commit_mb = 0.0_f64
+
+      {% if flag?(:windows) %}
+      begin
+        counters = LibPsapi::PROCESS_MEMORY_COUNTERS.new
+        counters.cb = sizeof(LibPsapi::PROCESS_MEMORY_COUNTERS).to_u32
+        if LibPsapi.GetProcessMemoryInfo(LibPsapi.GetCurrentProcess, pointerof(counters), counters.cb) != 0
+          os_ws_mb = counters.working_set_size.to_f64 / (1024.0 * 1024.0)
+          os_commit_mb = counters.pagefile_usage.to_f64 / (1024.0 * 1024.0)
+        end
+      rescue
+      end
+      {% end %}
 
       now_sec = (Time.instant - @start_time).total_seconds
 
@@ -80,7 +143,13 @@ module PerfFramework
         physics_time_ms: time_physics * 1000.0,
         static_ram_mb: mem_static / (1024.0 * 1024.0),
         peak_ram_mb: mem_peak / (1024.0 * 1024.0),
-        crystal_gc_mb: gc_mb,
+        crystal_gc_mb: gc_heap_mb,
+        crystal_gc_active_mb: gc_active_mb,
+        crystal_gc_heap_mb: gc_heap_mb,
+        crystal_gc_free_mb: gc_free_mb,
+        crystal_total_alloc_mb: gc_total_mb,
+        os_working_set_mb: os_ws_mb,
+        os_commit_mb: os_commit_mb,
         object_count: obj_count,
         node_count: node_count,
         orphan_count: orphan_count,
@@ -93,6 +162,18 @@ module PerfFramework
 
     def ram_delta_mb : Float64
       @current.static_ram_mb - @baseline.static_ram_mb
+    end
+
+    def crystal_gc_active_delta_mb : Float64
+      @current.crystal_gc_active_mb - @baseline.crystal_gc_active_mb
+    end
+
+    def crystal_gc_heap_delta_mb : Float64
+      @current.crystal_gc_heap_mb - @baseline.crystal_gc_heap_mb
+    end
+
+    def os_working_set_delta_mb : Float64
+      @current.os_working_set_mb - @baseline.os_working_set_mb
     end
 
     def node_delta : Int64

@@ -227,7 +227,7 @@ module PerfFramework
 
       # Run All Button
       btn_run_all = Godot.create(Godot::Button)
-      btn_run_all.call("set_text", "⚡ Run All (9 Tests)")
+      btn_run_all.call("set_text", "⚡ Run All (#{all_tests.size} Tests)")
       btn_run_all.connect("pressed") do
         Godot.print("[PerfMenu] Run All pressed")
         if cb = @on_launch_all

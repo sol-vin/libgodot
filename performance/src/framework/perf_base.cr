@@ -118,7 +118,8 @@ module PerfFramework
       Godot.print("------------------------------------------------------------------")
       Godot.print("[PerfTest] Starting: #{@test_name}")
       Godot.print("  Target Count: #{@target_count} | Mode: #{@is_infinite ? "INFINITE" : "#{@finite_duration}s"}")
-      Godot.print("  Baseline: RAM=#{@initial_snapshot.not_nil!.static_ram_mb.round(2)}MB, Objects=#{@initial_snapshot.not_nil!.object_count}")
+      init_snap = @initial_snapshot.not_nil!
+      Godot.print("  Baseline: Engine RAM=#{init_snap.static_ram_mb.round(2)}MB, Crystal GC Active=#{init_snap.crystal_gc_active_mb.round(2)}MB (Heap=#{init_snap.crystal_gc_heap_mb.round(2)}MB), OS WS=#{init_snap.os_working_set_mb.round(2)}MB, Objects=#{init_snap.object_count}")
       Godot.print("------------------------------------------------------------------")
 
       on_setup
@@ -146,11 +147,26 @@ module PerfFramework
       if init = @initial_snapshot
         final = @final_snapshot.not_nil!
         ram_diff = final.static_ram_mb - init.static_ram_mb
+        gc_active_diff = final.crystal_gc_active_mb - init.crystal_gc_active_mb
+        gc_heap_diff = final.crystal_gc_heap_mb - init.crystal_gc_heap_mb
+        os_ws_diff = final.os_working_set_mb - init.os_working_set_mb
         obj_diff = final.object_count - init.object_count
         node_diff = final.node_count - init.node_count
         orphans = final.orphan_count
-        Godot.print("  RAM Diff: #{ram_diff >= 0 ? "+" : ""}#{ram_diff.round(2)}MB (Peak: #{final.peak_ram_mb.round(2)}MB)")
+
+        Godot.print("  Engine RAM Diff: #{ram_diff >= 0 ? "+" : ""}#{ram_diff.round(2)}MB (Peak: #{final.peak_ram_mb.round(2)}MB)")
+        Godot.print("  Crystal GC Active Diff: #{gc_active_diff >= 0 ? "+" : ""}#{gc_active_diff.round(2)}MB (Final: #{final.crystal_gc_active_mb.round(2)}MB, Heap: #{final.crystal_gc_heap_mb.round(2)}MB [#{gc_heap_diff >= 0 ? "+" : ""}#{gc_heap_diff.round(2)}MB])")
+        if final.os_working_set_mb > 0.0
+          Godot.print("  OS Working Set: #{final.os_working_set_mb.round(2)}MB (#{os_ws_diff >= 0 ? "+" : ""}#{os_ws_diff.round(2)}MB)")
+        end
         Godot.print("  Objects Diff: #{obj_diff >= 0 ? "+" : ""}#{obj_diff} (Nodes: #{node_diff}, Orphans: #{orphans})")
+
+        if gc_active_diff > 2.0
+          Godot.printerr("  ⚠️ WARNING: Crystal GC active memory retained +#{gc_active_diff.round(2)}MB after GC.collect (Potential ballooning)!")
+        else
+          Godot.print("  ✔ Crystal Boehm GC heap cleanly reclaimed (Zero ballooning).")
+        end
+
         if orphans > 0
           Godot.printerr("  ⚠️ WARNING: #{orphans} orphan nodes detected after test completion!")
         else
