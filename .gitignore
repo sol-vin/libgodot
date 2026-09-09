@@ -45,3 +45,9 @@ android_audit_report.txt
 godot-src/
 *.cr.uid
 
+# Android keystore & release secrets
+/android/
+*.keystore
+*.jks
+*.credentials.json
+*credentials*.json

@@ -191,13 +191,32 @@ module Godot
         fs_path = ResourceFormatSaverCrystal.resolve_save_path(path)
 
         code = ""
-        if inst = Bridge.find_alive_instance(res_ptr)
-          if script = inst.as?(CrystalScript)
-            code = script.source_code
+        if !res_ptr.null?
+          if inst = Bridge.find_alive_instance(res_ptr)
+            if script = inst.as?(CrystalScript)
+              code = script.source_code
+            end
+          end
+
+          # Fallback: attempt direct engine reflection call to get_source_code
+          if code.empty?
+            code = Bridge.object_call_ret_string(res_ptr, "get_source_code")
           end
         end
 
-        if Godot::SystemIO.write_file(fs_path, code)
+        # Safety guard against catastrophic file truncation:
+        # If code could not be resolved or is empty, but the target file already exists and has content,
+        # refuse to overwrite with an empty string!
+        if code.empty? && !fs_path.empty? && Godot::SystemIO.file_exists?(fs_path)
+          existing_len = Godot::SystemIO.file_size(fs_path)
+          if existing_len > 0
+            Godot.printerr("[ResourceFormatSaverCrystal] Refusing to overwrite #{path} with empty content (source code unresolved)")
+            ret.as(Int32*).value = 1_i32 # ERR_FILE_CANT_WRITE
+            return
+          end
+        end
+
+        if !fs_path.empty? && Godot::SystemIO.write_file(fs_path, code)
           ret.as(Int32*).value = 0_i32 # OK
         else
           Godot.printerr("[ResourceFormatSaverCrystal] Failed to save #{path}")

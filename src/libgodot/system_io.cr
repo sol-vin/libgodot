@@ -59,6 +59,18 @@ module Godot
       end
     end
 
+    # Returns the size of the file in bytes, or -1 if the file cannot be opened
+    def self.file_size(path : String) : Int64
+      return -1_i64 if path.empty?
+      fp = LibSystemIO.fopen(path.to_unsafe, "rb".to_unsafe)
+      return -1_i64 if fp.null?
+
+      LibSystemIO.fseek(fp, 0_i32, SEEK_END)
+      size = LibSystemIO.ftell(fp).to_i64
+      LibSystemIO.fclose(fp)
+      size
+    end
+
     # Deletes a file on disk
     def self.delete_file(path : String) : Bool
       return false if path.empty?

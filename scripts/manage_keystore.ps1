@@ -61,6 +61,7 @@ param(
     [Parameter(Position = 1)]
     [string]$Path = "",
 
+    [Alias("User")]
     [string]$Alias = "",
     [string]$Password = "",
     [int]$ValidityDays = 10000,
@@ -166,13 +167,9 @@ function Get-SecureRandomString {
 }
 
 function Get-DefaultKeystoreDir {
-    $onWindows = ($env:OS -eq "Windows_NT" -or [System.IO.Path]::PathSeparator -eq ';')
-    $dir = if ($onWindows) {
-        Join-Path $env:USERPROFILE ".android"
-    } else {
-        $userHome = if ($env:HOME) { $env:HOME } else { [System.Environment]::GetFolderPath('UserProfile') }
-        Join-Path $userHome ".android"
-    }
+    # Default to the workspace's /android directory (git-ignored)
+    $rootDir = Split-Path -Parent $PSScriptRoot
+    $dir = Join-Path $rootDir "android"
     if (-not (Test-Path $dir)) {
         New-Item -ItemType Directory -Force -Path $dir | Out-Null
     }

@@ -1,4 +1,5 @@
 require "../src/libgodot"
+require "./libgodot_spec"
 
 puts "=== Running Safety, Memory & Dynamic Scaling Specifications ==="
 

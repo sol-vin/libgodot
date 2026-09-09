@@ -394,13 +394,66 @@ module Godot
     execute_crystal_build
   end
 
+  # Scans project addons/ directory and recompiles any Crystal addons whose source code changed
   def recompile_modified_addons_silent : Void
-    recompile_script = File.exists?("scripts/recompile_addons.ps1") ? "scripts/recompile_addons.ps1" : "../scripts/recompile_addons.ps1"
-    return unless File.exists?(recompile_script)
+    addons_dir = "addons"
+    addons_dir = "../addons" unless Dir.exists?(addons_dir)
+    return unless Dir.exists?(addons_dir)
 
-    output_io = IO::Memory.new
-    Process.run("powershell", ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", recompile_script, "-ProjectPath", "."], output: output_io, error: output_io)
-  rescue
+    so_ext = {% if flag?(:windows) %}
+      "dll"
+    {% elsif flag?(:darwin) %}
+      "dylib"
+    {% else %}
+      "so"
+    {% end %}
+
+    link_flags = {% if flag?(:windows) %}
+      "/DLL /ENTRY:_DllMainCRTStartup /EXPORT:crystal_godot_init"
+    {% elsif flag?(:darwin) %}
+      "-dynamiclib"
+    {% else %}
+      "-shared"
+    {% end %}
+
+    Dir.each_child(addons_dir) do |entry|
+      next if entry == "crystal_integration"
+      addon_path = File.join(addons_dir, entry)
+      next unless Dir.exists?(addon_path)
+
+      main_cr = File.join(addon_path, "src", "main.cr")
+      next unless File.exists?(main_cr)
+
+      bin_dir = File.join(addon_path, "bin")
+      Dir.mkdir_p(bin_dir) unless Dir.exists?(bin_dir)
+
+      target_bin = File.join(bin_dir, "#{entry}.#{so_ext}")
+      target_mtime = File.exists?(target_bin) ? File.info(target_bin).modification_time : ::Time.unix(0)
+
+      # Check if any .cr file inside the addon was modified after target_bin
+      needs_recompile = !File.exists?(target_bin)
+      unless needs_recompile
+        Dir.glob(File.join(addon_path, "**", "*.cr")).each do |src_file|
+          if File.info(src_file).modification_time > target_mtime
+            needs_recompile = true
+            break
+          end
+        end
+      end
+
+      if needs_recompile
+        Godot.print("[CrystalIntegrationPlugin] Recompiling modified addon: #{entry}...")
+        args = ["build", "--link-flags", link_flags, main_cr, "-o", target_bin]
+        status = Process.run("crystal", args)
+        if status.success?
+          Godot.print("[CrystalIntegrationPlugin] Successfully recompiled addon: #{entry}")
+        else
+          Godot.printerr("[CrystalIntegrationPlugin] Failed to recompile addon: #{entry} (exit code: #{status.exit_code})")
+        end
+      end
+    end
+  rescue ex
+    Godot.printerr("[CrystalIntegrationPlugin] Error checking addon recompilation: #{ex.message}")
   end
 
   # Compiles project Crystal code into shared library

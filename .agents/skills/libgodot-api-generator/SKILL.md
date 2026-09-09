@@ -33,7 +33,7 @@ make generate
 ```
 Or directly:
 ```bash
-crystal run scripts/generate_bindings.cr
+crystal run tools/api_generator/generate_bindings.cr
 ```
 
 This generates:
@@ -44,9 +44,9 @@ This generates:
 
 ---
 
-## 3. Customizing Mappings & Overrides (`scripts/overrides.yml`)
+## 3. Customizing Mappings & Overrides (`tools/api_generator/overrides.yml`)
 
-The generator reads `scripts/overrides.yml` to resolve keyword collisions and map native types:
+The generator reads `tools/api_generator/overrides.yml` to resolve keyword collisions and map native types:
 
 ```yaml
 keywords:

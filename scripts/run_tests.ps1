@@ -550,6 +550,8 @@ if ($FailedSteps.Count -gt 0) {
 $reportMdContent = $mdReport.ToString()
 $reportMdPath = Join-Path $TestBinDir "test_report.md"
 Set-Content -Path $reportMdPath -Value $reportMdContent -Force
+$reportMdPathRoot = Join-Path $TestDir "test_report.md"
+Set-Content -Path $reportMdPathRoot -Value $reportMdContent -Force
 
 # Generate JSON report
 $jsonReport = @{
@@ -570,6 +572,8 @@ $jsonReport = @{
 } | ConvertTo-Json -Depth 5
 $reportJsonPath = Join-Path $TestBinDir "test_report.json"
 Set-Content -Path $reportJsonPath -Value $jsonReport -Force
+$reportJsonPathRoot = Join-Path $TestDir "test_report.json"
+Set-Content -Path $reportJsonPathRoot -Value $jsonReport -Force
 
 # Append to GITHUB_STEP_SUMMARY if running in GitHub Actions
 if ($env:GITHUB_STEP_SUMMARY) {

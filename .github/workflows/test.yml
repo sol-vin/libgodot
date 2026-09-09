@@ -105,7 +105,10 @@ jobs:
           path: |
             test/test_report.md
             test/test_report.json
+            test/bin/test_report.md
+            test/bin/test_report.json
             test/.runtime_test_results.txt
+            test/bin/.runtime_test_results.txt
             test/.tool_tests_passed
             test/.tool_tests_failed
             test/.runtime_tests_passed

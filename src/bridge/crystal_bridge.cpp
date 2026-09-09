@@ -3527,9 +3527,6 @@ static void load_crystal_game_library() {
             CrystalInitFn init_fn = (CrystalInitFn)bridge_get_proc(hModule, "crystal_godot_init");
             if (init_fn) {
                 init_fn(&g_bridge_api);
-#ifdef _WIN32
-                AddVectoredExceptionHandler(1, custom_crash_handler);
-#endif
             } else {
                 godot_log_error("Failed to find 'crystal_godot_init' in loaded library", nullptr, "load_crystal_game_library", __FILE__, __LINE__);
             }
@@ -3726,7 +3723,7 @@ static LONG WINAPI custom_crash_handler(PEXCEPTION_POINTERS pExceptionInfo) {
                 "===========================================================\n\n");
         }
 
-        FILE *f = fopen("crash_dump.txt", "w");
+        FILE *f = fopen("crash_dump.log", "w");
         if (f) {
             fputs(report, f);
             fclose(f);

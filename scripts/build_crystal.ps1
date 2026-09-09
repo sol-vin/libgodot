@@ -60,6 +60,8 @@ if ($isMac -and ($Output -match '\.dylib$' -or $LinkFlags -match '-dynamiclib'))
     $wrapperPath = ""
     if (Test-Path $wrapperCandidate) {
         $wrapperPath = (Resolve-Path $wrapperCandidate).Path
+    } else {
+        $wrapperPath = $wrapperCandidate
         $scriptContent = @'
 #!/usr/bin/env bash
 is_shared=0

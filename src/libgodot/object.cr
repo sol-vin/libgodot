@@ -1,37 +1,7 @@
 require "./types"
 
 module Godot
-  lib LibKernel32
-    fun GetModuleHandleA(lpModuleName : LibC::Char*) : Void*
-    fun GetProcAddress(hModule : Void*, lpProcName : LibC::Char*) : Void*
-  end
-
   # Godot Engine Logging & Diagnostics System
-  @@bridge_print : (LibC::Char* -> Void)? = nil
-  @@bridge_printerr : (LibC::Char* -> Void)? = nil
-  @@bridge_error : ((LibC::Char*, LibC::Char*, LibC::Char*, Int32) -> Void)? = nil
-  @@bridge_warning : ((LibC::Char*, LibC::Char*, LibC::Char*, Int32) -> Void)? = nil
-  @@bridge_initialized : Bool = false
-
-  def self.init_bridge_logging
-    return if @@bridge_initialized
-    @@bridge_initialized = true
-    h_bridge = LibKernel32.GetModuleHandleA("crystal_bridge.dll")
-    if !h_bridge.null?
-      fn_p = LibKernel32.GetProcAddress(h_bridge, "crystal_godot_print")
-      @@bridge_print = Proc(LibC::Char*, Void).new(fn_p, Pointer(Void).null) unless fn_p.null?
-
-      fn_perr = LibKernel32.GetProcAddress(h_bridge, "crystal_godot_printerr")
-      @@bridge_printerr = Proc(LibC::Char*, Void).new(fn_perr, Pointer(Void).null) unless fn_perr.null?
-
-      fn_err = LibKernel32.GetProcAddress(h_bridge, "crystal_godot_error")
-      @@bridge_error = Proc(LibC::Char*, LibC::Char*, LibC::Char*, Int32, Void).new(fn_err, Pointer(Void).null) unless fn_err.null?
-
-      fn_warn = LibKernel32.GetProcAddress(h_bridge, "crystal_godot_warning")
-      @@bridge_warning = Proc(LibC::Char*, LibC::Char*, LibC::Char*, Int32, Void).new(fn_warn, Pointer(Void).null) unless fn_warn.null?
-    end
-  end
-
   def self.print(*args)
     msg = args.join(" ")
     if Bridge.api && !Bridge.api.null?

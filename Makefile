@@ -199,7 +199,7 @@ dump_api:
 
 generate:
 	@echo [Generator] Generating complete Godot bindings from extension_api.json...
-	$(CRYSTAL) run scripts/generate_bindings.cr
+	$(CRYSTAL) run tools/api_generator/generate_bindings.cr
 
 # Copy Crystal runtime dependencies and libgodot to all bin dirs
 deps: dirs
