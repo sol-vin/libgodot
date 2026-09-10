@@ -104,18 +104,15 @@ def resolve_crystal_return_type(type_id : Int64, class_name : String?) : String
     end
   end
 
-  if type_id == 0
-    return "Void"
-  end
-
-  if mapped = VARIANT_TYPE_MAP[type_id]?
-    if mapped == "Godot::Object"
-      "Godot::Object?"
-    else
-      mapped
-    end
+  case type_id
+  when 0 then "Void"
+  when 1 then "Bool"
+  when 2 then "Int64"
+  when 3 then "Float64"
+  when 4 then "String"
+  when 24 then "Godot::Object?"
   else
-    "Godot::Variant?"
+    "Void"
   end
 end
 
@@ -204,8 +201,8 @@ if gdscript_classes = data["gdscript_classes"]?.try(&.as_a)
             io.puts "      call_obj_as(#{base_t}, \"get\", \"#{prop_name}\")"
             io.puts "    end"
           else
-            io.puts "    def #{clean_getter} : Godot::Variant"
-            io.puts "      call(\"get\", \"#{prop_name}\")"
+            io.puts "    def #{clean_getter} : String"
+            io.puts "      call_str(\"get\", \"#{prop_name}\")"
             io.puts "    end"
           end
 
@@ -265,6 +262,7 @@ if gdscript_classes = data["gdscript_classes"]?.try(&.as_a)
             io.puts "      call_obj_as(#{base_t}, \"#{m_name}\"#{args_pass_str})"
           else
             io.puts "      call(\"#{m_name}\"#{args_pass_str})"
+            io.puts "      nil"
           end
           io.puts "    end\n"
         end

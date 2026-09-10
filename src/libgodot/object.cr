@@ -120,6 +120,10 @@ module Godot
         end
       end
     end
+
+    def unsubscribe : Void
+      Godot.unsubscribe_signal(self)
+    end
   end
 
   class_getter signal_subs = Hash(Tuple(UInt64, String), Array(SignalSubscription)).new

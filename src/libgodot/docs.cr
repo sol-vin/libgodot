@@ -784,59 +784,53 @@ module Docs
     end
   end
 
-  # # F. GDScript Interoperability
+  # # F. GDScript Interoperability & Automated Project Bindings
   #
-  # LibGodot includes bidirectional interoperability with GDScript, allowing Crystal code
-  # to call GDScript instance methods, invoke static functions, and read/write dynamic properties.
+  # LibGodot includes automated compile-time interoperability with GDScript, generating strongly
+  # typed Crystal wrapper classes directly from your project's custom GDScript nodes and scenes.
   #
   # ---
   #
-  # ### The `bind_gdscript_methods` DSL
+  # ### Automated Compile-Time Binding (`make project_bindings`)
   #
-  # Within any Crystal node, invoke `bind_gdscript_methods` to bind external GDScript APIs:
+  # Custom GDScript nodes (declared with `class_name` and extending Godot node types) are automatically
+  # introspected at compile time by Godot in headless mode (`dump_project_nodes.gd`). The binding generator
+  # (`generate_project_bindings.cr`) creates typed Crystal classes in `src/generated/project_nodes/`:
   #
   # ```crystal
-  # node QuestTracker < Node do
-  #   bind_gdscript_methods do
-  #     # Instance method taking arguments
-  #     gdscript_method award_experience(points : Int32)
+  # # Automatically generated wrapper:
+  # # module Godot
+  # #   class QuestTracker < Godot::Node
+  # #     def self.from(node : Godot::Object) : self
+  # #     def award_experience(points : Int64) : Int64
+  # #     def get_current_quest_title : String
+  # #     def active_quest_id : String
+  # #     def active_quest_id=(val : String) : Void
+  # #     def quest_completed : Godot::BoundSignal
+  # #   end
+  # # end
   #
-  #     # Instance method returning a value
-  #     gdscript_method get_current_quest_title
-  #
-  #     # Class-level static method
-  #     gdscript_static_method calculate_difficulty_multiplier(level : Int32)
-  #
-  #     # Dynamic script property getter / setter
-  #     gdscript_property active_quest_id : String
-  #   end
-  #
-  #   def _ready : Void
-  #     # Call GDScript instance methods directly:
-  #     award_experience(500)
-  #     title = get_current_quest_title
-  #     Godot.print("Active Quest: #{title}")
-  #
-  #     # Access bound properties:
-  #     self.active_quest_id = "QUEST_001"
-  #   end
-  # end
+  # # Crystal usage:
+  # tracker = Godot::QuestTracker.from(quest_node)
+  # tracker.award_experience(500_i64)
+  # Godot.print("Active Quest: #{tracker.active_quest_id}")
+  # tracker.active_quest_id = "QUEST_002"
   # ```
   #
   # ---
   #
   # ### How Variant Marshaling Works
   #
-  # 1. When calling a bound GDScript method, Crystal converts each argument into a Godot `Variant`
-  #    using `Bridge.variant_from_type`.
+  # 1. When calling an auto-bound GDScript method, Crystal passes typed arguments through the GDExtension
+  #    bridge argument marshaller.
   # 2. It dispatches the call through Godot's `object_call` / `object_call_ret_*` C-API.
   # 3. Return values are unmarshaled back into native Crystal types (`String`, `Int64`, `Float64`,
-  #    `Bool`, `Object`).
-  # 4. Variants are immediately destroyed via `Bridge.gd_variant_destroy` to prevent memory leaks.
+  #    `Bool`, `Godot::Object`).
+  # 4. Native variant resources are automatically lifecycle-managed to prevent memory leaks.
   module F_GDSCRIPT_INTEROP
     # Dummy method for documentation visibility
     def self.features : Array(String)
-      ["gdscript_method", "gdscript_static_method", "gdscript_property", "Variant marshaling"]
+      ["automated_ast_introspection", "typed_project_bindings", "typed_properties", "typed_signals", "variant_marshaling"]
     end
   end
 

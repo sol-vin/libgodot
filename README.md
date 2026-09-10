@@ -50,7 +50,7 @@ graph TD
 - **Inspector Export System**: Complete support for `@[Export]`, numeric ranges, enums, file pickers, bitmask flags, groups, categories, and tool buttons.
 - **Automated Doc Comment Harvesting**: Standard Crystal `# comments` above classes, properties, signals, and methods are extracted at compile time and registered into Godot's `EditorHelp` XML database for in-editor tooltips and offline F1 Help.
 - **Type-Safe Signals**: Declare signals via `signal health_changed(new_health : Int32)` with generated `emit_<signal>` helpers.
-- **GDScript Interoperability**: Call GDScript methods, static functions, and properties directly via `bind_gdscript_methods`.
+- **GDScript Interoperability**: Automatic compile-time generation of typed Crystal wrappers for project GDScript nodes and scenes (`make project_bindings`).
 - **Engine Reflection & Global Singletons**: First-class access to singletons like `Godot.input`, `Godot.engine`, `Godot.audio_server`, and generated Godot classes.
 - **Strict Decoupling**: Clean separation between reusable library (`src/`), test suite (`test/`), and examples (`examples/`).
 
@@ -176,7 +176,7 @@ LibGodot features an extensive in-code documentation suite under the `Docs` modu
     </tr>
     <tr>
       <td><a href="src/libgodot/docs.cr"><code>Docs::F_GDSCRIPT_INTEROP</code></a></td>
-      <td>The <code>bind_gdscript_methods</code> DSL and Variant marshaling.</td>
+      <td>Automated compile-time GDScript bindings and Variant marshaling.</td>
     </tr>
     <tr>
       <td><a href="src/libgodot/docs.cr"><code>Docs::G_CAVEATS_AND_INTERNALS</code></a></td>

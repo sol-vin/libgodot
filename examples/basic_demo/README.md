@@ -54,15 +54,13 @@ The demo provides a fully playable 3D character controller and scene with:
   ```
 - Continuously updates health bar display during `_process`.
 
-### 4. `CompanionController < Node`
-- Demonstrates typed GDScript method binding and dispatching:
+### 4. Custom GDScript Interoperability
+- Custom GDScript nodes can be automatically bound at compile time via `make project_bindings`:
   ```crystal
-  bind_gdscript_methods do
-    gdscript_method calculate_bonus(score : Int32)
-    gdscript_static_method get_system_status
-    gdscript_method cheer(score : Int32)
-    gdscript_property bonus_multiplier : Float32
-  end
+  # Auto-generated typed wrapper from CompanionController.gd:
+  companion = Godot::CompanionController.from(node)
+  bonus = companion.calculate_bonus(100_i64)
+  companion.bonus_multiplier = 1.5_f64
   ```
 
 ---

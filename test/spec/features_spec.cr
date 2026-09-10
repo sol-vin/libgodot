@@ -25,14 +25,6 @@ node SpecLifecycleDocNode < Godot::Node do
   end
 end
 
-class SpecGDScriptBinding < Godot::Node
-  bind_gdscript_methods do
-    gdscript_method calculate_score(points : Int32)
-    gdscript_static_method get_version
-    gdscript_property active : Bool
-  end
-end
-
 enum SpecCharacterRole
   Warrior = 0
   Mage    = 1
@@ -113,17 +105,6 @@ describe "LibGodot Features & Reflection" do
       lc_doc = docs.find { |d| d.includes?("SpecLifecycleDocNode") }
       lc_doc.should_not be_nil
       lc_doc.not_nil!.includes?("<method ").should be_false
-    end
-  end
-
-  describe "GDScript Interop Macro" do
-    it "binds properties and methods dynamically" do
-      obj = SpecGDScriptBinding.new
-      obj.active = true
-      obj.active.should be_true
-
-      obj.calculate_score(100)
-      SpecGDScriptBinding.get_version
     end
   end
 

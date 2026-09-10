@@ -49,23 +49,6 @@ abort "Failed: TestLifecycleDocNode should not have method tags for undocumented
 
 puts "✓ Compile-time Doc Comments and Godot XML DocData generation verified!"
 
-# 2. Test GDScript Interop Macro
-class CustomGDScriptBinding < Godot::Node
-  bind_gdscript_methods do
-    gdscript_method calculate_score(points : Int32)
-    gdscript_static_method get_version
-    gdscript_property active : Bool
-  end
-end
-
-binding_obj = CustomGDScriptBinding.new
-binding_obj.active = true
-abort "Failed: GDScript property getter/setter" unless binding_obj.active == true
-binding_obj.calculate_score(100)
-CustomGDScriptBinding.get_version
-
-puts "✓ GDScript Interop Macro verified!"
-
 # 3. Test Global Enums and Singletons
 abort "Failed: Key::Space enum" unless Godot::Key::Space.value == 32_i64
 abort "Failed: Key::Escape enum" unless Godot::Key::Escape.value == 4194305_i64

@@ -848,6 +848,348 @@
 					"name": "gd_pong"
 				}
 			]
+		},
+		{
+			"constants": {},
+			"inherits": "Node2D",
+			"language": "GDScript",
+			"methods": [
+				{
+					"args": [
+						{
+							"class_name": "",
+							"name": "a",
+							"type": 2,
+							"type_name": "int"
+						},
+						{
+							"class_name": "",
+							"name": "b",
+							"type": 2,
+							"type_name": "int"
+						},
+						{
+							"class_name": "",
+							"name": "multiplier",
+							"type": 3,
+							"type_name": "float"
+						}
+					],
+					"flags": 1,
+					"name": "compute_scaled_sum",
+					"return_class_name": "",
+					"return_type": 2,
+					"return_type_name": "int"
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"name": "a",
+							"type": 3,
+							"type_name": "float"
+						},
+						{
+							"class_name": "",
+							"name": "b",
+							"type": 3,
+							"type_name": "float"
+						}
+					],
+					"flags": 1,
+					"name": "calculate_hypotenuse",
+					"return_class_name": "",
+					"return_type": 3,
+					"return_type_name": "float"
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"name": "prefix",
+							"type": 4,
+							"type_name": "String"
+						},
+						{
+							"class_name": "",
+							"name": "id",
+							"type": 2,
+							"type_name": "int"
+						},
+						{
+							"class_name": "",
+							"name": "status",
+							"type": 4,
+							"type_name": "String"
+						}
+					],
+					"flags": 1,
+					"name": "format_complex_message",
+					"return_class_name": "",
+					"return_type": 4,
+					"return_type_name": "String"
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"name": "flag_a",
+							"type": 1,
+							"type_name": "bool"
+						},
+						{
+							"class_name": "",
+							"name": "flag_b",
+							"type": 1,
+							"type_name": "bool"
+						}
+					],
+					"flags": 1,
+					"name": "validate_conditions",
+					"return_class_name": "",
+					"return_type": 1,
+					"return_type_name": "bool"
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"name": "point",
+							"type": 5,
+							"type_name": "Vector2"
+						}
+					],
+					"flags": 1,
+					"name": "distance_to_point",
+					"return_class_name": "",
+					"return_type": 3,
+					"return_type_name": "float"
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"name": "v1",
+							"type": 9,
+							"type_name": "Vector3"
+						},
+						{
+							"class_name": "",
+							"name": "v2",
+							"type": 9,
+							"type_name": "Vector3"
+						}
+					],
+					"flags": 1,
+					"name": "compute_dot3",
+					"return_class_name": "",
+					"return_type": 3,
+					"return_type_name": "float"
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"name": "c",
+							"type": 20,
+							"type_name": "Color"
+						}
+					],
+					"flags": 1,
+					"name": "color_brightness",
+					"return_class_name": "",
+					"return_type": 3,
+					"return_type_name": "float"
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"name": "node_name",
+							"type": 4,
+							"type_name": "String"
+						}
+					],
+					"flags": 1,
+					"name": "duplicate_child_node",
+					"return_class_name": "Node",
+					"return_type": 24,
+					"return_type_name": "Object"
+				},
+				{
+					"args": [
+						{
+							"class_name": "Node",
+							"name": "target",
+							"type": 24,
+							"type_name": "Object"
+						}
+					],
+					"flags": 1,
+					"name": "inspect_incoming_node",
+					"return_class_name": "",
+					"return_type": 4,
+					"return_type_name": "String"
+				},
+				{
+					"args": [],
+					"flags": 1,
+					"name": "perform_state_reset",
+					"return_class_name": "",
+					"return_type": 0,
+					"return_type_name": "Nil"
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"name": "record_id",
+							"type": 2,
+							"type_name": "int"
+						},
+						{
+							"class_name": "",
+							"name": "label",
+							"type": 4,
+							"type_name": "String"
+						},
+						{
+							"class_name": "",
+							"name": "score",
+							"type": 3,
+							"type_name": "float"
+						}
+					],
+					"flags": 1,
+					"name": "trigger_data_processed",
+					"return_class_name": "",
+					"return_type": 0,
+					"return_type_name": "Nil"
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"name": "old_state",
+							"type": 4,
+							"type_name": "String"
+						},
+						{
+							"class_name": "",
+							"name": "new_state",
+							"type": 4,
+							"type_name": "String"
+						}
+					],
+					"flags": 1,
+					"name": "trigger_state_transitioned",
+					"return_class_name": "",
+					"return_type": 0,
+					"return_type_name": "Nil"
+				}
+			],
+			"name": "ComprehensiveInteropNode",
+			"path": "res://scripts/comprehensive_interop_node.gd",
+			"properties": [
+				{
+					"class_name": "",
+					"hint": 0,
+					"hint_string": "",
+					"name": "int_prop",
+					"type": 2,
+					"type_name": "int"
+				},
+				{
+					"class_name": "",
+					"hint": 0,
+					"hint_string": "",
+					"name": "float_prop",
+					"type": 3,
+					"type_name": "float"
+				},
+				{
+					"class_name": "",
+					"hint": 0,
+					"hint_string": "",
+					"name": "string_prop",
+					"type": 4,
+					"type_name": "String"
+				},
+				{
+					"class_name": "",
+					"hint": 0,
+					"hint_string": "",
+					"name": "bool_prop",
+					"type": 1,
+					"type_name": "bool"
+				},
+				{
+					"class_name": "",
+					"hint": 0,
+					"hint_string": "",
+					"name": "internal_reset_count",
+					"type": 2,
+					"type_name": "int"
+				},
+				{
+					"class_name": "",
+					"hint": 0,
+					"hint_string": "",
+					"name": "last_transition_old",
+					"type": 4,
+					"type_name": "String"
+				},
+				{
+					"class_name": "",
+					"hint": 0,
+					"hint_string": "",
+					"name": "last_transition_new",
+					"type": 4,
+					"type_name": "String"
+				}
+			],
+			"signals": [
+				{
+					"args": [
+						{
+							"class_name": "",
+							"name": "record_id",
+							"type": 2,
+							"type_name": "int"
+						},
+						{
+							"class_name": "",
+							"name": "label",
+							"type": 4,
+							"type_name": "String"
+						},
+						{
+							"class_name": "",
+							"name": "score",
+							"type": 3,
+							"type_name": "float"
+						}
+					],
+					"name": "data_processed"
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"name": "old_state",
+							"type": 4,
+							"type_name": "String"
+						},
+						{
+							"class_name": "",
+							"name": "new_state",
+							"type": 4,
+							"type_name": "String"
+						}
+					],
+					"name": "state_transitioned"
+				}
+			]
 		}
 	],
 	"plugin_classes": [

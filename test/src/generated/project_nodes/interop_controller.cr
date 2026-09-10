@@ -218,9 +218,10 @@ module Godot
       call("emit_crystal_node_signal", crystal_node, signal_name, arg)
       nil
     end
-    # Method `find_property_in_list` -> Godot::Dictionary
-    def find_property_in_list(node : Godot::Node, prop_name : String) : Godot::Dictionary
+    # Method `find_property_in_list` -> Void
+    def find_property_in_list(node : Godot::Node, prop_name : String) : Void
       call("find_property_in_list", node, prop_name)
+      nil
     end
     # Method `inspect_property_val` -> Void
     def inspect_property_val(node : Godot::Node, prop_name : String) : Void
@@ -231,9 +232,10 @@ module Godot
     def set_property_val(node : Godot::Node, prop_name : String, val) : Bool
       call_bool("set_property_val", node, prop_name, val)
     end
-    # Method `load_and_inspect_crystal_scene` -> Godot::Dictionary
-    def load_and_inspect_crystal_scene(scene_path : String) : Godot::Dictionary
+    # Method `load_and_inspect_crystal_scene` -> Void
+    def load_and_inspect_crystal_scene(scene_path : String) : Void
       call("load_and_inspect_crystal_scene", scene_path)
+      nil
     end
     # Method `verify_crystal_scene_properties` -> Bool
     def verify_crystal_scene_properties(scene_path : String) : Bool

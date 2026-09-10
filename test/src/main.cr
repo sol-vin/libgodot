@@ -1464,5 +1464,6 @@ require "./suites/test_macros_dsl"
 require "./suites/test_multi_addon_isolation"
 require "./suites/test_script_first_class"
 require "./suites/test_gdscript_channel_signal_interop"
+require "./suites/test_autobound_gdscript_nodes"
 require "./suites/test_scenes_persistence"
 
