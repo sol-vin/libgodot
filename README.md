@@ -500,6 +500,46 @@ LibGodot's test suite integrates Godot's `Performance` singleton monitors (`OBJE
 
 ---
 
+## Native In-Editor Debugging with LLDB
+
+LibGodot features first-class native debugging directly inside the Godot Editor using **LLDB**:
+- **Gutter Breakpoint Sync**: Set red breakpoints directly in Godot's Script Editor gutter; breakpoints are translated and dispatched to LLDB instantly.
+- **Interactive In-Editor Panel**: Dedicated **Crystal LLDB** tab docked in the Godot Debugger panel featuring Continue (`F5`), Step Over (`F10`), Step Into (`F11`), Step Out (`Shift+F11`), call stack frame navigation, and live variable inspection.
+- **Multiplayer Multi-Session Support**: Distinct session tabs with automatic role identification (`[SERVER]`, `[CLIENT 1]`, etc.) for multiple instances launched from the editor.
+- **Multiplayer Lockstep Break Mode**: When any peer hits a breakpoint, all other active instances are automatically paused via cooperative interrupt to prevent network heartbeat timeouts (ENet/WebSocket/WebRTC).
+
+### Debugging Tool Scripts (`@[Tool]`)
+
+<table style="width: 100%; border-collapse: collapse; margin: 1em 0;">
+  <thead>
+    <tr style="border-bottom: 2px solid #4a5568; text-align: left;">
+      <th style="padding: 10px 14px;">Execution Context</th>
+      <th style="padding: 10px 14px;">Will Breakpoint Trigger in Editor Tab?</th>
+      <th style="padding: 10px 14px;">Reason &amp; Workflow</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr style="border-bottom: 1px solid #2d3748;">
+      <td style="padding: 10px 14px;"><strong>Running Game Instance (F5 / F6)</strong></td>
+      <td style="padding: 10px 14px;"><strong>YES</strong></td>
+      <td style="padding: 10px 14px;">The tool script runs in the child game process attached to the in-editor LLDB session.</td>
+    </tr>
+    <tr style="border-bottom: 1px solid #2d3748;">
+      <td style="padding: 10px 14px;"><strong>Live In-Editor Viewport / Inspector</strong></td>
+      <td style="padding: 10px 14px;"><strong>NO</strong></td>
+      <td style="padding: 10px 14px;">
+        Code executes inside the parent Godot Editor process (<code>godot.exe</code>), not a child game process.<br>
+        <em>Host Deadlock Paradox</em>: An OS-level native breakpoint (<code>SIGTRAP</code>) in the editor process freezes the editor GUI thread, making it impossible to click &quot;Continue&quot; or &quot;Step&quot; in the debugger tab.<br>
+        <strong>Solution</strong>: Attach an external debugger (e.g. VS Code <code>CodeLLDB</code> or terminal <code>lldb -- godot.exe --editor --path &lt;project&gt;</code>) to debug live tool scripts without freezing the debugger UI.
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+> Detailed architectural breakdown and VS Code `.vscode/launch.json` templates are documented in [`Docs::M_LLDB_NATIVE_DEBUGGING_GUIDE`](src/libgodot/docs.cr).
+
+---
+
 ## Repository Structure
 
 ```
