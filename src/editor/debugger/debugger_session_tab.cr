@@ -44,10 +44,10 @@ module Godot
       @session_id = session_id
       @role_name = role
       @driver = driver
-      set_name("Crystal LLDB")
+      self.name = "Crystal LLDB"
 
-      call("set_h_size_flags", 3) # SIZE_EXPAND_FILL
-      call("set_v_size_flags", 3) # SIZE_EXPAND_FILL
+      call("set_h_size_flags", 3_i64) # SIZE_EXPAND_FILL
+      call("set_v_size_flags", 3_i64) # SIZE_EXPAND_FILL
 
       build_ui
       update_status("Detached", false)

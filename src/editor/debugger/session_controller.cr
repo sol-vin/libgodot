@@ -33,6 +33,7 @@ module Godot
       return nil unless tab
 
       tab.setup(@session_id, @role, @driver)
+
       tab.set_on_command do |cmd|
         @driver.send_command(cmd)
       end
@@ -58,6 +59,9 @@ module Godot
       @session.add_session_tab(tab)
       @tab = tab
       tab
+    rescue ex
+      Godot.print("[CrystalDebuggerPlugin] create_and_add_tab exception: #{ex.message}")
+      nil
     end
 
     # Attaches LLDB to the target process ID

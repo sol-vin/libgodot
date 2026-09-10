@@ -817,6 +817,11 @@ module Godot
       end
     end
 
+    # Sets the name of the node safely via dynamic reflection
+    def set_name(val : String) : Void
+      self.name = val
+    end
+
     # Returns the scene owner node responsible for serialization packing.
     def owner : Node?
       if !@pointer.null?

@@ -213,8 +213,12 @@ module Godot
       Godot.print("[CrystalIntegrationPlugin] Tip: LLDB not found in PATH. Install LLVM (e.g. 'scoop install llvm' on Windows, 'apt install lldb' on Linux) for native Crystal in-editor debugging.")
     end
 
-    if dbg_plugin = Godot.create("CrystalDebuggerPlugin")
+    dbg_plugin = Godot.create("CrystalDebuggerPlugin")
+    if dbg_plugin && !dbg_plugin.pointer.null?
       plug = Godot::EditorDebuggerPlugin.new(dbg_plugin.pointer)
+      if plug.get_reference_count == 0
+        plug.init_ref
+      end
       add_debugger_plugin(plug)
       @@debugger_plugin = plug
       Godot.print("[CrystalIntegrationPlugin] CrystalDebuggerPlugin registered into EditorDebuggerNode.")
