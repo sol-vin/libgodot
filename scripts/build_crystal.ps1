@@ -24,6 +24,11 @@ $buildArgs.Add("build")
 
 if ($Release) {
     $buildArgs.Add("--release")
+} else {
+    $buildArgs.Add("--debug")
+    if ($onWindows -and $LinkFlags -notmatch '/DEBUG') {
+        $LinkFlags = if ([string]::IsNullOrWhiteSpace($LinkFlags)) { "/DEBUG:FULL" } else { "$LinkFlags /DEBUG:FULL" }
+    }
 }
 
 if (-not [string]::IsNullOrWhiteSpace($Flags)) {

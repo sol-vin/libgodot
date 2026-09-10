@@ -14,6 +14,8 @@ require "./libgodot/generated/classes/all_classes"
 require "./libgodot/generated/singletons"
 require "./libgodot/docs"
 require "./libgodot/script"
+require "./libgodot/debugger/lldb_driver"
+require "./libgodot/debugger/agent"
 require "./libgodot/editor"
 
 module Godot

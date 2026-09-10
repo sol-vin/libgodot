@@ -2203,5 +2203,111 @@ module Docs
       ]
     end
   end
+
+  # ===========================================================================
+  # Guide M: Native LLDB In-Editor Debugging & Multiplayer Sessions
+  # ===========================================================================
+  #
+  # LibGodot integrates **LLDB** directly into the Godot Editor's native Debugger dock,
+  # enabling in-editor breakpoints, interactive command consoles, stack traces,
+  # and coordinated multi-session multiplayer debugging.
+  #
+  # ---
+  #
+  # ### 1. Prerequisite Tooling
+  #
+  # Because Crystal's compiler is built directly on **LLVM**, LLDB natively parses
+  # both Microsoft `.pdb` (Program Database) files on Windows and DWARF debug info
+  # on Linux and macOS without external symbol converters.
+  #
+  # <table>
+  #   <thead>
+  #     <tr>
+  #       <th>Platform</th>
+  #       <th>Package Manager</th>
+  #       <th>Installation Command</th>
+  #     </tr>
+  #   </thead>
+  #   <tbody>
+  #     <tr>
+  #       <td><strong>Windows</strong></td>
+  #       <td>Scoop / WinGet</td>
+  #       <td><code>scoop install llvm</code> or <code>winget install LLVM.LLVM</code></td>
+  #     </tr>
+  #     <tr>
+  #       <td><strong>Ubuntu / Debian</strong></td>
+  #       <td>APT</td>
+  #       <td><code>sudo apt install lldb</code></td>
+  #     </tr>
+  #     <tr>
+  #       <td><strong>Arch Linux</strong></td>
+  #       <td>Pacman</td>
+  #       <td><code>sudo pacman -S lldb</code></td>
+  #     </tr>
+  #     <tr>
+  #       <td><strong>macOS</strong></td>
+  #       <td>Homebrew / Xcode</td>
+  #       <td><code>brew install llvm</code> or <code>xcode-select --install</code></td>
+  #     </tr>
+  #   </tbody>
+  # </table>
+  #
+  # ---
+  #
+  # ### 2. In-Editor Breakpoint Synchronization
+  #
+  # 1. Open any Crystal source file (e.g. `src/main.cr` or `src/player.cr`) in Godot's Script Editor.
+  # 2. Click the gutter next to any line number to set a red breakpoint marker.
+  # 3. Godot's <code>EditorDebuggerPlugin._breakpoint_set_in_tree</code> intercepts the event,
+  #    translates <code>res://</code> paths to absolute filesystem paths, and pushes
+  #    <code>breakpoint set --file &lt;file&gt; --line &lt;line&gt;</code> to all active LLDB sessions.
+  # 4. When execution hits the breakpoint, the Godot Script Editor automatically navigates
+  #    to the line and displays the green debug execution pointer.
+  #
+  # ---
+  #
+  # ### 3. Multiplayer Multi-Session Coordination
+  #
+  # When running multiple instances in the Godot Editor (via <strong>Debug &gt; Run Multiple Instances</strong>):
+  #
+  # <table>
+  #   <thead>
+  #     <tr>
+  #       <th>Feature</th>
+  #       <th>Mechanic</th>
+  #       <th>Multiplayer Benefit</th>
+  #     </tr>
+  #   </thead>
+  #   <tbody>
+  #     <tr>
+  #       <td><strong>Per-Session Isolation</strong></td>
+  #       <td>Each instance connects to its own independent LLDB controller bound to that child PID.</td>
+  #       <td>Prevents breakpoints or inspect commands in Client 1 from interfering with Server or Client 2.</td>
+  #     </tr>
+  #     <tr>
+  #       <td><strong>Role Badging</strong></td>
+  #       <td>Instances report their multiplayer role (<code>Server</code>, <code>Client 1</code>, etc.) on startup.</td>
+  #       <td>Developers immediately know which debugger tab corresponds to which game window.</td>
+  #     </tr>
+  #     <tr>
+  #       <td><strong>Lockstep Break Mode</strong></td>
+  #       <td>When any peer hits a breakpoint, all other peers are cooperatively interrupted via <code>process interrupt</code>.</td>
+  #       <td>Eliminates network heartbeat timeout disconnections and physics state desynchronization.</td>
+  #     </tr>
+  #   </tbody>
+  # </table>
+  #
+  module M_LLDB_NATIVE_DEBUGGING_GUIDE
+    def self.features : Array(String)
+      [
+        "First-class LLDB native debugger integration via EditorDebuggerPlugin",
+        "Direct PDB symbol parsing on Windows and DWARF on Linux/macOS",
+        "Gutter breakpoint synchronization from Godot Script Editor",
+        "Interactive LLDB command console inside Godot Debugger dock",
+        "Multiplayer multi-session tabs with Server/Client role identification",
+        "Multiplayer Lockstep Break mode to prevent network heartbeat timeouts"
+      ]
+    end
+  end
 end
 

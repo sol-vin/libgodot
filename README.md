@@ -52,7 +52,25 @@ graph TD
 - **Type-Safe Signals**: Declare signals via `signal health_changed(new_health : Int32)` with generated `emit_<signal>` helpers.
 - **GDScript Interoperability**: Automatic compile-time generation of typed Crystal wrappers for project GDScript nodes and scenes (`make project_bindings`).
 - **Engine Reflection & Global Singletons**: First-class access to singletons like `Godot.input`, `Godot.engine`, `Godot.audio_server`, and generated Godot classes.
+- **Native In-Editor Debugging with LLDB**: Breakpoints in Godot's Script Editor gutter seamlessly synchronize with LLDB. Includes an interactive in-editor console, call stack navigation, and Multiplayer Lockstep Break coordination to eliminate peer timeout disconnects.
 - **Strict Decoupling**: Clean separation between reusable library (`src/`), test suite (`test/`), and examples (`examples/`).
+
+---
+
+## Prerequisites & Installation
+
+### Required Tooling
+- **Crystal Compiler**: 1.14+ (or preview builds)
+- **Godot Engine**: 4.3+ or 4.4+ (Standard build, 64-bit)
+- **C++ Compiler**: GCC (`g++`) or Clang (for compiling the GDExtension loader bridge)
+- **Make**: GNU Make
+
+### Native In-Editor Debugging Prerequisite (LLDB)
+For native in-editor debugging, breakpoint synchronization, and multiplayer lockstep inspection, install **LLDB**:
+- **Windows**: `scoop install llvm` or `winget install LLVM.LLVM`
+- **Ubuntu / Debian**: `sudo apt install lldb`
+- **Arch Linux**: `sudo pacman -S lldb`
+- **macOS**: `brew install llvm` or `xcode-select --install`
 
 ---
 

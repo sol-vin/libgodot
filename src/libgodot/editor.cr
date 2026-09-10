@@ -27,6 +27,7 @@ module Godot
   @@compile_button : Button? = nil
   @@crystal_panel : Node? = nil
   @@cached_icon_texture : Texture2D? = nil
+  @@debugger_plugin : EditorDebuggerPlugin? = nil
 
   def _enter_tree : Void
     Godot.print("==================================================================")
@@ -53,7 +54,6 @@ module Godot
             ed_settings.call("set_initial_value", "docks/filesystem/textfile_extensions", new_val, false)
             Godot.print("[CrystalIntegrationPlugin] Added 'cr' to EditorSettings docks/filesystem/textfile_extensions: #{new_val}")
           end
-          ed_settings.unreference
         end
       end
 
@@ -102,6 +102,7 @@ module Godot
 
       setup_toolbar_button
       setup_main_screen_panel
+      setup_debugger_plugin
 
       Godot.print("[CrystalIntegrationPlugin] First-class .cr script support, language, and syntax highlighter registered in 100% pure Crystal.")
     end
@@ -157,6 +158,11 @@ module Godot
       @@compile_button = nil
     end
 
+    if dbg_plug = @@debugger_plugin
+      remove_debugger_plugin(dbg_plug)
+      @@debugger_plugin = nil
+    end
+
     if panel = @@crystal_panel
       dock = panel.call_obj("get_parent")
       panel.call("queue_free")
@@ -170,6 +176,52 @@ module Godot
   end
 
   CRYSTAL_ICON_SVG = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 193.2 206.7' width='16' height='16'><path fill='#e0e0e0' d='m165.4 122-50 49.9c-.2.2-.5.3-.7.2l-68.3-18.3c-.3-.1-.5-.3-.5-.5L27.5 85.1c-.1-.3 0-.5.2-.7l50-49.9c.2-.2.5-.3.7-.2l68.3 18.3c.3.1.5.3.5.5l18.3 68.2c.2.3.1.5-.1.7zm-67-54.3L31.3 85.6c-.1 0-.2.2-.1.3l49.1 49c.1.1.3.1.3-.1l18-67c.1 0-.1-.2-.2-.1z'/></svg>"
+
+  # Registers and configures the native LLDB debugger plugin
+  def setup_debugger_plugin : Void
+    return if @@debugger_plugin
+
+    if Godot::EditorInterface.singleton_ptr.null?
+      return
+    end
+    ed_interface = Godot::EditorInterface.new(Godot::EditorInterface.singleton_ptr)
+    main_screen = ed_interface.get_editor_main_screen
+    if main_screen.pointer.null?
+      return
+    end
+
+    if !Godot::DisplayServer.singleton_ptr.null?
+      ds = Godot::DisplayServer.new(Godot::DisplayServer.singleton_ptr)
+      ds_name = ds.call_str("get_name")
+      Godot.print("[CrystalIntegrationPlugin] DisplayServer name: '#{ds_name}'")
+      if ds_name == "headless"
+        return
+      end
+    end
+
+    lldb_path = "lldb"
+    ed_settings = ed_interface.get_editor_settings
+    if !ed_settings.pointer.null?
+      custom_lldb = ed_settings.call_str("get_setting", "crystal/debugger/lldb_path")
+      lldb_path = custom_lldb unless custom_lldb.empty?
+    end
+
+    if Debugger::LldbDriver.available?(lldb_path)
+      found = Debugger::LldbDriver.find_lldb(lldb_path)
+      Godot.print("[CrystalIntegrationPlugin] LLDB native debugger detected: #{found}")
+    else
+      Godot.print("[CrystalIntegrationPlugin] Tip: LLDB not found in PATH. Install LLVM (e.g. 'scoop install llvm' on Windows, 'apt install lldb' on Linux) for native Crystal in-editor debugging.")
+    end
+
+    if dbg_plugin = Godot.create("CrystalDebuggerPlugin")
+      plug = Godot::EditorDebuggerPlugin.new(dbg_plugin.pointer)
+      add_debugger_plugin(plug)
+      @@debugger_plugin = plug
+      Godot.print("[CrystalIntegrationPlugin] CrystalDebuggerPlugin registered into EditorDebuggerNode.")
+    end
+  rescue ex
+    Godot.print("[CrystalIntegrationPlugin] Notice: debugger plugin setup: #{ex.message}")
+  end
 
   # Docks the CrystalPanel into Godot Editor's main screen
   def setup_main_screen_panel : Void
@@ -514,6 +566,9 @@ module Godot
   end
 
   def _process(delta : Float64) : Void
+    if dbg = @@debugger_plugin
+      dbg.call("poll") rescue nil
+    end
   end
 
   def apply_highlighter_if_needed : Void
