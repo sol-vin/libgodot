@@ -2,22 +2,23 @@ require "libgodot"
 
 # Main root node for the template project
 node MainNode < Node3D do
-  # Rotation speed in radians per second
-  @[Export(range: 0.1_f32..10.0_f32, step: 0.1_f32)]
-  property rotation_speed : Float32 = 1.0_f32
+  @[ExportMultiline]
+  property say_text : String = "Hello! Welcome to crystal in godot!\n Written with love by sol.vin"
 
   # Emitted when the node completes initialization
   signal initialized
 
   def _ready
-    Godot.print("Welcome to your Crystal + Godot Game!")
-    emit_initialized
+	Godot.print("Starting the game!")
+	
+	get_tree.create_timer(5.0).timeout.connect do
+	  say
+	end
+	
+	emit_initialized
   end
-
-  def _process(delta : Float64) : Void
-    # Example per-frame logic
-    rot = rotation
-    rot.y += rotation_speed * delta.to_f32
-    self.rotation = rot
+  
+  def say
+	 Godot.print(say_text)
   end
 end

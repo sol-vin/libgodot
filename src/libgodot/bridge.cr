@@ -66,6 +66,16 @@ module Godot
       data : Void*
     end
 
+    struct VariantArg
+      type : Int32
+      extra_flags : Int32
+      int_val : Int64
+      float_val : Float64
+      ptr_val : Void*
+      instance_id : UInt64
+      vec_val : StaticArray(Float32, 4)
+    end
+
     struct BridgeAPI
       register_class : (CrystalClassDesc* -> Int32)
       get_method_bind : (LibC::Char*, LibC::Char*, Int64 -> Void*)
@@ -116,9 +126,9 @@ module Godot
       ret_dictionary_complete_code : (Void* -> Void)
       ret_dictionary_lookup_code : (Void* -> Void)
       text_edit_get_line : (Void*, Int64, LibC::Char*, Int32 -> Int32)
-      object_connect_signal : (Void*, LibC::Char* -> Void)
+      object_connect_signal : (Void*, LibC::Char*, UInt32 -> Void)
       object_disconnect_signal : (Void*, LibC::Char* -> Void)
-      register_signal_callback : ((UInt64, LibC::Char*, LibC::Char**, Int32 -> Void) -> Void)
+      register_signal_callback : ((UInt64, LibC::Char*, VariantArg*, Int32 -> Void) -> Void)
     end
   end
 
@@ -145,7 +155,7 @@ module Godot
     @@alive_instances = Hash(Void*, Godot::Object).new
     @@alive_instances_by_ptr = Hash(Void*, Godot::Object).new
     @@alive_mutex = ::Thread::Mutex.new
-    @@native_signal_cb : (UInt64, LibC::Char*, LibC::Char**, Int32 -> Void)? = nil
+    @@native_signal_cb : (UInt64, LibC::Char*, LibBridge::VariantArg*, Int32 -> Void)? = nil
 
     # Retrieves the active Crystal instance root table for testing and diagnostics
     def self.alive_instances : Hash(Void*, Godot::Object)
@@ -389,12 +399,12 @@ module Godot
 
       # Register native signal callback from C++ bridge into Crystal signal dispatcher
       if !api.value.register_signal_callback.pointer.null?
-        cb = ->(target_id : UInt64, sig_ptr : LibC::Char*, args_ptr : LibC::Char**, count : Int32) {
+        cb = ->(target_id : UInt64, sig_ptr : LibC::Char*, args_ptr : LibBridge::VariantArg*, count : Int32) {
           sig_name = String.new(sig_ptr)
-          arr = [] of String
+          arr = Array(Godot::Variant).new(count)
           if !args_ptr.null? && count > 0
             count.times do |i|
-              arr << String.new(args_ptr[i])
+              arr << Godot::Variant.from_arg(args_ptr[i])
             end
           end
           Godot.notify_signal(target_id, sig_name, arr)
@@ -561,8 +571,13 @@ module Godot
       ret.to_f32
     end
 
+    def self.available? : Bool
+      !@@api.null? && !@@api.value.object_emit_signal.pointer.null?
+    end
+
     def self.emit_signal(godot_obj : Void*, signal_name : String) : Void
-      return if godot_obj.null? || @@api.null? || @@api.value.object_emit_signal.pointer.null?
+      return unless available?
+      return if godot_obj.null?
       @@api.value.object_emit_signal.call(godot_obj, signal_name.to_unsafe, Pointer(LibBridge::CrystalSignalArg).null, 0)
     end
 
@@ -614,9 +629,9 @@ module Godot
       @@api.value.object_emit_signal.call(godot_obj, signal_name.to_unsafe, c_args.to_unsafe, count)
     end
 
-    def self.object_connect_signal(godot_obj : Void*, signal_name : String) : Void
+    def self.object_connect_signal(godot_obj : Void*, signal_name : String, flags : UInt32 = 0_u32) : Void
       return if godot_obj.null? || @@api.null? || @@api.value.object_connect_signal.pointer.null?
-      @@api.value.object_connect_signal.call(godot_obj, signal_name.to_unsafe)
+      @@api.value.object_connect_signal.call(godot_obj, signal_name.to_unsafe, flags)
     end
 
     def self.object_disconnect_signal(godot_obj : Void*, signal_name : String) : Void
@@ -871,10 +886,32 @@ module Godot
       @@api.value.is_instance_valid.call(id) != 0_u8
     end
 
+    def self.unregister_alive_instance_by_ptr(godot_obj : Void*) : Void
+      return if godot_obj.null?
+      @@alive_mutex.synchronize do
+        @@alive_instances_by_ptr.delete(godot_obj)
+      end
+    end
+
     def self.find_alive_instance(godot_obj : Void*) : Godot::Object?
       return nil if godot_obj.null?
       @@alive_mutex.synchronize do
-        @@alive_instances_by_ptr[godot_obj]?
+        if inst = @@alive_instances_by_ptr[godot_obj]?
+          if inst.destroyed? || (inst.instance_id > 0 && !is_instance_valid(inst.instance_id))
+            @@alive_instances_by_ptr.delete(godot_obj)
+            return nil
+          end
+          if inst.instance_id > 0
+            cur_id = object_get_instance_id(godot_obj)
+            if cur_id > 0 && cur_id != inst.instance_id
+              @@alive_instances_by_ptr.delete(godot_obj)
+              return nil
+            end
+          end
+          inst
+        else
+          nil
+        end
       end
     end
 

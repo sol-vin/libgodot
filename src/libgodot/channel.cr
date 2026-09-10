@@ -186,7 +186,7 @@ module Godot
       if alive? && !@pointer.null?
         emit_signal("closed")
       else
-        Godot.notify_signal(signal_target_id, "closed", [] of String)
+        Godot.notify_signal(signal_target_id, "closed", [] of Variant)
       end
     end
 
@@ -196,7 +196,7 @@ module Godot
       if alive? && !@pointer.null?
         emit_signal("received", val_str)
       else
-        Godot.notify_signal(signal_target_id, "received", [val_str])
+        Godot.notify_signal(signal_target_id, "received", [Variant.new(val_str)])
       end
     end
 

@@ -1864,10 +1864,25 @@ macro signal(sig_decl)
     {% sig_args = [] of Nil %}
   {% end %}
 
+  {% param_types = [] of Nil %}
+  {% for arg in sig_args %}
+    {% if arg.is_a?(TypeDeclaration) %}
+      {% param_types << arg.type %}
+    {% else %}
+      {% param_types << "String".id %}
+    {% end %}
+  {% end %}
+
   # Bound signal accessor for idiomatic `await(node.{{sig_name.id}})` or `node.{{sig_name.id}}.connect { ... }`
-  def {{sig_name.id}} : ::Godot::BoundSignal
-    ::Godot::BoundSignal.new(self, "{{sig_name.id}}")
-  end
+  {% if param_types.size > 0 %}
+    def {{sig_name.id}} : ::Godot::TypedSignal({{param_types.splat}})
+      ::Godot::TypedSignal({{param_types.splat}}).new(self, "{{sig_name.id}}")
+    end
+  {% else %}
+    def {{sig_name.id}} : ::Godot::TypedSignal()
+      ::Godot::TypedSignal().new(self, "{{sig_name.id}}")
+    end
+  {% end %}
 
   {% emit_args = [] of Nil %}
   {% emit_pass_args = [] of Nil %}
@@ -1889,83 +1904,22 @@ macro signal(sig_decl)
   {% if sig_args.size == 0 %}
     # Type-safe signal listener
     def on_{{sig_name.id}}(&block : -> Void) : ::Godot::SignalSubscription
-      {{sig_name.id}}.connect do |_raw_args|
-        block.call
-      end
+      {{sig_name.id}}.connect(&block)
     end
 
     # One-shot type-safe signal listener that automatically disconnects after firing once
     def on_{{sig_name.id}}_once(&block : -> Void) : ::Godot::SignalSubscription
-      {{sig_name.id}}.connect_one_shot do |_raw_args|
-        block.call
-      end
+      {{sig_name.id}}.connect(flags: ::Godot::ConnectFlags::OneShot, &block)
     end
   {% else %}
-    {% param_types = [] of Nil %}
-    {% for arg in sig_args %}
-      {% if arg.is_a?(TypeDeclaration) %}
-        {% param_types << arg.type %}
-      {% else %}
-        {% param_types << "String".id %}
-      {% end %}
-    {% end %}
-
     # Type-safe signal listener with automatically converted typed parameters
     def on_{{sig_name.id}}(&block : ({{param_types.splat}}) -> Void) : ::Godot::SignalSubscription
-      {{sig_name.id}}.connect do |raw_args|
-        {% call_args = [] of Nil %}
-        {% for arg, i in sig_args %}
-          {% if arg.is_a?(TypeDeclaration) %}
-            {% if arg.type.stringify == "Int32" %}
-              {% call_args << "(raw_args[#{i}]?.try(&.to_i32) || 0)".id %}
-            {% elsif arg.type.stringify == "Int64" %}
-              {% call_args << "(raw_args[#{i}]?.try(&.to_i64) || 0_i64)".id %}
-            {% elsif arg.type.stringify == "Float32" %}
-              {% call_args << "(raw_args[#{i}]?.try(&.to_f32) || 0.0_f32)".id %}
-            {% elsif arg.type.stringify == "Float64" %}
-              {% call_args << "(raw_args[#{i}]?.try(&.to_f64) || 0.0_f64)".id %}
-            {% elsif arg.type.stringify == "Bool" %}
-              {% call_args << "(raw_args[#{i}]? == \"true\")".id %}
-            {% elsif arg.type.stringify == "String" %}
-              {% call_args << "(raw_args[#{i}]? || \"\")".id %}
-            {% else %}
-              {% call_args << "raw_args[#{i}]?".id %}
-            {% end %}
-          {% else %}
-            {% call_args << "(raw_args[#{i}]? || \"\")".id %}
-          {% end %}
-        {% end %}
-        block.call({{call_args.splat}})
-      end
+      {{sig_name.id}}.connect(&block)
     end
 
     # One-shot type-safe signal listener with automatically converted typed parameters
     def on_{{sig_name.id}}_once(&block : ({{param_types.splat}}) -> Void) : ::Godot::SignalSubscription
-      {{sig_name.id}}.connect_one_shot do |raw_args|
-        {% call_args = [] of Nil %}
-        {% for arg, i in sig_args %}
-          {% if arg.is_a?(TypeDeclaration) %}
-            {% if arg.type.stringify == "Int32" %}
-              {% call_args << "(raw_args[#{i}]?.try(&.to_i32) || 0)".id %}
-            {% elsif arg.type.stringify == "Int64" %}
-              {% call_args << "(raw_args[#{i}]?.try(&.to_i64) || 0_i64)".id %}
-            {% elsif arg.type.stringify == "Float32" %}
-              {% call_args << "(raw_args[#{i}]?.try(&.to_f32) || 0.0_f32)".id %}
-            {% elsif arg.type.stringify == "Float64" %}
-              {% call_args << "(raw_args[#{i}]?.try(&.to_f64) || 0.0_f64)".id %}
-            {% elsif arg.type.stringify == "Bool" %}
-              {% call_args << "(raw_args[#{i}]? == \"true\")".id %}
-            {% elsif arg.type.stringify == "String" %}
-              {% call_args << "(raw_args[#{i}]? || \"\")".id %}
-            {% else %}
-              {% call_args << "raw_args[#{i}]?".id %}
-            {% end %}
-          {% else %}
-            {% call_args << "(raw_args[#{i}]? || \"\")".id %}
-          {% end %}
-        {% end %}
-        block.call({{call_args.splat}})
-      end
+      {{sig_name.id}}.connect(flags: ::Godot::ConnectFlags::OneShot, &block)
     end
   {% end %}
 end

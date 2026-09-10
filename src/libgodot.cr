@@ -1,4 +1,5 @@
 require "./libgodot/types"
+require "./libgodot/variant"
 require "./libgodot/system_io"
 require "./libgodot/object"
 require "./libgodot/doc_macro"
@@ -49,6 +50,13 @@ module Godot
     end
   end
 
+  class SceneTree < MainLoop
+    # Creates a SceneTreeTimer with default arguments matching GDScript ergonomics
+    def create_timer(time_sec : Number, process_always : Bool = true, process_in_physics : Bool = false, ignore_time_scale : Bool = false) : SceneTreeTimer
+      create_timer(time_sec.to_f64, process_always, process_in_physics, ignore_time_scale)
+    end
+  end
+
   class SceneTreeTimer < RefCounted
     # Convenience time_left accessor
     def time_left : Float64
@@ -56,8 +64,8 @@ module Godot
     end
 
     # Bound signal accessor for `await(timer.timeout)` or `timer.timeout.await`
-    def timeout : BoundSignal
-      signal("timeout")
+    def timeout : TypedSignal()
+      TypedSignal().new(self, "timeout")
     end
   end
 

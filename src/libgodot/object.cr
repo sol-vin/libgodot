@@ -98,18 +98,33 @@ module Godot
     end
   end
 
+  @[Flags]
+  enum ConnectFlags : UInt32
+    None = 0_u32
+    Deferred = 1_u32
+    Persist = 2_u32
+    OneShot = 4_u32
+    ReferenceCounted = 8_u32
+  end
+
   # Represents an active signal subscription or awaiter
   class SignalSubscription
     getter target_id : UInt64
     getter signal_name : String
+    getter flags : ConnectFlags
     getter? completed : Bool = false
-    getter args : Array(String) = Array(String).new
-    getter callback : Proc(Array(String), Void)?
+    getter args : Array(Variant) = Array(Variant).new
+    getter callback : Proc(Array(Variant), Void)?
 
-    def initialize(@target_id : UInt64, @signal_name : String, @callback : Proc(Array(String), Void)? = nil)
+    def initialize(
+      @target_id : UInt64,
+      @signal_name : String,
+      @flags : ConnectFlags = ConnectFlags::None,
+      @callback : Proc(Array(Variant), Void)? = nil
+    )
     end
 
-    def trigger(signal_args : Array(String)) : Void
+    def trigger(signal_args : Array(Variant)) : Void
       @completed = true
       @args = signal_args
       if cb = @callback
@@ -117,8 +132,18 @@ module Godot
           cb.call(signal_args)
         rescue ex
           Godot.printerr("[CrystalSignal] Error executing callback for '#{@signal_name}' on #{target_id}: #{ex.message}\n#{ex.backtrace.join("\n")}")
+        ensure
+          if @flags.includes?(ConnectFlags::OneShot)
+            unsubscribe
+          end
         end
+      elsif @flags.includes?(ConnectFlags::OneShot)
+        unsubscribe
       end
+    end
+
+    def string_args : Array(String)
+      @args.map(&.to_s)
     end
 
     def unsubscribe : Void
@@ -130,8 +155,13 @@ module Godot
   class_getter signal_subs_mutex = ::Thread::Mutex.new
 
   # Subscribes an awaiter or callback to a signal on a target object instance ID
-  def self.subscribe_signal(target_id : UInt64, signal_name : String, callback : Proc(Array(String), Void)? = nil) : SignalSubscription
-    sub = SignalSubscription.new(target_id, signal_name, callback)
+  def self.subscribe_signal(
+    target_id : UInt64,
+    signal_name : String,
+    flags : ConnectFlags = ConnectFlags::None,
+    callback : Proc(Array(Variant), Void)? = nil
+  ) : SignalSubscription
+    sub = SignalSubscription.new(target_id, signal_name, flags, callback)
     key = {target_id, signal_name}
     signal_subs_mutex.synchronize do
       list = signal_subs[key] ||= Array(SignalSubscription).new
@@ -160,7 +190,7 @@ module Godot
   end
 
   # Notifies active subscribers that a signal has fired on an object
-  def self.notify_signal(target_id : UInt64, signal_name : String, args : Array(String)) : Void
+  def self.notify_signal(target_id : UInt64, signal_name : String, args : Array(Variant)) : Void
     return if target_id == 0
     key = {target_id, signal_name}
     subs_to_notify = nil
@@ -173,9 +203,9 @@ module Godot
   end
 
   # Cooperatively awaits until the named signal is emitted on the target object.
-  # Returns the emitted arguments as an Array(String).
+  # Returns the emitted arguments as an Array(Variant).
   # If the target object is freed while awaiting, raises Godot::DisposedObjectError.
-  def self.await(target : Godot::Object, signal_name : String, timeout_sec : Float64? = nil) : Array(String)
+  def self.await(target : Godot::Object, signal_name : String, timeout_sec : Float64? = nil) : Array(Variant)
     target.check_alive!
     target_id = target.signal_target_id
     sub = subscribe_signal(target_id, signal_name)
@@ -298,7 +328,7 @@ module Godot
   # await(enemy.died)
   # await(enemy.died, timeout_sec: 2.0)
   # enemy.died.await
-  # enemy.health_changed.connect { |args| puts "Health: #{args}" }
+  # enemy.health_changed.connect { |cur, max| puts "Health: #{cur}/#{max}" }
   # ```
   class BoundSignal
     getter target : Godot::Object
@@ -318,43 +348,34 @@ module Godot
     end
 
     # Cooperatively awaits this signal without blocking the engine main loop.
-    # Returns the emitted arguments as an Array(String).
-    def await(timeout_sec : Float64? = nil) : Array(String)
+    # Returns the emitted arguments as an Array(Variant).
+    def await(timeout_sec : Float64? = nil) : Array(Variant)
       Godot.await(@target, @name, timeout_sec)
     end
 
     # Cooperatively awaits this signal with timeout in seconds
-    def await(timeout_sec : Number) : Array(String)
+    def await(timeout_sec : Number) : Array(Variant)
       Godot.await(@target, @name, timeout_sec.to_f64)
     end
 
     # Connects a callback proc to this signal
-    def connect(callback : Proc(Array(String), Void)) : SignalSubscription
-      @target.connect(@name, callback)
+    def connect(flags : ConnectFlags = ConnectFlags::None, callback : Proc(Array(Variant), Void)? = nil) : SignalSubscription
+      @target.connect(@name, flags, callback)
     end
 
     # Connects a callback block to this signal
-    def connect(&block : Array(String) -> Void) : SignalSubscription
-      @target.connect(@name, &block)
+    def connect(flags : ConnectFlags = ConnectFlags::None, &block : Array(Variant) -> Void) : SignalSubscription
+      @target.connect(@name, flags, &block)
     end
 
-    # Connects a one-shot callback block that automatically disconnects after firing once
-    def connect_one_shot(&block : Array(String) -> Void) : SignalSubscription
-      sub : SignalSubscription? = nil
-      actual_sub = connect do |args|
-        begin
-          block.call(args)
-        ensure
-          sub.try { |s| Godot.unsubscribe_signal(s) }
-        end
-      end
-      sub = actual_sub
-      actual_sub
+    # Backwards-compatibility helper redirecting to ConnectFlags::OneShot
+    def connect_one_shot(&block : Array(Variant) -> Void) : SignalSubscription
+      connect(flags: ConnectFlags::OneShot, &block)
     end
 
     # Connects this signal to a method call on a target object by symbol name
-    def connect(listener_target : Godot::Object, method_name : Symbol) : SignalSubscription
-      connect do |_args|
+    def connect(listener_target : Godot::Object, method_name : Symbol, flags : ConnectFlags = ConnectFlags::None) : SignalSubscription
+      @target.connect(@name, flags) do |_args|
         listener_target.call(method_name.to_s)
       end
     end
@@ -374,23 +395,83 @@ module Godot
     end
   end
 
+  # Strongly-typed signal binding offering compile-time type safety for signal connections and await.
+  class TypedSignal(*T) < BoundSignal
+    # Type-safe connect with automatic unboxing into block parameters
+    def connect(flags : ConnectFlags = ConnectFlags::None, &block : *T -> Void) : SignalSubscription
+      cb = block
+      @target.connect(@name, flags) do |args|
+        {% begin %}
+          {% if T.size == 0 %}
+            cb.call
+          {% else %}
+            cb.call(
+              {% for i in 0...T.size %}
+                (if (arg = args[{{i}}]?)
+                  arg.as_t(T[{{i}}])
+                else
+                  Variant.default_for(T[{{i}}])
+                end),
+              {% end %}
+            )
+          {% end %}
+        {% end %}
+      end
+    end
+
+    # Backwards-compatibility helper redirecting to ConnectFlags::OneShot
+    def connect_one_shot(&block : *T -> Void) : SignalSubscription
+      connect(flags: ConnectFlags::OneShot, &block)
+    end
+
+    # Cooperatively awaits this typed signal returning unboxed values or tuple
+    def await(timeout_sec : Float64? = nil)
+      args = Godot.await(@target, @name, timeout_sec)
+      {% begin %}
+        {% if T.size == 0 %}
+          nil
+        {% elsif T.size == 1 %}
+          if (arg = args[0]?)
+            arg.as_t(T[0])
+          else
+            Variant.default_for(T[0])
+          end
+        {% else %}
+          {
+            {% for i in 0...T.size %}
+              (if (arg = args[{{i}}]?)
+                arg.as_t(T[{{i}}])
+              else
+                Variant.default_for(T[{{i}}])
+              end),
+            {% end %}
+          }
+        {% end %}
+      {% end %}
+    end
+
+    def await(timeout_sec : Number)
+      await(timeout_sec.to_f64)
+    end
+  end
+
   alias Signal = BoundSignal
 
   # Cooperatively awaits a bound signal.
   # Usage:
   #   args = Godot.await(enemy.died)
   #   args = Godot.await(enemy.died, timeout_sec: 3.0)
-  def self.await(signal : Godot::BoundSignal, timeout_sec : Float64? = nil) : Array(String)
+  def self.await(signal : Godot::BoundSignal, timeout_sec : Float64? = nil)
     signal.await(timeout_sec)
   end
 
   # Cooperatively awaits a bound signal with timeout.
-  def self.await(signal : Godot::BoundSignal, timeout_sec : Number) : Array(String)
+  def self.await(signal : Godot::BoundSignal, timeout_sec : Number)
     signal.await(timeout_sec.to_f64)
   end
 
   # Cooperatively awaits a signal on a target object with numeric timeout.
-  def self.await(target : Godot::Object, signal_name : String, timeout_sec : Number) : Array(String)
+  def self.await(target : Godot::Object, signal_name : String, timeout_sec : Number) : Array(Variant)
     await(target, signal_name, timeout_sec.to_f64)
   end
 
@@ -465,6 +546,7 @@ module Godot
       if !@pointer.null?
         target_ptr = @pointer
         @pointer = Pointer(Void).null
+        Bridge.unregister_alive_instance_by_ptr(target_ptr)
         Bridge.object_destroy(target_ptr)
       end
     end
@@ -504,20 +586,26 @@ module Godot
     # Emits a parameterless signal on this Godot object.
     def emit_signal(name : String) : Void
       check_alive!
-      Godot.notify_signal(signal_target_id, name, [] of String)
-      Bridge.emit_signal(@pointer, name) unless @pointer.null?
+      if !@pointer.null? && Bridge.available?
+        Bridge.emit_signal(@pointer, name)
+      else
+        Godot.notify_signal(signal_target_id, name, [] of Variant)
+      end
     end
 
     # Emits a signal with variable arguments on this Godot object.
     def emit_signal(name : String, *args) : Void
       check_alive!
-      str_args = args.map(&.to_s).to_a
-      Godot.notify_signal(signal_target_id, name, str_args)
-      Bridge.emit_signal(@pointer, name, *args) unless @pointer.null?
+      if !@pointer.null? && Bridge.available?
+        Bridge.emit_signal(@pointer, name, *args)
+      else
+        var_args = args.map { |a| Variant.new(a) }.to_a
+        Godot.notify_signal(signal_target_id, name, var_args)
+      end
     end
 
     # Cooperatively awaits a signal emitted on this object.
-    def await_signal(signal_name : String, timeout_sec : Float64? = nil) : Array(String)
+    def await_signal(signal_name : String, timeout_sec : Float64? = nil) : Array(Variant)
       Godot.await(self, signal_name, timeout_sec)
     end
 
@@ -586,33 +674,33 @@ module Godot
     end
 
     # Connects a callback proc to the named signal.
-    def connect(signal_name : String, callback : Proc(Array(String), Void)) : SignalSubscription
+    def connect(signal_name : String, flags : ::Godot::ConnectFlags = ::Godot::ConnectFlags::None, callback : Proc(Array(Variant), Void)? = nil) : SignalSubscription
       check_alive!
-      sub = Godot.subscribe_signal(signal_target_id, signal_name, callback)
+      sub = Godot.subscribe_signal(signal_target_id, signal_name, flags, callback)
       if !@pointer.null? && @instance_id > 0
-        Bridge.object_connect_signal(@pointer, signal_name)
+        Bridge.object_connect_signal(@pointer, signal_name, flags.value)
       end
       sub
     end
 
-    # Connects a callback block to the named signal.
-    def connect(signal_name : String, &block : Array(String) -> Void) : SignalSubscription
+    # Connects a callback block accepting Array(Variant) to the named signal.
+    def connect(signal_name : String, flags : ::Godot::ConnectFlags = ::Godot::ConnectFlags::None, &block : Array(Variant) -> Void) : SignalSubscription
       check_alive!
-      sub = Godot.subscribe_signal(signal_target_id, signal_name, block)
+      sub = Godot.subscribe_signal(signal_target_id, signal_name, flags, block)
       if !@pointer.null? && @instance_id > 0
-        Bridge.object_connect_signal(@pointer, signal_name)
+        Bridge.object_connect_signal(@pointer, signal_name, flags.value)
       end
       sub
     end
 
-    # Connects a one-shot callback block to the named signal.
-    def connect_one_shot(signal_name : String, &block : Array(String) -> Void) : SignalSubscription
-      signal(signal_name).connect_one_shot(&block)
+    # Connects a one-shot callback block to the named signal (backwards compatibility).
+    def connect_one_shot(signal_name : String, &block : Array(Variant) -> Void) : SignalSubscription
+      connect(signal_name, flags: ::Godot::ConnectFlags::OneShot, &block)
     end
 
     # Connects the named signal to a method call on a listener target by symbol name.
-    def connect(signal_name : String, listener_target : Godot::Object, method_name : Symbol) : SignalSubscription
-      signal(signal_name).connect(listener_target, method_name)
+    def connect(signal_name : String, listener_target : Godot::Object, method_name : Symbol, flags : ::Godot::ConnectFlags = ::Godot::ConnectFlags::None) : SignalSubscription
+      signal(signal_name).connect(listener_target, method_name, flags)
     end
 
     # Disconnects all signal subscriptions for the named signal on this object.

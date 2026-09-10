@@ -158,8 +158,8 @@ test_gdscript "Auto-bound signals and emission listening" do
 
   sub = comp.connect("state_transitioned") do |args|
     if args.size >= 2
-      received_old_state = args[0]
-      received_new_state = args[1]
+      received_old_state = args[0].to_s
+      received_new_state = args[1].to_s
       transition_received = true
     end
   end

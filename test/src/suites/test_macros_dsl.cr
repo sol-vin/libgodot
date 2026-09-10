@@ -56,6 +56,13 @@ node LifecycleMacroTestNode < Godot::Node do
   end
 end
 
+node TypedSignalTestEmitterNode < Godot::Node do
+  signal status_ping
+  signal single_score(score : Int32)
+  signal level_scored(score : Int32, bonus : Float32, title : String)
+  signal transform_updated(pos : Godot::Vector2, tint : Godot::Color)
+end
+
 @[Flags]
 enum DslTestSkills
   Melee   = 1
@@ -677,3 +684,137 @@ test_macros_dsl "GDScript interop: inspecting grouped node properties and Export
   controller.destroy
   scene.destroy
 end
+
+test_macros_dsl "TypedSignal connect and automatic unboxing of primitive and math types" do
+  node = Godot.create(TypedSignalTestEmitterNode)
+  root.add_child(node)
+
+  # 1. Zero-arg TypedSignal
+  ping_count = 0
+  sub_ping = node.status_ping.connect do
+    ping_count += 1
+  end
+  node.emit_status_ping
+  node.emit_status_ping
+  TestFramework.assert_eq ping_count, 2, "Zero-arg TypedSignal connect should fire on each emit"
+  sub_ping.unsubscribe
+
+  # 2. Multi-arg TypedSignal with primitives (Int32, Float32, String)
+  recv_score = 0
+  recv_bonus = 0.0_f32
+  recv_title = ""
+  sub_scored = node.level_scored.connect do |score, bonus, title|
+    recv_score = score
+    recv_bonus = bonus
+    recv_title = title
+  end
+  node.emit_level_scored(100, 2.5_f32, "Stage Complete")
+  TestFramework.assert_eq recv_score, 100, "Primitive Int32 should be automatically unboxed"
+  TestFramework.assert_approx_eq recv_bonus, 2.5_f32, 0.001, "Primitive Float32 should be automatically unboxed"
+  TestFramework.assert_eq recv_title, "Stage Complete", "String argument should be unboxed"
+  sub_scored.unsubscribe
+
+  # 3. Multi-arg TypedSignal with Godot math structs (Vector2, Color)
+  recv_pos = Godot::Vector2.new(0.0_f32, 0.0_f32)
+  recv_tint = Godot::Color.new(0.0_f32, 0.0_f32, 0.0_f32, 0.0_f32)
+  sub_transform = node.transform_updated.connect do |pos, tint|
+    recv_pos = pos
+    recv_tint = tint
+  end
+  node.emit_transform_updated(Godot::Vector2.new(42.0_f32, 84.0_f32), Godot::Color.new(0.2_f32, 0.4_f32, 0.6_f32, 1.0_f32))
+  TestFramework.assert_approx_eq recv_pos.x, 42.0_f32, 0.001, "Vector2.x should match emitted value"
+  TestFramework.assert_approx_eq recv_pos.y, 84.0_f32, 0.001, "Vector2.y should match emitted value"
+  TestFramework.assert_approx_eq recv_tint.r, 0.2_f32, 0.001, "Color.r should match emitted value"
+  TestFramework.assert_approx_eq recv_tint.g, 0.4_f32, 0.001, "Color.g should match emitted value"
+  TestFramework.assert_approx_eq recv_tint.b, 0.6_f32, 0.001, "Color.b should match emitted value"
+  sub_transform.unsubscribe
+
+  root.remove_child(node)
+  node.destroy
+end
+
+test_macros_dsl "TypedSignal ConnectFlags::OneShot and flag bitwise operations" do
+  node = Godot.create(TypedSignalTestEmitterNode)
+  root.add_child(node)
+
+  # OneShot flag test
+  one_shot_count = 0
+  node.status_ping.connect(flags: Godot::ConnectFlags::OneShot) do
+    one_shot_count += 1
+  end
+  node.emit_status_ping
+  node.emit_status_ping
+  node.emit_status_ping
+  TestFramework.assert_eq one_shot_count, 1, "OneShot connection should fire exactly once and auto-unsubscribe"
+
+  # Bitwise flags composition test
+  combo_flags = Godot::ConnectFlags::Persist | Godot::ConnectFlags::OneShot
+  TestFramework.assert_true combo_flags.includes?(Godot::ConnectFlags::Persist), "Combined flags should include Persist"
+  TestFramework.assert_true combo_flags.includes?(Godot::ConnectFlags::OneShot), "Combined flags should include OneShot"
+  TestFramework.assert_false combo_flags.includes?(Godot::ConnectFlags::Deferred), "Combined flags should not include Deferred"
+
+  combo_count = 0
+  node.single_score.connect(flags: combo_flags) do |val|
+    combo_count += val
+  end
+  node.emit_single_score(50)
+  node.emit_single_score(50)
+  TestFramework.assert_eq combo_count, 50, "Combined flags with OneShot should fire only once"
+
+  # Verify Deferred flag bitwise configuration and connection
+  def_flags = Godot::ConnectFlags::Deferred | Godot::ConnectFlags::OneShot
+  TestFramework.assert_true def_flags.includes?(Godot::ConnectFlags::Deferred), "Deferred flag bitwise configuration valid"
+  node.single_score.connect(flags: def_flags) do |_|
+    # Deferred callable accepted by Godot engine message queue
+  end
+
+  root.remove_child(node)
+  node.destroy
+end
+
+test_macros_dsl "TypedSignal cooperative await with typed return values" do
+  node = Godot.create(TypedSignalTestEmitterNode)
+  root.add_child(node)
+
+  # 1. Zero-arg await returns nil
+  nil_res = "initial"
+  Godot.spawn do
+    res = node.status_ping.await
+    nil_res = res.nil? ? "was_nil" : "was_not_nil"
+  end
+  3.times { Fiber.yield }
+  node.emit_status_ping
+  5.times { Fiber.yield }
+  TestFramework.assert_eq nil_res, "was_nil", "Zero-arg await should return nil"
+
+  # 2. Single-arg await returns T directly (Int32)
+  single_res = 0
+  Godot.spawn do
+    single_res = node.single_score.await
+  end
+  3.times { Fiber.yield }
+  node.emit_single_score(999)
+  5.times { Fiber.yield }
+  TestFramework.assert_eq single_res, 999, "Single-arg await should return unboxed T directly"
+
+  # 3. Multi-arg await returns Tuple(*T)
+  scored_score = 0
+  scored_bonus = 0.0_f32
+  scored_title = ""
+  Godot.spawn do
+    score, bonus, title = node.level_scored.await
+    scored_score = score
+    scored_bonus = bonus
+    scored_title = title
+  end
+  3.times { Fiber.yield }
+  node.emit_level_scored(555, 3.25_f32, "Victory")
+  5.times { Fiber.yield }
+  TestFramework.assert_eq scored_score, 555, "Tuple return should correctly unbox first element (Int32)"
+  TestFramework.assert_approx_eq scored_bonus, 3.25_f32, 0.001, "Tuple return should correctly unbox second element (Float32)"
+  TestFramework.assert_eq scored_title, "Victory", "Tuple return should correctly unbox third element (String)"
+
+  root.remove_child(node)
+  node.destroy
+end
+

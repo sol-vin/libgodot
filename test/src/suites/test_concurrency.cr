@@ -40,7 +40,7 @@ test_concurrency "Cooperative fiber awaiting custom Godot Node signals" do
 
   Godot.spawn do
     args = target.signal("custom_event").await
-    received_payload = args.first? || ""
+    received_payload = (args.first?.try(&.as_str)) || ""
     fiber_done = true
   end
 
@@ -138,7 +138,7 @@ test_concurrency "GodotChannel reactive signal received dispatch on Main Thread"
   received_signal_arg = ""
 
   channel.signal("received").connect do |args|
-    received_signal_arg = args.first? || ""
+    received_signal_arg = (args.first?.try(&.as_s)) || ""
   end
 
   # Send from background worker thread

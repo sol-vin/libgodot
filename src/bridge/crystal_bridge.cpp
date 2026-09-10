@@ -239,7 +239,17 @@ static GDExtensionInterfaceCallableCustomCreate gd_callable_custom_create = null
 static GDExtensionInterfaceVariantNewNil gd_variant_new_nil = nullptr;
 static GDExtensionPtrDestructor gd_callable_destroy = nullptr;
 
-typedef void (*CrystalSignalCallbackFn)(uint64_t target_id, const char *signal_name, const char **args, int arg_count);
+struct VariantArg {
+    int32_t type;
+    int32_t extra_flags;
+    int64_t int_val;
+    double float_val;
+    void *ptr_val;
+    uint64_t instance_id;
+    float vec_val[4];
+};
+
+typedef void (*CrystalSignalCallbackFn)(uint64_t target_id, const char *signal_name, const VariantArg *args, int arg_count);
 static std::vector<CrystalSignalCallbackFn> g_crystal_signal_callbacks;
 
 static GDExtensionMethodBindPtr mb_object_connect = nullptr;
@@ -2621,24 +2631,135 @@ static void custom_callable_call(void *callable_userdata, const GDExtensionConst
 
     int count = (int)p_argument_count;
     std::vector<std::string> str_storage;
-    std::vector<const char*> c_ptrs;
+    std::vector<VariantArg> variant_args;
     if (count > 0 && p_args) {
+        variant_args.resize(count);
         str_storage.reserve(count);
-        c_ptrs.reserve(count);
         for (int i = 0; i < count; i++) {
-            if (p_args[i] && gd_variant_stringify && gd_string_to_utf8_chars && gd_string_destroy) {
-                void *gd_str = malloc(sizeof(void*));
-                gd_variant_stringify((GDExtensionConstVariantPtr)p_args[i], gd_str);
-                GDExtensionInt len = gd_string_to_utf8_chars(gd_str, nullptr, 0);
-                std::string s(len, '\0');
-                gd_string_to_utf8_chars(gd_str, &s[0], len);
-                gd_string_destroy(gd_str);
-                free(gd_str);
-                str_storage.push_back(s);
-                c_ptrs.push_back(str_storage.back().c_str());
-            } else {
-                str_storage.push_back("");
-                c_ptrs.push_back(str_storage.back().c_str());
+            VariantArg &arg = variant_args[i];
+            memset(&arg, 0, sizeof(VariantArg));
+            if (!p_args[i]) {
+                arg.type = 0; // Nil
+                continue;
+            }
+            int vt = gd_variant_get_type ? (int)gd_variant_get_type((GDExtensionConstVariantPtr)p_args[i]) : 0;
+            arg.type = vt;
+            switch (vt) {
+                case GDEXTENSION_VARIANT_TYPE_NIL:
+                    break;
+                case GDEXTENSION_VARIANT_TYPE_BOOL: {
+                    uint8_t b = 0;
+                    bridge_type_from_variant(GDEXTENSION_VARIANT_TYPE_BOOL, &b, p_args[i]);
+                    arg.int_val = b ? 1 : 0;
+                    arg.float_val = b ? 1.0 : 0.0;
+                    break;
+                }
+                case GDEXTENSION_VARIANT_TYPE_INT: {
+                    int64_t val = 0;
+                    bridge_type_from_variant(GDEXTENSION_VARIANT_TYPE_INT, &val, p_args[i]);
+                    arg.int_val = val;
+                    arg.float_val = (double)val;
+                    break;
+                }
+                case GDEXTENSION_VARIANT_TYPE_FLOAT: {
+                    double val = 0.0;
+                    bridge_type_from_variant(GDEXTENSION_VARIANT_TYPE_FLOAT, &val, p_args[i]);
+                    arg.float_val = val;
+                    arg.int_val = (int64_t)val;
+                    break;
+                }
+                case GDEXTENSION_VARIANT_TYPE_STRING:
+                case GDEXTENSION_VARIANT_TYPE_STRING_NAME:
+                case GDEXTENSION_VARIANT_TYPE_NODE_PATH: {
+                    if (gd_variant_stringify && gd_string_to_utf8_chars && gd_string_destroy) {
+                        void *gd_str = malloc(sizeof(void*));
+                        gd_variant_stringify((GDExtensionConstVariantPtr)p_args[i], gd_str);
+                        GDExtensionInt len = gd_string_to_utf8_chars(gd_str, nullptr, 0);
+                        std::string s(len, '\0');
+                        gd_string_to_utf8_chars(gd_str, &s[0], len);
+                        gd_string_destroy(gd_str);
+                        free(gd_str);
+                        str_storage.push_back(s);
+                        arg.ptr_val = (void*)str_storage.back().c_str();
+                    } else {
+                        str_storage.push_back("");
+                        arg.ptr_val = (void*)str_storage.back().c_str();
+                    }
+                    break;
+                }
+                case GDEXTENSION_VARIANT_TYPE_VECTOR2: {
+                    struct { float x, y; } v2 = {0, 0};
+                    bridge_type_from_variant(GDEXTENSION_VARIANT_TYPE_VECTOR2, &v2, p_args[i]);
+                    arg.vec_val[0] = v2.x;
+                    arg.vec_val[1] = v2.y;
+                    break;
+                }
+                case GDEXTENSION_VARIANT_TYPE_VECTOR2I: {
+                    struct { int32_t x, y; } v2i = {0, 0};
+                    bridge_type_from_variant(GDEXTENSION_VARIANT_TYPE_VECTOR2I, &v2i, p_args[i]);
+                    arg.vec_val[0] = (float)v2i.x;
+                    arg.vec_val[1] = (float)v2i.y;
+                    arg.int_val = (int64_t)v2i.x;
+                    arg.instance_id = (uint64_t)v2i.y;
+                    break;
+                }
+                case GDEXTENSION_VARIANT_TYPE_RECT2: {
+                    struct { float x, y, w, h; } r = {0, 0, 0, 0};
+                    bridge_type_from_variant(GDEXTENSION_VARIANT_TYPE_RECT2, &r, p_args[i]);
+                    arg.vec_val[0] = r.x;
+                    arg.vec_val[1] = r.y;
+                    arg.vec_val[2] = r.w;
+                    arg.vec_val[3] = r.h;
+                    break;
+                }
+                case GDEXTENSION_VARIANT_TYPE_VECTOR3: {
+                    struct { float x, y, z; } v3 = {0, 0, 0};
+                    bridge_type_from_variant(GDEXTENSION_VARIANT_TYPE_VECTOR3, &v3, p_args[i]);
+                    arg.vec_val[0] = v3.x;
+                    arg.vec_val[1] = v3.y;
+                    arg.vec_val[2] = v3.z;
+                    break;
+                }
+                case GDEXTENSION_VARIANT_TYPE_VECTOR3I: {
+                    struct { int32_t x, y, z; } v3i = {0, 0, 0};
+                    bridge_type_from_variant(GDEXTENSION_VARIANT_TYPE_VECTOR3I, &v3i, p_args[i]);
+                    arg.vec_val[0] = (float)v3i.x;
+                    arg.vec_val[1] = (float)v3i.y;
+                    arg.vec_val[2] = (float)v3i.z;
+                    break;
+                }
+                case GDEXTENSION_VARIANT_TYPE_COLOR: {
+                    struct { float r, g, b, a; } col = {0, 0, 0, 0};
+                    bridge_type_from_variant(GDEXTENSION_VARIANT_TYPE_COLOR, &col, p_args[i]);
+                    arg.vec_val[0] = col.r;
+                    arg.vec_val[1] = col.g;
+                    arg.vec_val[2] = col.b;
+                    arg.vec_val[3] = col.a;
+                    break;
+                }
+                case GDEXTENSION_VARIANT_TYPE_OBJECT: {
+                    GDExtensionObjectPtr obj = bridge_object_from_variant(p_args[i]);
+                    arg.ptr_val = obj;
+                    arg.instance_id = obj ? bridge_object_get_instance_id(obj) : 0;
+                    break;
+                }
+                default: {
+                    if (gd_variant_stringify && gd_string_to_utf8_chars && gd_string_destroy) {
+                        void *gd_str = malloc(sizeof(void*));
+                        gd_variant_stringify((GDExtensionConstVariantPtr)p_args[i], gd_str);
+                        GDExtensionInt len = gd_string_to_utf8_chars(gd_str, nullptr, 0);
+                        std::string s(len, '\0');
+                        gd_string_to_utf8_chars(gd_str, &s[0], len);
+                        gd_string_destroy(gd_str);
+                        free(gd_str);
+                        str_storage.push_back(s);
+                        arg.ptr_val = (void*)str_storage.back().c_str();
+                    } else {
+                        str_storage.push_back("");
+                        arg.ptr_val = (void*)str_storage.back().c_str();
+                    }
+                    break;
+                }
             }
         }
     }
@@ -2648,7 +2769,7 @@ static void custom_callable_call(void *callable_userdata, const GDExtensionConst
             cb(
                 binding->target_id,
                 binding->signal_name.c_str(),
-                c_ptrs.empty() ? nullptr : c_ptrs.data(),
+                variant_args.empty() ? nullptr : variant_args.data(),
                 count
             );
         }
@@ -2707,7 +2828,7 @@ static void bridge_register_signal_callback(CrystalSignalCallbackFn fn) {
     g_crystal_signal_callbacks.push_back(fn);
 }
 
-static void bridge_object_connect_signal(GDExtensionObjectPtr instance, const char *signal_name) {
+static void bridge_object_connect_signal(GDExtensionObjectPtr instance, const char *signal_name, uint32_t flags) {
     if (!instance || !signal_name || !gd_classdb_get_method_bind || !gd_object_method_bind_ptrcall) return;
     if (!gd_callable_custom_create2 && !gd_callable_custom_create) return;
 
@@ -2788,7 +2909,6 @@ static void bridge_object_connect_signal(GDExtensionObjectPtr instance, const ch
     }
 
     if (!already_connected) {
-        uint32_t flags = 0;
         const void *conn_args[3] = { sn_sig, callable_buf, &flags };
         int64_t err = 0;
         gd_object_method_bind_ptrcall(mb_object_connect, instance, (GDExtensionConstTypePtr*)conn_args, &err);
@@ -2906,7 +3026,7 @@ struct BridgeAPI {
     void (*ret_dictionary_complete_code)(void *r_ret);
     void (*ret_dictionary_lookup_code)(void *r_ret);
     int (*text_edit_get_line)(void *text_edit, int64_t line, char *out_buf, int max_len);
-    void (*object_connect_signal)(GDExtensionObjectPtr instance, const char *signal_name);
+    void (*object_connect_signal)(GDExtensionObjectPtr instance, const char *signal_name, uint32_t flags);
     void (*object_disconnect_signal)(GDExtensionObjectPtr instance, const char *signal_name);
     void (*register_signal_callback)(CrystalSignalCallbackFn fn);
 };
@@ -2996,8 +3116,8 @@ extern "C" {
     GDE_EXPORT void crystal_range_set_value(GDExtensionObjectPtr range_obj, double value) {
         bridge_range_set_value(range_obj, value);
     }
-    GDE_EXPORT void crystal_object_connect_signal(GDExtensionObjectPtr instance, const char *signal_name) {
-        bridge_object_connect_signal(instance, signal_name);
+    GDE_EXPORT void crystal_object_connect_signal(GDExtensionObjectPtr instance, const char *signal_name, uint32_t flags) {
+        bridge_object_connect_signal(instance, signal_name, flags);
     }
     GDE_EXPORT void crystal_object_disconnect_signal(GDExtensionObjectPtr instance, const char *signal_name) {
         bridge_object_disconnect_signal(instance, signal_name);
