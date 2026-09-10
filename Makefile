@@ -95,7 +95,7 @@ PLUGIN_DLL       = $(PLUGIN_LIB)
 GAME_DLL         = $(GAME_LIB)
 LIBGODOT_DLL     = $(LIBGODOT_LIB)
 
-.PHONY: all bridge plugin test_project test_standalone package_tests examples examples_exe template template_addon perf perf_standalone perf_run perf_editor package_perf game_dll game_exe android package_android generate dump_api deps addons sync engine spec test tests docs run editor clean help
+.PHONY: all bridge plugin test_project test_standalone package_tests examples examples_exe template template_addon perf perf_standalone perf_run perf_editor package_perf game_dll game_exe android package_android generate dump_api project_bindings deps addons sync engine spec test tests docs run editor clean help
 
 # Default target: compile bridge, plugin, test project, standalone runner, examples, template, template_addon, perf, sync DLLs, and run test suite
 all: dirs deps bridge plugin addons dummy_addons test_project test_standalone examples template template_addon perf perf_standalone sync test
@@ -223,6 +223,12 @@ dump_api:
 generate:
 	@echo [Generator] Generating complete Godot bindings from extension_api.json...
 	$(CRYSTAL) run tools/api_generator/generate_bindings.cr
+
+# Generate typed Crystal bindings for project custom GDScript and plugin nodes
+project_bindings:
+	@echo [API] Dumping project custom GDScript and plugin nodes...
+	$(GODOT) --headless --path $(or $(PROJECT),test) -s ../tools/api_generator/dump_project_nodes.gd -- --output src/generated/project_nodes.json
+	$(CRYSTAL) run tools/api_generator/generate_project_bindings.cr -- $(or $(PROJECT),test)/src/generated/project_nodes.json $(or $(PROJECT),test)/src/generated/project_nodes
 
 # Copy Crystal runtime dependencies and libgodot to all bin dirs
 deps: dirs

@@ -50,12 +50,17 @@ ifeq ($(RELEASE), 1)
 	CRYSTAL_FLAGS += --release
 endif
 
-.PHONY: all game_dll game_exe standalone spec deps bridge extension_list addons rebuild export export_release run editor clean help
+.PHONY: all game_dll game_exe standalone spec deps bridge extension_list addons bindings rebuild export export_release run editor clean help
 
 all: dirs deps bridge extension_list addons game_dll
 	@echo ===================================================================
 	@echo   Test Suite game library built successfully!
 	@echo ===================================================================
+
+bindings:
+	@echo [API] Updating test project node bindings...
+	$(GODOT) --headless -s ../tools/api_generator/dump_project_nodes.gd -- --output src/generated/project_nodes.json
+	crystal run ../tools/api_generator/generate_project_bindings.cr -- src/generated/project_nodes.json src/generated/project_nodes
 
 dirs:
 	@$(PWSH_CMD) "if (-not (Test-Path '$(BIN_DIR)')) { New-Item -ItemType Directory -Force -Path '$(BIN_DIR)' | Out-Null }"

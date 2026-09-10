@@ -236,3 +236,38 @@ test_gdscript "GodotChannel received signal notifies GDScript reactive listener"
   root.destroy
   scene.destroy
 end
+
+test_gdscript "Auto-generated typed GDScript binding InteropController methods and properties" do
+  scene = Godot.load_as(Godot::PackedScene, "res://scenes/test_gdscript_interop.tscn")
+  TestFramework.assert_not_nil scene
+  root = scene.not_nil!.instantiate
+  TestFramework.assert_not_nil root
+
+  controller = Godot::InteropController.from(root)
+  TestFramework.assert_not_nil controller
+
+  # Strongly typed method calls without manual call_i64 / call_str
+  sum = controller.add_numbers(123_i64, 456_i64)
+  TestFramework.assert_eq sum, 579_i64, "controller.add_numbers must return 579"
+
+  greeting = controller.format_greeting("Antigravity")
+  TestFramework.assert_eq greeting, "Hello from GDScript, Antigravity!", "controller.format_greeting must return formatted string"
+
+  dist = controller.compute_distance(Godot::Vector2.new(0.0, 0.0), Godot::Vector2.new(3.0, 4.0))
+  TestFramework.assert_approx_eq dist, 5.0, 0.001, "controller.compute_distance must return approx 5.0"
+
+  # Strongly typed properties
+  controller.counter = 77_i64
+  TestFramework.assert_eq controller.counter, 77_i64, "controller.counter getter must reflect setter value"
+
+  incremented = controller.increment_counter(23_i64)
+  TestFramework.assert_eq incremented, 100_i64, "controller.increment_counter must return 100"
+  TestFramework.assert_eq controller.counter, 100_i64, "controller.counter must now be 100"
+
+  # Strongly typed signal helper
+  TestFramework.assert_not_nil controller.gd_ping, "controller.gd_ping bound signal must be present"
+  TestFramework.assert_not_nil controller.gd_pong, "controller.gd_pong bound signal must be present"
+
+  root.destroy
+  scene.destroy
+end

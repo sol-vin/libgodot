@@ -412,6 +412,11 @@ module Godot
       end
     end
 
+    # Idiomatic Crystal pointer conversion
+    def to_unsafe : Void*
+      @pointer
+    end
+
     # Identifier used for signal routing and lifecycle tracking (engine instance ID or Crystal object_id)
     def signal_target_id : UInt64
       @instance_id > 0 ? @instance_id : object_id

@@ -1,4 +1,5 @@
 require "../../src/libgodot"
+require "./generated/project_nodes/all_project_nodes"
 
 # =============================================================================
 # LibGodot Test Runner & Assertion Framework
