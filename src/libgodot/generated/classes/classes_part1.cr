@@ -70,12 +70,14 @@ module Godot
       if @@mb_is_class.null?
         @@mb_is_class = Bridge.get_method_bind("Object", "is_class", 2619796661_i64)
       end
-      val_0 = godot_class
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(godot_class)
+      arg_0 = sn_0
       args = [arg_0]
       ret = 0_u8
       Bridge.ptrcall(@@mb_is_class, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret != 0_u8
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_set : Void* = Pointer(Void).null
     # Assigns `value` to the given `property`. If the property does not exist or the given `value`'s type doesn't match, nothing happens.
@@ -100,12 +102,14 @@ module Godot
       if @@mb_set.null?
         @@mb_set = Bridge.get_method_bind("Object", "set", 3776071444_i64)
       end
-      val_0 = property
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(property)
+      arg_0 = sn_0
       val_1 = value
       arg_1 = pointerof(val_1).as(Void*)
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_set, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_get : Void* = Pointer(Void).null
     # Returns the `Variant` value of the given `property`. If the `property` does not exist, this method returns `null`.
@@ -130,12 +134,16 @@ module Godot
       if @@mb_get.null?
         @@mb_get = Bridge.get_method_bind("Object", "get", 2760726917_i64)
       end
-      val_0 = property
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(property)
+      arg_0 = sn_0
       args = [arg_0]
+      ret_var = StaticArray(UInt8, 24).new(0_u8)
+      Bridge.ptrcall(@@mb_get, @pointer, args.to_unsafe.as(Void**), ret_var.to_unsafe.as(Void*))
       ret_ptr = Pointer(Void).null
-      Bridge.ptrcall(@@mb_get, @pointer, args.to_unsafe.as(Void**), pointerof(ret_ptr).as(Void*))
+      Bridge.type_from_variant(24, pointerof(ret_ptr).as(Void*), ret_var.to_unsafe.as(Void*))
       ret_ptr
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_set_indexed : Void* = Pointer(Void).null
     # Assigns a new `value` to the property identified by the `property_path`. The path should be a `NodePath` relative to this object, and can use the colon character (`:`) to access nested properties.
@@ -199,8 +207,10 @@ module Godot
       val_0 = property_path
       arg_0 = pointerof(val_0).as(Void*)
       args = [arg_0]
+      ret_var = StaticArray(UInt8, 24).new(0_u8)
+      Bridge.ptrcall(@@mb_get_indexed, @pointer, args.to_unsafe.as(Void**), ret_var.to_unsafe.as(Void*))
       ret_ptr = Pointer(Void).null
-      Bridge.ptrcall(@@mb_get_indexed, @pointer, args.to_unsafe.as(Void**), pointerof(ret_ptr).as(Void*))
+      Bridge.type_from_variant(24, pointerof(ret_ptr).as(Void*), ret_var.to_unsafe.as(Void*))
       ret_ptr
     end
     @@mb_get_property_list : Void* = Pointer(Void).null
@@ -244,12 +254,14 @@ module Godot
       if @@mb_property_can_revert.null?
         @@mb_property_can_revert = Bridge.get_method_bind("Object", "property_can_revert", 2619796661_i64)
       end
-      val_0 = property
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(property)
+      arg_0 = sn_0
       args = [arg_0]
       ret = 0_u8
       Bridge.ptrcall(@@mb_property_can_revert, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret != 0_u8
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_property_get_revert : Void* = Pointer(Void).null
     # Returns the custom default value of the given `property`. Use `#property_can_revert` to check if the `property` has a custom default value.
@@ -258,12 +270,16 @@ module Godot
       if @@mb_property_get_revert.null?
         @@mb_property_get_revert = Bridge.get_method_bind("Object", "property_get_revert", 2760726917_i64)
       end
-      val_0 = property
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(property)
+      arg_0 = sn_0
       args = [arg_0]
+      ret_var = StaticArray(UInt8, 24).new(0_u8)
+      Bridge.ptrcall(@@mb_property_get_revert, @pointer, args.to_unsafe.as(Void**), ret_var.to_unsafe.as(Void*))
       ret_ptr = Pointer(Void).null
-      Bridge.ptrcall(@@mb_property_get_revert, @pointer, args.to_unsafe.as(Void**), pointerof(ret_ptr).as(Void*))
+      Bridge.type_from_variant(24, pointerof(ret_ptr).as(Void*), ret_var.to_unsafe.as(Void*))
       ret_ptr
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_notification : Void* = Pointer(Void).null
     # Sends the given `what` notification to all classes inherited by the object, triggering calls to `#_notification`, starting from the highest ancestor (the `Object` class) and going down to the object's script.
@@ -341,8 +357,10 @@ module Godot
       if @@mb_get_script.null?
         @@mb_get_script = Bridge.get_method_bind("Object", "get_script", 1214101251_i64)
       end
+      ret_var = StaticArray(UInt8, 24).new(0_u8)
+      Bridge.ptrcall(@@mb_get_script, @pointer, Pointer(Pointer(Void)).null, ret_var.to_unsafe.as(Void*))
       ret_ptr = Pointer(Void).null
-      Bridge.ptrcall(@@mb_get_script, @pointer, Pointer(Pointer(Void)).null, pointerof(ret_ptr).as(Void*))
+      Bridge.type_from_variant(24, pointerof(ret_ptr).as(Void*), ret_var.to_unsafe.as(Void*))
       ret_ptr
     end
     @@mb_set_meta : Void* = Pointer(Void).null
@@ -354,12 +372,14 @@ module Godot
       if @@mb_set_meta.null?
         @@mb_set_meta = Bridge.get_method_bind("Object", "set_meta", 3776071444_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       val_1 = value
       arg_1 = pointerof(val_1).as(Void*)
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_set_meta, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_remove_meta : Void* = Pointer(Void).null
     # Removes the given entry `name` from the object's metadata. See also `#has_meta`, `#get_meta` and `#set_meta`.
@@ -369,10 +389,12 @@ module Godot
       if @@mb_remove_meta.null?
         @@mb_remove_meta = Bridge.get_method_bind("Object", "remove_meta", 3304788590_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_remove_meta, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_get_meta : Void* = Pointer(Void).null
     # Returns the object's metadata value for the given entry `name`. If the entry does not exist, returns `default`. If `default` is `null`, an error is also generated.
@@ -382,14 +404,18 @@ module Godot
       if @@mb_get_meta.null?
         @@mb_get_meta = Bridge.get_method_bind("Object", "get_meta", 3990617847_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       val_1 = default
       arg_1 = pointerof(val_1).as(Void*)
       args = [arg_0, arg_1]
+      ret_var = StaticArray(UInt8, 24).new(0_u8)
+      Bridge.ptrcall(@@mb_get_meta, @pointer, args.to_unsafe.as(Void**), ret_var.to_unsafe.as(Void*))
       ret_ptr = Pointer(Void).null
-      Bridge.ptrcall(@@mb_get_meta, @pointer, args.to_unsafe.as(Void**), pointerof(ret_ptr).as(Void*))
+      Bridge.type_from_variant(24, pointerof(ret_ptr).as(Void*), ret_var.to_unsafe.as(Void*))
       ret_ptr
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_has_meta : Void* = Pointer(Void).null
     # Returns `true` if a metadata entry is found with the given `name`. See also `#get_meta`, `#set_meta` and `#remove_meta`.
@@ -399,12 +425,14 @@ module Godot
       if @@mb_has_meta.null?
         @@mb_has_meta = Bridge.get_method_bind("Object", "has_meta", 2619796661_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       args = [arg_0]
       ret = 0_u8
       Bridge.ptrcall(@@mb_has_meta, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret != 0_u8
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_get_meta_list : Void* = Pointer(Void).null
     # Returns the object's metadata entry names as an `Array` of `StringName`s.
@@ -448,12 +476,14 @@ module Godot
       if @@mb_add_user_signal.null?
         @@mb_add_user_signal = Bridge.get_method_bind("Object", "add_user_signal", 85656714_i64)
       end
-      val_0 = signal
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(signal)
+      arg_0 = str_0
       arg_ptr_1 = arguments ? arguments.pointer : Pointer(Void).null
       arg_1 = pointerof(arg_ptr_1).as(Void*)
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_add_user_signal, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_has_user_signal : Void* = Pointer(Void).null
     # Returns `true` if the given user-defined `signal` name exists. Only signals added with `#add_user_signal` are included. See also `#remove_user_signal`.
@@ -461,12 +491,14 @@ module Godot
       if @@mb_has_user_signal.null?
         @@mb_has_user_signal = Bridge.get_method_bind("Object", "has_user_signal", 2619796661_i64)
       end
-      val_0 = signal
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(signal)
+      arg_0 = sn_0
       args = [arg_0]
       ret = 0_u8
       Bridge.ptrcall(@@mb_has_user_signal, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret != 0_u8
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_remove_user_signal : Void* = Pointer(Void).null
     # Removes the given user signal `signal` from the object. See also `#add_user_signal` and `#has_user_signal`.
@@ -474,10 +506,12 @@ module Godot
       if @@mb_remove_user_signal.null?
         @@mb_remove_user_signal = Bridge.get_method_bind("Object", "remove_user_signal", 3304788590_i64)
       end
-      val_0 = signal
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(signal)
+      arg_0 = sn_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_remove_user_signal, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_set_deferred : Void* = Pointer(Void).null
     # Assigns `value` to the given `property`, at the end of the current frame. This is equivalent to calling `#set` through `#call_deferred`.
@@ -512,12 +546,14 @@ module Godot
       if @@mb_set_deferred.null?
         @@mb_set_deferred = Bridge.get_method_bind("Object", "set_deferred", 3776071444_i64)
       end
-      val_0 = property
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(property)
+      arg_0 = sn_0
       val_1 = value
       arg_1 = pointerof(val_1).as(Void*)
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_set_deferred, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_callv : Void* = Pointer(Void).null
     # Calls the `method` on the object and returns the result. Unlike `#call`, this method expects all parameters to be contained inside `arg_array`.
@@ -540,14 +576,18 @@ module Godot
       if @@mb_callv.null?
         @@mb_callv = Bridge.get_method_bind("Object", "callv", 1260104456_i64)
       end
-      val_0 = method
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(method)
+      arg_0 = sn_0
       arg_ptr_1 = arg_array ? arg_array.pointer : Pointer(Void).null
       arg_1 = pointerof(arg_ptr_1).as(Void*)
       args = [arg_0, arg_1]
+      ret_var = StaticArray(UInt8, 24).new(0_u8)
+      Bridge.ptrcall(@@mb_callv, @pointer, args.to_unsafe.as(Void**), ret_var.to_unsafe.as(Void*))
       ret_ptr = Pointer(Void).null
-      Bridge.ptrcall(@@mb_callv, @pointer, args.to_unsafe.as(Void**), pointerof(ret_ptr).as(Void*))
+      Bridge.type_from_variant(24, pointerof(ret_ptr).as(Void*), ret_var.to_unsafe.as(Void*))
       ret_ptr
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_has_method : Void* = Pointer(Void).null
     # Returns `true` if the given `method` name exists in the object.
@@ -556,12 +596,14 @@ module Godot
       if @@mb_has_method.null?
         @@mb_has_method = Bridge.get_method_bind("Object", "has_method", 2619796661_i64)
       end
-      val_0 = method
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(method)
+      arg_0 = sn_0
       args = [arg_0]
       ret = 0_u8
       Bridge.ptrcall(@@mb_has_method, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret != 0_u8
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_get_method_argument_count : Void* = Pointer(Void).null
     # Returns the number of arguments of the given `method` by name.
@@ -570,12 +612,14 @@ module Godot
       if @@mb_get_method_argument_count.null?
         @@mb_get_method_argument_count = Bridge.get_method_bind("Object", "get_method_argument_count", 2458036349_i64)
       end
-      val_0 = method
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(method)
+      arg_0 = sn_0
       args = [arg_0]
       ret = 0_i64
       Bridge.ptrcall(@@mb_get_method_argument_count, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_has_signal : Void* = Pointer(Void).null
     # Returns `true` if the given `signal` name exists in the object.
@@ -584,12 +628,14 @@ module Godot
       if @@mb_has_signal.null?
         @@mb_has_signal = Bridge.get_method_bind("Object", "has_signal", 2619796661_i64)
       end
-      val_0 = signal
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(signal)
+      arg_0 = sn_0
       args = [arg_0]
       ret = 0_u8
       Bridge.ptrcall(@@mb_has_signal, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret != 0_u8
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_get_signal_list : Void* = Pointer(Void).null
     # Returns the list of existing signals as an `Array` of dictionaries.
@@ -611,12 +657,14 @@ module Godot
       if @@mb_get_signal_connection_list.null?
         @@mb_get_signal_connection_list = Bridge.get_method_bind("Object", "get_signal_connection_list", 3147814860_i64)
       end
-      val_0 = signal
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(signal)
+      arg_0 = sn_0
       args = [arg_0]
       ret_ptr = Pointer(Void).null
       Bridge.ptrcall(@@mb_get_signal_connection_list, @pointer, args.to_unsafe.as(Void**), pointerof(ret_ptr).as(Void*))
       Godot::Array.new(ret_ptr)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_get_incoming_connections : Void* = Pointer(Void).null
     # Returns an `Array` of signal connections received by this object. Each connection is represented as a `Dictionary` that contains three entries:
@@ -641,8 +689,8 @@ module Godot
       if @@mb_connect.null?
         @@mb_connect = Bridge.get_method_bind("Object", "connect", 1518946055_i64)
       end
-      val_0 = signal
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(signal)
+      arg_0 = sn_0
       val_1 = callable
       arg_1 = pointerof(val_1).as(Void*)
       val_2 = flags
@@ -651,6 +699,8 @@ module Godot
       ret = 0_i64
       Bridge.ptrcall(@@mb_connect, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_disconnect : Void* = Pointer(Void).null
     # Disconnects a `signal` by name from a given `callable`. If the connection does not exist, generates an error. Use `#is_connected` to make sure that the connection exists.
@@ -658,12 +708,14 @@ module Godot
       if @@mb_disconnect.null?
         @@mb_disconnect = Bridge.get_method_bind("Object", "disconnect", 1874754934_i64)
       end
-      val_0 = signal
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(signal)
+      arg_0 = sn_0
       val_1 = callable
       arg_1 = pointerof(val_1).as(Void*)
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_disconnect, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_is_connected : Void* = Pointer(Void).null
     # Returns `true` if a connection exists between the given `signal` name and `callable`.
@@ -672,14 +724,16 @@ module Godot
       if @@mb_is_connected.null?
         @@mb_is_connected = Bridge.get_method_bind("Object", "is_connected", 768136979_i64)
       end
-      val_0 = signal
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(signal)
+      arg_0 = sn_0
       val_1 = callable
       arg_1 = pointerof(val_1).as(Void*)
       args = [arg_0, arg_1]
       ret = 0_u8
       Bridge.ptrcall(@@mb_is_connected, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret != 0_u8
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_has_connections : Void* = Pointer(Void).null
     # Returns `true` if any connection exists on the given `signal` name.
@@ -688,12 +742,14 @@ module Godot
       if @@mb_has_connections.null?
         @@mb_has_connections = Bridge.get_method_bind("Object", "has_connections", 2619796661_i64)
       end
-      val_0 = signal
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(signal)
+      arg_0 = sn_0
       args = [arg_0]
       ret = 0_u8
       Bridge.ptrcall(@@mb_has_connections, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret != 0_u8
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_set_block_signals : Void* = Pointer(Void).null
     # If set to `true`, the object becomes unable to emit signals. As such, `#emit_signal` and signal connections will not work, until it is set to `false`.
@@ -754,12 +810,15 @@ module Godot
       if @@mb_tr.null?
         @@mb_tr = Bridge.get_method_bind("Object", "tr", 1195764410_i64)
       end
-      val_0 = message
-      arg_0 = pointerof(val_0).as(Void*)
-      val_1 = context
-      arg_1 = pointerof(val_1).as(Void*)
+      sn_0 = Bridge.make_string_name(message)
+      arg_0 = sn_0
+      sn_1 = Bridge.make_string_name(context)
+      arg_1 = sn_1
       args = [arg_0, arg_1]
       ""
+    ensure
+      Bridge.free_string_name(sn_0)
+      Bridge.free_string_name(sn_1)
     end
     @@mb_tr_n : Void* = Pointer(Void).null
     # Translates a `message` or `plural_message`, using the translation catalogs configured in the Project Settings. Further `context` can be specified to help with the translation.
@@ -772,16 +831,20 @@ module Godot
       if @@mb_tr_n.null?
         @@mb_tr_n = Bridge.get_method_bind("Object", "tr_n", 162698058_i64)
       end
-      val_0 = message
-      arg_0 = pointerof(val_0).as(Void*)
-      val_1 = plural_message
-      arg_1 = pointerof(val_1).as(Void*)
+      sn_0 = Bridge.make_string_name(message)
+      arg_0 = sn_0
+      sn_1 = Bridge.make_string_name(plural_message)
+      arg_1 = sn_1
       val_2 = n
       arg_2 = pointerof(val_2).as(Void*)
-      val_3 = context
-      arg_3 = pointerof(val_3).as(Void*)
+      sn_3 = Bridge.make_string_name(context)
+      arg_3 = sn_3
       args = [arg_0, arg_1, arg_2, arg_3]
       ""
+    ensure
+      Bridge.free_string_name(sn_0)
+      Bridge.free_string_name(sn_1)
+      Bridge.free_string_name(sn_3)
     end
     @@mb_get_translation_domain : Void* = Pointer(Void).null
     # Returns the name of the translation domain used by `#tr` and `#tr_n`. See also `TranslationServer`.
@@ -797,10 +860,12 @@ module Godot
       if @@mb_set_translation_domain.null?
         @@mb_set_translation_domain = Bridge.get_method_bind("Object", "set_translation_domain", 3304788590_i64)
       end
-      val_0 = domain
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(domain)
+      arg_0 = sn_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_translation_domain, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_is_queued_for_deletion : Void* = Pointer(Void).null
     # Returns `true` if the methods `#Node.queue_free` or `#SceneTree.queue_delete` was called for the object.
@@ -2487,10 +2552,12 @@ module Godot
       if @@mb_set_name.null?
         @@mb_set_name = Bridge.get_method_bind("Node", "set_name", 3304788590_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_name, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_get_name : Void* = Pointer(Void).null
     def get_name() : String
@@ -2714,8 +2781,8 @@ module Godot
       if @@mb_find_child.null?
         @@mb_find_child = Bridge.get_method_bind("Node", "find_child", 2008217037_i64)
       end
-      val_0 = pattern
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(pattern)
+      arg_0 = str_0
       val_1 = recursive
       arg_1 = pointerof(val_1).as(Void*)
       val_2 = owned
@@ -2724,6 +2791,8 @@ module Godot
       ret_ptr = Pointer(Void).null
       Bridge.ptrcall(@@mb_find_child, @pointer, args.to_unsafe.as(Void**), pointerof(ret_ptr).as(Void*))
       Node.new(ret_ptr)
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_find_children : Void* = Pointer(Void).null
     # Finds all descendants of this node whose names match `pattern`, returning an empty `Array` if no match is found. The matching is done against node names, *not* their paths, through `#String.match`. As such, it is case-sensitive, `"*"` matches zero or more characters, and `"?"` matches any single character.
@@ -2736,10 +2805,10 @@ module Godot
       if @@mb_find_children.null?
         @@mb_find_children = Bridge.get_method_bind("Node", "find_children", 2560337219_i64)
       end
-      val_0 = pattern
-      arg_0 = pointerof(val_0).as(Void*)
-      val_1 = get_type
-      arg_1 = pointerof(val_1).as(Void*)
+      str_0 = Bridge.make_string(pattern)
+      arg_0 = str_0
+      str_1 = Bridge.make_string(get_type)
+      arg_1 = str_1
       val_2 = recursive
       arg_2 = pointerof(val_2).as(Void*)
       val_3 = owned
@@ -2748,6 +2817,9 @@ module Godot
       ret_ptr = Pointer(Void).null
       Bridge.ptrcall(@@mb_find_children, @pointer, args.to_unsafe.as(Void**), pointerof(ret_ptr).as(Void*))
       Godot::Array.new(ret_ptr)
+    ensure
+      Bridge.free_string(str_0)
+      Bridge.free_string(str_1)
     end
     @@mb_find_parent : Void* = Pointer(Void).null
     # Finds the first ancestor of this node whose `name` matches `pattern`, returning `null` if no match is found. The matching is done through `#String.match`. As such, it is case-sensitive, `"*"` matches zero or more characters, and `"?"` matches any single character. See also `#find_child` and `#find_children`.
@@ -2756,12 +2828,14 @@ module Godot
       if @@mb_find_parent.null?
         @@mb_find_parent = Bridge.get_method_bind("Node", "find_parent", 1140089439_i64)
       end
-      val_0 = pattern
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(pattern)
+      arg_0 = str_0
       args = [arg_0]
       ret_ptr = Pointer(Void).null
       Bridge.ptrcall(@@mb_find_parent, @pointer, args.to_unsafe.as(Void**), pointerof(ret_ptr).as(Void*))
       Node.new(ret_ptr)
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_has_node_and_resource : Void* = Pointer(Void).null
     # Returns `true` if `path` points to a valid node and its subnames point to a valid `Resource`, e.g. `Area2D/CollisionShape2D:shape`. Properties that are not `Resource` types (such as nodes or other `Variant` types) are not considered. See also `#get_node_and_resource`.
@@ -2912,12 +2986,14 @@ module Godot
       if @@mb_add_to_group.null?
         @@mb_add_to_group = Bridge.get_method_bind("Node", "add_to_group", 3683006648_i64)
       end
-      val_0 = group
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(group)
+      arg_0 = sn_0
       val_1 = persistent
       arg_1 = pointerof(val_1).as(Void*)
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_add_to_group, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_remove_from_group : Void* = Pointer(Void).null
     # Removes the node from the given `group`. Does nothing if the node is not in the `group`. See also notes in the description, and the `SceneTree`'s group methods.
@@ -2925,10 +3001,12 @@ module Godot
       if @@mb_remove_from_group.null?
         @@mb_remove_from_group = Bridge.get_method_bind("Node", "remove_from_group", 3304788590_i64)
       end
-      val_0 = group
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(group)
+      arg_0 = sn_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_remove_from_group, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_is_in_group : Void* = Pointer(Void).null
     # Returns `true` if this node has been added to the given `group`. See `#add_to_group` and `#remove_from_group`. See also notes in the description, and the `SceneTree`'s group methods.
@@ -2936,12 +3014,14 @@ module Godot
       if @@mb_is_in_group.null?
         @@mb_is_in_group = Bridge.get_method_bind("Node", "is_in_group", 2619796661_i64)
       end
-      val_0 = group
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(group)
+      arg_0 = sn_0
       args = [arg_0]
       ret = 0_u8
       Bridge.ptrcall(@@mb_is_in_group, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret != 0_u8
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_move_child : Void* = Pointer(Void).null
     # Moves `child_node` to the given index. A node's index is the order among its siblings. If `to_index` is negative, the index is counted from the end of the list. See also `#get_child` and `#get_index`.
@@ -3100,10 +3180,12 @@ module Godot
       if @@mb_set_scene_file_path.null?
         @@mb_set_scene_file_path = Bridge.get_method_bind("Node", "set_scene_file_path", 83702148_i64)
       end
-      val_0 = scene_file_path
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(scene_file_path)
+      arg_0 = str_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_scene_file_path, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_get_scene_file_path : Void* = Pointer(Void).null
     def get_scene_file_path() : String
@@ -3130,14 +3212,16 @@ module Godot
       if @@mb_propagate_call.null?
         @@mb_propagate_call = Bridge.get_method_bind("Node", "propagate_call", 1871007965_i64)
       end
-      val_0 = method
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(method)
+      arg_0 = sn_0
       arg_ptr_1 = args ? args.pointer : Pointer(Void).null
       arg_1 = pointerof(arg_ptr_1).as(Void*)
       val_2 = parent_first
       arg_2 = pointerof(val_2).as(Void*)
       args = [arg_0, arg_1, arg_2]
       Bridge.ptrcall(@@mb_propagate_call, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_set_physics_process : Void* = Pointer(Void).null
     # If set to `true`, enables physics (fixed framerate) processing. When a node is being processed, it will receive a `NOTIFICATION_PHYSICS_PROCESS` at a fixed (usually 60 FPS, see `Engine.physics_ticks_per_second` to change) interval (and the `#_physics_process` callback will be called if it exists).
@@ -3826,12 +3910,14 @@ module Godot
       if @@mb_rpc_config.null?
         @@mb_rpc_config = Bridge.get_method_bind("Node", "rpc_config", 3776071444_i64)
       end
-      val_0 = method
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(method)
+      arg_0 = sn_0
       val_1 = config
       arg_1 = pointerof(val_1).as(Void*)
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_rpc_config, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_get_node_rpc_config : Void* = Pointer(Void).null
     # Returns a `Dictionary` mapping method names to their RPC configuration defined for this node using `#rpc_config`.
@@ -3840,8 +3926,10 @@ module Godot
       if @@mb_get_node_rpc_config.null?
         @@mb_get_node_rpc_config = Bridge.get_method_bind("Node", "get_node_rpc_config", 1214101251_i64)
       end
+      ret_var = StaticArray(UInt8, 24).new(0_u8)
+      Bridge.ptrcall(@@mb_get_node_rpc_config, @pointer, Pointer(Pointer(Void)).null, ret_var.to_unsafe.as(Void*))
       ret_ptr = Pointer(Void).null
-      Bridge.ptrcall(@@mb_get_node_rpc_config, @pointer, Pointer(Pointer(Void)).null, pointerof(ret_ptr).as(Void*))
+      Bridge.type_from_variant(24, pointerof(ret_ptr).as(Void*), ret_var.to_unsafe.as(Void*))
       ret_ptr
     end
     @@mb_set_editor_description : Void* = Pointer(Void).null
@@ -3849,10 +3937,12 @@ module Godot
       if @@mb_set_editor_description.null?
         @@mb_set_editor_description = Bridge.get_method_bind("Node", "set_editor_description", 83702148_i64)
       end
-      val_0 = editor_description
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(editor_description)
+      arg_0 = str_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_editor_description, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_get_editor_description : Void* = Pointer(Void).null
     def get_editor_description() : String
@@ -3889,12 +3979,15 @@ module Godot
       if @@mb_atr.null?
         @@mb_atr = Bridge.get_method_bind("Node", "atr", 3344478075_i64)
       end
-      val_0 = message
-      arg_0 = pointerof(val_0).as(Void*)
-      val_1 = context
-      arg_1 = pointerof(val_1).as(Void*)
+      str_0 = Bridge.make_string(message)
+      arg_0 = str_0
+      sn_1 = Bridge.make_string_name(context)
+      arg_1 = sn_1
       args = [arg_0, arg_1]
       ""
+    ensure
+      Bridge.free_string(str_0)
+      Bridge.free_string_name(sn_1)
     end
     @@mb_atr_n : Void* = Pointer(Void).null
     # Translates a `message` or `plural_message`, using the translation catalogs configured in the Project Settings. Further `context` can be specified to help with the translation.
@@ -3907,16 +4000,20 @@ module Godot
       if @@mb_atr_n.null?
         @@mb_atr_n = Bridge.get_method_bind("Node", "atr_n", 259354841_i64)
       end
-      val_0 = message
-      arg_0 = pointerof(val_0).as(Void*)
-      val_1 = plural_message
-      arg_1 = pointerof(val_1).as(Void*)
+      str_0 = Bridge.make_string(message)
+      arg_0 = str_0
+      sn_1 = Bridge.make_string_name(plural_message)
+      arg_1 = sn_1
       val_2 = n
       arg_2 = pointerof(val_2).as(Void*)
-      val_3 = context
-      arg_3 = pointerof(val_3).as(Void*)
+      sn_3 = Bridge.make_string_name(context)
+      arg_3 = sn_3
       args = [arg_0, arg_1, arg_2, arg_3]
       ""
+    ensure
+      Bridge.free_string(str_0)
+      Bridge.free_string_name(sn_1)
+      Bridge.free_string_name(sn_3)
     end
     @@mb_update_configuration_warnings : Void* = Pointer(Void).null
     # Refreshes the warnings displayed for this node in the Scene dock. Use `#_get_configuration_warnings` to customize the warning messages to display.
@@ -3932,12 +4029,14 @@ module Godot
       if @@mb_set_deferred_thread_group.null?
         @@mb_set_deferred_thread_group = Bridge.get_method_bind("Node", "set_deferred_thread_group", 3776071444_i64)
       end
-      val_0 = property
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(property)
+      arg_0 = sn_0
       val_1 = value
       arg_1 = pointerof(val_1).as(Void*)
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_set_deferred_thread_group, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_notify_deferred_thread_group : Void* = Pointer(Void).null
     # Similar to `#call_deferred_thread_group`, but for notifications.
@@ -3956,12 +4055,14 @@ module Godot
       if @@mb_set_thread_safe.null?
         @@mb_set_thread_safe = Bridge.get_method_bind("Node", "set_thread_safe", 3776071444_i64)
       end
-      val_0 = property
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(property)
+      arg_0 = sn_0
       val_1 = value
       arg_1 = pointerof(val_1).as(Void*)
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_set_thread_safe, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_notify_thread_safe : Void* = Pointer(Void).null
     # Similar to `#call_thread_safe`, but for notifications.
@@ -4555,10 +4656,12 @@ module Godot
       if @@mb_push_text_input.null?
         @@mb_push_text_input = Bridge.get_method_bind("Viewport", "push_text_input", 83702148_i64)
       end
-      val_0 = text
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(text)
+      arg_0 = str_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_push_text_input, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_push_input : Void* = Pointer(Void).null
     # Triggers the given `event` in this `Viewport`. This can be used to pass an `InputEvent` between viewports, or to locally apply inputs that were sent over the network or saved to a file.
@@ -4666,8 +4769,10 @@ module Godot
       if @@mb_gui_get_drag_data.null?
         @@mb_gui_get_drag_data = Bridge.get_method_bind("Viewport", "gui_get_drag_data", 1214101251_i64)
       end
+      ret_var = StaticArray(UInt8, 24).new(0_u8)
+      Bridge.ptrcall(@@mb_gui_get_drag_data, @pointer, Pointer(Pointer(Void)).null, ret_var.to_unsafe.as(Void*))
       ret_ptr = Pointer(Void).null
-      Bridge.ptrcall(@@mb_gui_get_drag_data, @pointer, Pointer(Pointer(Void)).null, pointerof(ret_ptr).as(Void*))
+      Bridge.type_from_variant(24, pointerof(ret_ptr).as(Void*), ret_var.to_unsafe.as(Void*))
       ret_ptr
     end
     @@mb_gui_get_drag_description : Void* = Pointer(Void).null
@@ -4684,10 +4789,12 @@ module Godot
       if @@mb_gui_set_drag_description.null?
         @@mb_gui_set_drag_description = Bridge.get_method_bind("Viewport", "gui_set_drag_description", 83702148_i64)
       end
-      val_0 = description
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(description)
+      arg_0 = str_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_gui_set_drag_description, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_gui_is_dragging : Void* = Pointer(Void).null
     # Returns `true` if a drag operation is currently ongoing and where the drop action could happen in this viewport.
@@ -5496,10 +5603,12 @@ module Godot
       if @@mb_set_title.null?
         @@mb_set_title = Bridge.get_method_bind("Window", "set_title", 83702148_i64)
       end
-      val_0 = title
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(title)
+      arg_0 = str_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_title, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_get_title : Void* = Pointer(Void).null
     def get_title() : String
@@ -6249,10 +6358,12 @@ module Godot
       if @@mb_set_theme_type_variation.null?
         @@mb_set_theme_type_variation = Bridge.get_method_bind("Window", "set_theme_type_variation", 3304788590_i64)
       end
-      val_0 = theme_type
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(theme_type)
+      arg_0 = sn_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_theme_type_variation, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_get_theme_type_variation : Void* = Pointer(Void).null
     def get_theme_type_variation() : String
@@ -6284,12 +6395,14 @@ module Godot
       if @@mb_add_theme_icon_override.null?
         @@mb_add_theme_icon_override = Bridge.get_method_bind("Window", "add_theme_icon_override", 1373065600_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       arg_ptr_1 = texture ? texture.pointer : Pointer(Void).null
       arg_1 = pointerof(arg_ptr_1).as(Void*)
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_add_theme_icon_override, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_add_theme_stylebox_override : Void* = Pointer(Void).null
     # Creates a local override for a theme `StyleBox` with the specified `name`. Local overrides always take precedence when fetching theme items for the control. An override can be removed with `#remove_theme_stylebox_override`.
@@ -6298,12 +6411,14 @@ module Godot
       if @@mb_add_theme_stylebox_override.null?
         @@mb_add_theme_stylebox_override = Bridge.get_method_bind("Window", "add_theme_stylebox_override", 4188838905_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       arg_ptr_1 = stylebox ? stylebox.pointer : Pointer(Void).null
       arg_1 = pointerof(arg_ptr_1).as(Void*)
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_add_theme_stylebox_override, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_add_theme_font_override : Void* = Pointer(Void).null
     # Creates a local override for a theme `Font` with the specified `name`. Local overrides always take precedence when fetching theme items for the control. An override can be removed with `#remove_theme_font_override`.
@@ -6312,12 +6427,14 @@ module Godot
       if @@mb_add_theme_font_override.null?
         @@mb_add_theme_font_override = Bridge.get_method_bind("Window", "add_theme_font_override", 3518018674_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       arg_ptr_1 = font ? font.pointer : Pointer(Void).null
       arg_1 = pointerof(arg_ptr_1).as(Void*)
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_add_theme_font_override, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_add_theme_font_size_override : Void* = Pointer(Void).null
     # Creates a local override for a theme font size with the specified `name`. Local overrides always take precedence when fetching theme items for the control. An override can be removed with `#remove_theme_font_size_override`.
@@ -6326,12 +6443,14 @@ module Godot
       if @@mb_add_theme_font_size_override.null?
         @@mb_add_theme_font_size_override = Bridge.get_method_bind("Window", "add_theme_font_size_override", 2415702435_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       val_1 = font_size
       arg_1 = pointerof(val_1).as(Void*)
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_add_theme_font_size_override, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_add_theme_color_override : Void* = Pointer(Void).null
     # Creates a local override for a theme `Color` with the specified `name`. Local overrides always take precedence when fetching theme items for the control. An override can be removed with `#remove_theme_color_override`.
@@ -6340,12 +6459,14 @@ module Godot
       if @@mb_add_theme_color_override.null?
         @@mb_add_theme_color_override = Bridge.get_method_bind("Window", "add_theme_color_override", 4260178595_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       val_1 = color
       arg_1 = pointerof(val_1).as(Void*)
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_add_theme_color_override, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_add_theme_constant_override : Void* = Pointer(Void).null
     # Creates a local override for a theme constant with the specified `name`. Local overrides always take precedence when fetching theme items for the control. An override can be removed with `#remove_theme_constant_override`.
@@ -6354,12 +6475,14 @@ module Godot
       if @@mb_add_theme_constant_override.null?
         @@mb_add_theme_constant_override = Bridge.get_method_bind("Window", "add_theme_constant_override", 2415702435_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       val_1 = constant
       arg_1 = pointerof(val_1).as(Void*)
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_add_theme_constant_override, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_remove_theme_icon_override : Void* = Pointer(Void).null
     # Removes a local override for a theme icon with the specified `name` previously added by `#add_theme_icon_override` or via the Inspector dock.
@@ -6367,10 +6490,12 @@ module Godot
       if @@mb_remove_theme_icon_override.null?
         @@mb_remove_theme_icon_override = Bridge.get_method_bind("Window", "remove_theme_icon_override", 3304788590_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_remove_theme_icon_override, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_remove_theme_stylebox_override : Void* = Pointer(Void).null
     # Removes a local override for a theme `StyleBox` with the specified `name` previously added by `#add_theme_stylebox_override` or via the Inspector dock.
@@ -6378,10 +6503,12 @@ module Godot
       if @@mb_remove_theme_stylebox_override.null?
         @@mb_remove_theme_stylebox_override = Bridge.get_method_bind("Window", "remove_theme_stylebox_override", 3304788590_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_remove_theme_stylebox_override, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_remove_theme_font_override : Void* = Pointer(Void).null
     # Removes a local override for a theme `Font` with the specified `name` previously added by `#add_theme_font_override` or via the Inspector dock.
@@ -6389,10 +6516,12 @@ module Godot
       if @@mb_remove_theme_font_override.null?
         @@mb_remove_theme_font_override = Bridge.get_method_bind("Window", "remove_theme_font_override", 3304788590_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_remove_theme_font_override, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_remove_theme_font_size_override : Void* = Pointer(Void).null
     # Removes a local override for a theme font size with the specified `name` previously added by `#add_theme_font_size_override` or via the Inspector dock.
@@ -6400,10 +6529,12 @@ module Godot
       if @@mb_remove_theme_font_size_override.null?
         @@mb_remove_theme_font_size_override = Bridge.get_method_bind("Window", "remove_theme_font_size_override", 3304788590_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_remove_theme_font_size_override, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_remove_theme_color_override : Void* = Pointer(Void).null
     # Removes a local override for a theme `Color` with the specified `name` previously added by `#add_theme_color_override` or via the Inspector dock.
@@ -6411,10 +6542,12 @@ module Godot
       if @@mb_remove_theme_color_override.null?
         @@mb_remove_theme_color_override = Bridge.get_method_bind("Window", "remove_theme_color_override", 3304788590_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_remove_theme_color_override, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_remove_theme_constant_override : Void* = Pointer(Void).null
     # Removes a local override for a theme constant with the specified `name` previously added by `#add_theme_constant_override` or via the Inspector dock.
@@ -6422,10 +6555,12 @@ module Godot
       if @@mb_remove_theme_constant_override.null?
         @@mb_remove_theme_constant_override = Bridge.get_method_bind("Window", "remove_theme_constant_override", 3304788590_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_remove_theme_constant_override, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_get_theme_icon : Void* = Pointer(Void).null
     # Returns an icon from the first matching `Theme` in the tree if that `Theme` has an icon item with the specified `name` and `theme_type`.
@@ -6434,14 +6569,17 @@ module Godot
       if @@mb_get_theme_icon.null?
         @@mb_get_theme_icon = Bridge.get_method_bind("Window", "get_theme_icon", 3163973443_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
-      val_1 = theme_type
-      arg_1 = pointerof(val_1).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
+      sn_1 = Bridge.make_string_name(theme_type)
+      arg_1 = sn_1
       args = [arg_0, arg_1]
       ret_ptr = Pointer(Void).null
       Bridge.ptrcall(@@mb_get_theme_icon, @pointer, args.to_unsafe.as(Void**), pointerof(ret_ptr).as(Void*))
       Texture2D.new(ret_ptr)
+    ensure
+      Bridge.free_string_name(sn_0)
+      Bridge.free_string_name(sn_1)
     end
     @@mb_get_theme_stylebox : Void* = Pointer(Void).null
     # Returns a `StyleBox` from the first matching `Theme` in the tree if that `Theme` has a stylebox item with the specified `name` and `theme_type`.
@@ -6450,14 +6588,17 @@ module Godot
       if @@mb_get_theme_stylebox.null?
         @@mb_get_theme_stylebox = Bridge.get_method_bind("Window", "get_theme_stylebox", 604739069_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
-      val_1 = theme_type
-      arg_1 = pointerof(val_1).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
+      sn_1 = Bridge.make_string_name(theme_type)
+      arg_1 = sn_1
       args = [arg_0, arg_1]
       ret_ptr = Pointer(Void).null
       Bridge.ptrcall(@@mb_get_theme_stylebox, @pointer, args.to_unsafe.as(Void**), pointerof(ret_ptr).as(Void*))
       StyleBox.new(ret_ptr)
+    ensure
+      Bridge.free_string_name(sn_0)
+      Bridge.free_string_name(sn_1)
     end
     @@mb_get_theme_font : Void* = Pointer(Void).null
     # Returns a `Font` from the first matching `Theme` in the tree if that `Theme` has a font item with the specified `name` and `theme_type`.
@@ -6466,14 +6607,17 @@ module Godot
       if @@mb_get_theme_font.null?
         @@mb_get_theme_font = Bridge.get_method_bind("Window", "get_theme_font", 2826986490_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
-      val_1 = theme_type
-      arg_1 = pointerof(val_1).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
+      sn_1 = Bridge.make_string_name(theme_type)
+      arg_1 = sn_1
       args = [arg_0, arg_1]
       ret_ptr = Pointer(Void).null
       Bridge.ptrcall(@@mb_get_theme_font, @pointer, args.to_unsafe.as(Void**), pointerof(ret_ptr).as(Void*))
       Font.new(ret_ptr)
+    ensure
+      Bridge.free_string_name(sn_0)
+      Bridge.free_string_name(sn_1)
     end
     @@mb_get_theme_font_size : Void* = Pointer(Void).null
     # Returns a font size from the first matching `Theme` in the tree if that `Theme` has a font size item with the specified `name` and `theme_type`.
@@ -6482,14 +6626,17 @@ module Godot
       if @@mb_get_theme_font_size.null?
         @@mb_get_theme_font_size = Bridge.get_method_bind("Window", "get_theme_font_size", 1327056374_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
-      val_1 = theme_type
-      arg_1 = pointerof(val_1).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
+      sn_1 = Bridge.make_string_name(theme_type)
+      arg_1 = sn_1
       args = [arg_0, arg_1]
       ret = 0_i64
       Bridge.ptrcall(@@mb_get_theme_font_size, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret
+    ensure
+      Bridge.free_string_name(sn_0)
+      Bridge.free_string_name(sn_1)
     end
     @@mb_get_theme_color : Void* = Pointer(Void).null
     # Returns a `Color` from the first matching `Theme` in the tree if that `Theme` has a color item with the specified `name` and `theme_type`.
@@ -6498,14 +6645,17 @@ module Godot
       if @@mb_get_theme_color.null?
         @@mb_get_theme_color = Bridge.get_method_bind("Window", "get_theme_color", 2798751242_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
-      val_1 = theme_type
-      arg_1 = pointerof(val_1).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
+      sn_1 = Bridge.make_string_name(theme_type)
+      arg_1 = sn_1
       args = [arg_0, arg_1]
       ret = Color.new
       Bridge.ptrcall(@@mb_get_theme_color, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret
+    ensure
+      Bridge.free_string_name(sn_0)
+      Bridge.free_string_name(sn_1)
     end
     @@mb_get_theme_constant : Void* = Pointer(Void).null
     # Returns a constant from the first matching `Theme` in the tree if that `Theme` has a constant item with the specified `name` and `theme_type`.
@@ -6514,14 +6664,17 @@ module Godot
       if @@mb_get_theme_constant.null?
         @@mb_get_theme_constant = Bridge.get_method_bind("Window", "get_theme_constant", 1327056374_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
-      val_1 = theme_type
-      arg_1 = pointerof(val_1).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
+      sn_1 = Bridge.make_string_name(theme_type)
+      arg_1 = sn_1
       args = [arg_0, arg_1]
       ret = 0_i64
       Bridge.ptrcall(@@mb_get_theme_constant, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret
+    ensure
+      Bridge.free_string_name(sn_0)
+      Bridge.free_string_name(sn_1)
     end
     @@mb_has_theme_icon_override : Void* = Pointer(Void).null
     # Returns `true` if there is a local override for a theme icon with the specified `name` in this `Control` node.
@@ -6530,12 +6683,14 @@ module Godot
       if @@mb_has_theme_icon_override.null?
         @@mb_has_theme_icon_override = Bridge.get_method_bind("Window", "has_theme_icon_override", 2619796661_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       args = [arg_0]
       ret = 0_u8
       Bridge.ptrcall(@@mb_has_theme_icon_override, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret != 0_u8
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_has_theme_stylebox_override : Void* = Pointer(Void).null
     # Returns `true` if there is a local override for a theme `StyleBox` with the specified `name` in this `Control` node.
@@ -6544,12 +6699,14 @@ module Godot
       if @@mb_has_theme_stylebox_override.null?
         @@mb_has_theme_stylebox_override = Bridge.get_method_bind("Window", "has_theme_stylebox_override", 2619796661_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       args = [arg_0]
       ret = 0_u8
       Bridge.ptrcall(@@mb_has_theme_stylebox_override, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret != 0_u8
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_has_theme_font_override : Void* = Pointer(Void).null
     # Returns `true` if there is a local override for a theme `Font` with the specified `name` in this `Control` node.
@@ -6558,12 +6715,14 @@ module Godot
       if @@mb_has_theme_font_override.null?
         @@mb_has_theme_font_override = Bridge.get_method_bind("Window", "has_theme_font_override", 2619796661_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       args = [arg_0]
       ret = 0_u8
       Bridge.ptrcall(@@mb_has_theme_font_override, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret != 0_u8
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_has_theme_font_size_override : Void* = Pointer(Void).null
     # Returns `true` if there is a local override for a theme font size with the specified `name` in this `Control` node.
@@ -6572,12 +6731,14 @@ module Godot
       if @@mb_has_theme_font_size_override.null?
         @@mb_has_theme_font_size_override = Bridge.get_method_bind("Window", "has_theme_font_size_override", 2619796661_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       args = [arg_0]
       ret = 0_u8
       Bridge.ptrcall(@@mb_has_theme_font_size_override, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret != 0_u8
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_has_theme_color_override : Void* = Pointer(Void).null
     # Returns `true` if there is a local override for a theme `Color` with the specified `name` in this `Control` node.
@@ -6586,12 +6747,14 @@ module Godot
       if @@mb_has_theme_color_override.null?
         @@mb_has_theme_color_override = Bridge.get_method_bind("Window", "has_theme_color_override", 2619796661_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       args = [arg_0]
       ret = 0_u8
       Bridge.ptrcall(@@mb_has_theme_color_override, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret != 0_u8
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_has_theme_constant_override : Void* = Pointer(Void).null
     # Returns `true` if there is a local override for a theme constant with the specified `name` in this `Control` node.
@@ -6600,12 +6763,14 @@ module Godot
       if @@mb_has_theme_constant_override.null?
         @@mb_has_theme_constant_override = Bridge.get_method_bind("Window", "has_theme_constant_override", 2619796661_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       args = [arg_0]
       ret = 0_u8
       Bridge.ptrcall(@@mb_has_theme_constant_override, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret != 0_u8
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_has_theme_icon : Void* = Pointer(Void).null
     # Returns `true` if there is a matching `Theme` in the tree that has an icon item with the specified `name` and `theme_type`.
@@ -6614,14 +6779,17 @@ module Godot
       if @@mb_has_theme_icon.null?
         @@mb_has_theme_icon = Bridge.get_method_bind("Window", "has_theme_icon", 866386512_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
-      val_1 = theme_type
-      arg_1 = pointerof(val_1).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
+      sn_1 = Bridge.make_string_name(theme_type)
+      arg_1 = sn_1
       args = [arg_0, arg_1]
       ret = 0_u8
       Bridge.ptrcall(@@mb_has_theme_icon, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret != 0_u8
+    ensure
+      Bridge.free_string_name(sn_0)
+      Bridge.free_string_name(sn_1)
     end
     @@mb_has_theme_stylebox : Void* = Pointer(Void).null
     # Returns `true` if there is a matching `Theme` in the tree that has a stylebox item with the specified `name` and `theme_type`.
@@ -6630,14 +6798,17 @@ module Godot
       if @@mb_has_theme_stylebox.null?
         @@mb_has_theme_stylebox = Bridge.get_method_bind("Window", "has_theme_stylebox", 866386512_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
-      val_1 = theme_type
-      arg_1 = pointerof(val_1).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
+      sn_1 = Bridge.make_string_name(theme_type)
+      arg_1 = sn_1
       args = [arg_0, arg_1]
       ret = 0_u8
       Bridge.ptrcall(@@mb_has_theme_stylebox, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret != 0_u8
+    ensure
+      Bridge.free_string_name(sn_0)
+      Bridge.free_string_name(sn_1)
     end
     @@mb_has_theme_font : Void* = Pointer(Void).null
     # Returns `true` if there is a matching `Theme` in the tree that has a font item with the specified `name` and `theme_type`.
@@ -6646,14 +6817,17 @@ module Godot
       if @@mb_has_theme_font.null?
         @@mb_has_theme_font = Bridge.get_method_bind("Window", "has_theme_font", 866386512_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
-      val_1 = theme_type
-      arg_1 = pointerof(val_1).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
+      sn_1 = Bridge.make_string_name(theme_type)
+      arg_1 = sn_1
       args = [arg_0, arg_1]
       ret = 0_u8
       Bridge.ptrcall(@@mb_has_theme_font, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret != 0_u8
+    ensure
+      Bridge.free_string_name(sn_0)
+      Bridge.free_string_name(sn_1)
     end
     @@mb_has_theme_font_size : Void* = Pointer(Void).null
     # Returns `true` if there is a matching `Theme` in the tree that has a font size item with the specified `name` and `theme_type`.
@@ -6662,14 +6836,17 @@ module Godot
       if @@mb_has_theme_font_size.null?
         @@mb_has_theme_font_size = Bridge.get_method_bind("Window", "has_theme_font_size", 866386512_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
-      val_1 = theme_type
-      arg_1 = pointerof(val_1).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
+      sn_1 = Bridge.make_string_name(theme_type)
+      arg_1 = sn_1
       args = [arg_0, arg_1]
       ret = 0_u8
       Bridge.ptrcall(@@mb_has_theme_font_size, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret != 0_u8
+    ensure
+      Bridge.free_string_name(sn_0)
+      Bridge.free_string_name(sn_1)
     end
     @@mb_has_theme_color : Void* = Pointer(Void).null
     # Returns `true` if there is a matching `Theme` in the tree that has a color item with the specified `name` and `theme_type`.
@@ -6678,14 +6855,17 @@ module Godot
       if @@mb_has_theme_color.null?
         @@mb_has_theme_color = Bridge.get_method_bind("Window", "has_theme_color", 866386512_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
-      val_1 = theme_type
-      arg_1 = pointerof(val_1).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
+      sn_1 = Bridge.make_string_name(theme_type)
+      arg_1 = sn_1
       args = [arg_0, arg_1]
       ret = 0_u8
       Bridge.ptrcall(@@mb_has_theme_color, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret != 0_u8
+    ensure
+      Bridge.free_string_name(sn_0)
+      Bridge.free_string_name(sn_1)
     end
     @@mb_has_theme_constant : Void* = Pointer(Void).null
     # Returns `true` if there is a matching `Theme` in the tree that has a constant item with the specified `name` and `theme_type`.
@@ -6694,14 +6874,17 @@ module Godot
       if @@mb_has_theme_constant.null?
         @@mb_has_theme_constant = Bridge.get_method_bind("Window", "has_theme_constant", 866386512_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
-      val_1 = theme_type
-      arg_1 = pointerof(val_1).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
+      sn_1 = Bridge.make_string_name(theme_type)
+      arg_1 = sn_1
       args = [arg_0, arg_1]
       ret = 0_u8
       Bridge.ptrcall(@@mb_has_theme_constant, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret != 0_u8
+    ensure
+      Bridge.free_string_name(sn_0)
+      Bridge.free_string_name(sn_1)
     end
     @@mb_get_theme_default_base_scale : Void* = Pointer(Void).null
     # Returns the default base scale value from the first matching `Theme` in the tree if that `Theme` has a valid `Theme.default_base_scale` value.
@@ -6751,10 +6934,12 @@ module Godot
       if @@mb_set_accessibility_name.null?
         @@mb_set_accessibility_name = Bridge.get_method_bind("Window", "set_accessibility_name", 83702148_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(name)
+      arg_0 = str_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_accessibility_name, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_get_accessibility_name : Void* = Pointer(Void).null
     def get_accessibility_name() : String
@@ -6768,10 +6953,12 @@ module Godot
       if @@mb_set_accessibility_description.null?
         @@mb_set_accessibility_description = Bridge.get_method_bind("Window", "set_accessibility_description", 83702148_i64)
       end
-      val_0 = description
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(description)
+      arg_0 = str_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_accessibility_description, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_get_accessibility_description : Void* = Pointer(Void).null
     def get_accessibility_description() : String
@@ -7074,16 +7261,19 @@ module Godot
       if @@mb_add_button.null?
         @@mb_add_button = Bridge.get_method_bind("AcceptDialog", "add_button", 3328440682_i64)
       end
-      val_0 = text
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(text)
+      arg_0 = str_0
       val_1 = right
       arg_1 = pointerof(val_1).as(Void*)
-      val_2 = action
-      arg_2 = pointerof(val_2).as(Void*)
+      str_2 = Bridge.make_string(action)
+      arg_2 = str_2
       args = [arg_0, arg_1, arg_2]
       ret_ptr = Pointer(Void).null
       Bridge.ptrcall(@@mb_add_button, @pointer, args.to_unsafe.as(Void**), pointerof(ret_ptr).as(Void*))
       Button.new(ret_ptr)
+    ensure
+      Bridge.free_string(str_0)
+      Bridge.free_string(str_2)
     end
     @@mb_add_cancel_button : Void* = Pointer(Void).null
     # Adds a button with label `name` and a cancel action to the dialog and returns the created button.
@@ -7092,12 +7282,14 @@ module Godot
       if @@mb_add_cancel_button.null?
         @@mb_add_cancel_button = Bridge.get_method_bind("AcceptDialog", "add_cancel_button", 242045556_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(name)
+      arg_0 = str_0
       args = [arg_0]
       ret_ptr = Pointer(Void).null
       Bridge.ptrcall(@@mb_add_cancel_button, @pointer, args.to_unsafe.as(Void**), pointerof(ret_ptr).as(Void*))
       Button.new(ret_ptr)
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_remove_button : Void* = Pointer(Void).null
     # Removes the `button` from the dialog. Does NOT free the `button`. The `button` must be a `Button` added with `#add_button` or `#add_cancel_button` method. After removal, pressing the `button` will no longer emit this dialog's `custom_action` or `canceled` signals.
@@ -7126,10 +7318,12 @@ module Godot
       if @@mb_set_text.null?
         @@mb_set_text = Bridge.get_method_bind("AcceptDialog", "set_text", 83702148_i64)
       end
-      val_0 = text
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(text)
+      arg_0 = str_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_text, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_get_text : Void* = Pointer(Void).null
     def get_text() : String
@@ -7162,10 +7356,12 @@ module Godot
       if @@mb_set_ok_button_text.null?
         @@mb_set_ok_button_text = Bridge.get_method_bind("AcceptDialog", "set_ok_button_text", 83702148_i64)
       end
-      val_0 = text
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(text)
+      arg_0 = str_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_ok_button_text, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_get_ok_button_text : Void* = Pointer(Void).null
     def get_ok_button_text() : String
@@ -7401,8 +7597,10 @@ module Godot
       val_0 = id
       arg_0 = pointerof(val_0).as(Void*)
       args = [arg_0]
+      ret_var = StaticArray(UInt8, 24).new(0_u8)
+      Bridge.ptrcall(@@mb_element_get_meta, @pointer, args.to_unsafe.as(Void**), ret_var.to_unsafe.as(Void*))
       ret_ptr = Pointer(Void).null
-      Bridge.ptrcall(@@mb_element_get_meta, @pointer, args.to_unsafe.as(Void**), pointerof(ret_ptr).as(Void*))
+      Bridge.type_from_variant(24, pointerof(ret_ptr).as(Void*), ret_var.to_unsafe.as(Void*))
       ret_ptr
     end
     @@mb_set_window_rect : Void* = Pointer(Void).null
@@ -7482,10 +7680,12 @@ module Godot
       end
       val_0 = id
       arg_0 = pointerof(val_0).as(Void*)
-      val_1 = name
-      arg_1 = pointerof(val_1).as(Void*)
+      str_1 = Bridge.make_string(name)
+      arg_1 = str_1
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_update_set_name, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_1)
     end
     @@mb_update_set_braille_label : Void* = Pointer(Void).null
     # Sets element accessibility label for Braille display.
@@ -7495,10 +7695,12 @@ module Godot
       end
       val_0 = id
       arg_0 = pointerof(val_0).as(Void*)
-      val_1 = name
-      arg_1 = pointerof(val_1).as(Void*)
+      str_1 = Bridge.make_string(name)
+      arg_1 = str_1
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_update_set_braille_label, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_1)
     end
     @@mb_update_set_braille_role_description : Void* = Pointer(Void).null
     # Sets element accessibility role description for Braille display.
@@ -7508,10 +7710,12 @@ module Godot
       end
       val_0 = id
       arg_0 = pointerof(val_0).as(Void*)
-      val_1 = description
-      arg_1 = pointerof(val_1).as(Void*)
+      str_1 = Bridge.make_string(description)
+      arg_1 = str_1
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_update_set_braille_role_description, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_1)
     end
     @@mb_update_set_extra_info : Void* = Pointer(Void).null
     # Sets element accessibility extra information added to the element name.
@@ -7521,10 +7725,12 @@ module Godot
       end
       val_0 = id
       arg_0 = pointerof(val_0).as(Void*)
-      val_1 = name
-      arg_1 = pointerof(val_1).as(Void*)
+      str_1 = Bridge.make_string(name)
+      arg_1 = str_1
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_update_set_extra_info, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_1)
     end
     @@mb_update_set_description : Void* = Pointer(Void).null
     # Sets element accessibility description.
@@ -7534,10 +7740,12 @@ module Godot
       end
       val_0 = id
       arg_0 = pointerof(val_0).as(Void*)
-      val_1 = description
-      arg_1 = pointerof(val_1).as(Void*)
+      str_1 = Bridge.make_string(description)
+      arg_1 = str_1
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_update_set_description, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_1)
     end
     @@mb_update_set_value : Void* = Pointer(Void).null
     # Sets element text value.
@@ -7547,10 +7755,12 @@ module Godot
       end
       val_0 = id
       arg_0 = pointerof(val_0).as(Void*)
-      val_1 = value
-      arg_1 = pointerof(val_1).as(Void*)
+      str_1 = Bridge.make_string(value)
+      arg_1 = str_1
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_update_set_value, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_1)
     end
     @@mb_update_set_tooltip : Void* = Pointer(Void).null
     # Sets tooltip text.
@@ -7560,10 +7770,12 @@ module Godot
       end
       val_0 = id
       arg_0 = pointerof(val_0).as(Void*)
-      val_1 = tooltip
-      arg_1 = pointerof(val_1).as(Void*)
+      str_1 = Bridge.make_string(tooltip)
+      arg_1 = str_1
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_update_set_tooltip, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_1)
     end
     @@mb_update_set_bounds : Void* = Pointer(Void).null
     # Sets element bounding box, relative to the node position.
@@ -7800,10 +8012,12 @@ module Godot
       arg_0 = pointerof(val_0).as(Void*)
       val_1 = action_id
       arg_1 = pointerof(val_1).as(Void*)
-      val_2 = action_description
-      arg_2 = pointerof(val_2).as(Void*)
+      str_2 = Bridge.make_string(action_description)
+      arg_2 = str_2
       args = [arg_0, arg_1, arg_2]
       Bridge.ptrcall(@@mb_update_add_custom_action, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_2)
     end
     @@mb_update_set_table_row_count : Void* = Pointer(Void).null
     # Sets number of rows in the table.
@@ -8162,10 +8376,12 @@ module Godot
       end
       val_0 = id
       arg_0 = pointerof(val_0).as(Void*)
-      val_1 = classname
-      arg_1 = pointerof(val_1).as(Void*)
+      str_1 = Bridge.make_string(classname)
+      arg_1 = str_1
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_update_set_classname, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_1)
     end
     @@mb_update_set_placeholder : Void* = Pointer(Void).null
     # Sets placeholder text.
@@ -8175,10 +8391,12 @@ module Godot
       end
       val_0 = id
       arg_0 = pointerof(val_0).as(Void*)
-      val_1 = placeholder
-      arg_1 = pointerof(val_1).as(Void*)
+      str_1 = Bridge.make_string(placeholder)
+      arg_1 = str_1
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_update_set_placeholder, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_1)
     end
     @@mb_update_set_language : Void* = Pointer(Void).null
     # Sets element text language.
@@ -8188,10 +8406,12 @@ module Godot
       end
       val_0 = id
       arg_0 = pointerof(val_0).as(Void*)
-      val_1 = language
-      arg_1 = pointerof(val_1).as(Void*)
+      str_1 = Bridge.make_string(language)
+      arg_1 = str_1
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_update_set_language, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_1)
     end
     @@mb_update_set_text_orientation : Void* = Pointer(Void).null
     # Sets text orientation.
@@ -8227,10 +8447,12 @@ module Godot
       end
       val_0 = id
       arg_0 = pointerof(val_0).as(Void*)
-      val_1 = shortcut
-      arg_1 = pointerof(val_1).as(Void*)
+      str_1 = Bridge.make_string(shortcut)
+      arg_1 = str_1
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_update_set_shortcut, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_1)
     end
     @@mb_update_set_url : Void* = Pointer(Void).null
     # Sets link URL.
@@ -8240,10 +8462,12 @@ module Godot
       end
       val_0 = id
       arg_0 = pointerof(val_0).as(Void*)
-      val_1 = url
-      arg_1 = pointerof(val_1).as(Void*)
+      str_1 = Bridge.make_string(url)
+      arg_1 = str_1
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_update_set_url, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_1)
     end
     @@mb_update_set_role_description : Void* = Pointer(Void).null
     # Sets element accessibility role description text.
@@ -8253,10 +8477,12 @@ module Godot
       end
       val_0 = id
       arg_0 = pointerof(val_0).as(Void*)
-      val_1 = description
-      arg_1 = pointerof(val_1).as(Void*)
+      str_1 = Bridge.make_string(description)
+      arg_1 = str_1
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_update_set_role_description, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_1)
     end
     @@mb_update_set_state_description : Void* = Pointer(Void).null
     # Sets human-readable description of the current checked state.
@@ -8266,10 +8492,12 @@ module Godot
       end
       val_0 = id
       arg_0 = pointerof(val_0).as(Void*)
-      val_1 = description
-      arg_1 = pointerof(val_1).as(Void*)
+      str_1 = Bridge.make_string(description)
+      arg_1 = str_1
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_update_set_state_description, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_1)
     end
     @@mb_update_set_color_value : Void* = Pointer(Void).null
     # Sets element color value.
@@ -9208,10 +9436,12 @@ module Godot
       end
       val_0 = index
       arg_0 = pointerof(val_0).as(Void*)
-      val_1 = bone_name
-      arg_1 = pointerof(val_1).as(Void*)
+      str_1 = Bridge.make_string(bone_name)
+      arg_1 = str_1
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_set_apply_bone_name, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_1)
     end
     @@mb_get_apply_bone_name : Void* = Pointer(Void).null
     # Returns the apply bone name of the setting at `index`. This bone will be modified.
@@ -9285,10 +9515,12 @@ module Godot
       end
       val_0 = index
       arg_0 = pointerof(val_0).as(Void*)
-      val_1 = bone_name
-      arg_1 = pointerof(val_1).as(Void*)
+      str_1 = Bridge.make_string(bone_name)
+      arg_1 = str_1
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_set_reference_bone_name, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_1)
     end
     @@mb_get_reference_bone_name : Void* = Pointer(Void).null
     # Returns the reference bone name of the setting at `index`.
@@ -10253,8 +10485,8 @@ module Godot
       arg_0 = pointerof(arg_ptr_0).as(Void*)
       val_1 = pos
       arg_1 = pointerof(val_1).as(Void*)
-      val_2 = text
-      arg_2 = pointerof(val_2).as(Void*)
+      str_2 = Bridge.make_string(text)
+      arg_2 = str_2
       val_3 = alignment
       arg_3 = pointerof(val_3).as(Void*)
       val_4 = width
@@ -10273,6 +10505,8 @@ module Godot
       arg_10 = pointerof(val_10).as(Void*)
       args = [arg_0, arg_1, arg_2, arg_3, arg_4, arg_5, arg_6, arg_7, arg_8, arg_9, arg_10]
       Bridge.ptrcall(@@mb_draw_string, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_2)
     end
     @@mb_draw_multiline_string : Void* = Pointer(Void).null
     # Breaks `text` into lines and draws it using the specified `font` at the `pos` in local space (top-left corner). The text will have its color multiplied by `modulate`. If `width` is greater than or equal to 0, the text will be clipped if it exceeds the specified width. If `oversampling` is greater than zero, it is used as font oversampling factor, otherwise viewport oversampling settings are used.
@@ -10284,8 +10518,8 @@ module Godot
       arg_0 = pointerof(arg_ptr_0).as(Void*)
       val_1 = pos
       arg_1 = pointerof(val_1).as(Void*)
-      val_2 = text
-      arg_2 = pointerof(val_2).as(Void*)
+      str_2 = Bridge.make_string(text)
+      arg_2 = str_2
       val_3 = alignment
       arg_3 = pointerof(val_3).as(Void*)
       val_4 = width
@@ -10308,6 +10542,8 @@ module Godot
       arg_12 = pointerof(val_12).as(Void*)
       args = [arg_0, arg_1, arg_2, arg_3, arg_4, arg_5, arg_6, arg_7, arg_8, arg_9, arg_10, arg_11, arg_12]
       Bridge.ptrcall(@@mb_draw_multiline_string, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_2)
     end
     @@mb_draw_string_outline : Void* = Pointer(Void).null
     # Draws `text` outline using the specified `font` at the `pos` in local space (bottom-left corner using the baseline of the font). The text will have its color multiplied by `modulate`. If `width` is greater than or equal to 0, the text will be clipped if it exceeds the specified width. If `oversampling` is greater than zero, it is used as font oversampling factor, otherwise viewport oversampling settings are used.
@@ -10319,8 +10555,8 @@ module Godot
       arg_0 = pointerof(arg_ptr_0).as(Void*)
       val_1 = pos
       arg_1 = pointerof(val_1).as(Void*)
-      val_2 = text
-      arg_2 = pointerof(val_2).as(Void*)
+      str_2 = Bridge.make_string(text)
+      arg_2 = str_2
       val_3 = alignment
       arg_3 = pointerof(val_3).as(Void*)
       val_4 = width
@@ -10341,6 +10577,8 @@ module Godot
       arg_11 = pointerof(val_11).as(Void*)
       args = [arg_0, arg_1, arg_2, arg_3, arg_4, arg_5, arg_6, arg_7, arg_8, arg_9, arg_10, arg_11]
       Bridge.ptrcall(@@mb_draw_string_outline, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_2)
     end
     @@mb_draw_multiline_string_outline : Void* = Pointer(Void).null
     # Breaks `text` to the lines and draws text outline using the specified `font` at the `pos` in local space (top-left corner). The text will have its color multiplied by `modulate`. If `width` is greater than or equal to 0, the text will be clipped if it exceeds the specified width. If `oversampling` is greater than zero, it is used as font oversampling factor, otherwise viewport oversampling settings are used.
@@ -10352,8 +10590,8 @@ module Godot
       arg_0 = pointerof(arg_ptr_0).as(Void*)
       val_1 = pos
       arg_1 = pointerof(val_1).as(Void*)
-      val_2 = text
-      arg_2 = pointerof(val_2).as(Void*)
+      str_2 = Bridge.make_string(text)
+      arg_2 = str_2
       val_3 = alignment
       arg_3 = pointerof(val_3).as(Void*)
       val_4 = width
@@ -10378,6 +10616,8 @@ module Godot
       arg_13 = pointerof(val_13).as(Void*)
       args = [arg_0, arg_1, arg_2, arg_3, arg_4, arg_5, arg_6, arg_7, arg_8, arg_9, arg_10, arg_11, arg_12, arg_13]
       Bridge.ptrcall(@@mb_draw_multiline_string_outline, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_2)
     end
     @@mb_draw_char : Void* = Pointer(Void).null
     # Draws a string first character using a custom font. If `oversampling` is greater than zero, it is used as font oversampling factor, otherwise viewport oversampling settings are used. `pos` is defined in local space.
@@ -10389,8 +10629,8 @@ module Godot
       arg_0 = pointerof(arg_ptr_0).as(Void*)
       val_1 = pos
       arg_1 = pointerof(val_1).as(Void*)
-      val_2 = char
-      arg_2 = pointerof(val_2).as(Void*)
+      str_2 = Bridge.make_string(char)
+      arg_2 = str_2
       val_3 = font_size
       arg_3 = pointerof(val_3).as(Void*)
       val_4 = modulate
@@ -10399,6 +10639,8 @@ module Godot
       arg_5 = pointerof(val_5).as(Void*)
       args = [arg_0, arg_1, arg_2, arg_3, arg_4, arg_5]
       Bridge.ptrcall(@@mb_draw_char, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_2)
     end
     @@mb_draw_char_outline : Void* = Pointer(Void).null
     # Draws a string first character outline using a custom font. If `oversampling` is greater than zero, it is used as font oversampling factor, otherwise viewport oversampling settings are used. `pos` is defined in local space.
@@ -10410,8 +10652,8 @@ module Godot
       arg_0 = pointerof(arg_ptr_0).as(Void*)
       val_1 = pos
       arg_1 = pointerof(val_1).as(Void*)
-      val_2 = char
-      arg_2 = pointerof(val_2).as(Void*)
+      str_2 = Bridge.make_string(char)
+      arg_2 = str_2
       val_3 = font_size
       arg_3 = pointerof(val_3).as(Void*)
       val_4 = size
@@ -10422,6 +10664,8 @@ module Godot
       arg_6 = pointerof(val_6).as(Void*)
       args = [arg_0, arg_1, arg_2, arg_3, arg_4, arg_5, arg_6]
       Bridge.ptrcall(@@mb_draw_char_outline, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_2)
     end
     @@mb_draw_mesh : Void* = Pointer(Void).null
     # Draws a `Mesh` in 2D, using the provided texture. See `MeshInstance2D` for related documentation. The `transform` is defined in local space.
@@ -10657,12 +10901,14 @@ module Godot
       if @@mb_set_instance_shader_parameter.null?
         @@mb_set_instance_shader_parameter = Bridge.get_method_bind("CanvasItem", "set_instance_shader_parameter", 3776071444_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       val_1 = value
       arg_1 = pointerof(val_1).as(Void*)
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_set_instance_shader_parameter, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_get_instance_shader_parameter : Void* = Pointer(Void).null
     # Get the value of a shader parameter as set on this instance.
@@ -10670,12 +10916,16 @@ module Godot
       if @@mb_get_instance_shader_parameter.null?
         @@mb_get_instance_shader_parameter = Bridge.get_method_bind("CanvasItem", "get_instance_shader_parameter", 2760726917_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       args = [arg_0]
+      ret_var = StaticArray(UInt8, 24).new(0_u8)
+      Bridge.ptrcall(@@mb_get_instance_shader_parameter, @pointer, args.to_unsafe.as(Void**), ret_var.to_unsafe.as(Void*))
       ret_ptr = Pointer(Void).null
-      Bridge.ptrcall(@@mb_get_instance_shader_parameter, @pointer, args.to_unsafe.as(Void**), pointerof(ret_ptr).as(Void*))
+      Bridge.type_from_variant(24, pointerof(ret_ptr).as(Void*), ret_var.to_unsafe.as(Void*))
       ret_ptr
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_set_use_parent_material : Void* = Pointer(Void).null
     def set_use_parent_material(enable : Bool) : Void
@@ -12530,10 +12780,12 @@ module Godot
       if @@mb_set_animation.null?
         @@mb_set_animation = Bridge.get_method_bind("AnimatedSprite2D", "set_animation", 3304788590_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_animation, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_get_animation : Void* = Pointer(Void).null
     def get_animation() : String
@@ -12547,10 +12799,12 @@ module Godot
       if @@mb_set_autoplay.null?
         @@mb_set_autoplay = Bridge.get_method_bind("AnimatedSprite2D", "set_autoplay", 83702148_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(name)
+      arg_0 = str_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_autoplay, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_get_autoplay : Void* = Pointer(Void).null
     def get_autoplay() : String
@@ -12576,14 +12830,16 @@ module Godot
       if @@mb_play.null?
         @@mb_play = Bridge.get_method_bind("AnimatedSprite2D", "play", 3269405555_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       val_1 = custom_speed
       arg_1 = pointerof(val_1).as(Void*)
       val_2 = from_end
       arg_2 = pointerof(val_2).as(Void*)
       args = [arg_0, arg_1, arg_2]
       Bridge.ptrcall(@@mb_play, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_play_backwards : Void* = Pointer(Void).null
     # Plays the animation with key `name` in reverse.
@@ -12592,10 +12848,12 @@ module Godot
       if @@mb_play_backwards.null?
         @@mb_play_backwards = Bridge.get_method_bind("AnimatedSprite2D", "play_backwards", 3323268493_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_play_backwards, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_pause : Void* = Pointer(Void).null
     # Pauses the currently playing animation. The `frame` and `frame_progress` will be kept and calling `#play` or `#play_backwards` without arguments will resume the animation from the current playback position.
@@ -13143,12 +13401,14 @@ module Godot
       if @@mb_set_instance_shader_parameter.null?
         @@mb_set_instance_shader_parameter = Bridge.get_method_bind("GeometryInstance3D", "set_instance_shader_parameter", 3776071444_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       val_1 = value
       arg_1 = pointerof(val_1).as(Void*)
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_set_instance_shader_parameter, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_get_instance_shader_parameter : Void* = Pointer(Void).null
     # Get the value of a shader parameter as set on this instance.
@@ -13156,12 +13416,16 @@ module Godot
       if @@mb_get_instance_shader_parameter.null?
         @@mb_get_instance_shader_parameter = Bridge.get_method_bind("GeometryInstance3D", "get_instance_shader_parameter", 2760726917_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       args = [arg_0]
+      ret_var = StaticArray(UInt8, 24).new(0_u8)
+      Bridge.ptrcall(@@mb_get_instance_shader_parameter, @pointer, args.to_unsafe.as(Void**), ret_var.to_unsafe.as(Void*))
       ret_ptr = Pointer(Void).null
-      Bridge.ptrcall(@@mb_get_instance_shader_parameter, @pointer, args.to_unsafe.as(Void**), pointerof(ret_ptr).as(Void*))
+      Bridge.type_from_variant(24, pointerof(ret_ptr).as(Void*), ret_var.to_unsafe.as(Void*))
       ret_ptr
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_set_extra_cull_margin : Void* = Pointer(Void).null
     def set_extra_cull_margin(margin : Float64) : Void
@@ -13662,10 +13926,12 @@ module Godot
       if @@mb_set_animation.null?
         @@mb_set_animation = Bridge.get_method_bind("AnimatedSprite3D", "set_animation", 3304788590_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_animation, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_get_animation : Void* = Pointer(Void).null
     def get_animation() : String
@@ -13679,10 +13945,12 @@ module Godot
       if @@mb_set_autoplay.null?
         @@mb_set_autoplay = Bridge.get_method_bind("AnimatedSprite3D", "set_autoplay", 83702148_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(name)
+      arg_0 = str_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_autoplay, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_get_autoplay : Void* = Pointer(Void).null
     def get_autoplay() : String
@@ -13708,14 +13976,16 @@ module Godot
       if @@mb_play.null?
         @@mb_play = Bridge.get_method_bind("AnimatedSprite3D", "play", 3269405555_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       val_1 = custom_speed
       arg_1 = pointerof(val_1).as(Void*)
       val_2 = from_end
       arg_2 = pointerof(val_2).as(Void*)
       args = [arg_0, arg_1, arg_2]
       Bridge.ptrcall(@@mb_play, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_play_backwards : Void* = Pointer(Void).null
     # Plays the animation with key `name` in reverse.
@@ -13724,10 +13994,12 @@ module Godot
       if @@mb_play_backwards.null?
         @@mb_play_backwards = Bridge.get_method_bind("AnimatedSprite3D", "play_backwards", 3323268493_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_play_backwards, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_pause : Void* = Pointer(Void).null
     # Pauses the currently playing animation. The `frame` and `frame_progress` will be kept and calling `#play` or `#play_backwards` without arguments will resume the animation from the current playback position.
@@ -13858,10 +14130,12 @@ module Godot
       if @@mb_set_path.null?
         @@mb_set_path = Bridge.get_method_bind("Resource", "set_path", 83702148_i64)
       end
-      val_0 = path
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(path)
+      arg_0 = str_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_path, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_take_over_path : Void* = Pointer(Void).null
     # Sets the `resource_path` to `path`, potentially overriding an existing cache entry for this path. Further attempts to load an overridden resource by path will instead return this resource.
@@ -13869,10 +14143,12 @@ module Godot
       if @@mb_take_over_path.null?
         @@mb_take_over_path = Bridge.get_method_bind("Resource", "take_over_path", 83702148_i64)
       end
-      val_0 = path
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(path)
+      arg_0 = str_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_take_over_path, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_get_path : Void* = Pointer(Void).null
     def get_path() : String
@@ -13887,20 +14163,24 @@ module Godot
       if @@mb_set_path_cache.null?
         @@mb_set_path_cache = Bridge.get_method_bind("Resource", "set_path_cache", 83702148_i64)
       end
-      val_0 = path
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(path)
+      arg_0 = str_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_path_cache, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_set_name : Void* = Pointer(Void).null
     def set_name(name : String) : Void
       if @@mb_set_name.null?
         @@mb_set_name = Bridge.get_method_bind("Resource", "set_name", 83702148_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(name)
+      arg_0 = str_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_name, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_get_name : Void* = Pointer(Void).null
     def get_name() : String
@@ -13971,12 +14251,15 @@ module Godot
       if @@mb_set_id_for_path.null?
         @@mb_set_id_for_path = Bridge.get_method_bind("Resource", "set_id_for_path", 3186203200_i64)
       end
-      val_0 = path
-      arg_0 = pointerof(val_0).as(Void*)
-      val_1 = id
-      arg_1 = pointerof(val_1).as(Void*)
+      str_0 = Bridge.make_string(path)
+      arg_0 = str_0
+      str_1 = Bridge.make_string(id)
+      arg_1 = str_1
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_set_id_for_path, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_0)
+      Bridge.free_string(str_1)
     end
     @@mb_get_id_for_path : Void* = Pointer(Void).null
     # From the internal cache for scene-unique IDs, returns the ID of this resource for the scene at `path`. If there is no entry, an empty string is returned. Useful to keep scene-unique IDs the same when implementing a VCS-friendly custom resource format by extending `ResourceFormatLoader` and `ResourceFormatSaver`.
@@ -13985,10 +14268,12 @@ module Godot
       if @@mb_get_id_for_path.null?
         @@mb_get_id_for_path = Bridge.get_method_bind("Resource", "get_id_for_path", 3135753539_i64)
       end
-      val_0 = path
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(path)
+      arg_0 = str_0
       args = [arg_0]
       ""
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_is_built_in : Void* = Pointer(Void).null
     # Returns `true` if the resource is saved on disk as a part of another resource's file.
@@ -14013,10 +14298,12 @@ module Godot
       if @@mb_set_scene_unique_id.null?
         @@mb_set_scene_unique_id = Bridge.get_method_bind("Resource", "set_scene_unique_id", 83702148_i64)
       end
-      val_0 = id
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(id)
+      arg_0 = str_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_scene_unique_id, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_get_scene_unique_id : Void* = Pointer(Void).null
     def get_scene_unique_id() : String
@@ -14947,8 +15234,10 @@ module Godot
       val_1 = key_idx
       arg_1 = pointerof(val_1).as(Void*)
       args = [arg_0, arg_1]
+      ret_var = StaticArray(UInt8, 24).new(0_u8)
+      Bridge.ptrcall(@@mb_track_get_key_value, @pointer, args.to_unsafe.as(Void**), ret_var.to_unsafe.as(Void*))
       ret_ptr = Pointer(Void).null
-      Bridge.ptrcall(@@mb_track_get_key_value, @pointer, args.to_unsafe.as(Void**), pointerof(ret_ptr).as(Void*))
+      Bridge.type_from_variant(24, pointerof(ret_ptr).as(Void*), ret_var.to_unsafe.as(Void*))
       ret_ptr
     end
     @@mb_track_get_key_time : Void* = Pointer(Void).null
@@ -15095,8 +15384,10 @@ module Godot
       val_2 = backward
       arg_2 = pointerof(val_2).as(Void*)
       args = [arg_0, arg_1, arg_2]
+      ret_var = StaticArray(UInt8, 24).new(0_u8)
+      Bridge.ptrcall(@@mb_value_track_interpolate, @pointer, args.to_unsafe.as(Void**), ret_var.to_unsafe.as(Void*))
       ret_ptr = Pointer(Void).null
-      Bridge.ptrcall(@@mb_value_track_interpolate, @pointer, args.to_unsafe.as(Void**), pointerof(ret_ptr).as(Void*))
+      Bridge.type_from_variant(24, pointerof(ret_ptr).as(Void*), ret_var.to_unsafe.as(Void*))
       ret_ptr
     end
     @@mb_method_track_get_name : Void* = Pointer(Void).null
@@ -15408,12 +15699,14 @@ module Godot
       arg_0 = pointerof(val_0).as(Void*)
       val_1 = time
       arg_1 = pointerof(val_1).as(Void*)
-      val_2 = animation
-      arg_2 = pointerof(val_2).as(Void*)
+      sn_2 = Bridge.make_string_name(animation)
+      arg_2 = sn_2
       args = [arg_0, arg_1, arg_2]
       ret = 0_i64
       Bridge.ptrcall(@@mb_animation_track_insert_key, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret
+    ensure
+      Bridge.free_string_name(sn_2)
     end
     @@mb_animation_track_set_key_animation : Void* = Pointer(Void).null
     # Sets the key identified by `key_idx` to value `animation`. The `track_idx` must be the index of an Animation Track.
@@ -15425,10 +15718,12 @@ module Godot
       arg_0 = pointerof(val_0).as(Void*)
       val_1 = key_idx
       arg_1 = pointerof(val_1).as(Void*)
-      val_2 = animation
-      arg_2 = pointerof(val_2).as(Void*)
+      sn_2 = Bridge.make_string_name(animation)
+      arg_2 = sn_2
       args = [arg_0, arg_1, arg_2]
       Bridge.ptrcall(@@mb_animation_track_set_key_animation, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_2)
     end
     @@mb_animation_track_get_key_animation : Void* = Pointer(Void).null
     # Returns the animation name at the key identified by `key_idx`. The `track_idx` must be the index of an Animation Track.
@@ -15449,12 +15744,14 @@ module Godot
       if @@mb_add_marker.null?
         @@mb_add_marker = Bridge.get_method_bind("Animation", "add_marker", 4135858297_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       val_1 = time
       arg_1 = pointerof(val_1).as(Void*)
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_add_marker, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_remove_marker : Void* = Pointer(Void).null
     # Removes the marker with the given name from this Animation.
@@ -15462,10 +15759,12 @@ module Godot
       if @@mb_remove_marker.null?
         @@mb_remove_marker = Bridge.get_method_bind("Animation", "remove_marker", 3304788590_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_remove_marker, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_has_marker : Void* = Pointer(Void).null
     # Returns `true` if this Animation contains a marker with the given name.
@@ -15473,12 +15772,14 @@ module Godot
       if @@mb_has_marker.null?
         @@mb_has_marker = Bridge.get_method_bind("Animation", "has_marker", 2619796661_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       args = [arg_0]
       ret = 0_u8
       Bridge.ptrcall(@@mb_has_marker, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret != 0_u8
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_get_marker_at_time : Void* = Pointer(Void).null
     # Returns the name of the marker located at the given time.
@@ -15519,12 +15820,14 @@ module Godot
       if @@mb_get_marker_time.null?
         @@mb_get_marker_time = Bridge.get_method_bind("Animation", "get_marker_time", 2349060816_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       args = [arg_0]
       ret = 0.0_f64
       Bridge.ptrcall(@@mb_get_marker_time, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_get_marker_names : Void* = Pointer(Void).null
     # Returns every marker in this Animation, sorted ascending by time.
@@ -15542,12 +15845,14 @@ module Godot
       if @@mb_get_marker_color.null?
         @@mb_get_marker_color = Bridge.get_method_bind("Animation", "get_marker_color", 3742943038_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       args = [arg_0]
       ret = Color.new
       Bridge.ptrcall(@@mb_get_marker_color, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_set_marker_color : Void* = Pointer(Void).null
     # Sets the given marker's color.
@@ -15555,12 +15860,14 @@ module Godot
       if @@mb_set_marker_color.null?
         @@mb_set_marker_color = Bridge.get_method_bind("Animation", "set_marker_color", 4260178595_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       val_1 = color
       arg_1 = pointerof(val_1).as(Void*)
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_set_marker_color, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_set_length : Void* = Pointer(Void).null
     def set_length(time_sec : Float64) : Void
@@ -15694,14 +16001,16 @@ module Godot
       if @@mb_add_animation.null?
         @@mb_add_animation = Bridge.get_method_bind("AnimationLibrary", "add_animation", 1811855551_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       arg_ptr_1 = animation ? animation.pointer : Pointer(Void).null
       arg_1 = pointerof(arg_ptr_1).as(Void*)
       args = [arg_0, arg_1]
       ret = 0_i64
       Bridge.ptrcall(@@mb_add_animation, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_remove_animation : Void* = Pointer(Void).null
     # Removes the `Animation` with the key `name`.
@@ -15709,10 +16018,12 @@ module Godot
       if @@mb_remove_animation.null?
         @@mb_remove_animation = Bridge.get_method_bind("AnimationLibrary", "remove_animation", 3304788590_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_remove_animation, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_rename_animation : Void* = Pointer(Void).null
     # Changes the key of the `Animation` associated with the key `name` to `newname`.
@@ -15720,12 +16031,15 @@ module Godot
       if @@mb_rename_animation.null?
         @@mb_rename_animation = Bridge.get_method_bind("AnimationLibrary", "rename_animation", 3740211285_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
-      val_1 = newname
-      arg_1 = pointerof(val_1).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
+      sn_1 = Bridge.make_string_name(newname)
+      arg_1 = sn_1
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_rename_animation, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
+      Bridge.free_string_name(sn_1)
     end
     @@mb_has_animation : Void* = Pointer(Void).null
     # Returns `true` if the library stores an `Animation` with `name` as the key.
@@ -15733,12 +16047,14 @@ module Godot
       if @@mb_has_animation.null?
         @@mb_has_animation = Bridge.get_method_bind("AnimationLibrary", "has_animation", 2619796661_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       args = [arg_0]
       ret = 0_u8
       Bridge.ptrcall(@@mb_has_animation, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret != 0_u8
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_get_animation : Void* = Pointer(Void).null
     # Returns the `Animation` with the key `name`. If the animation does not exist, `null` is returned and an error is logged.
@@ -15746,12 +16062,14 @@ module Godot
       if @@mb_get_animation.null?
         @@mb_get_animation = Bridge.get_method_bind("AnimationLibrary", "get_animation", 2933122410_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       args = [arg_0]
       ret_ptr = Pointer(Void).null
       Bridge.ptrcall(@@mb_get_animation, @pointer, args.to_unsafe.as(Void**), pointerof(ret_ptr).as(Void*))
       Animation.new(ret_ptr)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_get_animation_list : Void* = Pointer(Void).null
     # Returns the keys for the `Animation`s stored in the library.
@@ -15810,14 +16128,16 @@ module Godot
       if @@mb_add_animation_library.null?
         @@mb_add_animation_library = Bridge.get_method_bind("AnimationMixer", "add_animation_library", 618909818_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       arg_ptr_1 = library ? library.pointer : Pointer(Void).null
       arg_1 = pointerof(arg_ptr_1).as(Void*)
       args = [arg_0, arg_1]
       ret = 0_i64
       Bridge.ptrcall(@@mb_add_animation_library, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_remove_animation_library : Void* = Pointer(Void).null
     # Removes the `AnimationLibrary` associated with the key `name`.
@@ -15825,10 +16145,12 @@ module Godot
       if @@mb_remove_animation_library.null?
         @@mb_remove_animation_library = Bridge.get_method_bind("AnimationMixer", "remove_animation_library", 3304788590_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_remove_animation_library, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_rename_animation_library : Void* = Pointer(Void).null
     # Moves the `AnimationLibrary` associated with the key `name` to the key `newname`.
@@ -15836,12 +16158,15 @@ module Godot
       if @@mb_rename_animation_library.null?
         @@mb_rename_animation_library = Bridge.get_method_bind("AnimationMixer", "rename_animation_library", 3740211285_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
-      val_1 = newname
-      arg_1 = pointerof(val_1).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
+      sn_1 = Bridge.make_string_name(newname)
+      arg_1 = sn_1
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_rename_animation_library, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
+      Bridge.free_string_name(sn_1)
     end
     @@mb_has_animation_library : Void* = Pointer(Void).null
     # Returns `true` if the `AnimationMixer` stores an `AnimationLibrary` with key `name`.
@@ -15849,12 +16174,14 @@ module Godot
       if @@mb_has_animation_library.null?
         @@mb_has_animation_library = Bridge.get_method_bind("AnimationMixer", "has_animation_library", 2619796661_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       args = [arg_0]
       ret = 0_u8
       Bridge.ptrcall(@@mb_has_animation_library, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret != 0_u8
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_get_animation_library : Void* = Pointer(Void).null
     # Returns the first `AnimationLibrary` with key `name` or `null` if not found.
@@ -15863,12 +16190,14 @@ module Godot
       if @@mb_get_animation_library.null?
         @@mb_get_animation_library = Bridge.get_method_bind("AnimationMixer", "get_animation_library", 147342321_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       args = [arg_0]
       ret_ptr = Pointer(Void).null
       Bridge.ptrcall(@@mb_get_animation_library, @pointer, args.to_unsafe.as(Void**), pointerof(ret_ptr).as(Void*))
       AnimationLibrary.new(ret_ptr)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_get_animation_library_list : Void* = Pointer(Void).null
     # Returns the list of stored library keys.
@@ -15886,12 +16215,14 @@ module Godot
       if @@mb_has_animation.null?
         @@mb_has_animation = Bridge.get_method_bind("AnimationMixer", "has_animation", 2619796661_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       args = [arg_0]
       ret = 0_u8
       Bridge.ptrcall(@@mb_has_animation, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret != 0_u8
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_get_animation : Void* = Pointer(Void).null
     # Returns the `Animation` with the key `name`. If the animation does not exist, `null` is returned and an error is logged.
@@ -15899,12 +16230,14 @@ module Godot
       if @@mb_get_animation.null?
         @@mb_get_animation = Bridge.get_method_bind("AnimationMixer", "get_animation", 2933122410_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       args = [arg_0]
       ret_ptr = Pointer(Void).null
       Bridge.ptrcall(@@mb_get_animation, @pointer, args.to_unsafe.as(Void**), pointerof(ret_ptr).as(Void*))
       Animation.new(ret_ptr)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_get_animation_list : Void* = Pointer(Void).null
     # Returns the list of stored animation keys.
@@ -16304,8 +16637,8 @@ module Godot
       if @@mb_capture.null?
         @@mb_capture = Bridge.get_method_bind("AnimationMixer", "capture", 1333632127_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       val_1 = duration
       arg_1 = pointerof(val_1).as(Void*)
       val_2 = trans_type
@@ -16314,6 +16647,8 @@ module Godot
       arg_3 = pointerof(val_3).as(Void*)
       args = [arg_0, arg_1, arg_2, arg_3]
       Bridge.ptrcall(@@mb_capture, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_set_reset_on_save_enabled : Void* = Pointer(Void).null
     def set_reset_on_save_enabled(enabled : Bool) : Void
@@ -16386,12 +16721,14 @@ module Godot
       if @@mb_add_input.null?
         @@mb_add_input = Bridge.get_method_bind("AnimationNode", "add_input", 2323990056_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(name)
+      arg_0 = str_0
       args = [arg_0]
       ret = 0_u8
       Bridge.ptrcall(@@mb_add_input, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret != 0_u8
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_remove_input : Void* = Pointer(Void).null
     # Removes an input, call this only when inactive.
@@ -16412,12 +16749,14 @@ module Godot
       end
       val_0 = input
       arg_0 = pointerof(val_0).as(Void*)
-      val_1 = name
-      arg_1 = pointerof(val_1).as(Void*)
+      str_1 = Bridge.make_string(name)
+      arg_1 = str_1
       args = [arg_0, arg_1]
       ret = 0_u8
       Bridge.ptrcall(@@mb_set_input_name, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret != 0_u8
+    ensure
+      Bridge.free_string(str_1)
     end
     @@mb_get_input_name : Void* = Pointer(Void).null
     # Gets the name of an input by index.
@@ -16446,12 +16785,14 @@ module Godot
       if @@mb_find_input.null?
         @@mb_find_input = Bridge.get_method_bind("AnimationNode", "find_input", 1321353865_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(name)
+      arg_0 = str_0
       args = [arg_0]
       ret = 0_i64
       Bridge.ptrcall(@@mb_find_input, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_set_filter_path : Void* = Pointer(Void).null
     # Adds or removes a path for the filter.
@@ -16526,8 +16867,8 @@ module Godot
       if @@mb_blend_animation.null?
         @@mb_blend_animation = Bridge.get_method_bind("AnimationNode", "blend_animation", 1630801826_i64)
       end
-      val_0 = animation
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(animation)
+      arg_0 = sn_0
       val_1 = time
       arg_1 = pointerof(val_1).as(Void*)
       val_2 = delta
@@ -16542,6 +16883,8 @@ module Godot
       arg_6 = pointerof(val_6).as(Void*)
       args = [arg_0, arg_1, arg_2, arg_3, arg_4, arg_5, arg_6]
       Bridge.ptrcall(@@mb_blend_animation, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_blend_node : Void* = Pointer(Void).null
     # Blend another animation node (in case this animation node contains child animation nodes). This function is only useful if you inherit from `AnimationRootNode` instead, otherwise editors will not display your animation node for addition.
@@ -16549,8 +16892,8 @@ module Godot
       if @@mb_blend_node.null?
         @@mb_blend_node = Bridge.get_method_bind("AnimationNode", "blend_node", 1746075988_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       arg_ptr_1 = node ? node.pointer : Pointer(Void).null
       arg_1 = pointerof(arg_ptr_1).as(Void*)
       val_2 = time
@@ -16571,6 +16914,8 @@ module Godot
       ret = 0.0_f64
       Bridge.ptrcall(@@mb_blend_node, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_blend_input : Void* = Pointer(Void).null
     # Blends an input. This is only useful for animation nodes created for an `AnimationNodeBlendTree`. The `time` parameter is a relative delta, unless `seek` is `true`, in which case it is absolute. A filter mode may be optionally passed.
@@ -16605,12 +16950,14 @@ module Godot
       if @@mb_set_parameter.null?
         @@mb_set_parameter = Bridge.get_method_bind("AnimationNode", "set_parameter", 3776071444_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       val_1 = value
       arg_1 = pointerof(val_1).as(Void*)
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_set_parameter, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_get_parameter : Void* = Pointer(Void).null
     # Gets the value of a parameter. Parameters are custom local memory used for your animation nodes, given a resource can be reused in multiple trees.
@@ -16618,12 +16965,16 @@ module Godot
       if @@mb_get_parameter.null?
         @@mb_get_parameter = Bridge.get_method_bind("AnimationNode", "get_parameter", 2760726917_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       args = [arg_0]
+      ret_var = StaticArray(UInt8, 24).new(0_u8)
+      Bridge.ptrcall(@@mb_get_parameter, @pointer, args.to_unsafe.as(Void**), ret_var.to_unsafe.as(Void*))
       ret_ptr = Pointer(Void).null
-      Bridge.ptrcall(@@mb_get_parameter, @pointer, args.to_unsafe.as(Void**), pointerof(ret_ptr).as(Void*))
+      Bridge.type_from_variant(24, pointerof(ret_ptr).as(Void*), ret_var.to_unsafe.as(Void*))
       ret_ptr
+    ensure
+      Bridge.free_string_name(sn_0)
     end
   end
   # Base class for `AnimationNode`s with multiple input ports that must be synchronized.
@@ -16702,10 +17053,12 @@ module Godot
       if @@mb_set_animation.null?
         @@mb_set_animation = Bridge.get_method_bind("AnimationNodeAnimation", "set_animation", 3304788590_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_animation, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_get_animation : Void* = Pointer(Void).null
     def get_animation() : String
@@ -16918,10 +17271,12 @@ module Godot
       arg_1 = pointerof(val_1).as(Void*)
       val_2 = at_index
       arg_2 = pointerof(val_2).as(Void*)
-      val_3 = name
-      arg_3 = pointerof(val_3).as(Void*)
+      sn_3 = Bridge.make_string_name(name)
+      arg_3 = sn_3
       args = [arg_0, arg_1, arg_2, arg_3]
       Bridge.ptrcall(@@mb_add_blend_point, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_3)
     end
     @@mb_set_blend_point_position : Void* = Pointer(Void).null
     # Updates the position of the point at index `point` on the blend axis.
@@ -16983,10 +17338,12 @@ module Godot
       end
       val_0 = point
       arg_0 = pointerof(val_0).as(Void*)
-      val_1 = name
-      arg_1 = pointerof(val_1).as(Void*)
+      sn_1 = Bridge.make_string_name(name)
+      arg_1 = sn_1
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_set_blend_point_name, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_1)
     end
     @@mb_get_blend_point_name : Void* = Pointer(Void).null
     # Returns the name of the blend point at index `point`.
@@ -17005,12 +17362,14 @@ module Godot
       if @@mb_find_blend_point_by_name.null?
         @@mb_find_blend_point_by_name = Bridge.get_method_bind("AnimationNodeBlendSpace1D", "find_blend_point_by_name", 2458036349_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       args = [arg_0]
       ret = 0_i64
       Bridge.ptrcall(@@mb_find_blend_point_by_name, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_remove_blend_point : Void* = Pointer(Void).null
     # Removes the point at index `point` from the blend axis.
@@ -17108,10 +17467,12 @@ module Godot
       if @@mb_set_value_label.null?
         @@mb_set_value_label = Bridge.get_method_bind("AnimationNodeBlendSpace1D", "set_value_label", 83702148_i64)
       end
-      val_0 = text
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(text)
+      arg_0 = str_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_value_label, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_get_value_label : Void* = Pointer(Void).null
     def get_value_label() : String
@@ -17245,10 +17606,12 @@ module Godot
       arg_1 = pointerof(val_1).as(Void*)
       val_2 = at_index
       arg_2 = pointerof(val_2).as(Void*)
-      val_3 = name
-      arg_3 = pointerof(val_3).as(Void*)
+      sn_3 = Bridge.make_string_name(name)
+      arg_3 = sn_3
       args = [arg_0, arg_1, arg_2, arg_3]
       Bridge.ptrcall(@@mb_add_blend_point, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_3)
     end
     @@mb_set_blend_point_position : Void* = Pointer(Void).null
     # Updates the position of the point at index `point` in the blend space.
@@ -17310,10 +17673,12 @@ module Godot
       end
       val_0 = point
       arg_0 = pointerof(val_0).as(Void*)
-      val_1 = name
-      arg_1 = pointerof(val_1).as(Void*)
+      sn_1 = Bridge.make_string_name(name)
+      arg_1 = sn_1
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_set_blend_point_name, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_1)
     end
     @@mb_get_blend_point_name : Void* = Pointer(Void).null
     # Returns the name of the blend point at index `point`.
@@ -17332,12 +17697,14 @@ module Godot
       if @@mb_find_blend_point_by_name.null?
         @@mb_find_blend_point_by_name = Bridge.get_method_bind("AnimationNodeBlendSpace2D", "find_blend_point_by_name", 2458036349_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       args = [arg_0]
       ret = 0_i64
       Bridge.ptrcall(@@mb_find_blend_point_by_name, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_remove_blend_point : Void* = Pointer(Void).null
     # Removes the point at index `point` from the blend space.
@@ -17488,10 +17855,12 @@ module Godot
       if @@mb_set_x_label.null?
         @@mb_set_x_label = Bridge.get_method_bind("AnimationNodeBlendSpace2D", "set_x_label", 83702148_i64)
       end
-      val_0 = text
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(text)
+      arg_0 = str_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_x_label, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_get_x_label : Void* = Pointer(Void).null
     def get_x_label() : String
@@ -17505,10 +17874,12 @@ module Godot
       if @@mb_set_y_label.null?
         @@mb_set_y_label = Bridge.get_method_bind("AnimationNodeBlendSpace2D", "set_y_label", 83702148_i64)
       end
-      val_0 = text
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(text)
+      arg_0 = str_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_y_label, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_get_y_label : Void* = Pointer(Void).null
     def get_y_label() : String
@@ -17627,14 +17998,16 @@ module Godot
       if @@mb_add_node.null?
         @@mb_add_node = Bridge.get_method_bind("AnimationNodeBlendTree", "add_node", 1980270704_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       arg_ptr_1 = node ? node.pointer : Pointer(Void).null
       arg_1 = pointerof(arg_ptr_1).as(Void*)
       val_2 = position
       arg_2 = pointerof(val_2).as(Void*)
       args = [arg_0, arg_1, arg_2]
       Bridge.ptrcall(@@mb_add_node, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_get_node : Void* = Pointer(Void).null
     # Returns the sub animation node with the specified `name`.
@@ -17642,12 +18015,14 @@ module Godot
       if @@mb_get_node.null?
         @@mb_get_node = Bridge.get_method_bind("AnimationNodeBlendTree", "get_node", 625644256_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       args = [arg_0]
       ret_ptr = Pointer(Void).null
       Bridge.ptrcall(@@mb_get_node, @pointer, args.to_unsafe.as(Void**), pointerof(ret_ptr).as(Void*))
       AnimationNode.new(ret_ptr)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_remove_node : Void* = Pointer(Void).null
     # Removes a sub animation node.
@@ -17655,10 +18030,12 @@ module Godot
       if @@mb_remove_node.null?
         @@mb_remove_node = Bridge.get_method_bind("AnimationNodeBlendTree", "remove_node", 3304788590_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_remove_node, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_rename_node : Void* = Pointer(Void).null
     # Changes the name of a sub animation node.
@@ -17666,12 +18043,15 @@ module Godot
       if @@mb_rename_node.null?
         @@mb_rename_node = Bridge.get_method_bind("AnimationNodeBlendTree", "rename_node", 3740211285_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
-      val_1 = new_name
-      arg_1 = pointerof(val_1).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
+      sn_1 = Bridge.make_string_name(new_name)
+      arg_1 = sn_1
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_rename_node, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
+      Bridge.free_string_name(sn_1)
     end
     @@mb_has_node : Void* = Pointer(Void).null
     # Returns `true` if a sub animation node with specified `name` exists.
@@ -17679,12 +18059,14 @@ module Godot
       if @@mb_has_node.null?
         @@mb_has_node = Bridge.get_method_bind("AnimationNodeBlendTree", "has_node", 2619796661_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       args = [arg_0]
       ret = 0_u8
       Bridge.ptrcall(@@mb_has_node, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret != 0_u8
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_connect_node : Void* = Pointer(Void).null
     # Connects the output of an `AnimationNode` as input for another `AnimationNode`, at the input port specified by `input_index`.
@@ -17692,14 +18074,17 @@ module Godot
       if @@mb_connect_node.null?
         @@mb_connect_node = Bridge.get_method_bind("AnimationNodeBlendTree", "connect_node", 2168001410_i64)
       end
-      val_0 = input_node
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(input_node)
+      arg_0 = sn_0
       val_1 = input_index
       arg_1 = pointerof(val_1).as(Void*)
-      val_2 = output_node
-      arg_2 = pointerof(val_2).as(Void*)
+      sn_2 = Bridge.make_string_name(output_node)
+      arg_2 = sn_2
       args = [arg_0, arg_1, arg_2]
       Bridge.ptrcall(@@mb_connect_node, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
+      Bridge.free_string_name(sn_2)
     end
     @@mb_disconnect_node : Void* = Pointer(Void).null
     # Disconnects the animation node connected to the specified input.
@@ -17707,12 +18092,14 @@ module Godot
       if @@mb_disconnect_node.null?
         @@mb_disconnect_node = Bridge.get_method_bind("AnimationNodeBlendTree", "disconnect_node", 2415702435_i64)
       end
-      val_0 = input_node
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(input_node)
+      arg_0 = sn_0
       val_1 = input_index
       arg_1 = pointerof(val_1).as(Void*)
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_disconnect_node, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_get_node_list : Void* = Pointer(Void).null
     # Returns a list containing the names of all sub animation nodes in this blend tree.
@@ -17730,12 +18117,14 @@ module Godot
       if @@mb_set_node_position.null?
         @@mb_set_node_position = Bridge.get_method_bind("AnimationNodeBlendTree", "set_node_position", 1999414630_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       val_1 = position
       arg_1 = pointerof(val_1).as(Void*)
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_set_node_position, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_get_node_position : Void* = Pointer(Void).null
     # Returns the position of the sub animation node with the specified `name`.
@@ -17743,12 +18132,14 @@ module Godot
       if @@mb_get_node_position.null?
         @@mb_get_node_position = Bridge.get_method_bind("AnimationNodeBlendTree", "get_node_position", 3100822709_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       args = [arg_0]
       ret = Vector2.new
       Bridge.ptrcall(@@mb_get_node_position, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_set_graph_offset : Void* = Pointer(Void).null
     def set_graph_offset(offset : Vector2) : Void
@@ -18140,14 +18531,16 @@ module Godot
       if @@mb_add_node.null?
         @@mb_add_node = Bridge.get_method_bind("AnimationNodeStateMachine", "add_node", 1980270704_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       arg_ptr_1 = node ? node.pointer : Pointer(Void).null
       arg_1 = pointerof(arg_ptr_1).as(Void*)
       val_2 = position
       arg_2 = pointerof(val_2).as(Void*)
       args = [arg_0, arg_1, arg_2]
       Bridge.ptrcall(@@mb_add_node, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_replace_node : Void* = Pointer(Void).null
     # Replaces the given animation node with a new animation node.
@@ -18155,12 +18548,14 @@ module Godot
       if @@mb_replace_node.null?
         @@mb_replace_node = Bridge.get_method_bind("AnimationNodeStateMachine", "replace_node", 2559412862_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       arg_ptr_1 = node ? node.pointer : Pointer(Void).null
       arg_1 = pointerof(arg_ptr_1).as(Void*)
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_replace_node, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_get_node : Void* = Pointer(Void).null
     # Returns the animation node with the given name.
@@ -18168,12 +18563,14 @@ module Godot
       if @@mb_get_node.null?
         @@mb_get_node = Bridge.get_method_bind("AnimationNodeStateMachine", "get_node", 625644256_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       args = [arg_0]
       ret_ptr = Pointer(Void).null
       Bridge.ptrcall(@@mb_get_node, @pointer, args.to_unsafe.as(Void**), pointerof(ret_ptr).as(Void*))
       AnimationNode.new(ret_ptr)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_remove_node : Void* = Pointer(Void).null
     # Deletes the given animation node from the graph.
@@ -18181,10 +18578,12 @@ module Godot
       if @@mb_remove_node.null?
         @@mb_remove_node = Bridge.get_method_bind("AnimationNodeStateMachine", "remove_node", 3304788590_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_remove_node, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_rename_node : Void* = Pointer(Void).null
     # Renames the given animation node.
@@ -18192,12 +18591,15 @@ module Godot
       if @@mb_rename_node.null?
         @@mb_rename_node = Bridge.get_method_bind("AnimationNodeStateMachine", "rename_node", 3740211285_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
-      val_1 = new_name
-      arg_1 = pointerof(val_1).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
+      sn_1 = Bridge.make_string_name(new_name)
+      arg_1 = sn_1
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_rename_node, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
+      Bridge.free_string_name(sn_1)
     end
     @@mb_has_node : Void* = Pointer(Void).null
     # Returns `true` if the graph contains the given animation node.
@@ -18205,12 +18607,14 @@ module Godot
       if @@mb_has_node.null?
         @@mb_has_node = Bridge.get_method_bind("AnimationNodeStateMachine", "has_node", 2619796661_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       args = [arg_0]
       ret = 0_u8
       Bridge.ptrcall(@@mb_has_node, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret != 0_u8
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_get_node_name : Void* = Pointer(Void).null
     # Returns the given animation node's name.
@@ -18239,12 +18643,14 @@ module Godot
       if @@mb_set_node_position.null?
         @@mb_set_node_position = Bridge.get_method_bind("AnimationNodeStateMachine", "set_node_position", 1999414630_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       val_1 = position
       arg_1 = pointerof(val_1).as(Void*)
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_set_node_position, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_get_node_position : Void* = Pointer(Void).null
     # Returns the given animation node's coordinates. Used for display in the editor.
@@ -18252,12 +18658,14 @@ module Godot
       if @@mb_get_node_position.null?
         @@mb_get_node_position = Bridge.get_method_bind("AnimationNodeStateMachine", "get_node_position", 3100822709_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       args = [arg_0]
       ret = Vector2.new
       Bridge.ptrcall(@@mb_get_node_position, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_has_transition : Void* = Pointer(Void).null
     # Returns `true` if there is a transition between the given animation nodes.
@@ -18265,14 +18673,17 @@ module Godot
       if @@mb_has_transition.null?
         @@mb_has_transition = Bridge.get_method_bind("AnimationNodeStateMachine", "has_transition", 471820014_i64)
       end
-      val_0 = from
-      arg_0 = pointerof(val_0).as(Void*)
-      val_1 = to
-      arg_1 = pointerof(val_1).as(Void*)
+      sn_0 = Bridge.make_string_name(from)
+      arg_0 = sn_0
+      sn_1 = Bridge.make_string_name(to)
+      arg_1 = sn_1
       args = [arg_0, arg_1]
       ret = 0_u8
       Bridge.ptrcall(@@mb_has_transition, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret != 0_u8
+    ensure
+      Bridge.free_string_name(sn_0)
+      Bridge.free_string_name(sn_1)
     end
     @@mb_add_transition : Void* = Pointer(Void).null
     # Adds a transition between the given animation nodes.
@@ -18280,14 +18691,17 @@ module Godot
       if @@mb_add_transition.null?
         @@mb_add_transition = Bridge.get_method_bind("AnimationNodeStateMachine", "add_transition", 795486887_i64)
       end
-      val_0 = from
-      arg_0 = pointerof(val_0).as(Void*)
-      val_1 = to
-      arg_1 = pointerof(val_1).as(Void*)
+      sn_0 = Bridge.make_string_name(from)
+      arg_0 = sn_0
+      sn_1 = Bridge.make_string_name(to)
+      arg_1 = sn_1
       arg_ptr_2 = transition ? transition.pointer : Pointer(Void).null
       arg_2 = pointerof(arg_ptr_2).as(Void*)
       args = [arg_0, arg_1, arg_2]
       Bridge.ptrcall(@@mb_add_transition, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
+      Bridge.free_string_name(sn_1)
     end
     @@mb_get_transition : Void* = Pointer(Void).null
     # Returns the given transition.
@@ -18351,12 +18765,15 @@ module Godot
       if @@mb_remove_transition.null?
         @@mb_remove_transition = Bridge.get_method_bind("AnimationNodeStateMachine", "remove_transition", 3740211285_i64)
       end
-      val_0 = from
-      arg_0 = pointerof(val_0).as(Void*)
-      val_1 = to
-      arg_1 = pointerof(val_1).as(Void*)
+      sn_0 = Bridge.make_string_name(from)
+      arg_0 = sn_0
+      sn_1 = Bridge.make_string_name(to)
+      arg_1 = sn_1
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_remove_transition, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
+      Bridge.free_string_name(sn_1)
     end
     @@mb_set_graph_offset : Void* = Pointer(Void).null
     # Sets the draw offset of the graph. Used for display in the editor.
@@ -18465,12 +18882,14 @@ module Godot
       if @@mb_travel.null?
         @@mb_travel = Bridge.get_method_bind("AnimationNodeStateMachinePlayback", "travel", 3823612587_i64)
       end
-      val_0 = to_node
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(to_node)
+      arg_0 = sn_0
       val_1 = reset_on_teleport
       arg_1 = pointerof(val_1).as(Void*)
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_travel, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_start : Void* = Pointer(Void).null
     # Starts playing the given animation.
@@ -18479,12 +18898,14 @@ module Godot
       if @@mb_start.null?
         @@mb_start = Bridge.get_method_bind("AnimationNodeStateMachinePlayback", "start", 3823612587_i64)
       end
-      val_0 = node
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(node)
+      arg_0 = sn_0
       val_1 = reset
       arg_1 = pointerof(val_1).as(Void*)
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_start, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_next : Void* = Pointer(Void).null
     # If there is a next path by travel or auto advance, immediately transitions from the current state to the next state.
@@ -18662,10 +19083,12 @@ module Godot
       if @@mb_set_advance_condition.null?
         @@mb_set_advance_condition = Bridge.get_method_bind("AnimationNodeStateMachineTransition", "set_advance_condition", 3304788590_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_advance_condition, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_get_advance_condition : Void* = Pointer(Void).null
     def get_advance_condition() : String
@@ -18774,10 +19197,12 @@ module Godot
       if @@mb_set_advance_expression.null?
         @@mb_set_advance_expression = Bridge.get_method_bind("AnimationNodeStateMachineTransition", "set_advance_expression", 83702148_i64)
       end
-      val_0 = text
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(text)
+      arg_0 = str_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_advance_expression, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_get_advance_expression : Void* = Pointer(Void).null
     def get_advance_expression() : String
@@ -19083,12 +19508,15 @@ module Godot
       if @@mb_animation_set_next.null?
         @@mb_animation_set_next = Bridge.get_method_bind("AnimationPlayer", "animation_set_next", 3740211285_i64)
       end
-      val_0 = animation_from
-      arg_0 = pointerof(val_0).as(Void*)
-      val_1 = animation_to
-      arg_1 = pointerof(val_1).as(Void*)
+      sn_0 = Bridge.make_string_name(animation_from)
+      arg_0 = sn_0
+      sn_1 = Bridge.make_string_name(animation_to)
+      arg_1 = sn_1
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_animation_set_next, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
+      Bridge.free_string_name(sn_1)
     end
     @@mb_animation_get_next : Void* = Pointer(Void).null
     # Returns the key of the animation which is queued to play after the `animation_from` animation.
@@ -19096,10 +19524,12 @@ module Godot
       if @@mb_animation_get_next.null?
         @@mb_animation_get_next = Bridge.get_method_bind("AnimationPlayer", "animation_get_next", 1965194235_i64)
       end
-      val_0 = animation_from
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(animation_from)
+      arg_0 = sn_0
       args = [arg_0]
       ""
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_set_blend_time : Void* = Pointer(Void).null
     # Specifies a blend time (in seconds) between two animations, referenced by their keys.
@@ -19107,14 +19537,17 @@ module Godot
       if @@mb_set_blend_time.null?
         @@mb_set_blend_time = Bridge.get_method_bind("AnimationPlayer", "set_blend_time", 3231131886_i64)
       end
-      val_0 = animation_from
-      arg_0 = pointerof(val_0).as(Void*)
-      val_1 = animation_to
-      arg_1 = pointerof(val_1).as(Void*)
+      sn_0 = Bridge.make_string_name(animation_from)
+      arg_0 = sn_0
+      sn_1 = Bridge.make_string_name(animation_to)
+      arg_1 = sn_1
       val_2 = sec
       arg_2 = pointerof(val_2).as(Void*)
       args = [arg_0, arg_1, arg_2]
       Bridge.ptrcall(@@mb_set_blend_time, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
+      Bridge.free_string_name(sn_1)
     end
     @@mb_get_blend_time : Void* = Pointer(Void).null
     # Returns the blend time (in seconds) between two animations, referenced by their keys.
@@ -19122,14 +19555,17 @@ module Godot
       if @@mb_get_blend_time.null?
         @@mb_get_blend_time = Bridge.get_method_bind("AnimationPlayer", "get_blend_time", 1958752504_i64)
       end
-      val_0 = animation_from
-      arg_0 = pointerof(val_0).as(Void*)
-      val_1 = animation_to
-      arg_1 = pointerof(val_1).as(Void*)
+      sn_0 = Bridge.make_string_name(animation_from)
+      arg_0 = sn_0
+      sn_1 = Bridge.make_string_name(animation_to)
+      arg_1 = sn_1
       args = [arg_0, arg_1]
       ret = 0.0_f64
       Bridge.ptrcall(@@mb_get_blend_time, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret
+    ensure
+      Bridge.free_string_name(sn_0)
+      Bridge.free_string_name(sn_1)
     end
     @@mb_set_default_blend_time : Void* = Pointer(Void).null
     def set_default_blend_time(sec : Float64) : Void
@@ -19235,8 +19671,8 @@ module Godot
       if @@mb_play.null?
         @@mb_play = Bridge.get_method_bind("AnimationPlayer", "play", 3118260607_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       val_1 = custom_blend
       arg_1 = pointerof(val_1).as(Void*)
       val_2 = custom_speed
@@ -19245,6 +19681,8 @@ module Godot
       arg_3 = pointerof(val_3).as(Void*)
       args = [arg_0, arg_1, arg_2, arg_3]
       Bridge.ptrcall(@@mb_play, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_play_section_with_markers : Void* = Pointer(Void).null
     # Plays the animation with key `name` and the section starting from `start_marker` and ending on `end_marker`.
@@ -19253,12 +19691,12 @@ module Godot
       if @@mb_play_section_with_markers.null?
         @@mb_play_section_with_markers = Bridge.get_method_bind("AnimationPlayer", "play_section_with_markers", 1421431412_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
-      val_1 = start_marker
-      arg_1 = pointerof(val_1).as(Void*)
-      val_2 = end_marker
-      arg_2 = pointerof(val_2).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
+      sn_1 = Bridge.make_string_name(start_marker)
+      arg_1 = sn_1
+      sn_2 = Bridge.make_string_name(end_marker)
+      arg_2 = sn_2
       val_3 = custom_blend
       arg_3 = pointerof(val_3).as(Void*)
       val_4 = custom_speed
@@ -19267,6 +19705,10 @@ module Godot
       arg_5 = pointerof(val_5).as(Void*)
       args = [arg_0, arg_1, arg_2, arg_3, arg_4, arg_5]
       Bridge.ptrcall(@@mb_play_section_with_markers, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
+      Bridge.free_string_name(sn_1)
+      Bridge.free_string_name(sn_2)
     end
     @@mb_play_section : Void* = Pointer(Void).null
     # Plays the animation with key `name` and the section starting from `start_time` and ending on `end_time`. See also `#play`.
@@ -19275,8 +19717,8 @@ module Godot
       if @@mb_play_section.null?
         @@mb_play_section = Bridge.get_method_bind("AnimationPlayer", "play_section", 284774635_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       val_1 = start_time
       arg_1 = pointerof(val_1).as(Void*)
       val_2 = end_time
@@ -19289,6 +19731,8 @@ module Godot
       arg_5 = pointerof(val_5).as(Void*)
       args = [arg_0, arg_1, arg_2, arg_3, arg_4, arg_5]
       Bridge.ptrcall(@@mb_play_section, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_play_backwards : Void* = Pointer(Void).null
     # Plays the animation with key `name` in reverse.
@@ -19297,12 +19741,14 @@ module Godot
       if @@mb_play_backwards.null?
         @@mb_play_backwards = Bridge.get_method_bind("AnimationPlayer", "play_backwards", 2787282401_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       val_1 = custom_blend
       arg_1 = pointerof(val_1).as(Void*)
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_play_backwards, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_play_section_with_markers_backwards : Void* = Pointer(Void).null
     # Plays the animation with key `name` and the section starting from `start_marker` and ending on `end_marker` in reverse.
@@ -19311,16 +19757,20 @@ module Godot
       if @@mb_play_section_with_markers_backwards.null?
         @@mb_play_section_with_markers_backwards = Bridge.get_method_bind("AnimationPlayer", "play_section_with_markers_backwards", 910195100_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
-      val_1 = start_marker
-      arg_1 = pointerof(val_1).as(Void*)
-      val_2 = end_marker
-      arg_2 = pointerof(val_2).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
+      sn_1 = Bridge.make_string_name(start_marker)
+      arg_1 = sn_1
+      sn_2 = Bridge.make_string_name(end_marker)
+      arg_2 = sn_2
       val_3 = custom_blend
       arg_3 = pointerof(val_3).as(Void*)
       args = [arg_0, arg_1, arg_2, arg_3]
       Bridge.ptrcall(@@mb_play_section_with_markers_backwards, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
+      Bridge.free_string_name(sn_1)
+      Bridge.free_string_name(sn_2)
     end
     @@mb_play_section_backwards : Void* = Pointer(Void).null
     # Plays the animation with key `name` and the section starting from `start_time` and ending on `end_time` in reverse.
@@ -19329,8 +19779,8 @@ module Godot
       if @@mb_play_section_backwards.null?
         @@mb_play_section_backwards = Bridge.get_method_bind("AnimationPlayer", "play_section_backwards", 831955981_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       val_1 = start_time
       arg_1 = pointerof(val_1).as(Void*)
       val_2 = end_time
@@ -19339,6 +19789,8 @@ module Godot
       arg_3 = pointerof(val_3).as(Void*)
       args = [arg_0, arg_1, arg_2, arg_3]
       Bridge.ptrcall(@@mb_play_section_backwards, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_play_with_capture : Void* = Pointer(Void).null
     # See also `#AnimationMixer.capture`.
@@ -19356,8 +19808,8 @@ module Godot
       if @@mb_play_with_capture.null?
         @@mb_play_with_capture = Bridge.get_method_bind("AnimationPlayer", "play_with_capture", 1572969103_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       val_1 = duration
       arg_1 = pointerof(val_1).as(Void*)
       val_2 = custom_blend
@@ -19372,6 +19824,8 @@ module Godot
       arg_6 = pointerof(val_6).as(Void*)
       args = [arg_0, arg_1, arg_2, arg_3, arg_4, arg_5, arg_6]
       Bridge.ptrcall(@@mb_play_with_capture, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_pause : Void* = Pointer(Void).null
     # Pauses the currently playing animation. The `current_animation_position` will be kept and calling `#play` or `#play_backwards` without arguments or with the same animation name as `assigned_animation` will resume the animation.
@@ -19427,10 +19881,12 @@ module Godot
       if @@mb_set_current_animation.null?
         @@mb_set_current_animation = Bridge.get_method_bind("AnimationPlayer", "set_current_animation", 3304788590_i64)
       end
-      val_0 = animation
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(animation)
+      arg_0 = sn_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_current_animation, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_get_current_animation : Void* = Pointer(Void).null
     def get_current_animation() : String
@@ -19444,10 +19900,12 @@ module Godot
       if @@mb_set_assigned_animation.null?
         @@mb_set_assigned_animation = Bridge.get_method_bind("AnimationPlayer", "set_assigned_animation", 3304788590_i64)
       end
-      val_0 = animation
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(animation)
+      arg_0 = sn_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_assigned_animation, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_get_assigned_animation : Void* = Pointer(Void).null
     def get_assigned_animation() : String
@@ -19463,10 +19921,12 @@ module Godot
       if @@mb_queue.null?
         @@mb_queue = Bridge.get_method_bind("AnimationPlayer", "queue", 3304788590_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_queue, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_get_queue : Void* = Pointer(Void).null
     # Returns a list of the animation keys that are currently queued to play.
@@ -19521,10 +19981,12 @@ module Godot
       if @@mb_set_autoplay.null?
         @@mb_set_autoplay = Bridge.get_method_bind("AnimationPlayer", "set_autoplay", 3304788590_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_autoplay, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_get_autoplay : Void* = Pointer(Void).null
     def get_autoplay() : String
@@ -19596,12 +20058,15 @@ module Godot
       if @@mb_set_section_with_markers.null?
         @@mb_set_section_with_markers = Bridge.get_method_bind("AnimationPlayer", "set_section_with_markers", 794792241_i64)
       end
-      val_0 = start_marker
-      arg_0 = pointerof(val_0).as(Void*)
-      val_1 = end_marker
-      arg_1 = pointerof(val_1).as(Void*)
+      sn_0 = Bridge.make_string_name(start_marker)
+      arg_0 = sn_0
+      sn_1 = Bridge.make_string_name(end_marker)
+      arg_1 = sn_1
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_set_section_with_markers, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
+      Bridge.free_string_name(sn_1)
     end
     @@mb_set_section : Void* = Pointer(Void).null
     # Changes the start and end times of the section being played. The current playback position will be clamped within the new section. See also `#play_section`.
@@ -20168,10 +20633,12 @@ module Godot
       if @@mb_set_audio_bus_name.null?
         @@mb_set_audio_bus_name = Bridge.get_method_bind("Area2D", "set_audio_bus_name", 3304788590_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_audio_bus_name, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_get_audio_bus_name : Void* = Pointer(Void).null
     def get_audio_bus_name() : String
@@ -20621,10 +21088,12 @@ module Godot
       if @@mb_set_audio_bus_name.null?
         @@mb_set_audio_bus_name = Bridge.get_method_bind("Area3D", "set_audio_bus_name", 3304788590_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_audio_bus_name, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_get_audio_bus_name : Void* = Pointer(Void).null
     def get_audio_bus_name() : String
@@ -20657,10 +21126,12 @@ module Godot
       if @@mb_set_reverb_bus_name.null?
         @@mb_set_reverb_bus_name = Bridge.get_method_bind("Area3D", "set_reverb_bus_name", 3304788590_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_reverb_bus_name, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_get_reverb_bus_name : Void* = Pointer(Void).null
     def get_reverb_bus_name() : String
@@ -21417,10 +21888,12 @@ module Godot
       if @@mb_add_blend_shape.null?
         @@mb_add_blend_shape = Bridge.get_method_bind("ArrayMesh", "add_blend_shape", 3304788590_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_add_blend_shape, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_get_blend_shape_count : Void* = Pointer(Void).null
     # Returns the number of blend shapes that the `ArrayMesh` holds.
@@ -21451,10 +21924,12 @@ module Godot
       end
       val_0 = index
       arg_0 = pointerof(val_0).as(Void*)
-      val_1 = name
-      arg_1 = pointerof(val_1).as(Void*)
+      sn_1 = Bridge.make_string_name(name)
+      arg_1 = sn_1
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_set_blend_shape_name, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_1)
     end
     @@mb_clear_blend_shapes : Void* = Pointer(Void).null
     # Removes all blend shapes from this `ArrayMesh`.
@@ -21636,12 +22111,14 @@ module Godot
       if @@mb_surface_find_by_name.null?
         @@mb_surface_find_by_name = Bridge.get_method_bind("ArrayMesh", "surface_find_by_name", 1321353865_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(name)
+      arg_0 = str_0
       args = [arg_0]
       ret = 0_i64
       Bridge.ptrcall(@@mb_surface_find_by_name, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_surface_set_name : Void* = Pointer(Void).null
     # Sets a name for a given surface.
@@ -21651,10 +22128,12 @@ module Godot
       end
       val_0 = surf_idx
       arg_0 = pointerof(val_0).as(Void*)
-      val_1 = name
-      arg_1 = pointerof(val_1).as(Void*)
+      str_1 = Bridge.make_string(name)
+      arg_1 = str_1
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_surface_set_name, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_1)
     end
     @@mb_surface_get_name : Void* = Pointer(Void).null
     # Gets the name assigned to this surface.
@@ -22784,10 +23263,12 @@ module Godot
       if @@mb_set_theme_type_variation.null?
         @@mb_set_theme_type_variation = Bridge.get_method_bind("Control", "set_theme_type_variation", 3304788590_i64)
       end
-      val_0 = theme_type
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(theme_type)
+      arg_0 = sn_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_theme_type_variation, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_get_theme_type_variation : Void* = Pointer(Void).null
     def get_theme_type_variation() : String
@@ -22819,12 +23300,14 @@ module Godot
       if @@mb_add_theme_icon_override.null?
         @@mb_add_theme_icon_override = Bridge.get_method_bind("Control", "add_theme_icon_override", 1373065600_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       arg_ptr_1 = texture ? texture.pointer : Pointer(Void).null
       arg_1 = pointerof(arg_ptr_1).as(Void*)
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_add_theme_icon_override, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_add_theme_stylebox_override : Void* = Pointer(Void).null
     # Creates a local override for a theme `StyleBox` with the specified `name`. Local overrides always take precedence when fetching theme items for the control. An override can be removed with `#remove_theme_stylebox_override`.
@@ -22861,12 +23344,14 @@ module Godot
       if @@mb_add_theme_stylebox_override.null?
         @@mb_add_theme_stylebox_override = Bridge.get_method_bind("Control", "add_theme_stylebox_override", 4188838905_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       arg_ptr_1 = stylebox ? stylebox.pointer : Pointer(Void).null
       arg_1 = pointerof(arg_ptr_1).as(Void*)
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_add_theme_stylebox_override, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_add_theme_font_override : Void* = Pointer(Void).null
     # Creates a local override for a theme `Font` with the specified `name`. Local overrides always take precedence when fetching theme items for the control. An override can be removed with `#remove_theme_font_override`.
@@ -22875,12 +23360,14 @@ module Godot
       if @@mb_add_theme_font_override.null?
         @@mb_add_theme_font_override = Bridge.get_method_bind("Control", "add_theme_font_override", 3518018674_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       arg_ptr_1 = font ? font.pointer : Pointer(Void).null
       arg_1 = pointerof(arg_ptr_1).as(Void*)
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_add_theme_font_override, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_add_theme_font_size_override : Void* = Pointer(Void).null
     # Creates a local override for a theme font size with the specified `name`. Local overrides always take precedence when fetching theme items for the control. An override can be removed with `#remove_theme_font_size_override`.
@@ -22889,12 +23376,14 @@ module Godot
       if @@mb_add_theme_font_size_override.null?
         @@mb_add_theme_font_size_override = Bridge.get_method_bind("Control", "add_theme_font_size_override", 2415702435_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       val_1 = font_size
       arg_1 = pointerof(val_1).as(Void*)
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_add_theme_font_size_override, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_add_theme_color_override : Void* = Pointer(Void).null
     # Creates a local override for a theme `Color` with the specified `name`. Local overrides always take precedence when fetching theme items for the control. An override can be removed with `#remove_theme_color_override`.
@@ -22925,12 +23414,14 @@ module Godot
       if @@mb_add_theme_color_override.null?
         @@mb_add_theme_color_override = Bridge.get_method_bind("Control", "add_theme_color_override", 4260178595_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       val_1 = color
       arg_1 = pointerof(val_1).as(Void*)
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_add_theme_color_override, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_add_theme_constant_override : Void* = Pointer(Void).null
     # Creates a local override for a theme constant with the specified `name`. Local overrides always take precedence when fetching theme items for the control. An override can be removed with `#remove_theme_constant_override`.
@@ -22939,12 +23430,14 @@ module Godot
       if @@mb_add_theme_constant_override.null?
         @@mb_add_theme_constant_override = Bridge.get_method_bind("Control", "add_theme_constant_override", 2415702435_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       val_1 = constant
       arg_1 = pointerof(val_1).as(Void*)
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_add_theme_constant_override, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_remove_theme_icon_override : Void* = Pointer(Void).null
     # Removes a local override for a theme icon with the specified `name` previously added by `#add_theme_icon_override` or via the Inspector dock.
@@ -22952,10 +23445,12 @@ module Godot
       if @@mb_remove_theme_icon_override.null?
         @@mb_remove_theme_icon_override = Bridge.get_method_bind("Control", "remove_theme_icon_override", 3304788590_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_remove_theme_icon_override, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_remove_theme_stylebox_override : Void* = Pointer(Void).null
     # Removes a local override for a theme `StyleBox` with the specified `name` previously added by `#add_theme_stylebox_override` or via the Inspector dock.
@@ -22963,10 +23458,12 @@ module Godot
       if @@mb_remove_theme_stylebox_override.null?
         @@mb_remove_theme_stylebox_override = Bridge.get_method_bind("Control", "remove_theme_stylebox_override", 3304788590_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_remove_theme_stylebox_override, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_remove_theme_font_override : Void* = Pointer(Void).null
     # Removes a local override for a theme `Font` with the specified `name` previously added by `#add_theme_font_override` or via the Inspector dock.
@@ -22974,10 +23471,12 @@ module Godot
       if @@mb_remove_theme_font_override.null?
         @@mb_remove_theme_font_override = Bridge.get_method_bind("Control", "remove_theme_font_override", 3304788590_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_remove_theme_font_override, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_remove_theme_font_size_override : Void* = Pointer(Void).null
     # Removes a local override for a theme font size with the specified `name` previously added by `#add_theme_font_size_override` or via the Inspector dock.
@@ -22985,10 +23484,12 @@ module Godot
       if @@mb_remove_theme_font_size_override.null?
         @@mb_remove_theme_font_size_override = Bridge.get_method_bind("Control", "remove_theme_font_size_override", 3304788590_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_remove_theme_font_size_override, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_remove_theme_color_override : Void* = Pointer(Void).null
     # Removes a local override for a theme `Color` with the specified `name` previously added by `#add_theme_color_override` or via the Inspector dock.
@@ -22996,10 +23497,12 @@ module Godot
       if @@mb_remove_theme_color_override.null?
         @@mb_remove_theme_color_override = Bridge.get_method_bind("Control", "remove_theme_color_override", 3304788590_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_remove_theme_color_override, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_remove_theme_constant_override : Void* = Pointer(Void).null
     # Removes a local override for a theme constant with the specified `name` previously added by `#add_theme_constant_override` or via the Inspector dock.
@@ -23007,10 +23510,12 @@ module Godot
       if @@mb_remove_theme_constant_override.null?
         @@mb_remove_theme_constant_override = Bridge.get_method_bind("Control", "remove_theme_constant_override", 3304788590_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_remove_theme_constant_override, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_get_theme_icon : Void* = Pointer(Void).null
     # Returns an icon from the first matching `Theme` in the tree if that `Theme` has an icon item with the specified `name` and `theme_type`.
@@ -23019,14 +23524,17 @@ module Godot
       if @@mb_get_theme_icon.null?
         @@mb_get_theme_icon = Bridge.get_method_bind("Control", "get_theme_icon", 3163973443_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
-      val_1 = theme_type
-      arg_1 = pointerof(val_1).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
+      sn_1 = Bridge.make_string_name(theme_type)
+      arg_1 = sn_1
       args = [arg_0, arg_1]
       ret_ptr = Pointer(Void).null
       Bridge.ptrcall(@@mb_get_theme_icon, @pointer, args.to_unsafe.as(Void**), pointerof(ret_ptr).as(Void*))
       Texture2D.new(ret_ptr)
+    ensure
+      Bridge.free_string_name(sn_0)
+      Bridge.free_string_name(sn_1)
     end
     @@mb_get_theme_stylebox : Void* = Pointer(Void).null
     # Returns a `StyleBox` from the first matching `Theme` in the tree if that `Theme` has a stylebox item with the specified `name` and `theme_type`.
@@ -23035,14 +23543,17 @@ module Godot
       if @@mb_get_theme_stylebox.null?
         @@mb_get_theme_stylebox = Bridge.get_method_bind("Control", "get_theme_stylebox", 604739069_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
-      val_1 = theme_type
-      arg_1 = pointerof(val_1).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
+      sn_1 = Bridge.make_string_name(theme_type)
+      arg_1 = sn_1
       args = [arg_0, arg_1]
       ret_ptr = Pointer(Void).null
       Bridge.ptrcall(@@mb_get_theme_stylebox, @pointer, args.to_unsafe.as(Void**), pointerof(ret_ptr).as(Void*))
       StyleBox.new(ret_ptr)
+    ensure
+      Bridge.free_string_name(sn_0)
+      Bridge.free_string_name(sn_1)
     end
     @@mb_get_theme_font : Void* = Pointer(Void).null
     # Returns a `Font` from the first matching `Theme` in the tree if that `Theme` has a font item with the specified `name` and `theme_type`.
@@ -23051,14 +23562,17 @@ module Godot
       if @@mb_get_theme_font.null?
         @@mb_get_theme_font = Bridge.get_method_bind("Control", "get_theme_font", 2826986490_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
-      val_1 = theme_type
-      arg_1 = pointerof(val_1).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
+      sn_1 = Bridge.make_string_name(theme_type)
+      arg_1 = sn_1
       args = [arg_0, arg_1]
       ret_ptr = Pointer(Void).null
       Bridge.ptrcall(@@mb_get_theme_font, @pointer, args.to_unsafe.as(Void**), pointerof(ret_ptr).as(Void*))
       Font.new(ret_ptr)
+    ensure
+      Bridge.free_string_name(sn_0)
+      Bridge.free_string_name(sn_1)
     end
     @@mb_get_theme_font_size : Void* = Pointer(Void).null
     # Returns a font size from the first matching `Theme` in the tree if that `Theme` has a font size item with the specified `name` and `theme_type`.
@@ -23067,14 +23581,17 @@ module Godot
       if @@mb_get_theme_font_size.null?
         @@mb_get_theme_font_size = Bridge.get_method_bind("Control", "get_theme_font_size", 1327056374_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
-      val_1 = theme_type
-      arg_1 = pointerof(val_1).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
+      sn_1 = Bridge.make_string_name(theme_type)
+      arg_1 = sn_1
       args = [arg_0, arg_1]
       ret = 0_i64
       Bridge.ptrcall(@@mb_get_theme_font_size, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret
+    ensure
+      Bridge.free_string_name(sn_0)
+      Bridge.free_string_name(sn_1)
     end
     @@mb_get_theme_color : Void* = Pointer(Void).null
     # Returns a `Color` from the first matching `Theme` in the tree if that `Theme` has a color item with the specified `name` and `theme_type`. If `theme_type` is omitted the class name of the current control is used as the type, or `theme_type_variation` if it is defined. If the type is a class name its parent classes are also checked, in order of inheritance. If the type is a variation its base types are checked, in order of dependency, then the control's class name and its parent classes are checked.
@@ -23104,14 +23621,17 @@ module Godot
       if @@mb_get_theme_color.null?
         @@mb_get_theme_color = Bridge.get_method_bind("Control", "get_theme_color", 2798751242_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
-      val_1 = theme_type
-      arg_1 = pointerof(val_1).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
+      sn_1 = Bridge.make_string_name(theme_type)
+      arg_1 = sn_1
       args = [arg_0, arg_1]
       ret = Color.new
       Bridge.ptrcall(@@mb_get_theme_color, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret
+    ensure
+      Bridge.free_string_name(sn_0)
+      Bridge.free_string_name(sn_1)
     end
     @@mb_get_theme_constant : Void* = Pointer(Void).null
     # Returns a constant from the first matching `Theme` in the tree if that `Theme` has a constant item with the specified `name` and `theme_type`.
@@ -23120,14 +23640,17 @@ module Godot
       if @@mb_get_theme_constant.null?
         @@mb_get_theme_constant = Bridge.get_method_bind("Control", "get_theme_constant", 1327056374_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
-      val_1 = theme_type
-      arg_1 = pointerof(val_1).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
+      sn_1 = Bridge.make_string_name(theme_type)
+      arg_1 = sn_1
       args = [arg_0, arg_1]
       ret = 0_i64
       Bridge.ptrcall(@@mb_get_theme_constant, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret
+    ensure
+      Bridge.free_string_name(sn_0)
+      Bridge.free_string_name(sn_1)
     end
     @@mb_has_theme_icon_override : Void* = Pointer(Void).null
     # Returns `true` if there is a local override for a theme icon with the specified `name` in this `Control` node.
@@ -23136,12 +23659,14 @@ module Godot
       if @@mb_has_theme_icon_override.null?
         @@mb_has_theme_icon_override = Bridge.get_method_bind("Control", "has_theme_icon_override", 2619796661_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       args = [arg_0]
       ret = 0_u8
       Bridge.ptrcall(@@mb_has_theme_icon_override, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret != 0_u8
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_has_theme_stylebox_override : Void* = Pointer(Void).null
     # Returns `true` if there is a local override for a theme `StyleBox` with the specified `name` in this `Control` node.
@@ -23150,12 +23675,14 @@ module Godot
       if @@mb_has_theme_stylebox_override.null?
         @@mb_has_theme_stylebox_override = Bridge.get_method_bind("Control", "has_theme_stylebox_override", 2619796661_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       args = [arg_0]
       ret = 0_u8
       Bridge.ptrcall(@@mb_has_theme_stylebox_override, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret != 0_u8
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_has_theme_font_override : Void* = Pointer(Void).null
     # Returns `true` if there is a local override for a theme `Font` with the specified `name` in this `Control` node.
@@ -23164,12 +23691,14 @@ module Godot
       if @@mb_has_theme_font_override.null?
         @@mb_has_theme_font_override = Bridge.get_method_bind("Control", "has_theme_font_override", 2619796661_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       args = [arg_0]
       ret = 0_u8
       Bridge.ptrcall(@@mb_has_theme_font_override, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret != 0_u8
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_has_theme_font_size_override : Void* = Pointer(Void).null
     # Returns `true` if there is a local override for a theme font size with the specified `name` in this `Control` node.
@@ -23178,12 +23707,14 @@ module Godot
       if @@mb_has_theme_font_size_override.null?
         @@mb_has_theme_font_size_override = Bridge.get_method_bind("Control", "has_theme_font_size_override", 2619796661_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       args = [arg_0]
       ret = 0_u8
       Bridge.ptrcall(@@mb_has_theme_font_size_override, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret != 0_u8
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_has_theme_color_override : Void* = Pointer(Void).null
     # Returns `true` if there is a local override for a theme `Color` with the specified `name` in this `Control` node.
@@ -23192,12 +23723,14 @@ module Godot
       if @@mb_has_theme_color_override.null?
         @@mb_has_theme_color_override = Bridge.get_method_bind("Control", "has_theme_color_override", 2619796661_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       args = [arg_0]
       ret = 0_u8
       Bridge.ptrcall(@@mb_has_theme_color_override, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret != 0_u8
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_has_theme_constant_override : Void* = Pointer(Void).null
     # Returns `true` if there is a local override for a theme constant with the specified `name` in this `Control` node.
@@ -23206,12 +23739,14 @@ module Godot
       if @@mb_has_theme_constant_override.null?
         @@mb_has_theme_constant_override = Bridge.get_method_bind("Control", "has_theme_constant_override", 2619796661_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       args = [arg_0]
       ret = 0_u8
       Bridge.ptrcall(@@mb_has_theme_constant_override, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret != 0_u8
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_has_theme_icon : Void* = Pointer(Void).null
     # Returns `true` if there is a matching `Theme` in the tree that has an icon item with the specified `name` and `theme_type`.
@@ -23220,14 +23755,17 @@ module Godot
       if @@mb_has_theme_icon.null?
         @@mb_has_theme_icon = Bridge.get_method_bind("Control", "has_theme_icon", 866386512_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
-      val_1 = theme_type
-      arg_1 = pointerof(val_1).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
+      sn_1 = Bridge.make_string_name(theme_type)
+      arg_1 = sn_1
       args = [arg_0, arg_1]
       ret = 0_u8
       Bridge.ptrcall(@@mb_has_theme_icon, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret != 0_u8
+    ensure
+      Bridge.free_string_name(sn_0)
+      Bridge.free_string_name(sn_1)
     end
     @@mb_has_theme_stylebox : Void* = Pointer(Void).null
     # Returns `true` if there is a matching `Theme` in the tree that has a stylebox item with the specified `name` and `theme_type`.
@@ -23236,14 +23774,17 @@ module Godot
       if @@mb_has_theme_stylebox.null?
         @@mb_has_theme_stylebox = Bridge.get_method_bind("Control", "has_theme_stylebox", 866386512_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
-      val_1 = theme_type
-      arg_1 = pointerof(val_1).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
+      sn_1 = Bridge.make_string_name(theme_type)
+      arg_1 = sn_1
       args = [arg_0, arg_1]
       ret = 0_u8
       Bridge.ptrcall(@@mb_has_theme_stylebox, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret != 0_u8
+    ensure
+      Bridge.free_string_name(sn_0)
+      Bridge.free_string_name(sn_1)
     end
     @@mb_has_theme_font : Void* = Pointer(Void).null
     # Returns `true` if there is a matching `Theme` in the tree that has a font item with the specified `name` and `theme_type`.
@@ -23252,14 +23793,17 @@ module Godot
       if @@mb_has_theme_font.null?
         @@mb_has_theme_font = Bridge.get_method_bind("Control", "has_theme_font", 866386512_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
-      val_1 = theme_type
-      arg_1 = pointerof(val_1).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
+      sn_1 = Bridge.make_string_name(theme_type)
+      arg_1 = sn_1
       args = [arg_0, arg_1]
       ret = 0_u8
       Bridge.ptrcall(@@mb_has_theme_font, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret != 0_u8
+    ensure
+      Bridge.free_string_name(sn_0)
+      Bridge.free_string_name(sn_1)
     end
     @@mb_has_theme_font_size : Void* = Pointer(Void).null
     # Returns `true` if there is a matching `Theme` in the tree that has a font size item with the specified `name` and `theme_type`.
@@ -23268,14 +23812,17 @@ module Godot
       if @@mb_has_theme_font_size.null?
         @@mb_has_theme_font_size = Bridge.get_method_bind("Control", "has_theme_font_size", 866386512_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
-      val_1 = theme_type
-      arg_1 = pointerof(val_1).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
+      sn_1 = Bridge.make_string_name(theme_type)
+      arg_1 = sn_1
       args = [arg_0, arg_1]
       ret = 0_u8
       Bridge.ptrcall(@@mb_has_theme_font_size, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret != 0_u8
+    ensure
+      Bridge.free_string_name(sn_0)
+      Bridge.free_string_name(sn_1)
     end
     @@mb_has_theme_color : Void* = Pointer(Void).null
     # Returns `true` if there is a matching `Theme` in the tree that has a color item with the specified `name` and `theme_type`.
@@ -23284,14 +23831,17 @@ module Godot
       if @@mb_has_theme_color.null?
         @@mb_has_theme_color = Bridge.get_method_bind("Control", "has_theme_color", 866386512_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
-      val_1 = theme_type
-      arg_1 = pointerof(val_1).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
+      sn_1 = Bridge.make_string_name(theme_type)
+      arg_1 = sn_1
       args = [arg_0, arg_1]
       ret = 0_u8
       Bridge.ptrcall(@@mb_has_theme_color, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret != 0_u8
+    ensure
+      Bridge.free_string_name(sn_0)
+      Bridge.free_string_name(sn_1)
     end
     @@mb_has_theme_constant : Void* = Pointer(Void).null
     # Returns `true` if there is a matching `Theme` in the tree that has a constant item with the specified `name` and `theme_type`.
@@ -23300,14 +23850,17 @@ module Godot
       if @@mb_has_theme_constant.null?
         @@mb_has_theme_constant = Bridge.get_method_bind("Control", "has_theme_constant", 866386512_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
-      val_1 = theme_type
-      arg_1 = pointerof(val_1).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
+      sn_1 = Bridge.make_string_name(theme_type)
+      arg_1 = sn_1
       args = [arg_0, arg_1]
       ret = 0_u8
       Bridge.ptrcall(@@mb_has_theme_constant, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret != 0_u8
+    ensure
+      Bridge.free_string_name(sn_0)
+      Bridge.free_string_name(sn_1)
     end
     @@mb_get_theme_default_base_scale : Void* = Pointer(Void).null
     # Returns the default base scale value from the first matching `Theme` in the tree if that `Theme` has a valid `Theme.default_base_scale` value.
@@ -23414,10 +23967,12 @@ module Godot
       if @@mb_set_tooltip_text.null?
         @@mb_set_tooltip_text = Bridge.get_method_bind("Control", "set_tooltip_text", 83702148_i64)
       end
-      val_0 = hint
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(hint)
+      arg_0 = str_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_tooltip_text, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_get_tooltip_text : Void* = Pointer(Void).null
     def get_tooltip_text() : String
@@ -23444,10 +23999,12 @@ module Godot
       if @@mb_set_translation_context.null?
         @@mb_set_translation_context = Bridge.get_method_bind("Control", "set_translation_context", 3304788590_i64)
       end
-      val_0 = context
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(context)
+      arg_0 = sn_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_translation_context, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_get_translation_context : Void* = Pointer(Void).null
     def get_translation_context() : String
@@ -23589,10 +24146,12 @@ module Godot
       if @@mb_set_accessibility_name.null?
         @@mb_set_accessibility_name = Bridge.get_method_bind("Control", "set_accessibility_name", 83702148_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(name)
+      arg_0 = str_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_accessibility_name, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_get_accessibility_name : Void* = Pointer(Void).null
     def get_accessibility_name() : String
@@ -23606,10 +24165,12 @@ module Godot
       if @@mb_set_accessibility_description.null?
         @@mb_set_accessibility_description = Bridge.get_method_bind("Control", "set_accessibility_description", 83702148_i64)
       end
-      val_0 = description
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(description)
+      arg_0 = str_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_accessibility_description, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_get_accessibility_description : Void* = Pointer(Void).null
     def get_accessibility_description() : String
@@ -24876,10 +25437,12 @@ module Godot
       if @@mb_set_sidechain.null?
         @@mb_set_sidechain = Bridge.get_method_bind("AudioEffectCompressor", "set_sidechain", 3304788590_i64)
       end
-      val_0 = sidechain
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(sidechain)
+      arg_0 = sn_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_sidechain, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_get_sidechain : Void* = Pointer(Void).null
     def get_sidechain() : String
@@ -26362,10 +26925,12 @@ module Godot
       end
       val_0 = bus_idx
       arg_0 = pointerof(val_0).as(Void*)
-      val_1 = name
-      arg_1 = pointerof(val_1).as(Void*)
+      str_1 = Bridge.make_string(name)
+      arg_1 = str_1
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_set_bus_name, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_1)
     end
     @@mb_get_bus_name : Void* = Pointer(Void).null
     # Returns the name of the bus with the index `bus_idx`.
@@ -26384,12 +26949,14 @@ module Godot
       if @@mb_get_bus_index.null?
         @@mb_get_bus_index = Bridge.get_method_bind("AudioServer", "get_bus_index", 2458036349_i64)
       end
-      val_0 = bus_name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(bus_name)
+      arg_0 = sn_0
       args = [arg_0]
       ret = 0_i64
       Bridge.ptrcall(@@mb_get_bus_index, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_get_bus_channels : Void* = Pointer(Void).null
     # Returns the number of channels of the bus at index `bus_idx`.
@@ -26466,10 +27033,12 @@ module Godot
       end
       val_0 = bus_idx
       arg_0 = pointerof(val_0).as(Void*)
-      val_1 = send
-      arg_1 = pointerof(val_1).as(Void*)
+      sn_1 = Bridge.make_string_name(send)
+      arg_1 = sn_1
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_set_bus_send, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_1)
     end
     @@mb_get_bus_send : Void* = Pointer(Void).null
     # Returns the name of the bus that the bus at index `bus_idx` sends to.
@@ -26804,10 +27373,12 @@ module Godot
       if @@mb_set_output_device.null?
         @@mb_set_output_device = Bridge.get_method_bind("AudioServer", "set_output_device", 83702148_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(name)
+      arg_0 = str_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_output_device, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_get_time_to_next_mix : Void* = Pointer(Void).null
     # Returns the relative time until the next mix occurs, in seconds.
@@ -26863,10 +27434,12 @@ module Godot
       if @@mb_set_input_device.null?
         @@mb_set_input_device = Bridge.get_method_bind("AudioServer", "set_input_device", 83702148_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(name)
+      arg_0 = str_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_input_device, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_set_input_device_active : Void* = Pointer(Void).null
     # If `active` is `true`, starts the microphone input stream specified by `input_device` or returns an error if it failed.
@@ -27450,10 +28023,12 @@ module Godot
       end
       val_0 = clip_index
       arg_0 = pointerof(val_0).as(Void*)
-      val_1 = name
-      arg_1 = pointerof(val_1).as(Void*)
+      sn_1 = Bridge.make_string_name(name)
+      arg_1 = sn_1
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_set_clip_name, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_1)
     end
     @@mb_get_clip_name : Void* = Pointer(Void).null
     # Return the name of a clip.
@@ -27749,12 +28324,14 @@ module Godot
       if @@mb_load_from_file.null?
         @@mb_load_from_file = Bridge.get_method_bind("AudioStreamMP3", "load_from_file", 4238362998_i64)
       end
-      val_0 = path
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(path)
+      arg_0 = str_0
       args = [arg_0]
       ret_ptr = Pointer(Void).null
       Bridge.ptrcall(@@mb_load_from_file, @pointer, args.to_unsafe.as(Void**), pointerof(ret_ptr).as(Void*))
       AudioStreamMP3.new(ret_ptr)
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_set_data : Void* = Pointer(Void).null
     def set_data(data : Void*) : Void
@@ -27907,12 +28484,14 @@ module Godot
       if @@mb_load_from_file.null?
         @@mb_load_from_file = Bridge.get_method_bind("AudioStreamOggVorbis", "load_from_file", 797568536_i64)
       end
-      val_0 = path
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(path)
+      arg_0 = str_0
       args = [arg_0]
       ret_ptr = Pointer(Void).null
       Bridge.ptrcall(@@mb_load_from_file, @pointer, args.to_unsafe.as(Void**), pointerof(ret_ptr).as(Void*))
       AudioStreamOggVorbis.new(ret_ptr)
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_set_packet_sequence : Void* = Pointer(Void).null
     def set_packet_sequence(packet_sequence : OggPacketSequence) : Void
@@ -28061,10 +28640,12 @@ module Godot
       if @@mb_switch_to_clip_by_name.null?
         @@mb_switch_to_clip_by_name = Bridge.get_method_bind("AudioStreamPlaybackInteractive", "switch_to_clip_by_name", 3304788590_i64)
       end
-      val_0 = clip_name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(clip_name)
+      arg_0 = sn_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_switch_to_clip_by_name, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_switch_to_clip : Void* = Pointer(Void).null
     # Switch to a clip (by index).
@@ -28137,12 +28718,14 @@ module Godot
       arg_3 = pointerof(val_3).as(Void*)
       val_4 = playback_type
       arg_4 = pointerof(val_4).as(Void*)
-      val_5 = bus
-      arg_5 = pointerof(val_5).as(Void*)
+      sn_5 = Bridge.make_string_name(bus)
+      arg_5 = sn_5
       args = [arg_0, arg_1, arg_2, arg_3, arg_4, arg_5]
       ret = 0_i64
       Bridge.ptrcall(@@mb_play_stream, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret
+    ensure
+      Bridge.free_string_name(sn_5)
     end
     @@mb_set_stream_volume : Void* = Pointer(Void).null
     # Change the stream volume (in db). The `stream` argument is an integer ID returned by `#play_stream`.
@@ -28349,10 +28932,12 @@ module Godot
       if @@mb_set_bus.null?
         @@mb_set_bus = Bridge.get_method_bind("AudioStreamPlayer", "set_bus", 3304788590_i64)
       end
-      val_0 = bus
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(bus)
+      arg_0 = sn_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_bus, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_get_bus : Void* = Pointer(Void).null
     def get_bus() : String
@@ -28627,10 +29212,12 @@ module Godot
       if @@mb_set_bus.null?
         @@mb_set_bus = Bridge.get_method_bind("AudioStreamPlayer2D", "set_bus", 3304788590_i64)
       end
-      val_0 = bus
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(bus)
+      arg_0 = sn_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_bus, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_get_bus : Void* = Pointer(Void).null
     def get_bus() : String
@@ -29011,10 +29598,12 @@ module Godot
       if @@mb_set_bus.null?
         @@mb_set_bus = Bridge.get_method_bind("AudioStreamPlayer3D", "set_bus", 3304788590_i64)
       end
-      val_0 = bus
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(bus)
+      arg_0 = sn_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_bus, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_get_bus : Void* = Pointer(Void).null
     def get_bus() : String
@@ -29806,14 +30395,16 @@ module Godot
       if @@mb_load_from_file.null?
         @@mb_load_from_file = Bridge.get_method_bind("AudioStreamWAV", "load_from_file", 4015802384_i64)
       end
-      val_0 = path
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(path)
+      arg_0 = str_0
       val_1 = options
       arg_1 = pointerof(val_1).as(Void*)
       args = [arg_0, arg_1]
       ret_ptr = Pointer(Void).null
       Bridge.ptrcall(@@mb_load_from_file, @pointer, args.to_unsafe.as(Void**), pointerof(ret_ptr).as(Void*))
       AudioStreamWAV.new(ret_ptr)
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_set_data : Void* = Pointer(Void).null
     def set_data(data : Void*) : Void
@@ -29974,12 +30565,14 @@ module Godot
       if @@mb_save_to_wav.null?
         @@mb_save_to_wav = Bridge.get_method_bind("AudioStreamWAV", "save_to_wav", 166001499_i64)
       end
-      val_0 = path
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(path)
+      arg_0 = str_0
       args = [arg_0]
       ret = 0_i64
       Bridge.ptrcall(@@mb_save_to_wav, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret
+    ensure
+      Bridge.free_string(str_0)
     end
   end
   # Abstract class for all Tweeners used by `Tween`.
@@ -32401,10 +32994,12 @@ module Godot
       if @@mb_set_bone_name.null?
         @@mb_set_bone_name = Bridge.get_method_bind("BoneAttachment3D", "set_bone_name", 83702148_i64)
       end
-      val_0 = bone_name
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(bone_name)
+      arg_0 = str_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_bone_name, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_get_bone_name : Void* = Pointer(Void).null
     def get_bone_name() : String
@@ -32532,10 +33127,12 @@ module Godot
       if @@mb_get_skeleton_bone_name.null?
         @@mb_get_skeleton_bone_name = Bridge.get_method_bind("BoneMap", "get_skeleton_bone_name", 1965194235_i64)
       end
-      val_0 = profile_bone_name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(profile_bone_name)
+      arg_0 = sn_0
       args = [arg_0]
       ""
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_set_skeleton_bone_name : Void* = Pointer(Void).null
     # Maps a skeleton bone name to `profile_bone_name`.
@@ -32544,12 +33141,15 @@ module Godot
       if @@mb_set_skeleton_bone_name.null?
         @@mb_set_skeleton_bone_name = Bridge.get_method_bind("BoneMap", "set_skeleton_bone_name", 3740211285_i64)
       end
-      val_0 = profile_bone_name
-      arg_0 = pointerof(val_0).as(Void*)
-      val_1 = skeleton_bone_name
-      arg_1 = pointerof(val_1).as(Void*)
+      sn_0 = Bridge.make_string_name(profile_bone_name)
+      arg_0 = sn_0
+      sn_1 = Bridge.make_string_name(skeleton_bone_name)
+      arg_1 = sn_1
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_set_skeleton_bone_name, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
+      Bridge.free_string_name(sn_1)
     end
     @@mb_find_profile_bone_name : Void* = Pointer(Void).null
     # Returns a profile bone name having `skeleton_bone_name`. If not found, an empty `StringName` will be returned.
@@ -32558,10 +33158,12 @@ module Godot
       if @@mb_find_profile_bone_name.null?
         @@mb_find_profile_bone_name = Bridge.get_method_bind("BoneMap", "find_profile_bone_name", 1965194235_i64)
       end
-      val_0 = skeleton_bone_name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(skeleton_bone_name)
+      arg_0 = sn_0
       args = [arg_0]
       ""
+    ensure
+      Bridge.free_string_name(sn_0)
     end
   end
   # Inputs a scale and converts it to the position of a child bone.
@@ -32599,10 +33201,12 @@ module Godot
       end
       val_0 = index
       arg_0 = pointerof(val_0).as(Void*)
-      val_1 = bone_name
-      arg_1 = pointerof(val_1).as(Void*)
+      sn_1 = Bridge.make_string_name(bone_name)
+      arg_1 = sn_1
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_set_bone_name, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_1)
     end
     @@mb_get_bone_name : Void* = Pointer(Void).null
     # Returns the scaled bone name of the setting at `index`.
@@ -32791,10 +33395,12 @@ module Godot
       end
       val_0 = index
       arg_0 = pointerof(val_0).as(Void*)
-      val_1 = bone_name
-      arg_1 = pointerof(val_1).as(Void*)
+      str_1 = Bridge.make_string(bone_name)
+      arg_1 = str_1
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_set_root_bone_name, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_1)
     end
     @@mb_get_root_bone_name : Void* = Pointer(Void).null
     # Returns the root bone name of the bone chain.
@@ -32842,10 +33448,12 @@ module Godot
       end
       val_0 = index
       arg_0 = pointerof(val_0).as(Void*)
-      val_1 = bone_name
-      arg_1 = pointerof(val_1).as(Void*)
+      str_1 = Bridge.make_string(bone_name)
+      arg_1 = str_1
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_set_end_bone_name, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_1)
     end
     @@mb_get_end_bone_name : Void* = Pointer(Void).null
     # Returns the end bone name of the bone chain.
@@ -33632,10 +34240,12 @@ module Godot
       if @@mb_set_text.null?
         @@mb_set_text = Bridge.get_method_bind("Button", "set_text", 83702148_i64)
       end
-      val_0 = text
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(text)
+      arg_0 = str_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_text, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_get_text : Void* = Pointer(Void).null
     def get_text() : String
@@ -33725,10 +34335,12 @@ module Godot
       if @@mb_set_language.null?
         @@mb_set_language = Bridge.get_method_bind("Button", "set_language", 83702148_i64)
       end
-      val_0 = language
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(language)
+      arg_0 = str_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_language, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_get_language : Void* = Pointer(Void).null
     def get_language() : String
@@ -33999,10 +34611,12 @@ module Godot
       end
       val_0 = index
       arg_0 = pointerof(val_0).as(Void*)
-      val_1 = bone_name
-      arg_1 = pointerof(val_1).as(Void*)
+      str_1 = Bridge.make_string(bone_name)
+      arg_1 = str_1
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_set_root_bone_name, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_1)
     end
     @@mb_get_root_bone_name : Void* = Pointer(Void).null
     # Returns the root bone name of the bone chain.
@@ -34050,10 +34664,12 @@ module Godot
       end
       val_0 = index
       arg_0 = pointerof(val_0).as(Void*)
-      val_1 = bone_name
-      arg_1 = pointerof(val_1).as(Void*)
+      str_1 = Bridge.make_string(bone_name)
+      arg_1 = str_1
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_set_end_bone_name, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_1)
     end
     @@mb_get_end_bone_name : Void* = Pointer(Void).null
     # Returns the end bone name of the bone chain.

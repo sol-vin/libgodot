@@ -118,6 +118,7 @@ module Godot
           user_profile = ENV["USERPROFILE"]? || ""
           local_app_data = ENV["LOCALAPPDATA"]? || ""
           candidates = [
+            "C:\\ProgramData\\llvm\\bin\\lldb.exe",
             File.join(user_profile, "scoop", "apps", "llvm", "current", "bin", "lldb.exe"),
             "C:\\Program Files\\LLVM\\bin\\lldb.exe",
             "C:\\Program Files (x86)\\LLVM\\bin\\lldb.exe",

@@ -3,15 +3,54 @@ module Godot
   @[Tool]
   node ResourceFormatLoaderCrystal < ResourceFormatLoader do
     @@instance : ResourceFormatLoaderCrystal? = nil
+    @@registered : Bool = false
+
+    def self.ensure_registered : Void
+      return if @@registered
+      if Bridge.is_loader_registered?
+        return
+      end
+      rl_ptr = Bridge.get_singleton("ResourceLoader")
+      return if rl_ptr.null?
+      r_loader = Godot::ResourceLoader.new(rl_ptr)
+      if r_loader.call_str("get_resource_type", "test.cr") == "CrystalScript"
+        Bridge.set_loader_registered(true)
+        return
+      end
+      if loader = Godot.create(Godot::ResourceFormatLoaderCrystal)
+        @@instance = loader
+        r_loader.call("add_resource_format_loader", loader, true)
+        Bridge.set_loader_registered(true)
+        @@registered = true
+      end
+    end
+
+    def self.unregister : Void
+      return unless @@registered
+      return unless (loader = @@instance) && !loader.pointer.null?
+      rl_ptr = Bridge.get_singleton("ResourceLoader")
+      unless rl_ptr.null?
+        r_loader = Godot::ResourceLoader.new(rl_ptr)
+        begin
+          r_loader.call("remove_resource_format_loader", loader)
+        rescue
+        end
+      end
+      Bridge.set_loader_registered(false)
+      @@instance = nil
+      @@registered = false
+    end
 
     def self.instance : ResourceFormatLoaderCrystal
-      @@instance ||= new
+      if inst = @@instance
+        return inst
+      end
+      ensure_registered
+      @@instance || new
     end
 
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
-      init_ref
-      @@instance = self
     end
 
     def self.clear_instance : Void
@@ -64,7 +103,8 @@ module Godot
     end
 
     def self._godot_has_virtual_method(method_name : String) : Bool
-      case method_name
+      norm = method_name.starts_with?('_') ? method_name : "_#{method_name}"
+      case norm
       when "_get_recognized_extensions", "_recognize_path", "_handles_type", "_get_resource_type", "_load"
         true
       else
@@ -73,7 +113,8 @@ module Godot
     end
 
     def _godot_call_virtual_with_data(method_name : String, args : Void**, ret : Void*) : Void
-      case method_name
+      norm = method_name.starts_with?('_') ? method_name : "_#{method_name}"
+      case norm
       when "_get_recognized_extensions"
         Bridge.ret_packed_string_array(ret, ["cr"])
       when "_recognize_path"
@@ -113,15 +154,50 @@ module Godot
   @[Tool]
   node ResourceFormatSaverCrystal < ResourceFormatSaver do
     @@instance : ResourceFormatSaverCrystal? = nil
+    @@registered : Bool = false
+
+    def self.ensure_registered : Void
+      return if @@registered
+      if Bridge.is_saver_registered?
+        return
+      end
+      rs_ptr = Bridge.get_singleton("ResourceSaver")
+      return if rs_ptr.null?
+      if saver = Godot.create(Godot::ResourceFormatSaverCrystal)
+        @@instance = saver
+        r_saver = Godot::ResourceSaver.new(rs_ptr)
+        r_saver.call("add_resource_format_saver", saver, true)
+        Bridge.set_saver_registered(true)
+        @@registered = true
+      end
+    end
+
+    def self.unregister : Void
+      return unless @@registered
+      return unless (saver = @@instance) && !saver.pointer.null?
+      rs_ptr = Bridge.get_singleton("ResourceSaver")
+      unless rs_ptr.null?
+        r_saver = Godot::ResourceSaver.new(rs_ptr)
+        begin
+          r_saver.call("remove_resource_format_saver", saver)
+        rescue
+        end
+      end
+      Bridge.set_saver_registered(false)
+      @@instance = nil
+      @@registered = false
+    end
 
     def self.instance : ResourceFormatSaverCrystal
-      @@instance ||= new
+      if inst = @@instance
+        return inst
+      end
+      ensure_registered
+      @@instance || new
     end
 
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
-      init_ref
-      @@instance = self
     end
 
     def self.clear_instance : Void
@@ -161,7 +237,8 @@ module Godot
     end
 
     def self._godot_has_virtual_method(method_name : String) : Bool
-      case method_name
+      norm = method_name.starts_with?('_') ? method_name : "_#{method_name}"
+      case norm
       when "_recognize", "_get_recognized_extensions", "_save"
         true
       else
@@ -170,7 +247,8 @@ module Godot
     end
 
     def _godot_call_virtual_with_data(method_name : String, args : Void**, ret : Void*) : Void
-      case method_name
+      norm = method_name.starts_with?('_') ? method_name : "_#{method_name}"
+      case norm
       when "_recognize"
         res_ptr = args[0].as(Void**).value
         recognize = false

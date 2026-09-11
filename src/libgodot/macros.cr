@@ -203,6 +203,9 @@ annotation Abstract; end
 # Configures GDExtension library unloading behavior.
 annotation StaticUnload; end
 
+# Explicitly sets the source script path for editor script linking.
+annotation ScriptPath; end
+
 # Automatically initializes a node property when `_ready` is called by querying the scene tree.
 #
 # ```crystal
@@ -330,6 +333,7 @@ module Godot
       property is_abstract : Bool
       property rpc_methods : Array(NamedTuple(name: String, rpc_mode: Int32, transfer_mode: Int32, call_local: Bool, channel: Int32))
       property has_virtual_proc : (String -> Bool)? = nil
+      property script_path : String = ""
 
       def has_virtual_method?(name : String) : Bool
         if proc = @has_virtual_proc
@@ -354,12 +358,36 @@ module Godot
         @is_abstract : Bool = false,
         @rpc_methods : Array(NamedTuple(name: String, rpc_mode: Int32, transfer_mode: Int32, call_local: Bool, channel: Int32)) = [] of NamedTuple(name: String, rpc_mode: Int32, transfer_mode: Int32, call_local: Bool, channel: Int32),
         @has_virtual_proc : (String -> Bool)? = nil,
-        @constants : Array(ConstantInfo) = [] of ConstantInfo
+        @constants : Array(ConstantInfo) = [] of ConstantInfo,
+        @script_path : String = ""
       )
       end
     end
 
     class_getter entries = Array(Entry).new
+    @@script_cache = Hash(String, CrystalScript).new
+
+    def self.get_or_load_script(path : String, class_name : String, base_type : String = "Node", is_tool : Bool = false) : CrystalScript?
+      return nil if path.empty? || path == "res://" || path == "res:///"
+      if script = @@script_cache[path]?
+        return script
+      end
+      source = ""
+      fs_path = path.starts_with?("res://") ? path.sub("res://", "") : path
+      if File.exists?(fs_path)
+        source = File.read(fs_path) rescue ""
+      end
+      script = Godot.create(Godot::CrystalScript)
+      return nil unless script
+      script.script_path = path
+      script.source_code = source
+      script.script_class_name = class_name
+      script.script_base_type = base_type
+      script.is_tool_script = is_tool
+      script.set_path_cache(path) rescue script.set_path(path) rescue script.call("set_path", path) rescue nil
+      @@script_cache[path] = script
+      script
+    end
 
     def self.register(entry : Entry)
       if parent = find(entry.parent_name)
@@ -426,6 +454,7 @@ macro node(decl, &block)
     is_abstract_class = false
     is_static_unload = false
     class_icon_path = ""
+    script_path_override = ""
     props = [] of Nil
     sigs = [] of Nil
     methods_doc = [] of Nil
@@ -616,9 +645,12 @@ macro node(decl, &block)
           {% is_tool_class = true %}
         {% elsif s_stripped.starts_with?("@[StaticUnload]") %}
           {% is_static_unload = true %}
+        {% elsif s_stripped.starts_with?("@[ScriptPath(") %}
+          {% script_path_override = s_stripped.gsub(/^@\[ScriptPath\(\"/, "").gsub(/\"\)\].*/, "") %}
         {% elsif !s_stripped.starts_with?("@") && !s_stripped.empty? %}
           {% comment_accum = "" %}
           {% class_icon_path = "" %}
+          {% script_path_override = "" %}
           {% is_abstract_class = false %}
           {% is_tool_class = false %}
           {% is_static_unload = false %}
@@ -685,6 +717,8 @@ macro node(decl, &block)
           {% is_abstract_class = true %}
         {% elsif anno_name == "StaticUnload" %}
           {% is_static_unload = true %}
+        {% elsif anno_name == "ScriptPath" %}
+          {% script_path_override = stmt.args[0].stringify %}
         {% elsif anno_name == "ExportCategory" %}
           {% cat_name = stmt.args[0].is_a?(StringLiteral) ? stmt.args[0] : stmt.args[0].id.stringify %}
           {% props << {:category, cat_name, ""} %}
@@ -943,11 +977,14 @@ macro node(decl, &block)
     end
 
     def self._godot_has_virtual_method(method_name : String) : Bool
-      case method_name
+      norm = method_name.starts_with?('_') ? method_name : "_#{method_name}"
+      case norm
+      when "_enter_tree"
+        return true
       {% for item_entry in stmts_items %}
         {% if item_entry[0] == :stmt %}
           {% stmt = item_entry[1] %}
-          {% if stmt.is_a?(Def) && stmt.name.stringify.starts_with?("_") %}
+          {% if stmt.is_a?(Def) && stmt.name.stringify.starts_with?("_") && stmt.name.stringify != "_enter_tree" %}
           when {{stmt.name.stringify}}
             return true
           {% end %}
@@ -984,10 +1021,13 @@ macro node(decl, &block)
 
     def _godot_call_virtual(method_name : String, delta : Float64) : Void
       case method_name
-      {% if has_enter_tree %}
       when "_enter_tree"
+        {% unless base_godot_name.stringify.includes?("Script") || base_godot_name.stringify.includes?("Plugin") || class_name.stringify.includes?("Script") || class_name.stringify.includes?("Plugin") %}
+        link_class_script if ::Godot.editor_hint?
+        {% end %}
+        {% if has_enter_tree %}
         _enter_tree if responds_to?(:_enter_tree)
-      {% end %}
+        {% end %}
       {% if has_exit_tree %}
       when "_exit_tree"
         _exit_tree if responds_to?(:_exit_tree)
@@ -1588,6 +1628,12 @@ macro node(decl, &block)
     signals_{{class_name}} << ::Godot::SignalInfo.new("{{sig_name.id}}", args_{{sig_name.id}})
   {% end %}
 
+  {% if script_path_override && !script_path_override.empty? %}
+    script_path_{{class_name}} = {{script_path_override}}
+  {% else %}
+    script_path_{{class_name}} = ::Godot.to_godot_res_path({{src_file}})
+  {% end %}
+
   ::Godot::ClassRegistry.register(
     ::Godot::ClassRegistry::Entry.new(
       "{{class_name}}",
@@ -1617,7 +1663,8 @@ macro node(decl, &block)
         ([] of NamedTuple(name: String, rpc_mode: Int32, transfer_mode: Int32, call_local: Bool, channel: Int32)),
       {% end %}
       has_virtual_proc: ->(m : String) { {{class_name}}._godot_has_virtual_method(m) },
-      constants: constants_{{class_name}}
+      constants: constants_{{class_name}},
+      script_path: script_path_{{class_name}}
     )
   )
 

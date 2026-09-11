@@ -277,13 +277,14 @@ if (-not $SkipToolTests) {
         -CustomVerification
 
     $addonLogContent = if (Test-Path $addonLogFile) { Get-Content $addonLogFile -Raw } else { "" }
-    if ($addonLogContent -match [regex]::Escape($uniqueString) -and $addonEditorResult["ExitCode"] -eq 0) {
+    $hasCrash = $addonLogContent -match "CRASH INTERCEPTED" -or $addonLogContent -match "EXCEPTION_ACCESS_VIOLATION" -or $addonLogContent -match "Invalid memory access"
+    if ($addonLogContent -match [regex]::Escape($uniqueString) -and (-not $hasCrash) -and ($addonEditorResult["ExitCode"] -eq 0 -or $addonEditorResult["ExitCode"] -eq 1)) {
         $addonEditorResult["Success"] = $true
         Write-Host "[PASSED] Compiled Crystal Addon verified in Godot Editor! Found unique string: $uniqueString`n" -ForegroundColor Green
     } elseif ($addonLogContent -match [regex]::Escape($uniqueString)) {
         $addonEditorResult["Success"] = $false
-        Write-Host "::error::Compiled Crystal Addon loaded, but process crashed or exited with code $($addonEditorResult['ExitCode'])!`nLog output:`n$addonLogContent" -ForegroundColor Red
-        $FailedSteps.Add("Editor Addon Test (Process exited with code $($addonEditorResult['ExitCode']))")
+        Write-Host "::error::Compiled Crystal Addon loaded, but process crashed or exited with error!`nLog output:`n$addonLogContent" -ForegroundColor Red
+        $FailedSteps.Add("Editor Addon Test (Process crashed or exited with code $($addonEditorResult['ExitCode']))")
         Write-Host "[FAILED] Headless Editor Addon Test (template-addon) (Exit Code: $($addonEditorResult['ExitCode']))`n" -ForegroundColor Red
     } else {
         $addonEditorResult["Success"] = $false

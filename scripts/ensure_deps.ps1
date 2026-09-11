@@ -126,4 +126,33 @@ if ($onWindows) {
         }
     }
 }
+
+# 4. Ensure shard dependencies are installed for projects with shard.yml missing lib/
+$shardsCmd = Get-Command shards -ErrorAction SilentlyContinue
+if ($shardsCmd) {
+    $shardProjects = [System.Collections.Generic.List[string]]::new()
+    $shardProjects.Add((Join-Path $RootDir "template"))
+    $shardProjects.Add((Join-Path $RootDir "test"))
+    $shardProjects.Add((Join-Path $RootDir "template-addon"))
+    if (Test-Path (Join-Path $RootDir "examples")) {
+        Get-ChildItem -Path (Join-Path $RootDir "examples") -Directory | ForEach-Object {
+            $shardProjects.Add($_.FullName)
+        }
+    }
+
+    foreach ($proj in $shardProjects) {
+        $shardYml = Join-Path $proj "shard.yml"
+        $libDir = Join-Path $proj "lib"
+        if ((Test-Path $shardYml) -and (-not (Test-Path $libDir))) {
+            Push-Location $proj
+            try {
+                & $shardsCmd.Source install --skip-postinstall --skip-executables 2>&1 | Out-Null
+            } catch {}
+            finally {
+                Pop-Location
+            }
+        }
+    }
+}
+
 exit 0

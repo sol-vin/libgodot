@@ -46,7 +46,8 @@ module Godot
     }
 
     def self._godot_has_virtual_method(method_name : String) : Bool
-      case method_name
+      norm = method_name.starts_with?('_') ? method_name : "_#{method_name}"
+      case norm
       when "_get_name", "_get_supported_languages", "_get_line_syntax_highlighting",
            "_create", "_clear_highlighting_cache", "_update_cache"
         true
@@ -56,7 +57,8 @@ module Godot
     end
 
     def _godot_call_virtual_with_data(method_name : String, args : Void**, ret : Void*) : Void
-      case method_name
+      norm = method_name.starts_with?('_') ? method_name : "_#{method_name}"
+      case norm
       when "_get_name"
         Bridge.ret_string(ret, "Crystal")
       when "_get_supported_languages"

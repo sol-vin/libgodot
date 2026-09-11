@@ -324,6 +324,7 @@ def generate_class_code(io : IO, c : JSON::Any, keywords : Hash(String, String),
       io.puts "      end"
 
       # Prepare arguments for ptrcall
+      cleanups = [] of String
       args_expr = if args.empty?
         "Pointer(Pointer(Void)).null"
       else
@@ -331,9 +332,18 @@ def generate_class_code(io : IO, c : JSON::Any, keywords : Hash(String, String),
           raw_a_name = a["name"].as_s
           a_name = sanitize_name(raw_a_name, keywords)
           a_type = crystal_type_name(a["type"].as_s, type_map)
-          if class_names.includes?(a["type"].as_s) || a_type.starts_with?("Godot::") || ["Node", "Resource", "SceneTree", "Object", "Mesh"].includes?(a_type)
+          godot_type = a["type"].as_s
+          if class_names.includes?(godot_type) || a_type.starts_with?("Godot::") || ["Node", "Resource", "SceneTree", "Object", "Mesh"].includes?(a_type)
             io.puts "      arg_ptr_#{idx} = #{a_name} ? #{a_name}.pointer : Pointer(Void).null"
             io.puts "      arg_#{idx} = pointerof(arg_ptr_#{idx}).as(Void*)"
+          elsif godot_type == "String"
+            io.puts "      str_#{idx} = Bridge.make_string(#{a_name})"
+            io.puts "      arg_#{idx} = str_#{idx}"
+            cleanups << "Bridge.free_string(str_#{idx})"
+          elsif godot_type == "StringName"
+            io.puts "      sn_#{idx} = Bridge.make_string_name(#{a_name})"
+            io.puts "      arg_#{idx} = sn_#{idx}"
+            cleanups << "Bridge.free_string_name(sn_#{idx})"
           else
             io.puts "      val_#{idx} = #{a_name}"
             io.puts "      arg_#{idx} = pointerof(val_#{idx}).as(Void*)"
@@ -376,15 +386,30 @@ def generate_class_code(io : IO, c : JSON::Any, keywords : Hash(String, String),
         io.puts "      Bridge.ptrcall(@@mb_#{clean_var_name}, @pointer, #{args_expr}, pointerof(ret).as(Void*))"
         io.puts "      ret"
       elsif ret_type_crystal == "Void*" || ret_type_crystal == "Pointer(Void)"
-        io.puts "      ret_ptr = Pointer(Void).null"
-        io.puts "      Bridge.ptrcall(@@mb_#{clean_var_name}, @pointer, #{args_expr}, pointerof(ret_ptr).as(Void*))"
-        io.puts "      ret_ptr"
+        if ret_type_godot == "Variant"
+          io.puts "      ret_var = StaticArray(UInt8, 24).new(0_u8)"
+          io.puts "      Bridge.ptrcall(@@mb_#{clean_var_name}, @pointer, #{args_expr}, ret_var.to_unsafe.as(Void*))"
+          io.puts "      ret_ptr = Pointer(Void).null"
+          io.puts "      Bridge.type_from_variant(24, pointerof(ret_ptr).as(Void*), ret_var.to_unsafe.as(Void*))"
+          io.puts "      ret_ptr"
+        else
+          io.puts "      ret_ptr = Pointer(Void).null"
+          io.puts "      Bridge.ptrcall(@@mb_#{clean_var_name}, @pointer, #{args_expr}, pointerof(ret_ptr).as(Void*))"
+          io.puts "      ret_ptr"
+        end
       elsif ret_type_crystal == "String"
         io.puts "      \"\""
       else
         io.puts "      ret_ptr = Pointer(Void).null"
         io.puts "      Bridge.ptrcall(@@mb_#{clean_var_name}, @pointer, #{args_expr}, pointerof(ret_ptr).as(Void*))"
         io.puts "      #{ret_type_crystal}.new(ret_ptr)"
+      end
+
+      if !cleanups.empty?
+        io.puts "    ensure"
+        cleanups.each do |c|
+          io.puts "      #{c}"
+        end
       end
 
       io.puts "    end\n"

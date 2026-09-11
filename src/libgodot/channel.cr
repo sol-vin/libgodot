@@ -370,7 +370,7 @@ module Godot
     end
 
     def destroy : Void
-      @channel.destroy
+      close
     end
   end
 end

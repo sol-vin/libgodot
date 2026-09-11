@@ -85,6 +85,8 @@ module Godot
       get_singleton : (LibC::Char* -> Void*)
       make_string_name : (LibC::Char* -> Void*)
       free_string_name : (Void* -> Void)
+      make_string : (LibC::Char* -> Void*)
+      free_string : (Void* -> Void)
       type_from_variant : (Int32, Void*, Void* -> Void)
       variant_from_type : (Int32, Void*, Void* -> Void)
       log_print : (LibC::Char* -> Void)
@@ -125,10 +127,19 @@ module Godot
       ret_dictionary_validate : (Void*, UInt8 -> Void)
       ret_dictionary_complete_code : (Void* -> Void)
       ret_dictionary_lookup_code : (Void* -> Void)
+      ret_dictionary_global_class : (Void*, LibC::Char*, LibC::Char*, LibC::Char* -> Void)
+      placeholder_script_instance_create : (Void*, Void*, Void* -> Void*)
       text_edit_get_line : (Void*, Int64, LibC::Char*, Int32 -> Int32)
       object_connect_signal : (Void*, LibC::Char*, UInt32 -> Void)
       object_disconnect_signal : (Void*, LibC::Char* -> Void)
       register_signal_callback : ((UInt64, LibC::Char*, VariantArg*, Int32 -> Void) -> Void)
+      register_deinit_callback : ((-> Void) -> Void)
+      is_loader_registered : (-> Int32)
+      set_loader_registered : (Int32 -> Void)
+      is_saver_registered : (-> Int32)
+      set_saver_registered : (Int32 -> Void)
+      is_language_registered : (-> Int32)
+      set_language_registered : (Int32 -> Void)
     end
   end
 
@@ -156,6 +167,7 @@ module Godot
     @@alive_instances_by_ptr = Hash(Void*, Godot::Object).new
     @@alive_mutex = ::Thread::Mutex.new
     @@native_signal_cb : (UInt64, LibC::Char*, LibBridge::VariantArg*, Int32 -> Void)? = nil
+    @@native_deinit_cb : (-> Void)? = nil
 
     # Retrieves the active Crystal instance root table for testing and diagnostics
     def self.alive_instances : Hash(Void*, Godot::Object)
@@ -412,6 +424,35 @@ module Godot
         @@native_signal_cb = cb
         api.value.register_signal_callback.call(cb)
       end
+
+      # Register deinitialization callback so Godot cleanly unregisters language, loader, and saver
+      if !api.value.register_deinit_callback.pointer.null?
+        deinit_cb = ->{
+          Bridge.deinit
+        }
+        @@native_deinit_cb = deinit_cb
+        api.value.register_deinit_callback.call(deinit_cb)
+      end
+
+      # Early-register language, loader, and saver so Godot can load .cr files during editor layout restore
+      Godot::CrystalLanguage.ensure_registered
+      Godot::ResourceFormatLoaderCrystal.ensure_registered
+      Godot::ResourceFormatSaverCrystal.ensure_registered
+
+      # Ensure editor integration (toolbar button, panel, debugger) is active if running in editor
+      if Godot.editor_hint?
+        Godot::CrystalIntegrationPlugin.ensure_editor_setup rescue nil
+      end
+    end
+
+    def self.deinit : Void
+      Godot.print("[Bridge.deinit] Unregistering loader...")
+      Godot::ResourceFormatLoaderCrystal.unregister rescue nil
+      Godot.print("[Bridge.deinit] Unregistering saver...")
+      Godot::ResourceFormatSaverCrystal.unregister rescue nil
+      Godot.print("[Bridge.deinit] Unregistering language...")
+      Godot::CrystalLanguage.unregister rescue nil
+      Godot.print("[Bridge.deinit] Completed successfully!")
     end
 
     # Engine Logging Helpers
@@ -920,6 +961,16 @@ module Godot
       @@api.value.ret_string.call(ret, str.to_unsafe)
     end
 
+    def self.type_from_variant(type : Int32, dst : Void*, variant_ptr : Void*) : Void
+      return if @@api.null? || @@api.value.type_from_variant.pointer.null?
+      @@api.value.type_from_variant.call(type, dst, variant_ptr)
+    end
+
+    def self.variant_from_type(type : Int32, variant_ptr : Void*, src : Void*) : Void
+      return if @@api.null? || @@api.value.variant_from_type.pointer.null?
+      @@api.value.variant_from_type.call(type, variant_ptr, src)
+    end
+
     def self.ret_string_name(ret : Void*, str : String) : Void
       return if ret.null? || @@api.null? || @@api.value.ret_string_name.pointer.null?
       @@api.value.ret_string_name.call(ret, str.to_unsafe)
@@ -952,6 +1003,16 @@ module Godot
     def self.ret_dictionary_lookup_code(ret : Void*) : Void
       return if ret.null? || @@api.null? || @@api.value.ret_dictionary_lookup_code.pointer.null?
       @@api.value.ret_dictionary_lookup_code.call(ret)
+    end
+
+    def self.ret_dictionary_global_class(ret : Void*, class_name : String, base_type : String = "Node", icon_path : String = "") : Void
+      return if ret.null? || @@api.null? || @@api.value.ret_dictionary_global_class.pointer.null?
+      @@api.value.ret_dictionary_global_class.call(ret, class_name.to_unsafe, base_type.to_unsafe, icon_path.to_unsafe)
+    end
+
+    def self.placeholder_script_instance_create(language : Void*, script : Void*, owner : Void*) : Void*
+      return Pointer(Void).null if @@api.null? || @@api.value.placeholder_script_instance_create.pointer.null?
+      @@api.value.placeholder_script_instance_create.call(language, script, owner)
     end
 
     def self.text_edit_get_line(text_edit : Void*, line : Int64) : String
@@ -1003,6 +1064,56 @@ module Godot
       buf = Bytes.new(512)
       len = @@api.value.arg_to_string_name.call(arg_ptr, buf.to_unsafe.as(LibC::Char*), 512)
       len > 0 ? String.new(buf[0, len]) : ""
+    end
+
+    def self.make_string_name(str : String) : Void*
+      return Pointer(Void).null if @@api.null? || @@api.value.make_string_name.pointer.null?
+      @@api.value.make_string_name.call(str.to_unsafe)
+    end
+
+    def self.free_string_name(ptr : Void*?) : Void
+      return if ptr.nil? || ptr.null? || @@api.null? || @@api.value.free_string_name.pointer.null?
+      @@api.value.free_string_name.call(ptr)
+    end
+
+    def self.make_string(str : String) : Void*
+      return Pointer(Void).null if @@api.null? || @@api.value.make_string.pointer.null?
+      @@api.value.make_string.call(str.to_unsafe)
+    end
+
+    def self.free_string(ptr : Void*?) : Void
+      return if ptr.nil? || ptr.null? || @@api.null? || @@api.value.free_string.pointer.null?
+      @@api.value.free_string.call(ptr)
+    end
+
+    def self.is_loader_registered? : Bool
+      return false if @@api.null? || @@api.value.is_loader_registered.pointer.null?
+      @@api.value.is_loader_registered.call != 0
+    end
+
+    def self.set_loader_registered(registered : Bool) : Void
+      return if @@api.null? || @@api.value.set_loader_registered.pointer.null?
+      @@api.value.set_loader_registered.call(registered ? 1 : 0)
+    end
+
+    def self.is_saver_registered? : Bool
+      return false if @@api.null? || @@api.value.is_saver_registered.pointer.null?
+      @@api.value.is_saver_registered.call != 0
+    end
+
+    def self.set_saver_registered(registered : Bool) : Void
+      return if @@api.null? || @@api.value.set_saver_registered.pointer.null?
+      @@api.value.set_saver_registered.call(registered ? 1 : 0)
+    end
+
+    def self.is_language_registered? : Bool
+      return false if @@api.null? || @@api.value.is_language_registered.pointer.null?
+      @@api.value.is_language_registered.call != 0
+    end
+
+    def self.set_language_registered(registered : Bool) : Void
+      return if @@api.null? || @@api.value.set_language_registered.pointer.null?
+      @@api.value.set_language_registered.call(registered ? 1 : 0)
     end
   end
 end

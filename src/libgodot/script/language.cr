@@ -15,26 +15,98 @@ module Godot
   @[Tool]
   node CrystalLanguage < ScriptLanguageExtension do
     @@instance : CrystalLanguage? = nil
+    @@registered : Bool = false
+
+    def self.ensure_registered : Void
+      return if @@registered
+      if Bridge.is_language_registered?
+        return
+      end
+      eng_ptr = Bridge.get_singleton("Engine")
+      return if eng_ptr.null?
+      engine = Godot::Engine.new(eng_ptr)
+
+      # Clean up any leftover defunct language instances from previous loads
+      begin
+        count = engine.call_i64("get_script_language_count")
+        (count - 1).downto(0) do |i|
+          existing = engine.call_obj("get_script_language", i)
+          if existing && !existing.pointer.null?
+            cls = existing.call_str("get_class") rescue ""
+            if cls == "CrystalLanguage" || cls == "ScriptLanguageExtension"
+              lang_obj = Godot::ScriptLanguage.new(existing.pointer)
+              engine.unregister_script_language(lang_obj)
+              lang_obj.destroy rescue nil
+            end
+          end
+        end
+      rescue
+      end
+
+      if lang = Godot.create(Godot::CrystalLanguage)
+        @@instance = lang
+        engine.register_script_language(lang)
+        Bridge.set_language_registered(true)
+        @@registered = true
+      end
+    end
+
+    def self.unregister : Void
+      Godot.print("[CrystalLanguage.unregister] Entering, @@registered=#{@@registered}")
+      return unless @@registered
+      return unless (lang = @@instance) && !lang.pointer.null?
+      Godot.print("[CrystalLanguage.unregister] lang pointer=#{lang.pointer}")
+      eng_ptr = Bridge.get_singleton("Engine")
+      Godot.print("[CrystalLanguage.unregister] eng_ptr=#{eng_ptr}")
+      unless eng_ptr.null?
+        engine = Godot::Engine.new(eng_ptr)
+        begin
+          Godot.print("[CrystalLanguage.unregister] Calling engine.unregister_script_language...")
+          err = engine.unregister_script_language(lang)
+          Godot.print("[CrystalLanguage.unregister] unregister_script_language returned: #{err}")
+        rescue ex
+          Godot.print("[CrystalLanguage.unregister] Rescued error: #{ex.message}")
+        end
+      end
+      Bridge.set_language_registered(false)
+      @@instance = nil
+      @@registered = false
+      Godot.print("[CrystalLanguage.unregister] Done successfully.")
+    end
 
     def self.singleton_instance : CrystalLanguage
       if inst = @@instance
         return inst
       end
-      if created = Godot.create(Godot::CrystalLanguage)
-        @@instance = created
-        created
-      else
-        instance
+      ensure_registered
+      if inst = @@instance
+        return inst
       end
+      eng_ptr = Bridge.get_singleton("Engine")
+      if !eng_ptr.null?
+        engine = Godot::Engine.new(eng_ptr)
+        count = engine.call_i64("get_script_language_count") rescue 0_i64
+        count.times do |i|
+          lang_obj = engine.call_obj("get_script_language", i) rescue nil
+          if lang_obj && !lang_obj.pointer.null?
+            cls = lang_obj.call_str("get_class") rescue ""
+            if cls == "CrystalLanguage" || cls == "ScriptLanguageExtension"
+              inst = Godot::CrystalLanguage.new(lang_obj.pointer)
+              @@instance = inst
+              return inst
+            end
+          end
+        end
+      end
+      @@instance || new
     end
 
     def self.instance : CrystalLanguage
-      @@instance ||= new
+      singleton_instance
     end
 
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
-      @@instance = self
     end
 
     def get_name : String
@@ -70,6 +142,30 @@ module Godot
       ].includes?(kw)
     end
 
+    def _get_name : String
+      get_name
+    end
+
+    def _get_type : String
+      get_type
+    end
+
+    def _get_extension : String
+      get_extension
+    end
+
+    def _get_recognized_extensions : Array(String)
+      get_recognized_extensions
+    end
+
+    def _get_reserved_words : Array(String)
+      get_reserved_words
+    end
+
+    def _is_control_flow_keyword(kw : String) : Bool
+      is_control_flow_keyword(kw)
+    end
+
     def make_template(template : String, class_name : String, base_class_name : String) : String
       c_name = class_name.empty? ? "NewNode" : class_name
       b_name = base_class_name.empty? ? "Node" : base_class_name
@@ -94,7 +190,8 @@ module Godot
     end
 
     def self._godot_has_virtual_method(method_name : String) : Bool
-      case method_name
+      norm = method_name.starts_with?('_') ? method_name : "_#{method_name}"
+      case norm
       when "_init", "_finish", "_thread_enter", "_thread_exit", "_frame",
            "_get_name", "_get_type", "_get_extension", "_get_recognized_extensions",
            "_get_reserved_words", "_is_control_flow_keyword", "_get_comment_delimiters",
@@ -122,7 +219,8 @@ module Godot
     end
 
     def _godot_call_virtual_with_data(method_name : String, args : Void**, ret : Void*) : Void
-      case method_name
+      norm = method_name.starts_with?('_') ? method_name : "_#{method_name}"
+      case norm
       when "_init", "_finish", "_thread_enter", "_thread_exit", "_frame"
         # No-op void lifecycle hooks
         return
@@ -231,9 +329,24 @@ module Godot
         Bridge.ret_string(ret, auto_indent_code(code, from_line, to_line))
       when "_handles_global_class_type"
         t = Bridge.arg_to_string(args[0])
-        ret.as(UInt8*).value = (t == "CrystalScript") ? 1_u8 : 0_u8
+        ret.as(UInt8*).value = (t == "CrystalScript" || t == "Crystal") ? 1_u8 : 0_u8
       when "_get_global_class_name"
-        Bridge.ret_dictionary_empty(ret)
+        path = Bridge.arg_to_string(args[0])
+        normalized_path = path.starts_with?("res://") ? path : "res://#{path.lstrip('/')}"
+        entry = ClassRegistry.entries.find do |e|
+          e.script_path == path || e.script_path == normalized_path ||
+            (!e.script_path.empty? && (path.ends_with?(e.script_path.sub("res://", "")) || e.script_path.ends_with?(path.sub("res://", ""))))
+        end
+        if entry
+          Bridge.ret_dictionary_global_class(ret, entry.class_name, entry.parent_name, entry.icon_path)
+        else
+          c_name, b_type, icon_path = CrystalLanguage.inspect_file_global_class(path)
+          if !c_name.empty?
+            Bridge.ret_dictionary_global_class(ret, c_name, b_type, icon_path)
+          else
+            Bridge.ret_dictionary_empty(ret)
+          end
+        end
       when "_debug_get_error"
         Bridge.ret_string(ret, "")
       when "_debug_get_stack_level_count"
@@ -296,6 +409,30 @@ module Godot
       end
 
       result.join("\n")
+    end
+
+    def self.inspect_file_global_class(path : String) : Tuple(String, String, String)
+      fs_path = ResourceFormatSaverCrystal.resolve_save_path(path)
+      if fs_path.empty? || !File.exists?(fs_path)
+        fs_path = path.starts_with?("res://") ? path.sub("res://", "") : path
+      end
+      return {"", "", ""} unless File.exists?(fs_path)
+      content = File.read(fs_path) rescue ""
+      class_name = ""
+      base_type = "Node"
+      icon_path = ""
+      content.each_line do |line|
+        trimmed = line.strip
+        if trimmed =~ /@\[Icon\("([^"]+)"\)\]/
+          icon_path = $1
+        end
+        if trimmed =~ /(?:^|\s)node\s+([A-Za-z0-9_]+)(?:\s*<\s*([A-Za-z0-9_:]+))?(?:\s+do|\s*$)/
+          class_name = $1
+          base_type = $2 ? $2.split("::").last : "Node"
+          break
+        end
+      end
+      {class_name, base_type, icon_path}
     end
   end
 end

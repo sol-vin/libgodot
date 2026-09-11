@@ -20,6 +20,7 @@ module Godot
   # Emitted when the Crystal editor plugin finishes initialization
   signal ready_in_editor
 
+  @@instance : CrystalIntegrationPlugin? = nil
   @@crystal_language : CrystalLanguage? = nil
   @@crystal_highlighter : CrystalHighlighter? = nil
   @@resource_loader : ResourceFormatLoaderCrystal? = nil
@@ -28,8 +29,56 @@ module Godot
   @@crystal_panel : Node? = nil
   @@cached_icon_texture : Texture2D? = nil
   @@debugger_plugin : EditorDebuggerPlugin? = nil
+  @@editor_start_time : ::Time = ::Time.local
+  @@file_last_disk_mtime : Hash(String, ::Time) = Hash(String, ::Time).new
+  @@building : Bool = false
+  @@reload_pending : Bool = false
+
+  def self.building? : Bool
+    @@building
+  end
+
+  def self.reload_pending? : Bool
+    @@reload_pending
+  end
+
+  def self.reload_pending=(val : Bool) : Void
+    @@reload_pending = val
+  end
+
+  def initialize
+    super
+    @@instance = self
+  end
+
+  def self.has_editor_interface? : Bool
+    return false if Godot::Engine.singleton_ptr.null?
+    engine = Godot::Engine.new(Godot::Engine.singleton_ptr)
+    engine.has_singleton("EditorInterface")
+  end
+
+  # Ensures all editor integration components are active when running inside the Godot Editor.
+  # Safe to call both on startup and after GDExtension reloads.
+  def self.ensure_editor_setup : Void
+    return unless has_editor_interface?
+    return if Godot::EditorInterface.singleton_ptr.null?
+    ed_iface = Godot::EditorInterface.new(Godot::EditorInterface.singleton_ptr)
+    base_ctrl = ed_iface.get_base_control
+    return if base_ctrl.pointer.null?
+
+    if !Godot::DisplayServer.singleton_ptr.null?
+      ds = Godot::DisplayServer.new(Godot::DisplayServer.singleton_ptr)
+      return if ds.call_str("get_name") == "headless"
+    end
+
+    setup_toolbar_button
+    setup_main_screen_panel
+    setup_debugger_plugin
+    ensure_highlighter_registered
+  end
 
   def _enter_tree : Void
+    @@instance = self
     Godot.print("==================================================================")
     Godot.print("  [CrystalIntegrationPlugin] Native Crystal editor plugin loaded!")
     Godot.print("  LibGodot Version: #{::Godot::VERSION}")
@@ -57,38 +106,7 @@ module Godot
         end
       end
 
-      if lang = Godot.create(Godot::CrystalLanguage)
-        @@crystal_language = lang
-        engine = Godot::Engine.new(Godot::Engine.singleton_ptr)
-        engine.register_script_language(lang)
-      end
-
-      if highlighter = Godot.create(Godot::CrystalHighlighter)
-        @@crystal_highlighter = highlighter
-        if !Godot::EditorInterface.singleton_ptr.null?
-          ed_interface = Godot::EditorInterface.new(Godot::EditorInterface.singleton_ptr)
-          script_editor = ed_interface.get_script_editor
-          if !script_editor.pointer.null?
-            script_editor.register_syntax_highlighter(highlighter)
-            self.class.apply_highlighter_if_needed
-            script_editor.connect("editor_script_changed") do |_args|
-              self.class.apply_highlighter_if_needed
-            end
-          end
-        end
-      end
-
-      if loader = Godot.create(Godot::ResourceFormatLoaderCrystal)
-        @@resource_loader = loader
-        r_loader = Godot::ResourceLoader.new(Godot::ResourceLoader.singleton_ptr)
-        r_loader.add_resource_format_loader(loader, true)
-      end
-
-      if saver = Godot.create(Godot::ResourceFormatSaverCrystal)
-        @@resource_saver = saver
-        r_saver = Godot::ResourceSaver.new(Godot::ResourceSaver.singleton_ptr)
-        r_saver.add_resource_format_saver(saver, true)
-      end
+      self.class.ensure_highlighter_registered
 
       # Safe filesystem scan only if Godot is not already performing its startup scan
       if !Godot::EditorInterface.singleton_ptr.null?
@@ -100,9 +118,14 @@ module Godot
         end
       end
 
-      setup_toolbar_button
-      setup_main_screen_panel
-      setup_debugger_plugin
+      self.class.setup_toolbar_button
+      self.class.setup_main_screen_panel
+      self.class.setup_debugger_plugin
+
+      self.class.link_scripts_in_edited_scene
+      connect("scene_changed") do |_args|
+        self.class.link_scripts_in_edited_scene
+      end
 
       Godot.print("[CrystalIntegrationPlugin] First-class .cr script support, language, and syntax highlighter registered in 100% pure Crystal.")
     end
@@ -110,76 +133,95 @@ module Godot
     emit_ready_in_editor
   end
 
-  def _exit_tree : Void
-    if (highlighter = @@crystal_highlighter) && !Godot::EditorInterface.singleton_ptr.null?
-      ed_interface = Godot::EditorInterface.new(Godot::EditorInterface.singleton_ptr)
-      script_editor = ed_interface.get_script_editor
-      if !script_editor.pointer.null?
-        script_editor.unregister_syntax_highlighter(highlighter)
+  def self.cleanup : Void
+    if (highlighter = @@crystal_highlighter) && !highlighter.pointer.null?
+      if !Godot::EditorInterface.singleton_ptr.null?
+        begin
+          ed_interface = Godot::EditorInterface.new(Godot::EditorInterface.singleton_ptr)
+          script_editor = ed_interface.get_script_editor
+          if !script_editor.pointer.null?
+            script_editor.unregister_syntax_highlighter(highlighter) rescue nil
+          end
+        rescue
+        end
       end
-      highlighter.destroy
       @@crystal_highlighter = nil
     end
 
-    if loader = @@resource_loader
-      r_loader = Godot::ResourceLoader.new(Godot::ResourceLoader.singleton_ptr)
-      r_loader.remove_resource_format_loader(loader)
-      loader.destroy
-      @@resource_loader = nil
-      ResourceFormatLoaderCrystal.clear_instance
-    end
-
-    if saver = @@resource_saver
-      r_saver = Godot::ResourceSaver.new(Godot::ResourceSaver.singleton_ptr)
-      r_saver.remove_resource_format_saver(saver)
-      saver.destroy
-      @@resource_saver = nil
-      ResourceFormatSaverCrystal.clear_instance
-    end
-
-    if tex = @@cached_icon_texture
-      tex.destroy
-      @@cached_icon_texture = nil
-    end
-
-    if lang = @@crystal_language
-      engine = Godot::Engine.new(Godot::Engine.singleton_ptr)
-      engine.unregister_script_language(lang)
-      lang.destroy
-      @@crystal_language = nil
-    end
+    @@cached_icon_texture = nil
 
     if btn = @@compile_button
-      remove_control_from_container(Godot::EditorPlugin::CustomControlContainer::ContainerToolbar.value, btn)
-      if p = btn.call_obj("get_parent")
-        p.call("remove_child", btn)
+      if !btn.pointer.null?
+        if inst = @@instance
+          inst.remove_control_from_container(Godot::EditorPlugin::CustomControlContainer::ContainerToolbar.value, btn) rescue nil
+        end
+        btn.queue_free rescue nil
       end
-      btn.queue_free
       @@compile_button = nil
     end
 
     if dbg_plug = @@debugger_plugin
-      remove_debugger_plugin(dbg_plug)
+      if !dbg_plug.pointer.null?
+        begin
+          if inst = @@instance
+            inst.remove_debugger_plugin(dbg_plug) rescue nil
+          end
+        rescue
+        end
+      end
       @@debugger_plugin = nil
     end
 
     if panel = @@crystal_panel
-      dock = panel.call_obj("get_parent")
-      panel.call("queue_free")
-      @@crystal_panel = nil
-      if dock && !dock.pointer.null? && dock.call_str("get_class") == "EditorDock"
-        dock.call("queue_free")
+      if !panel.pointer.null?
+        panel.queue_free rescue nil
       end
+      @@crystal_panel = nil
     end
 
+    if dlg = @@error_dialog
+      if !dlg.pointer.null?
+        dlg.queue_free rescue nil
+      end
+      @@error_dialog = nil
+    end
+
+    @@building = false
+    @@reload_pending = false
+  end
+
+  def _exit_tree : Void
+    self.class.cleanup
+    @@instance = nil
     Godot.print("  [CrystalIntegrationPlugin] Native Crystal editor plugin unloaded.")
   end
 
   CRYSTAL_ICON_SVG = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 193.2 206.7' width='16' height='16'><path fill='#e0e0e0' d='m165.4 122-50 49.9c-.2.2-.5.3-.7.2l-68.3-18.3c-.3-.1-.5-.3-.5-.5L27.5 85.1c-.1-.3 0-.5.2-.7l50-49.9c.2-.2.5-.3.7-.2l68.3 18.3c.3.1.5.3.5.5l18.3 68.2c.2.3.1.5-.1.7zm-67-54.3L31.3 85.6c-.1 0-.2.2-.1.3l49.1 49c.1.1.3.1.3-.1l18-67c.1 0-.1-.2-.2-.1z'/></svg>"
 
+  # Ensures syntax highlighter is registered with ScriptEditor
+  def self.ensure_highlighter_registered : Void
+    return if (h = @@crystal_highlighter) && !h.pointer.null?
+    if !Godot::EditorInterface.singleton_ptr.null?
+      ed_interface = Godot::EditorInterface.new(Godot::EditorInterface.singleton_ptr)
+      script_editor = ed_interface.get_script_editor
+      if !script_editor.pointer.null?
+        if highlighter = Godot.create(Godot::CrystalHighlighter)
+          @@crystal_highlighter = highlighter
+          script_editor.register_syntax_highlighter(highlighter) rescue nil
+          apply_highlighter_if_needed
+          script_editor.connect("editor_script_changed") do |_args|
+            apply_highlighter_if_needed
+          end
+        end
+      end
+    end
+  rescue ex
+    Godot.printerr("[CrystalIntegrationPlugin] Notice: highlighter registration: #{ex.message}")
+  end
+
   # Registers and configures the native LLDB debugger plugin
-  def setup_debugger_plugin : Void
-    return if @@debugger_plugin
+  def self.setup_debugger_plugin : Void
+    return if (dp = @@debugger_plugin) && !dp.pointer.null?
 
     if Godot::EditorInterface.singleton_ptr.null?
       return
@@ -219,7 +261,9 @@ module Godot
       if plug.get_reference_count == 0
         plug.init_ref
       end
-      add_debugger_plugin(plug)
+      if inst = @@instance
+        inst.add_debugger_plugin(plug) rescue nil
+      end
       @@debugger_plugin = plug
       Godot.print("[CrystalIntegrationPlugin] CrystalDebuggerPlugin registered into EditorDebuggerNode.")
     end
@@ -227,9 +271,13 @@ module Godot
     Godot.print("[CrystalIntegrationPlugin] Notice: debugger plugin setup: #{ex.message}")
   end
 
+  def setup_debugger_plugin : Void
+    self.class.setup_debugger_plugin
+  end
+
   # Docks the CrystalPanel into Godot Editor's main screen
-  def setup_main_screen_panel : Void
-    if @@crystal_panel
+  def self.setup_main_screen_panel : Void
+    if (p = @@crystal_panel) && !p.pointer.null?
       return
     end
     if Godot::EditorInterface.singleton_ptr.null?
@@ -248,7 +296,14 @@ module Godot
       end
     end
 
-    if panel = Godot.create("CrystalPanel")
+    existing = main_screen.call_obj("find_child", "CrystalPanel", false, false)
+    if existing && !existing.pointer.null?
+      @@crystal_panel = existing
+      return
+    end
+
+    if (panel = Godot.create("CrystalPanel")) && !panel.pointer.null?
+      panel.call("set_name", "CrystalPanel")
       panel.call("set_visible", false)
       main_screen.call("add_child", panel)
       @@crystal_panel = panel
@@ -256,6 +311,10 @@ module Godot
     end
   rescue ex
     Godot.printerr("[CrystalIntegrationPlugin] Notice: could not setup main screen panel: #{ex.message}")
+  end
+
+  def setup_main_screen_panel : Void
+    self.class.setup_main_screen_panel
   end
 
   def make_crystal_panel_visible(visible : Bool) : Void
@@ -344,6 +403,7 @@ module Godot
             icon_tex = itex
           end
         end
+        img.unreference rescue nil
       end
     end
 
@@ -351,8 +411,9 @@ module Godot
     icon_tex
   end
 
-  def setup_toolbar_button : Void
-    return if @@compile_button
+  def self.setup_toolbar_button : Void
+    return unless has_editor_interface?
+    return if (btn_alive = @@compile_button) && !btn_alive.pointer.null?
     return if Godot::EditorInterface.singleton_ptr.null?
     ed_iface = Godot::EditorInterface.new(Godot::EditorInterface.singleton_ptr)
     base_ctrl = ed_iface.get_base_control
@@ -366,7 +427,16 @@ module Godot
     # Check if button already exists in editor tree to avoid duplicates
     existing = base_ctrl.call_obj("find_child", "BuildCrystalToolbarButton", true, false)
     if existing && !existing.pointer.null?
-      @@compile_button = Godot::Button.new(existing.pointer)
+      btn = Godot::Button.new(existing.pointer)
+      @@compile_button = btn
+      @@building = false
+      @@reload_pending = false
+      btn.call("set_disabled", false) rescue nil
+      btn.call("set_text", "Build") rescue nil
+      Godot.clear_signal_subscriptions(btn.signal_target_id)
+      btn.connect("pressed", flags: ::Godot::ConnectFlags::Deferred) do |_args|
+        on_compile_button_pressed
+      end
       return
     end
 
@@ -376,12 +446,12 @@ module Godot
     btn.call("set_flat", true)
     btn.call("set_theme_type_variation", "RunBarButton")
 
-    icon_tex = self.class.get_crystal_icon_texture
+    icon_tex = get_crystal_icon_texture
 
     if icon_tex && !icon_tex.pointer.null?
       btn.set_button_icon(icon_tex)
       btn.call("set_button_icon", icon_tex)
-      btn.call("set_text", "")
+      btn.call("set_text", "Build")
     else
       btn.call("set_text", "Build Crystal")
     end
@@ -389,13 +459,21 @@ module Godot
     btn.call("set_tooltip_text", "Build Crystal (Quick Recompile)")
     btn.call("set_focus_mode", 0)
 
-    btn.connect("pressed") do |_args|
+    btn.connect("pressed", flags: ::Godot::ConnectFlags::Deferred) do |_args|
       on_compile_button_pressed
     end
 
     # Place the "Build Crystal" button in CONTAINER_TOOLBAR (EditorTitleBar, an HBoxContainer)
     # and move it right before EditorRunBar (the Play buttons)
-    add_control_to_container(Godot::EditorPlugin::CustomControlContainer::ContainerToolbar.value, btn)
+    if inst = @@instance
+      inst.add_control_to_container(Godot::EditorPlugin::CustomControlContainer::ContainerToolbar.value, btn) rescue nil
+    elsif title_bar = base_ctrl.call_obj("find_child", "EditorTitleBar", true, false)
+      title_bar.call("add_child", btn) rescue nil
+    elsif run_bar = base_ctrl.call_obj("find_child", "EditorRunBar", true, false)
+      if run_bar_parent = run_bar.call_obj("get_parent")
+        run_bar_parent.call("add_child", btn) rescue nil
+      end
+    end
 
     if title_bar = btn.call_obj("get_parent")
       run_bar_idx = -1_i64
@@ -421,37 +499,367 @@ module Godot
     end
 
     @@compile_button = btn
+    @@building = false
+    @@reload_pending = false
   rescue ex
     Godot.printerr("[CrystalIntegrationPlugin] Warning: could not setup toolbar button: #{ex.message}")
   end
 
-  # Handles toolbar compile button press to trigger manual Crystal rebuild
-  def on_compile_button_pressed : Void
-    Godot.print("[CrystalIntegrationPlugin] Triggering manual Crystal build...")
-    recompile_modified_addons_silent
-    success = execute_crystal_build
-    if success
-      Godot.print("[CrystalIntegrationPlugin] Build completed successfully!")
-      ext_path = "res://addons/crystal_integration/crystal.gdextension"
-      gd_ext_mgr = Godot::GDExtensionManager.new(Godot::GDExtensionManager.singleton_ptr)
-      if gd_ext_mgr.is_extension_loaded(ext_path)
-        status = gd_ext_mgr.reload_extension(ext_path)
-        Godot.print("[CrystalIntegrationPlugin] GDExtension reload status: #{status}")
+  def setup_toolbar_button : Void
+    self.class.setup_toolbar_button
+  end
+
+  # Tracks the active build error dialog to prevent multiple windows
+  @@error_dialog : Godot::AcceptDialog? = nil
+
+  # Formats and bubbles up compilation failures into the Godot Editor UI:
+  # - Outputs clean formatted error banner in the bottom panel
+  # - Emits EditorToaster notification (toast in status bar)
+  # - Pops up centered AcceptDialog in the editor viewport
+  # - Jumps to the offending line in ScriptEditor if file/line is detected
+  def self.report_build_failure(context : String, out_msg : String, err_msg : String, exit_code : Int32) : Void
+    combined = [] of String
+    combined << err_msg.strip unless err_msg.strip.empty?
+    combined << out_msg.strip unless out_msg.strip.empty?
+    raw_error = combined.join("\n").strip
+    raw_error = "Compilation failed with exit code #{exit_code} (no compiler output)." if raw_error.empty?
+
+    # Extract location and summary message
+    file_path = ""
+    line_num = -1
+    col_num = -1
+    error_summary = ""
+
+    raw_error.each_line do |line|
+      line_strip = line.strip
+      if m = line_strip.match(/(?:In|Syntax error in)\s+([^:\r\n]+):(\d+)(?::(\d+))?/)
+        file_path = m[1]
+        line_num = m[2].to_i? || -1
+        col_num = m[3]?.try(&.to_i?) || -1
+      elsif line_strip.starts_with?("Error:")
+        error_summary = line_strip.sub("Error:", "").strip
       end
-    else
-      Godot.printerr("[CrystalIntegrationPlugin] Build failed.")
     end
+
+    summary_title = if !file_path.empty? && line_num > 0
+      "#{File.basename(file_path)}:#{line_num} - #{error_summary.empty? ? "Compilation Error" : error_summary}"
+    elsif !error_summary.empty?
+      error_summary
+    else
+      "Build failed with exit code #{exit_code}"
+    end
+
+    # 1. Output formatted banner to Godot's Output panel AND Debugger / Error console
+    banner_lines = [
+      "==================================================================",
+      "[CrystalIntegrationPlugin] #{context.upcase} FAILED",
+      "Summary: #{summary_title}",
+      "------------------------------------------------------------------"
+    ]
+    banner_lines.each do |line|
+      Godot.print(line)
+      Godot.printerr(line)
+    end
+    raw_error.each_line do |l|
+      Godot.print(l)
+      Godot.printerr(l)
+    end
+    Godot.print("==================================================================")
+    Godot.printerr("==================================================================")
+
+    # Report directly to Godot's Debugger -> Errors tab with line-jumping context
+    Godot.print_error("#{summary_title}\n#{raw_error}", "execute_crystal_build", file_path.empty? ? "src/main.cr" : file_path, line_num > 0 ? line_num : 1)
+
+    # 2. EditorToaster push_toast notification (severity: 2 = Error)
+    if !Godot::EditorInterface.singleton_ptr.null?
+      begin
+        ei = Godot::EditorInterface.new(Godot::EditorInterface.singleton_ptr)
+        toaster = ei.get_editor_toaster rescue nil
+        if toaster && !toaster.pointer.null?
+          toaster.push_toast("Crystal Build Failed: #{summary_title}", 2_i64, raw_error)
+        end
+      rescue
+      end
+    end
+
+    # 3. Present centered AcceptDialog modal in the editor window
+    show_build_error_dialog(context, summary_title, raw_error, file_path, line_num)
+  end
+
+  def self.show_build_error_dialog(context : String, summary : String, full_error : String, file_path : String = "", line_num : Int32 = -1) : Void
+    return if Godot::EditorInterface.singleton_ptr.null?
+    ei = Godot::EditorInterface.new(Godot::EditorInterface.singleton_ptr)
+
+    # Jump to error line in script editor if applicable
+    if line_num > 0
+      begin
+        script_ed = ei.get_script_editor rescue nil
+        if script_ed && !script_ed.pointer.null?
+          script_ed.goto_line(line_num.to_i64 - 1)
+        end
+      rescue
+      end
+    end
+
+    dialog_message = "#{context.capitalize} Failed!\n\n#{full_error}"
+
+    # Reuse existing dialog if already created
+    if (dlg = @@error_dialog) && dlg.alive?
+      dlg.set_text(dialog_message)
+      if (parent = dlg.call_obj("get_parent")) && !parent.pointer.null?
+        dlg.popup_centered(Godot::Vector2i.new(750, 450))
+      else
+        ei.popup_dialog_centered(dlg, Godot::Vector2i.new(750, 450))
+      end
+      return
+    end
+
+    dialog = Godot.create(Godot::AcceptDialog)
+    return unless dialog
+
+    dialog.set_title("Crystal Build Error")
+    dialog.set_text(dialog_message)
+    dialog.set_autowrap(true)
+    dialog.set_ok_button_text("Close")
+
+    @@error_dialog = dialog
+    ei.popup_dialog_centered(dialog, Godot::Vector2i.new(750, 450))
+  rescue ex
+    Godot.printerr("[CrystalIntegrationPlugin] Notice: could not display dialog: #{ex.message}")
+  end
+
+  # Synchronizes a script editor buffer with the file on disk.
+  # If the file on disk was modified externally (or on initial load), disk changes take precedence.
+  # If the buffer was modified in-editor inside Godot, changes are flushed to disk.
+  def self.sync_script_file(base_ed : Godot::Object, path : String) : Void
+    return if path.empty? || !path.ends_with?(".cr")
+    return if Godot::ProjectSettings.singleton_ptr.null?
+    ps = Godot::ProjectSettings.new(Godot::ProjectSettings.singleton_ptr)
+    fs_path = ps.call_str("globalize_path", path).gsub('\\', '/')
+    return if fs_path.empty? || !File.exists?(fs_path)
+
+    version = base_ed.call_i64("get_version") rescue 0_i64
+    saved_version = base_ed.call_i64("get_saved_version") rescue 0_i64
+    disk_mtime = File.info(fs_path).modification_time
+    last_mtime = @@file_last_disk_mtime[fs_path]?
+    disk_text = File.read(fs_path)
+    editor_text = base_ed.call_str("get_text")
+
+    if last_mtime.nil?
+      # Initial synchronization: disk is always authoritative
+      if disk_text != editor_text
+        base_ed.call("set_text", disk_text)
+        Godot.print("[CrystalIntegrationPlugin] Initialized editor view from disk: #{fs_path} (#{disk_text.bytesize} bytes)")
+      end
+      base_ed.call("tag_saved_version") rescue nil
+      @@file_last_disk_mtime[fs_path] = disk_mtime
+    elsif disk_mtime > last_mtime && disk_text != editor_text
+      # External modifications on disk took place after our last save/sync: disk wins
+      base_ed.call("set_text", disk_text)
+      base_ed.call("tag_saved_version") rescue nil
+      @@file_last_disk_mtime[fs_path] = disk_mtime
+      Godot.print("[CrystalIntegrationPlugin] Loaded external disk modifications into editor: #{fs_path} (#{disk_text.bytesize} bytes)")
+    elsif version != saved_version
+      # In-editor changes typed directly inside Godot: flush live buffer to disk
+      File.write(fs_path, editor_text)
+      base_ed.call("tag_saved_version") rescue nil
+      @@file_last_disk_mtime[fs_path] = File.info(fs_path).modification_time
+      Godot.print("[CrystalIntegrationPlugin] Auto-flushed live editor buffer to #{fs_path} (#{editor_text.bytesize} bytes)")
+    elsif disk_text != editor_text
+      # Versions match but contents differ: reload from disk
+      base_ed.call("set_text", disk_text)
+      base_ed.call("tag_saved_version") rescue nil
+      @@file_last_disk_mtime[fs_path] = disk_mtime
+      Godot.print("[CrystalIntegrationPlugin] Synchronized editor view with disk: #{fs_path} (#{disk_text.bytesize} bytes)")
+    else
+      @@file_last_disk_mtime[fs_path] = disk_mtime
+    end
+  rescue ex
+    Godot.printerr("[CrystalIntegrationPlugin] Notice during sync_script_file(#{path}): #{ex.message}")
+  end
+
+  # Saves all open scripts and scenes in the editor before compiling so modifications on disk are up to date
+  def self.save_open_editor_files : Void
+    return if Godot::EditorInterface.singleton_ptr.null?
+    ei = Godot::EditorInterface.new(Godot::EditorInterface.singleton_ptr)
+    begin
+      # 1. Ask Godot's ScriptEditor to save all scripts
+      script_ed = ei.call_obj("get_script_editor")
+      if script_ed && !script_ed.pointer.null?
+        script_ed.call("save_all_scripts") rescue nil
+
+        # 2. Directly inspect the active editor to guarantee live changes are synchronized
+        if curr = script_ed.call_obj("get_current_script")
+          if !curr.pointer.null?
+            path = curr.call_str("get_path")
+            if curr_ed = script_ed.call_obj("get_current_editor")
+              if !curr_ed.pointer.null?
+                if base_ed = curr_ed.call_obj("get_base_editor")
+                  if !base_ed.pointer.null?
+                    sync_script_file(base_ed, path)
+                  end
+                end
+              end
+            end
+          end
+        end
+
+        # Inspect any open script editors list if available
+        open_editors = script_ed.call("get_open_script_editors") rescue nil
+        if open_editors.is_a?(Array(Godot::Variant))
+          open_editors.each do |ed_var|
+            ed_obj = ed_var.as_object rescue nil
+            next unless ed_obj && !ed_obj.pointer.null?
+            base_ed = ed_obj.call_obj("get_base_editor") rescue nil
+            next unless base_ed && !base_ed.pointer.null?
+            scr = ed_obj.call_obj("get_current_script") rescue nil
+            next unless scr && !scr.pointer.null?
+            p = scr.call_str("get_path") rescue ""
+            sync_script_file(base_ed, p) unless p.empty?
+          end
+        end
+      end
+
+      # 3. Save open scenes
+      ei.call("save_all_scenes") rescue nil
+    rescue ex
+      Godot.printerr("[CrystalIntegrationPlugin] Notice during save_open_editor_files: #{ex.message}")
+    end
+  end
+
+  # Handles toolbar compile button press to trigger manual Crystal rebuild
+  def self.on_compile_button_pressed : Void
+    if @@building || @@reload_pending
+      Godot.print("[CrystalIntegrationPlugin] Build or reload already in progress, skipping duplicate request.")
+      return
+    end
+    @@building = true
+
+    if btn = @@compile_button
+      btn.call("set_disabled", true) rescue nil
+      btn.call("set_text", "Building...") rescue nil
+    end
+
+    begin
+      save_open_editor_files
+      Godot.print("[CrystalIntegrationPlugin] Triggering manual Crystal build...")
+      recompile_modified_addons_silent
+      success = execute_crystal_build
+      if success
+        Godot.print("[CrystalIntegrationPlugin] Build completed successfully!")
+        if (dlg = @@error_dialog) && dlg.alive?
+          dlg.hide
+        end
+        ext_path = "res://addons/crystal_integration/crystal.gdextension"
+        gd_ext_mgr = Godot::GDExtensionManager.new(Godot::GDExtensionManager.singleton_ptr)
+        if gd_ext_mgr.is_extension_loaded(ext_path)
+          @@reload_pending = true
+          if btn = @@compile_button
+            btn.call("set_text", "Reloading...") rescue nil
+          end
+          gd_ext_mgr.call_deferred("reload_extension", ext_path)
+          Godot.print("[CrystalIntegrationPlugin] Scheduled deferred GDExtension reload.")
+        else
+          @@building = false
+          if btn = @@compile_button
+            btn.call("set_disabled", false) rescue nil
+            btn.call("set_text", "Build") rescue nil
+          end
+        end
+      else
+        Godot.printerr("[CrystalIntegrationPlugin] Build failed! Check the error dialog and Debugger -> Errors tab.")
+        @@building = false
+        if btn = @@compile_button
+          btn.call("set_disabled", false) rescue nil
+          btn.call("set_text", "Build") rescue nil
+        end
+      end
+    rescue ex
+      @@building = false
+      if btn = @@compile_button
+        btn.call("set_disabled", false) rescue nil
+        btn.call("set_text", "Build") rescue nil
+      end
+      Godot.printerr("[CrystalIntegrationPlugin] Error during build: #{ex.message}")
+    end
+  end
+
+  def on_compile_button_pressed : Void
+    self.class.on_compile_button_pressed
   end
 
   # Invoked by Godot editor before running project (F5 / F6)
   def _build : Bool
-    Godot.print("[CrystalIntegrationPlugin] Editor build requested (F5 / Play). Compiling Crystal...")
-    recompile_modified_addons_silent
-    execute_crystal_build
+    if @@building || @@reload_pending
+      Godot.print("[CrystalIntegrationPlugin] Build or reload already in progress, skipping F5 build.")
+      return true
+    end
+    @@building = true
+    begin
+      self.class.save_open_editor_files
+      Godot.print("[CrystalIntegrationPlugin] Editor build requested (F5 / Play). Compiling Crystal...")
+      self.class.recompile_modified_addons_silent
+      self.class.execute_crystal_build
+    ensure
+      @@building = false
+    end
+  end
+
+  # Builds an environment Hash with properly configured CRYSTAL_PATH
+  # ensuring libgodot and local shards can be resolved from anywhere.
+  def self.build_compiler_env : Hash(String, String)
+    env = ENV.to_h
+    sep = {% if flag?(:windows) %} ";" {% else %} ":" {% end %}
+
+    # 1. If shard.yml exists but lib/ directory does not, automatically run shards install
+    if File.exists?("shard.yml") && !File.directory?("lib")
+      begin
+        Godot.print("[CrystalIntegrationPlugin] Dependencies in 'lib/' missing. Running 'shards install'...")
+        sh_out = IO::Memory.new
+        sh_status = Process.run("shards", ["install"], output: sh_out, error: sh_out)
+        sh_msg = sh_out.to_s.strip
+        Godot.print(sh_msg) unless sh_msg.empty?
+        if sh_status.success?
+          Godot.print("[CrystalIntegrationPlugin] Shards installed successfully.")
+        else
+          Godot.printerr("[CrystalIntegrationPlugin] 'shards install' exited with code #{sh_status.exit_code}.")
+        end
+      rescue ex
+        Godot.printerr("[CrystalIntegrationPlugin] Notice: could not execute shards install: #{ex.message}")
+      end
+    end
+
+    # 2. Gather candidate search paths for libgodot
+    extra_paths = [] of String
+    ["../src", "../../src", "../../../src", "lib"].each do |candidate|
+      if File.exists?(File.join(candidate, "libgodot.cr")) || candidate == "lib"
+        full_path = File.expand_path(candidate)
+        extra_paths << full_path unless extra_paths.includes?(full_path)
+      end
+    end
+
+    # 3. Query base CRYSTAL_PATH from crystal compiler if not already present
+    base_crystal_path = env["CRYSTAL_PATH"]?
+    if base_crystal_path.nil? || base_crystal_path.empty?
+      io = IO::Memory.new
+      if (Process.run("crystal", ["env", "CRYSTAL_PATH"], output: io) rescue nil).try(&.success?)
+        base_crystal_path = io.to_s.strip
+      end
+    end
+
+    if !extra_paths.empty?
+      all_paths = extra_paths.dup
+      if base_crystal_path && !base_crystal_path.empty?
+        all_paths << base_crystal_path
+      end
+      env["CRYSTAL_PATH"] = all_paths.join(sep)
+    end
+
+    env
   end
 
   # Scans project addons/ directory and recompiles any Crystal addons whose source code changed
-  def recompile_modified_addons_silent : Void
+  def self.recompile_modified_addons_silent : Void
     addons_dir = "addons"
     addons_dir = "../addons" unless Dir.exists?(addons_dir)
     return unless Dir.exists?(addons_dir)
@@ -500,11 +908,18 @@ module Godot
       if needs_recompile
         Godot.print("[CrystalIntegrationPlugin] Recompiling modified addon: #{entry}...")
         args = ["build", "--link-flags", link_flags, main_cr, "-o", target_bin]
-        status = Process.run("crystal", args)
+        compiler_env = build_compiler_env
+        out_io = IO::Memory.new
+        err_io = IO::Memory.new
+        status = Process.run("crystal", args, env: compiler_env, output: out_io, error: err_io)
+        out_msg = out_io.to_s.strip
+        err_msg = err_io.to_s.strip
+        Godot.print(out_msg) unless out_msg.empty?
+        Godot.printerr(err_msg) unless err_msg.empty?
         if status.success?
           Godot.print("[CrystalIntegrationPlugin] Successfully recompiled addon: #{entry}")
         else
-          Godot.printerr("[CrystalIntegrationPlugin] Failed to recompile addon: #{entry} (exit code: #{status.exit_code})")
+          report_build_failure("Addon '#{entry}' compilation", out_msg, err_msg, status.exit_code)
         end
       end
     end
@@ -512,18 +927,31 @@ module Godot
     Godot.printerr("[CrystalIntegrationPlugin] Error checking addon recompilation: #{ex.message}")
   end
 
+  def recompile_modified_addons_silent : Void
+    self.class.recompile_modified_addons_silent
+  end
+
   # Compiles project Crystal code into shared library
-  def execute_crystal_build : Bool
+  def self.execute_crystal_build : Bool
     execute_crystal_build_with_options(false)
   end
 
+  def execute_crystal_build : Bool
+    self.class.execute_crystal_build
+  end
+
   # Compiles project Crystal code with optional release optimizations
-  def execute_crystal_build_with_options(is_release : Bool = false) : Bool
+  def self.execute_crystal_build_with_options(is_release : Bool = false) : Bool
     entry_file = "src/main.cr"
     if !Godot::SystemIO.file_exists?(entry_file) && !Godot::ProjectSettings.singleton_ptr.null?
       ps = Godot::ProjectSettings.new(Godot::ProjectSettings.singleton_ptr)
       global_entry = ps.call_str("globalize_path", "res://src/main.cr").gsub('\\', '/')
       entry_file = global_entry if !global_entry.empty? && Godot::SystemIO.file_exists?(global_entry)
+    end
+
+    if !Godot::SystemIO.file_exists?(entry_file)
+      report_build_failure("Crystal build", "", "Entry file not found: #{entry_file}", 1)
+      return false
     end
 
     out_dll = {% if flag?(:windows) %}
@@ -533,6 +961,9 @@ module Godot
     {% else %}
       "bin/game.so"
     {% end %}
+
+    out_dir = File.dirname(out_dll)
+    Dir.mkdir_p(out_dir) unless Dir.exists?(out_dir)
 
     link_flags = {% if flag?(:windows) %}
       "/DLL /ENTRY:_DllMainCRTStartup /EXPORT:crystal_godot_init"
@@ -548,9 +979,21 @@ module Godot
     args << "-o"
     args << out_dll
 
+    compiler_env = build_compiler_env
     Godot.print("[CrystalIntegrationPlugin] Running: crystal #{args.join(" ")}")
-    status = Process.run("crystal", args)
+
+    out_io = IO::Memory.new
+    err_io = IO::Memory.new
+    status = Process.run("crystal", args, env: compiler_env, output: out_io, error: err_io)
+    out_msg = out_io.to_s.strip
+    err_msg = err_io.to_s.strip
+    Godot.print(out_msg) unless out_msg.empty?
+    Godot.print(err_msg) unless err_msg.empty?
+
     if status.success?
+      if (dlg = @@error_dialog) && dlg.alive?
+        dlg.hide
+      end
       Godot.print("[CrystalIntegrationPlugin] Crystal build succeeded: #{out_dll}")
       if File.directory?("../bin")
         begin
@@ -559,14 +1002,26 @@ module Godot
         rescue
         end
       end
+      addon_bin_target = "addons/crystal_integration/bin/#{File.basename(out_dll)}"
+      if File.directory?("addons/crystal_integration/bin")
+        begin
+          File.copy(out_dll, addon_bin_target)
+          Godot.print("[CrystalIntegrationPlugin] Synced DLL to addon: #{addon_bin_target}")
+        rescue
+        end
+      end
       true
     else
-      Godot.printerr("[CrystalIntegrationPlugin] Crystal build failed with exit code #{status.exit_code}")
+      report_build_failure("Crystal build", out_msg, err_msg, status.exit_code)
       false
     end
   rescue ex
-    Godot.printerr("[CrystalIntegrationPlugin] Error running build: #{ex.message}")
+    report_build_failure("Crystal build", "", "Error running build: #{ex.message}", 1)
     false
+  end
+
+  def execute_crystal_build_with_options(is_release : Bool = false) : Bool
+    self.class.execute_crystal_build_with_options(is_release)
   end
 
   def _process(delta : Float64) : Void
@@ -605,6 +1060,35 @@ module Godot
       end
     end
   rescue
+  end
+
+  def self.link_scripts_recursive(node : Godot::Node) : Void
+    return if node.pointer.null?
+    node.link_class_script
+    child_count = node.call_i64("get_child_count")
+    child_count.times do |i|
+      child_obj = node.call_obj("get_child", i)
+      if child_obj && !child_obj.pointer.null?
+        link_scripts_recursive(Godot::Node.new(child_obj.pointer))
+      end
+    end
+  rescue ex
+    Godot.print("[CrystalIntegrationPlugin] Note: link_scripts_recursive: #{ex.message}")
+  end
+
+  def self.link_scripts_in_edited_scene : Void
+    return if Godot::EditorInterface.singleton_ptr.null?
+    if !Godot::DisplayServer.singleton_ptr.null?
+      ds = Godot::DisplayServer.new(Godot::DisplayServer.singleton_ptr)
+      return if ds.call_str("get_name") == "headless"
+    end
+    ed_interface = Godot::EditorInterface.new(Godot::EditorInterface.singleton_ptr)
+    scene_root = ed_interface.call_obj("get_edited_scene_root")
+    if scene_root && !scene_root.pointer.null?
+      link_scripts_recursive(scene_root)
+    end
+  rescue ex
+    Godot.print("[CrystalIntegrationPlugin] Note: link_scripts_in_edited_scene: #{ex.message}")
   end
 end
 end

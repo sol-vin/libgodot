@@ -1467,4 +1467,3 @@ require "./suites/test_gdscript_channel_signal_interop"
 require "./suites/test_autobound_gdscript_nodes"
 require "./suites/test_scenes_persistence"
 require "./suites/test_debugger_isolation"
-

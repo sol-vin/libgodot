@@ -181,3 +181,50 @@ test_script_first_class "ResourceFormatLoader and ResourceFormatSaver for .cr fi
   fs_path = Godot::ResourceFormatSaverCrystal.resolve_save_path(test_path)
   LibSystemIO.remove(fs_path.to_unsafe) if !fs_path.empty? && Godot::SystemIO.file_exists?(fs_path)
 end
+
+test_script_first_class "Editor script linking, ClassRegistry script_path, and global class inspection" do
+  # Test path normalization
+  res_path = Godot.to_godot_res_path("src/libgodot.cr")
+  TestFramework.assert_true res_path.starts_with?("res://"), "Path should normalize to res://"
+
+  # Test ClassRegistry entries have script_path
+  entries = Godot::ClassRegistry.entries
+  TestFramework.assert_true entries.size > 0, "ClassRegistry should have registered entries"
+
+  # Find an entry registered via the node macro
+  tool_tester_entry = Godot::ClassRegistry.find("ToolTester2D")
+  if entry = tool_tester_entry
+    TestFramework.assert_true entry.script_path.starts_with?("res://"), "ToolTester2D script_path should start with res://"
+    TestFramework.assert_true entry.script_path.ends_with?(".cr"), "ToolTester2D script_path should end with .cr"
+  end
+
+  # Test link_class_script attaching script to a node
+  test_node = Godot.create(Godot::Node2D)
+  if test_node
+    entry = Godot::ClassRegistry.find("ToolTester2D")
+    if entry && !entry.script_path.empty?
+      script = Godot::ClassRegistry.get_or_load_script(entry.script_path, entry.class_name, entry.parent_name, entry.is_tool)
+      TestFramework.assert_true !script.nil?, "Script cache should load script for entry"
+      if script
+        test_node.call("set_script", script)
+        linked = test_node.call_obj("get_script")
+        TestFramework.assert_true !linked.nil? && !linked.pointer.null?, "Node should have linked script"
+      end
+    end
+    test_node.destroy
+  end
+
+  # Test CrystalLanguage.inspect_file_global_class
+  source_snippet = <<-CRYSTAL
+  node InspectTarget < CharacterBody3D do
+    def _ready; end
+  end
+  CRYSTAL
+  temp_path = "user://test_inspect_target.cr"
+  fs_temp_path = Godot::ResourceFormatSaverCrystal.resolve_save_path(temp_path)
+  File.write(fs_temp_path, source_snippet) rescue nil
+  c_name, b_type, _icon = Godot::CrystalLanguage.inspect_file_global_class(temp_path)
+  TestFramework.assert_eq c_name, "InspectTarget"
+  TestFramework.assert_eq b_type, "CharacterBody3D"
+  LibSystemIO.remove(fs_temp_path.to_unsafe) if File.exists?(fs_temp_path)
+end

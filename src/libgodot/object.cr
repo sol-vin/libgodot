@@ -47,6 +47,32 @@ module Godot
     ret != 0_u8
   end
 
+  # Converts any filesystem or relative path to a normalized Godot res:// path
+  def self.to_godot_res_path(path : String) : String
+    return "" if path.empty?
+    p = path.gsub('\\', '/')
+    return p if p.starts_with?("res://")
+
+    if !Godot::ProjectSettings.singleton_ptr.null?
+      ps = Godot::ProjectSettings.new(Godot::ProjectSettings.singleton_ptr)
+      localized = ps.call_str("localize_path", p)
+      return localized if localized.starts_with?("res://") && localized != "res://" && localized != "res:///"
+    end
+
+    if idx = p.index("/src/")
+      return "res:/" + p[idx..-1]
+    elsif idx = p.index("/addons/")
+      return "res:/" + p[idx..-1]
+    elsif idx = p.index("/scripts/")
+      return "res:/" + p[idx..-1]
+    elsif p.starts_with?("src/") || p.starts_with?("addons/") || p.starts_with?("scripts/")
+      return "res://#{p}"
+    end
+
+    bname = File.basename(p)
+    bname.empty? ? "" : "res://#{bname}"
+  end
+
   # Loads a resource from the given path (e.g. "res://scenes/my_scene.tscn")
   def self.load(path : String, type_hint : String = "", cache_mode : Int64 = 0_i64) : Resource
     ptr = Bridge.resource_loader_load(path, type_hint, cache_mode)
@@ -65,8 +91,9 @@ module Godot
   end
 
   # Constructs a new native Godot engine object of the given class name (e.g. "Node2D", "MeshInstance3D", "BoxMesh")
-  def self.create(class_name : String) : Node
+  def self.create(class_name : String) : Node?
     ptr = Bridge.construct_object(class_name)
+    return nil if ptr.null?
     Node.new(ptr)
   end
 
@@ -559,6 +586,28 @@ module Godot
     # Checks if a 64-bit instance ID is currently valid in Godot's ObjectDB
     def self.is_instance_id_valid(id : Int | UInt64) : Bool
       Bridge.is_instance_valid(id.to_u64)
+    end
+
+    # Automatically links this node's registered CrystalScript resource if running inside the Godot Editor
+    def link_class_script : Void
+      return unless Godot.editor_hint?
+      return if @pointer.null?
+      return if self.is_a?(Godot::Script) || self.class.name.includes?("Script") || self.class.name.includes?("Plugin")
+
+      curr_script = self.get_script
+      return if !curr_script.null?
+
+      c_name = self.class.name.split("::").last
+      entry = ClassRegistry.find(c_name)
+      return unless entry
+      path = entry.script_path
+      return if path.empty? || path == "res://" || path == "res:///"
+
+      if script = ClassRegistry.get_or_load_script(path, entry.class_name, entry.parent_name, entry.is_tool)
+        self.call("set_script", script)
+      end
+    rescue ex
+      Godot.print("[LibGodot] Notice: could not link script for #{self.class.name}: #{ex.message}")
     end
 
     # Virtual method and property dispatch hooks overridden by class registration macros.

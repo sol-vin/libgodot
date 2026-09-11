@@ -15,12 +15,14 @@ module Godot
       if @@mb_listen.null?
         @@mb_listen = Bridge.get_method_bind("UDSServer", "listen", 166001499_i64)
       end
-      val_0 = path
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(path)
+      arg_0 = str_0
       args = [arg_0]
       ret = 0_i64
       Bridge.ptrcall(@@mb_listen, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_take_connection : Void* = Pointer(Void).null
     # If a connection is available, returns a StreamPeerUDS with the connection.
@@ -215,12 +217,14 @@ module Godot
       arg_0 = pointerof(val_0).as(Void*)
       val_1 = ttl
       arg_1 = pointerof(val_1).as(Void*)
-      val_2 = device_filter
-      arg_2 = pointerof(val_2).as(Void*)
+      str_2 = Bridge.make_string(device_filter)
+      arg_2 = str_2
       args = [arg_0, arg_1, arg_2]
       ret = 0_i64
       Bridge.ptrcall(@@mb_discover, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret
+    ensure
+      Bridge.free_string(str_2)
     end
     @@mb_query_external_address : Void* = Pointer(Void).null
     # Returns the external `IP` address of the default gateway (see `#get_gateway`) as string. Returns an empty string on error.
@@ -245,16 +249,19 @@ module Godot
       arg_0 = pointerof(val_0).as(Void*)
       val_1 = port_internal
       arg_1 = pointerof(val_1).as(Void*)
-      val_2 = desc
-      arg_2 = pointerof(val_2).as(Void*)
-      val_3 = proto
-      arg_3 = pointerof(val_3).as(Void*)
+      str_2 = Bridge.make_string(desc)
+      arg_2 = str_2
+      str_3 = Bridge.make_string(proto)
+      arg_3 = str_3
       val_4 = duration
       arg_4 = pointerof(val_4).as(Void*)
       args = [arg_0, arg_1, arg_2, arg_3, arg_4]
       ret = 0_i64
       Bridge.ptrcall(@@mb_add_port_mapping, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret
+    ensure
+      Bridge.free_string(str_2)
+      Bridge.free_string(str_3)
     end
     @@mb_delete_port_mapping : Void* = Pointer(Void).null
     # Deletes the port mapping for the given port and protocol combination on the default gateway (see `#get_gateway`) if one exists. `port` must be a valid port between 1 and 65535, `proto` can be either `"TCP"` or `"UDP"`. May be refused for mappings pointing to addresses other than this one, for well-known ports (below 1024), or for mappings not added via UPnP. See `UPNPResult` for possible return values.
@@ -264,22 +271,26 @@ module Godot
       end
       val_0 = port
       arg_0 = pointerof(val_0).as(Void*)
-      val_1 = proto
-      arg_1 = pointerof(val_1).as(Void*)
+      str_1 = Bridge.make_string(proto)
+      arg_1 = str_1
       args = [arg_0, arg_1]
       ret = 0_i64
       Bridge.ptrcall(@@mb_delete_port_mapping, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret
+    ensure
+      Bridge.free_string(str_1)
     end
     @@mb_set_discover_multicast_if : Void* = Pointer(Void).null
     def set_discover_multicast_if(m_if : String) : Void
       if @@mb_set_discover_multicast_if.null?
         @@mb_set_discover_multicast_if = Bridge.get_method_bind("UPNP", "set_discover_multicast_if", 83702148_i64)
       end
-      val_0 = m_if
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(m_if)
+      arg_0 = str_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_discover_multicast_if, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_get_discover_multicast_if : Void* = Pointer(Void).null
     def get_discover_multicast_if() : String
@@ -374,16 +385,19 @@ module Godot
       arg_0 = pointerof(val_0).as(Void*)
       val_1 = port_internal
       arg_1 = pointerof(val_1).as(Void*)
-      val_2 = desc
-      arg_2 = pointerof(val_2).as(Void*)
-      val_3 = proto
-      arg_3 = pointerof(val_3).as(Void*)
+      str_2 = Bridge.make_string(desc)
+      arg_2 = str_2
+      str_3 = Bridge.make_string(proto)
+      arg_3 = str_3
       val_4 = duration
       arg_4 = pointerof(val_4).as(Void*)
       args = [arg_0, arg_1, arg_2, arg_3, arg_4]
       ret = 0_i64
       Bridge.ptrcall(@@mb_add_port_mapping, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret
+    ensure
+      Bridge.free_string(str_2)
+      Bridge.free_string(str_3)
     end
     @@mb_delete_port_mapping : Void* = Pointer(Void).null
     # Deletes the port mapping identified by the given port and protocol combination on this device. See `#UPNP.delete_port_mapping`.
@@ -393,22 +407,26 @@ module Godot
       end
       val_0 = port
       arg_0 = pointerof(val_0).as(Void*)
-      val_1 = proto
-      arg_1 = pointerof(val_1).as(Void*)
+      str_1 = Bridge.make_string(proto)
+      arg_1 = str_1
       args = [arg_0, arg_1]
       ret = 0_i64
       Bridge.ptrcall(@@mb_delete_port_mapping, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret
+    ensure
+      Bridge.free_string(str_1)
     end
     @@mb_set_description_url : Void* = Pointer(Void).null
     def set_description_url(url : String) : Void
       if @@mb_set_description_url.null?
         @@mb_set_description_url = Bridge.get_method_bind("UPNPDevice", "set_description_url", 83702148_i64)
       end
-      val_0 = url
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(url)
+      arg_0 = str_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_description_url, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_get_description_url : Void* = Pointer(Void).null
     def get_description_url() : String
@@ -422,10 +440,12 @@ module Godot
       if @@mb_set_service_type.null?
         @@mb_set_service_type = Bridge.get_method_bind("UPNPDevice", "set_service_type", 83702148_i64)
       end
-      val_0 = get_type
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(get_type)
+      arg_0 = str_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_service_type, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_get_service_type : Void* = Pointer(Void).null
     def get_service_type() : String
@@ -439,10 +459,12 @@ module Godot
       if @@mb_set_igd_control_url.null?
         @@mb_set_igd_control_url = Bridge.get_method_bind("UPNPDevice", "set_igd_control_url", 83702148_i64)
       end
-      val_0 = url
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(url)
+      arg_0 = str_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_igd_control_url, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_get_igd_control_url : Void* = Pointer(Void).null
     def get_igd_control_url() : String
@@ -456,10 +478,12 @@ module Godot
       if @@mb_set_igd_service_type.null?
         @@mb_set_igd_service_type = Bridge.get_method_bind("UPNPDevice", "set_igd_service_type", 83702148_i64)
       end
-      val_0 = get_type
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(get_type)
+      arg_0 = str_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_igd_service_type, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_get_igd_service_type : Void* = Pointer(Void).null
     def get_igd_service_type() : String
@@ -473,10 +497,12 @@ module Godot
       if @@mb_set_igd_our_addr.null?
         @@mb_set_igd_our_addr = Bridge.get_method_bind("UPNPDevice", "set_igd_our_addr", 83702148_i64)
       end
-      val_0 = addr
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(addr)
+      arg_0 = str_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_igd_our_addr, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_get_igd_our_addr : Void* = Pointer(Void).null
     def get_igd_our_addr() : String
@@ -615,14 +641,16 @@ module Godot
       if @@mb_create_action.null?
         @@mb_create_action = Bridge.get_method_bind("UndoRedo", "create_action", 3171901514_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(name)
+      arg_0 = str_0
       val_1 = merge_mode
       arg_1 = pointerof(val_1).as(Void*)
       val_2 = backward_undo_ops
       arg_2 = pointerof(val_2).as(Void*)
       args = [arg_0, arg_1, arg_2]
       Bridge.ptrcall(@@mb_create_action, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_commit_action : Void* = Pointer(Void).null
     # Commit the action. If `execute` is `true` (which it is by default), all "do" methods/properties are called/set when this function is called.
@@ -675,12 +703,14 @@ module Godot
       end
       arg_ptr_0 = object ? object.pointer : Pointer(Void).null
       arg_0 = pointerof(arg_ptr_0).as(Void*)
-      val_1 = property
-      arg_1 = pointerof(val_1).as(Void*)
+      sn_1 = Bridge.make_string_name(property)
+      arg_1 = sn_1
       val_2 = value
       arg_2 = pointerof(val_2).as(Void*)
       args = [arg_0, arg_1, arg_2]
       Bridge.ptrcall(@@mb_add_do_property, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_1)
     end
     @@mb_add_undo_property : Void* = Pointer(Void).null
     # Register a `property` that would change its value to `value` when the action is undone.
@@ -690,12 +720,14 @@ module Godot
       end
       arg_ptr_0 = object ? object.pointer : Pointer(Void).null
       arg_0 = pointerof(arg_ptr_0).as(Void*)
-      val_1 = property
-      arg_1 = pointerof(val_1).as(Void*)
+      sn_1 = Bridge.make_string_name(property)
+      arg_1 = sn_1
       val_2 = value
       arg_2 = pointerof(val_2).as(Void*)
       args = [arg_0, arg_1, arg_2]
       Bridge.ptrcall(@@mb_add_undo_property, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_1)
     end
     @@mb_add_do_reference : Void* = Pointer(Void).null
     # Register a reference to an object that will be erased if the "do" history is deleted. This is useful for objects added by the "do" action and removed by the "undo" action.
@@ -1360,10 +1392,12 @@ module Godot
       if @@mb_set_file.null?
         @@mb_set_file = Bridge.get_method_bind("VideoStream", "set_file", 83702148_i64)
       end
-      val_0 = file
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(file)
+      arg_0 = str_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_file, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_get_file : Void* = Pointer(Void).null
     def get_file() : String
@@ -1667,10 +1701,12 @@ module Godot
       if @@mb_set_bus.null?
         @@mb_set_bus = Bridge.get_method_bind("VideoStreamPlayer", "set_bus", 3304788590_i64)
       end
-      val_0 = bus
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(bus)
+      arg_0 = sn_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_bus, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_get_bus : Void* = Pointer(Void).null
     def get_bus() : String
@@ -1873,10 +1909,12 @@ module Godot
       if @@mb_set_action_left.null?
         @@mb_set_action_left = Bridge.get_method_bind("VirtualJoystick", "set_action_left", 3304788590_i64)
       end
-      val_0 = action
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(action)
+      arg_0 = sn_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_action_left, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_get_action_left : Void* = Pointer(Void).null
     def get_action_left() : String
@@ -1890,10 +1928,12 @@ module Godot
       if @@mb_set_action_right.null?
         @@mb_set_action_right = Bridge.get_method_bind("VirtualJoystick", "set_action_right", 3304788590_i64)
       end
-      val_0 = action
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(action)
+      arg_0 = sn_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_action_right, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_get_action_right : Void* = Pointer(Void).null
     def get_action_right() : String
@@ -1907,10 +1947,12 @@ module Godot
       if @@mb_set_action_up.null?
         @@mb_set_action_up = Bridge.get_method_bind("VirtualJoystick", "set_action_up", 3304788590_i64)
       end
-      val_0 = action
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(action)
+      arg_0 = sn_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_action_up, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_get_action_up : Void* = Pointer(Void).null
     def get_action_up() : String
@@ -1924,10 +1966,12 @@ module Godot
       if @@mb_set_action_down.null?
         @@mb_set_action_down = Bridge.get_method_bind("VirtualJoystick", "set_action_down", 3304788590_i64)
       end
-      val_0 = action
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(action)
+      arg_0 = sn_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_action_down, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_get_action_down : Void* = Pointer(Void).null
     def get_action_down() : String
@@ -2311,10 +2355,12 @@ module Godot
       arg_0 = pointerof(val_0).as(Void*)
       val_1 = id
       arg_1 = pointerof(val_1).as(Void*)
-      val_2 = new_class
-      arg_2 = pointerof(val_2).as(Void*)
+      sn_2 = Bridge.make_string_name(new_class)
+      arg_2 = sn_2
       args = [arg_0, arg_1, arg_2]
       Bridge.ptrcall(@@mb_replace_node, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_2)
     end
     @@mb_is_node_connection : Void* = Pointer(Void).null
     # Returns `true` if the specified node and port connection exists.
@@ -2464,14 +2510,16 @@ module Godot
       if @@mb_add_varying.null?
         @@mb_add_varying = Bridge.get_method_bind("VisualShader", "add_varying", 2084110726_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(name)
+      arg_0 = str_0
       val_1 = mode
       arg_1 = pointerof(val_1).as(Void*)
       val_2 = get_type
       arg_2 = pointerof(val_2).as(Void*)
       args = [arg_0, arg_1, arg_2]
       Bridge.ptrcall(@@mb_add_varying, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_remove_varying : Void* = Pointer(Void).null
     # Removes a varying value node with the given `name`. Prints an error if a node with this name is not found.
@@ -2479,10 +2527,12 @@ module Godot
       if @@mb_remove_varying.null?
         @@mb_remove_varying = Bridge.get_method_bind("VisualShader", "remove_varying", 83702148_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(name)
+      arg_0 = str_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_remove_varying, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_has_varying : Void* = Pointer(Void).null
     # Returns `true` if the shader has a varying with the given `name`.
@@ -2490,12 +2540,14 @@ module Godot
       if @@mb_has_varying.null?
         @@mb_has_varying = Bridge.get_method_bind("VisualShader", "has_varying", 3927539163_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(name)
+      arg_0 = str_0
       args = [arg_0]
       ret = 0_u8
       Bridge.ptrcall(@@mb_has_varying, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret != 0_u8
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_set_graph_offset : Void* = Pointer(Void).null
     def set_graph_offset(offset : Vector2) : Void
@@ -2531,10 +2583,12 @@ module Godot
       if @@mb_set_group_name.null?
         @@mb_set_group_name = Bridge.get_method_bind("VisualShaderGroup", "set_group_name", 83702148_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(name)
+      arg_0 = str_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_group_name, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_get_group_name : Void* = Pointer(Void).null
     def get_group_name() : String
@@ -2554,10 +2608,12 @@ module Godot
       arg_0 = pointerof(val_0).as(Void*)
       val_1 = get_type
       arg_1 = pointerof(val_1).as(Void*)
-      val_2 = name
-      arg_2 = pointerof(val_2).as(Void*)
+      str_2 = Bridge.make_string(name)
+      arg_2 = str_2
       args = [arg_0, arg_1, arg_2]
       ""
+    ensure
+      Bridge.free_string(str_2)
     end
     @@mb_remove_input_port : Void* = Pointer(Void).null
     # Removes the input port at the given `id`.
@@ -2591,10 +2647,12 @@ module Godot
       end
       val_0 = id
       arg_0 = pointerof(val_0).as(Void*)
-      val_1 = name
-      arg_1 = pointerof(val_1).as(Void*)
+      str_1 = Bridge.make_string(name)
+      arg_1 = str_1
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_set_input_port_name, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_1)
     end
     @@mb_set_input_port_type : Void* = Pointer(Void).null
     # Sets the type of the input port at the given `id`.
@@ -2663,10 +2721,12 @@ module Godot
       arg_0 = pointerof(val_0).as(Void*)
       val_1 = get_type
       arg_1 = pointerof(val_1).as(Void*)
-      val_2 = name
-      arg_2 = pointerof(val_2).as(Void*)
+      str_2 = Bridge.make_string(name)
+      arg_2 = str_2
       args = [arg_0, arg_1, arg_2]
       ""
+    ensure
+      Bridge.free_string(str_2)
     end
     @@mb_remove_output_port : Void* = Pointer(Void).null
     # Removes the output port at the given `id`.
@@ -2700,10 +2760,12 @@ module Godot
       end
       val_0 = id
       arg_0 = pointerof(val_0).as(Void*)
-      val_1 = name
-      arg_1 = pointerof(val_1).as(Void*)
+      str_1 = Bridge.make_string(name)
+      arg_1 = str_1
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_set_output_port_name, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_1)
     end
     @@mb_set_output_port_type : Void* = Pointer(Void).null
     # Sets the type of the output port at the given `id`.
@@ -2854,10 +2916,12 @@ module Godot
       end
       val_0 = id
       arg_0 = pointerof(val_0).as(Void*)
-      val_1 = new_class
-      arg_1 = pointerof(val_1).as(Void*)
+      sn_1 = Bridge.make_string_name(new_class)
+      arg_1 = sn_1
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_replace_node, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_1)
     end
     @@mb_is_node_connection : Void* = Pointer(Void).null
     # Returns `true` if the specified node and port connection exists.
@@ -3060,8 +3124,10 @@ module Godot
       val_0 = port
       arg_0 = pointerof(val_0).as(Void*)
       args = [arg_0]
+      ret_var = StaticArray(UInt8, 24).new(0_u8)
+      Bridge.ptrcall(@@mb_get_input_port_default_value, @pointer, args.to_unsafe.as(Void**), ret_var.to_unsafe.as(Void*))
       ret_ptr = Pointer(Void).null
-      Bridge.ptrcall(@@mb_get_input_port_default_value, @pointer, args.to_unsafe.as(Void**), pointerof(ret_ptr).as(Void*))
+      Bridge.type_from_variant(24, pointerof(ret_ptr).as(Void*), ret_var.to_unsafe.as(Void*))
       ret_ptr
     end
     @@mb_remove_input_port_default_value : Void* = Pointer(Void).null
@@ -3232,10 +3298,12 @@ module Godot
       if @@mb_set_parameter_name.null?
         @@mb_set_parameter_name = Bridge.get_method_bind("VisualShaderNodeParameter", "set_parameter_name", 83702148_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(name)
+      arg_0 = str_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_parameter_name, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_get_parameter_name : Void* = Pointer(Void).null
     def get_parameter_name() : String
@@ -3555,10 +3623,12 @@ module Godot
       if @@mb_set_title.null?
         @@mb_set_title = Bridge.get_method_bind("VisualShaderNodeFrame", "set_title", 83702148_i64)
       end
-      val_0 = title
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(title)
+      arg_0 = str_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_title, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_get_title : Void* = Pointer(Void).null
     def get_title() : String
@@ -3678,10 +3748,12 @@ module Godot
       if @@mb_set_description.null?
         @@mb_set_description = Bridge.get_method_bind("VisualShaderNodeComment", "set_description", 83702148_i64)
       end
-      val_0 = description
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(description)
+      arg_0 = str_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_description, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_get_description : Void* = Pointer(Void).null
     def get_description() : String
@@ -4208,10 +4280,12 @@ module Godot
       if @@mb_set_inputs.null?
         @@mb_set_inputs = Bridge.get_method_bind("VisualShaderNodeGroupBase", "set_inputs", 83702148_i64)
       end
-      val_0 = inputs
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(inputs)
+      arg_0 = str_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_inputs, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_get_inputs : Void* = Pointer(Void).null
     # Returns a `String` description of the input ports as a colon-separated list using the format `id,type,name;` (see `#add_input_port`).
@@ -4227,10 +4301,12 @@ module Godot
       if @@mb_set_outputs.null?
         @@mb_set_outputs = Bridge.get_method_bind("VisualShaderNodeGroupBase", "set_outputs", 83702148_i64)
       end
-      val_0 = outputs
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(outputs)
+      arg_0 = str_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_outputs, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_get_outputs : Void* = Pointer(Void).null
     # Returns a `String` description of the output ports as a colon-separated list using the format `id,type,name;` (see `#add_output_port`).
@@ -4246,12 +4322,14 @@ module Godot
       if @@mb_is_valid_port_name.null?
         @@mb_is_valid_port_name = Bridge.get_method_bind("VisualShaderNodeGroupBase", "is_valid_port_name", 3927539163_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(name)
+      arg_0 = str_0
       args = [arg_0]
       ret = 0_u8
       Bridge.ptrcall(@@mb_is_valid_port_name, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret != 0_u8
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_add_input_port : Void* = Pointer(Void).null
     # Adds an input port with the specified `type` (see `VisualShaderNode.PortType`) and `name`.
@@ -4263,10 +4341,12 @@ module Godot
       arg_0 = pointerof(val_0).as(Void*)
       val_1 = get_type
       arg_1 = pointerof(val_1).as(Void*)
-      val_2 = name
-      arg_2 = pointerof(val_2).as(Void*)
+      str_2 = Bridge.make_string(name)
+      arg_2 = str_2
       args = [arg_0, arg_1, arg_2]
       Bridge.ptrcall(@@mb_add_input_port, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_2)
     end
     @@mb_remove_input_port : Void* = Pointer(Void).null
     # Removes the specified input port.
@@ -4320,10 +4400,12 @@ module Godot
       arg_0 = pointerof(val_0).as(Void*)
       val_1 = get_type
       arg_1 = pointerof(val_1).as(Void*)
-      val_2 = name
-      arg_2 = pointerof(val_2).as(Void*)
+      str_2 = Bridge.make_string(name)
+      arg_2 = str_2
       args = [arg_0, arg_1, arg_2]
       Bridge.ptrcall(@@mb_add_output_port, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_2)
     end
     @@mb_remove_output_port : Void* = Pointer(Void).null
     # Removes the specified output port.
@@ -4375,10 +4457,12 @@ module Godot
       end
       val_0 = id
       arg_0 = pointerof(val_0).as(Void*)
-      val_1 = name
-      arg_1 = pointerof(val_1).as(Void*)
+      str_1 = Bridge.make_string(name)
+      arg_1 = str_1
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_set_input_port_name, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_1)
     end
     @@mb_set_input_port_type : Void* = Pointer(Void).null
     # Sets the specified input port's type (see `VisualShaderNode.PortType`).
@@ -4401,10 +4485,12 @@ module Godot
       end
       val_0 = id
       arg_0 = pointerof(val_0).as(Void*)
-      val_1 = name
-      arg_1 = pointerof(val_1).as(Void*)
+      str_1 = Bridge.make_string(name)
+      arg_1 = str_1
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_set_output_port_name, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_1)
     end
     @@mb_set_output_port_type : Void* = Pointer(Void).null
     # Sets the specified output port's type (see `VisualShaderNode.PortType`).
@@ -4453,10 +4539,12 @@ module Godot
       if @@mb_set_expression.null?
         @@mb_set_expression = Bridge.get_method_bind("VisualShaderNodeExpression", "set_expression", 83702148_i64)
       end
-      val_0 = expression
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(expression)
+      arg_0 = str_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_expression, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_get_expression : Void* = Pointer(Void).null
     def get_expression() : String
@@ -4847,10 +4935,12 @@ module Godot
       if @@mb_set_input_name.null?
         @@mb_set_input_name = Bridge.get_method_bind("VisualShaderNodeInput", "set_input_name", 83702148_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(name)
+      arg_0 = str_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_input_name, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_get_input_name : Void* = Pointer(Void).null
     def get_input_name() : String
@@ -5258,10 +5348,12 @@ module Godot
       if @@mb_set_parameter_name.null?
         @@mb_set_parameter_name = Bridge.get_method_bind("VisualShaderNodeParameterRef", "set_parameter_name", 83702148_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(name)
+      arg_0 = str_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_parameter_name, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_get_parameter_name : Void* = Pointer(Void).null
     def get_parameter_name() : String
@@ -6365,10 +6457,12 @@ module Godot
       if @@mb_set_varying_name.null?
         @@mb_set_varying_name = Bridge.get_method_bind("VisualShaderNodeVarying", "set_varying_name", 83702148_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(name)
+      arg_0 = str_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_varying_name, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_get_varying_name : Void* = Pointer(Void).null
     def get_varying_name() : String
@@ -7143,8 +7237,10 @@ module Godot
       if @@mb_get_ref.null?
         @@mb_get_ref = Bridge.get_method_bind("WeakRef", "get_ref", 1214101251_i64)
       end
+      ret_var = StaticArray(UInt8, 24).new(0_u8)
+      Bridge.ptrcall(@@mb_get_ref, @pointer, Pointer(Pointer(Void)).null, ret_var.to_unsafe.as(Void*))
       ret_ptr = Pointer(Void).null
-      Bridge.ptrcall(@@mb_get_ref, @pointer, Pointer(Pointer(Void)).null, pointerof(ret_ptr).as(Void*))
+      Bridge.type_from_variant(24, pointerof(ret_ptr).as(Void*), ret_var.to_unsafe.as(Void*))
       ret_ptr
     end
   end
@@ -7464,10 +7560,12 @@ module Godot
       if @@mb_set_default_extension.null?
         @@mb_set_default_extension = Bridge.get_method_bind("WebRTCPeerConnection", "set_default_extension", 3304788590_i64)
       end
-      val_0 = extension_class
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(extension_class)
+      arg_0 = sn_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_default_extension, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_initialize : Void* = Pointer(Void).null
     # Re-initialize this peer connection, closing any previously active connection, and going back to state `STATE_NEW`. A dictionary of `configuration` options can be passed to configure the peer connection.
@@ -7523,14 +7621,16 @@ module Godot
       if @@mb_create_data_channel.null?
         @@mb_create_data_channel = Bridge.get_method_bind("WebRTCPeerConnection", "create_data_channel", 1288557393_i64)
       end
-      val_0 = label
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(label)
+      arg_0 = str_0
       val_1 = options
       arg_1 = pointerof(val_1).as(Void*)
       args = [arg_0, arg_1]
       ret_ptr = Pointer(Void).null
       Bridge.ptrcall(@@mb_create_data_channel, @pointer, args.to_unsafe.as(Void**), pointerof(ret_ptr).as(Void*))
       WebRTCDataChannel.new(ret_ptr)
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_create_offer : Void* = Pointer(Void).null
     # Creates a new SDP offer to start a WebRTC connection with a remote peer. At least one `WebRTCDataChannel` must have been created before calling this method.
@@ -7550,14 +7650,17 @@ module Godot
       if @@mb_set_local_description.null?
         @@mb_set_local_description = Bridge.get_method_bind("WebRTCPeerConnection", "set_local_description", 852856452_i64)
       end
-      val_0 = get_type
-      arg_0 = pointerof(val_0).as(Void*)
-      val_1 = sdp
-      arg_1 = pointerof(val_1).as(Void*)
+      str_0 = Bridge.make_string(get_type)
+      arg_0 = str_0
+      str_1 = Bridge.make_string(sdp)
+      arg_1 = str_1
       args = [arg_0, arg_1]
       ret = 0_i64
       Bridge.ptrcall(@@mb_set_local_description, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret
+    ensure
+      Bridge.free_string(str_0)
+      Bridge.free_string(str_1)
     end
     @@mb_set_remote_description : Void* = Pointer(Void).null
     # Sets the SDP description of the remote peer. This should be called with the values generated by a remote peer and received over the signaling server.
@@ -7567,14 +7670,17 @@ module Godot
       if @@mb_set_remote_description.null?
         @@mb_set_remote_description = Bridge.get_method_bind("WebRTCPeerConnection", "set_remote_description", 852856452_i64)
       end
-      val_0 = get_type
-      arg_0 = pointerof(val_0).as(Void*)
-      val_1 = sdp
-      arg_1 = pointerof(val_1).as(Void*)
+      str_0 = Bridge.make_string(get_type)
+      arg_0 = str_0
+      str_1 = Bridge.make_string(sdp)
+      arg_1 = str_1
       args = [arg_0, arg_1]
       ret = 0_i64
       Bridge.ptrcall(@@mb_set_remote_description, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret
+    ensure
+      Bridge.free_string(str_0)
+      Bridge.free_string(str_1)
     end
     @@mb_add_ice_candidate : Void* = Pointer(Void).null
     # Add an ice candidate generated by a remote peer (and received over the signaling server). See `ice_candidate_created`.
@@ -7582,16 +7688,19 @@ module Godot
       if @@mb_add_ice_candidate.null?
         @@mb_add_ice_candidate = Bridge.get_method_bind("WebRTCPeerConnection", "add_ice_candidate", 3958950400_i64)
       end
-      val_0 = media
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(media)
+      arg_0 = str_0
       val_1 = index
       arg_1 = pointerof(val_1).as(Void*)
-      val_2 = name
-      arg_2 = pointerof(val_2).as(Void*)
+      str_2 = Bridge.make_string(name)
+      arg_2 = str_2
       args = [arg_0, arg_1, arg_2]
       ret = 0_i64
       Bridge.ptrcall(@@mb_add_ice_candidate, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret
+    ensure
+      Bridge.free_string(str_0)
+      Bridge.free_string(str_2)
     end
     @@mb_poll : Void* = Pointer(Void).null
     # Call this method frequently (e.g. in `#Node._process` or `#Node._physics_process`) to properly receive signals.
@@ -7663,14 +7772,16 @@ module Godot
       if @@mb_create_client.null?
         @@mb_create_client = Bridge.get_method_bind("WebSocketMultiplayerPeer", "create_client", 1966198364_i64)
       end
-      val_0 = url
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(url)
+      arg_0 = str_0
       arg_ptr_1 = tls_client_options ? tls_client_options.pointer : Pointer(Void).null
       arg_1 = pointerof(arg_ptr_1).as(Void*)
       args = [arg_0, arg_1]
       ret = 0_i64
       Bridge.ptrcall(@@mb_create_client, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_create_server : Void* = Pointer(Void).null
     # Starts a new multiplayer server listening on the given `port`. You can optionally specify a `bind_address`, and provide valid `tls_server_options` to use TLS. See `#TLSOptions.server`.
@@ -7680,14 +7791,16 @@ module Godot
       end
       val_0 = port
       arg_0 = pointerof(val_0).as(Void*)
-      val_1 = bind_address
-      arg_1 = pointerof(val_1).as(Void*)
+      str_1 = Bridge.make_string(bind_address)
+      arg_1 = str_1
       arg_ptr_2 = tls_server_options ? tls_server_options.pointer : Pointer(Void).null
       arg_2 = pointerof(arg_ptr_2).as(Void*)
       args = [arg_0, arg_1, arg_2]
       ret = 0_i64
       Bridge.ptrcall(@@mb_create_server, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret
+    ensure
+      Bridge.free_string(str_1)
     end
     @@mb_get_peer : Void* = Pointer(Void).null
     # Returns the `WebSocketPeer` associated to the given `peer_id`.
@@ -7896,14 +8009,16 @@ module Godot
       if @@mb_connect_to_url.null?
         @@mb_connect_to_url = Bridge.get_method_bind("WebSocketPeer", "connect_to_url", 1966198364_i64)
       end
-      val_0 = url
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(url)
+      arg_0 = str_0
       arg_ptr_1 = tls_client_options ? tls_client_options.pointer : Pointer(Void).null
       arg_1 = pointerof(arg_ptr_1).as(Void*)
       args = [arg_0, arg_1]
       ret = 0_i64
       Bridge.ptrcall(@@mb_connect_to_url, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_accept_stream : Void* = Pointer(Void).null
     # Accepts a peer connection performing the HTTP handshake as a WebSocket server. The `stream` must be a valid TCP stream retrieved via `#TCPServer.take_connection`, or a TLS stream accepted via `#StreamPeerTLS.accept_stream`.
@@ -7940,12 +8055,14 @@ module Godot
       if @@mb_send_text.null?
         @@mb_send_text = Bridge.get_method_bind("WebSocketPeer", "send_text", 166001499_i64)
       end
-      val_0 = message
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(message)
+      arg_0 = str_0
       args = [arg_0]
       ret = 0_i64
       Bridge.ptrcall(@@mb_send_text, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_was_string_packet : Void* = Pointer(Void).null
     # Returns `true` if the last received packet was sent as a text payload. See `WriteMode`.
@@ -7977,10 +8094,12 @@ module Godot
       end
       val_0 = code
       arg_0 = pointerof(val_0).as(Void*)
-      val_1 = reason
-      arg_1 = pointerof(val_1).as(Void*)
+      str_1 = Bridge.make_string(reason)
+      arg_1 = str_1
       args = [arg_0, arg_1]
       Bridge.ptrcall(@@mb_close, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_1)
     end
     @@mb_get_connected_host : Void* = Pointer(Void).null
     # Returns the IP address of the connected peer.
@@ -8293,20 +8412,24 @@ module Godot
       if @@mb_is_session_supported.null?
         @@mb_is_session_supported = Bridge.get_method_bind("WebXRInterface", "is_session_supported", 83702148_i64)
       end
-      val_0 = session_mode
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(session_mode)
+      arg_0 = str_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_is_session_supported, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_set_session_mode : Void* = Pointer(Void).null
     def set_session_mode(session_mode : String) : Void
       if @@mb_set_session_mode.null?
         @@mb_set_session_mode = Bridge.get_method_bind("WebXRInterface", "set_session_mode", 83702148_i64)
       end
-      val_0 = session_mode
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(session_mode)
+      arg_0 = str_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_session_mode, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_get_session_mode : Void* = Pointer(Void).null
     def get_session_mode() : String
@@ -8320,10 +8443,12 @@ module Godot
       if @@mb_set_required_features.null?
         @@mb_set_required_features = Bridge.get_method_bind("WebXRInterface", "set_required_features", 83702148_i64)
       end
-      val_0 = required_features
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(required_features)
+      arg_0 = str_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_required_features, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_get_required_features : Void* = Pointer(Void).null
     def get_required_features() : String
@@ -8337,10 +8462,12 @@ module Godot
       if @@mb_set_optional_features.null?
         @@mb_set_optional_features = Bridge.get_method_bind("WebXRInterface", "set_optional_features", 83702148_i64)
       end
-      val_0 = optional_features
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(optional_features)
+      arg_0 = str_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_optional_features, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_get_optional_features : Void* = Pointer(Void).null
     def get_optional_features() : String
@@ -8368,10 +8495,12 @@ module Godot
       if @@mb_set_requested_reference_space_types.null?
         @@mb_set_requested_reference_space_types = Bridge.get_method_bind("WebXRInterface", "set_requested_reference_space_types", 83702148_i64)
       end
-      val_0 = requested_reference_space_types
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(requested_reference_space_types)
+      arg_0 = str_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_requested_reference_space_types, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_get_requested_reference_space_types : Void* = Pointer(Void).null
     def get_requested_reference_space_types() : String
@@ -8526,12 +8655,14 @@ module Godot
       arg_0 = pointerof(val_0).as(Void*)
       val_1 = high_priority
       arg_1 = pointerof(val_1).as(Void*)
-      val_2 = description
-      arg_2 = pointerof(val_2).as(Void*)
+      str_2 = Bridge.make_string(description)
+      arg_2 = str_2
       args = [arg_0, arg_1, arg_2]
       ret = 0_i64
       Bridge.ptrcall(@@mb_add_task, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret
+    ensure
+      Bridge.free_string(str_2)
     end
     @@mb_is_task_completed : Void* = Pointer(Void).null
     # Returns `true` if the task with the given ID is completed.
@@ -8592,12 +8723,14 @@ module Godot
       arg_2 = pointerof(val_2).as(Void*)
       val_3 = high_priority
       arg_3 = pointerof(val_3).as(Void*)
-      val_4 = description
-      arg_4 = pointerof(val_4).as(Void*)
+      str_4 = Bridge.make_string(description)
+      arg_4 = str_4
       args = [arg_0, arg_1, arg_2, arg_3, arg_4]
       ret = 0_i64
       Bridge.ptrcall(@@mb_add_group_task, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret
+    ensure
+      Bridge.free_string(str_4)
     end
     @@mb_is_group_task_completed : Void* = Pointer(Void).null
     # Returns `true` if the group task with the given ID is completed.
@@ -8949,12 +9082,14 @@ module Godot
       if @@mb_save.null?
         @@mb_save = Bridge.get_method_bind("X509Certificate", "save", 166001499_i64)
       end
-      val_0 = path
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(path)
+      arg_0 = str_0
       args = [arg_0]
       ret = 0_i64
       Bridge.ptrcall(@@mb_save, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_load : Void* = Pointer(Void).null
     # Loads a certificate from `path` ("*.crt" file).
@@ -8962,12 +9097,14 @@ module Godot
       if @@mb_load.null?
         @@mb_load = Bridge.get_method_bind("X509Certificate", "load", 166001499_i64)
       end
-      val_0 = path
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(path)
+      arg_0 = str_0
       args = [arg_0]
       ret = 0_i64
       Bridge.ptrcall(@@mb_load, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_save_to_string : Void* = Pointer(Void).null
     # Returns a string representation of the certificate, or an empty string if the certificate is invalid.
@@ -8983,12 +9120,14 @@ module Godot
       if @@mb_load_from_string.null?
         @@mb_load_from_string = Bridge.get_method_bind("X509Certificate", "load_from_string", 166001499_i64)
       end
-      val_0 = string
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(string)
+      arg_0 = str_0
       args = [arg_0]
       ret = 0_i64
       Bridge.ptrcall(@@mb_load_from_string, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret
+    ensure
+      Bridge.free_string(str_0)
     end
   end
   # Provides a low-level interface for creating parsers for XML files.
@@ -9128,12 +9267,14 @@ module Godot
       if @@mb_has_attribute.null?
         @@mb_has_attribute = Bridge.get_method_bind("XMLParser", "has_attribute", 3927539163_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(name)
+      arg_0 = str_0
       args = [arg_0]
       ret = 0_u8
       Bridge.ptrcall(@@mb_has_attribute, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret != 0_u8
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_get_named_attribute_value : Void* = Pointer(Void).null
     # Returns the value of an attribute of the currently parsed element, specified by its `name`. This method will raise an error if the element has no such attribute.
@@ -9141,10 +9282,12 @@ module Godot
       if @@mb_get_named_attribute_value.null?
         @@mb_get_named_attribute_value = Bridge.get_method_bind("XMLParser", "get_named_attribute_value", 3135753539_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(name)
+      arg_0 = str_0
       args = [arg_0]
       ""
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_get_named_attribute_value_safe : Void* = Pointer(Void).null
     # Returns the value of an attribute of the currently parsed element, specified by its `name`. This method will return an empty string if the element has no such attribute.
@@ -9152,10 +9295,12 @@ module Godot
       if @@mb_get_named_attribute_value_safe.null?
         @@mb_get_named_attribute_value_safe = Bridge.get_method_bind("XMLParser", "get_named_attribute_value_safe", 3135753539_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(name)
+      arg_0 = str_0
       args = [arg_0]
       ""
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_is_empty : Void* = Pointer(Void).null
     # Returns `true` if the currently parsed element is empty, e.g. `<element />`.
@@ -9204,12 +9349,14 @@ module Godot
       if @@mb_open.null?
         @@mb_open = Bridge.get_method_bind("XMLParser", "open", 166001499_i64)
       end
-      val_0 = file
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(file)
+      arg_0 = str_0
       args = [arg_0]
       ret = 0_i64
       Bridge.ptrcall(@@mb_open, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_open_buffer : Void* = Pointer(Void).null
     # Opens an XML raw `buffer` for parsing. This method returns an error code.
@@ -9237,10 +9384,12 @@ module Godot
       if @@mb_set_tracker.null?
         @@mb_set_tracker = Bridge.get_method_bind("XRNode3D", "set_tracker", 3304788590_i64)
       end
-      val_0 = tracker_name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(tracker_name)
+      arg_0 = sn_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_tracker, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_get_tracker : Void* = Pointer(Void).null
     def get_tracker() : String
@@ -9254,10 +9403,12 @@ module Godot
       if @@mb_set_pose_name.null?
         @@mb_set_pose_name = Bridge.get_method_bind("XRNode3D", "set_pose_name", 3304788590_i64)
       end
-      val_0 = pose
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(pose)
+      arg_0 = sn_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_pose_name, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_get_pose_name : Void* = Pointer(Void).null
     def get_pose_name() : String
@@ -9326,8 +9477,8 @@ module Godot
       if @@mb_trigger_haptic_pulse.null?
         @@mb_trigger_haptic_pulse = Bridge.get_method_bind("XRNode3D", "trigger_haptic_pulse", 508576839_i64)
       end
-      val_0 = action_name
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(action_name)
+      arg_0 = str_0
       val_1 = frequency
       arg_1 = pointerof(val_1).as(Void*)
       val_2 = amplitude
@@ -9338,6 +9489,8 @@ module Godot
       arg_4 = pointerof(val_4).as(Void*)
       args = [arg_0, arg_1, arg_2, arg_3, arg_4]
       Bridge.ptrcall(@@mb_trigger_haptic_pulse, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_0)
     end
   end
   # An anchor point in AR space.
@@ -9394,10 +9547,12 @@ module Godot
       if @@mb_set_body_tracker.null?
         @@mb_set_body_tracker = Bridge.get_method_bind("XRBodyModifier3D", "set_body_tracker", 3304788590_i64)
       end
-      val_0 = tracker_name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(tracker_name)
+      arg_0 = sn_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_body_tracker, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_get_body_tracker : Void* = Pointer(Void).null
     def get_body_tracker() : String
@@ -9672,12 +9827,14 @@ module Godot
       if @@mb_is_button_pressed.null?
         @@mb_is_button_pressed = Bridge.get_method_bind("XRController3D", "is_button_pressed", 2619796661_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       args = [arg_0]
       ret = 0_u8
       Bridge.ptrcall(@@mb_is_button_pressed, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret != 0_u8
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_get_input : Void* = Pointer(Void).null
     # Returns a `Variant` for the input with the given `name`. This works for any input type, the variant will be typed according to the actions configuration.
@@ -9686,12 +9843,16 @@ module Godot
       if @@mb_get_input.null?
         @@mb_get_input = Bridge.get_method_bind("XRController3D", "get_input", 2760726917_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       args = [arg_0]
+      ret_var = StaticArray(UInt8, 24).new(0_u8)
+      Bridge.ptrcall(@@mb_get_input, @pointer, args.to_unsafe.as(Void**), ret_var.to_unsafe.as(Void*))
       ret_ptr = Pointer(Void).null
-      Bridge.ptrcall(@@mb_get_input, @pointer, args.to_unsafe.as(Void**), pointerof(ret_ptr).as(Void*))
+      Bridge.type_from_variant(24, pointerof(ret_ptr).as(Void*), ret_var.to_unsafe.as(Void*))
       ret_ptr
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_get_float : Void* = Pointer(Void).null
     # Returns a numeric value for the input with the given `name`. This is used for triggers and grip sensors.
@@ -9700,12 +9861,14 @@ module Godot
       if @@mb_get_float.null?
         @@mb_get_float = Bridge.get_method_bind("XRController3D", "get_float", 2349060816_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       args = [arg_0]
       ret = 0.0_f64
       Bridge.ptrcall(@@mb_get_float, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_get_vector2 : Void* = Pointer(Void).null
     # Returns a `Vector2` for the input with the given `name`. This is used for thumbsticks and thumbpads found on many controllers.
@@ -9714,12 +9877,14 @@ module Godot
       if @@mb_get_vector2.null?
         @@mb_get_vector2 = Bridge.get_method_bind("XRController3D", "get_vector2", 3100822709_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       args = [arg_0]
       ret = Vector2.new
       Bridge.ptrcall(@@mb_get_vector2, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_get_tracker_hand : Void* = Pointer(Void).null
     # Returns the hand holding this controller, if known.
@@ -9756,10 +9921,12 @@ module Godot
       if @@mb_set_face_tracker.null?
         @@mb_set_face_tracker = Bridge.get_method_bind("XRFaceModifier3D", "set_face_tracker", 3304788590_i64)
       end
-      val_0 = tracker_name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(tracker_name)
+      arg_0 = sn_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_face_tracker, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_get_face_tracker : Void* = Pointer(Void).null
     def get_face_tracker() : String
@@ -10007,10 +10174,12 @@ module Godot
       if @@mb_set_hand_tracker.null?
         @@mb_set_hand_tracker = Bridge.get_method_bind("XRHandModifier3D", "set_hand_tracker", 3304788590_i64)
       end
-      val_0 = tracker_name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(tracker_name)
+      arg_0 = sn_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_hand_tracker, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_get_hand_tracker : Void* = Pointer(Void).null
     def get_hand_tracker() : String
@@ -10425,10 +10594,12 @@ module Godot
       if @@mb_set_name.null?
         @@mb_set_name = Bridge.get_method_bind("XRPose", "set_name", 3304788590_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(name)
+      arg_0 = sn_0
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_name, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_get_name : Void* = Pointer(Void).null
     def get_name() : String
@@ -10712,12 +10883,14 @@ module Godot
       if @@mb_find_interface.null?
         @@mb_find_interface = Bridge.get_method_bind("XRServer", "find_interface", 1395192955_i64)
       end
-      val_0 = name
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(name)
+      arg_0 = str_0
       args = [arg_0]
       ret_ptr = Pointer(Void).null
       Bridge.ptrcall(@@mb_find_interface, @pointer, args.to_unsafe.as(Void**), pointerof(ret_ptr).as(Void*))
       XRInterface.new(ret_ptr)
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_add_tracker : Void* = Pointer(Void).null
     # Registers a new `XRTracker` that tracks a physical object.
@@ -10760,12 +10933,14 @@ module Godot
       if @@mb_get_tracker.null?
         @@mb_get_tracker = Bridge.get_method_bind("XRServer", "get_tracker", 147382240_i64)
       end
-      val_0 = tracker_name
-      arg_0 = pointerof(val_0).as(Void*)
+      sn_0 = Bridge.make_string_name(tracker_name)
+      arg_0 = sn_0
       args = [arg_0]
       ret_ptr = Pointer(Void).null
       Bridge.ptrcall(@@mb_get_tracker, @pointer, args.to_unsafe.as(Void**), pointerof(ret_ptr).as(Void*))
       XRTracker.new(ret_ptr)
+    ensure
+      Bridge.free_string_name(sn_0)
     end
     @@mb_get_primary_interface : Void* = Pointer(Void).null
     def get_primary_interface() : XRInterface
@@ -10909,14 +11084,16 @@ module Godot
       if @@mb_open.null?
         @@mb_open = Bridge.get_method_bind("ZIPPacker", "open", 1936816515_i64)
       end
-      val_0 = path
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(path)
+      arg_0 = str_0
       val_1 = append
       arg_1 = pointerof(val_1).as(Void*)
       args = [arg_0, arg_1]
       ret = 0_i64
       Bridge.ptrcall(@@mb_open, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_set_compression_level : Void* = Pointer(Void).null
     def set_compression_level(compression_level : Int64) : Void
@@ -10944,8 +11121,8 @@ module Godot
       if @@mb_add_directory.null?
         @@mb_add_directory = Bridge.get_method_bind("ZIPPacker", "add_directory", 934773537_i64)
       end
-      val_0 = path
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(path)
+      arg_0 = str_0
       val_1 = permissions
       arg_1 = pointerof(val_1).as(Void*)
       val_2 = modified_time
@@ -10954,6 +11131,8 @@ module Godot
       ret = 0_i64
       Bridge.ptrcall(@@mb_add_directory, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_start_file : Void* = Pointer(Void).null
     # Starts writing to a file within the archive. Only one file can be written at the same time. If `modified_time` is set to `0`, current system time is used.
@@ -10962,8 +11141,8 @@ module Godot
       if @@mb_start_file.null?
         @@mb_start_file = Bridge.get_method_bind("ZIPPacker", "start_file", 4260848715_i64)
       end
-      val_0 = path
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(path)
+      arg_0 = str_0
       val_1 = permissions
       arg_1 = pointerof(val_1).as(Void*)
       val_2 = modified_time
@@ -10972,6 +11151,8 @@ module Godot
       ret = 0_i64
       Bridge.ptrcall(@@mb_start_file, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_write_file : Void* = Pointer(Void).null
     # Write the given `data` to the file.
@@ -11061,12 +11242,14 @@ module Godot
       if @@mb_open.null?
         @@mb_open = Bridge.get_method_bind("ZIPReader", "open", 166001499_i64)
       end
-      val_0 = path
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(path)
+      arg_0 = str_0
       args = [arg_0]
       ret = 0_i64
       Bridge.ptrcall(@@mb_open, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_close : Void* = Pointer(Void).null
     # Closes the underlying resources used by this instance.
@@ -11096,14 +11279,16 @@ module Godot
       if @@mb_read_file.null?
         @@mb_read_file = Bridge.get_method_bind("ZIPReader", "read_file", 740857591_i64)
       end
-      val_0 = path
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(path)
+      arg_0 = str_0
       val_1 = case_sensitive
       arg_1 = pointerof(val_1).as(Void*)
       args = [arg_0, arg_1]
       ret_ptr = Pointer(Void).null
       Bridge.ptrcall(@@mb_read_file, @pointer, args.to_unsafe.as(Void**), pointerof(ret_ptr).as(Void*))
       ret_ptr
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_file_exists : Void* = Pointer(Void).null
     # Returns `true` if the file exists in the loaded zip archive.
@@ -11112,14 +11297,16 @@ module Godot
       if @@mb_file_exists.null?
         @@mb_file_exists = Bridge.get_method_bind("ZIPReader", "file_exists", 35364943_i64)
       end
-      val_0 = path
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(path)
+      arg_0 = str_0
       val_1 = case_sensitive
       arg_1 = pointerof(val_1).as(Void*)
       args = [arg_0, arg_1]
       ret = 0_u8
       Bridge.ptrcall(@@mb_file_exists, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret != 0_u8
+    ensure
+      Bridge.free_string(str_0)
     end
     @@mb_get_compression_level : Void* = Pointer(Void).null
     # Returns the compression level of the file in the loaded zip archive. Returns `-1` if the file doesn't exist or any other error occurs. Must be called after `#open`.
@@ -11127,14 +11314,16 @@ module Godot
       if @@mb_get_compression_level.null?
         @@mb_get_compression_level = Bridge.get_method_bind("ZIPReader", "get_compression_level", 3694577386_i64)
       end
-      val_0 = path
-      arg_0 = pointerof(val_0).as(Void*)
+      str_0 = Bridge.make_string(path)
+      arg_0 = str_0
       val_1 = case_sensitive
       arg_1 = pointerof(val_1).as(Void*)
       args = [arg_0, arg_1]
       ret = 0_i64
       Bridge.ptrcall(@@mb_get_compression_level, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret
+    ensure
+      Bridge.free_string(str_0)
     end
   end
 end

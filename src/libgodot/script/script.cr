@@ -93,7 +93,8 @@ module Godot
     end
 
     def self._godot_has_virtual_method(method_name : String) : Bool
-      case method_name
+      norm = method_name.starts_with?('_') ? method_name : "_#{method_name}"
+      case norm
       when "_can_instantiate", "_has_source_code", "_get_source_code", "_set_source_code",
            "_get_instance_base_type", "_get_global_name", "_is_tool", "_is_valid",
            "_get_language", "_has_method", "_has_static_method",
@@ -112,9 +113,10 @@ module Godot
     end
 
     def _godot_call_virtual_with_data(method_name : String, args : Void**, ret : Void*) : Void
-      case method_name
+      norm = method_name.starts_with?('_') ? method_name : "_#{method_name}"
+      case norm
       when "_can_instantiate"
-        ret.as(UInt8*).value = 0_u8
+        ret.as(UInt8*).value = 1_u8
       when "_has_source_code"
         ret.as(UInt8*).value = 1_u8
       when "_get_source_code"
@@ -167,9 +169,15 @@ module Godot
         end
         ret.as(Int32*).value = 0_i32 # OK
       when "_instance_create", "_placeholder_instance_create"
-        ret.as(Void**).value = Pointer(Void).null
+        lang = CrystalLanguage.singleton_instance
+        if !lang.pointer.null?
+          inst = Bridge.placeholder_script_instance_create(lang.pointer, @pointer, args[0])
+          ret.as(Void**).value = inst
+        else
+          ret.as(Void**).value = Pointer(Void).null
+        end
       when "_instance_has"
-        ret.as(UInt8*).value = 0_u8
+        ret.as(UInt8*).value = 1_u8
       when "_get_documentation"
         Bridge.ret_array_empty(ret)
       when "_get_doc_class_name"

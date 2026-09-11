@@ -171,5 +171,35 @@ describe "LibGodot Features & Reflection" do
       rpc_method[:channel].should eq(1)
       rpc_method[:call_local].should be_true
     end
+
+    it "extracts file, line, and error summary from compiler output" do
+      sample_error = <<-ERR
+      Showing last frame. Use --error-trace for full trace.
+
+      In src\\main.cr:16:5
+
+       16 | butt_soup
+             ^--------
+      Error: undefined local variable or method 'butt_soup' for MainNode
+      ERR
+
+      file_path = ""
+      line_num = -1
+      error_summary = ""
+
+      sample_error.each_line do |line|
+        line_strip = line.strip
+        if m = line_strip.match(/(?:In|Syntax error in)\s+([^:\r\n]+):(\d+)(?::(\d+))?/)
+          file_path = m[1]
+          line_num = m[2].to_i? || -1
+        elsif line_strip.starts_with?("Error:")
+          error_summary = line_strip.sub("Error:", "").strip
+        end
+      end
+
+      file_path.should eq("src\\main.cr")
+      line_num.should eq(16)
+      error_summary.should eq("undefined local variable or method 'butt_soup' for MainNode")
+    end
   end
 end

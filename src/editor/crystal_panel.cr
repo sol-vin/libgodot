@@ -98,7 +98,7 @@ module Godot
         btn_quick_build = Godot.create(Godot::Button)
         if btn_quick_build
           btn_quick_build.call("set_text", "Build Game (Debug)")
-          btn_quick_build.connect("pressed") { on_build_game(false) }
+          btn_quick_build.connect("pressed", flags: ::Godot::ConnectFlags::Deferred) { on_build_game(false) }
           header_box.call("add_child", btn_quick_build)
         end
 
@@ -106,7 +106,7 @@ module Godot
         btn_quick_release = Godot.create(Godot::Button)
         if btn_quick_release
           btn_quick_release.call("set_text", "Build Game (Release)")
-          btn_quick_release.connect("pressed") { on_build_game(true) }
+          btn_quick_release.connect("pressed", flags: ::Godot::ConnectFlags::Deferred) { on_build_game(true) }
           header_box.call("add_child", btn_quick_release)
         end
 
@@ -114,7 +114,7 @@ module Godot
         btn_quick_specs = Godot.create(Godot::Button)
         if btn_quick_specs
           btn_quick_specs.call("set_text", "Run Specs")
-          btn_quick_specs.connect("pressed") { on_run_all_specs }
+          btn_quick_specs.connect("pressed", flags: ::Godot::ConnectFlags::Deferred) { on_run_all_specs }
           header_box.call("add_child", btn_quick_specs)
         end
 
@@ -193,35 +193,35 @@ module Godot
         btn_build_debug = Godot.create(Godot::Button)
         if btn_build_debug
           btn_build_debug.call("set_text", "Build Game (Debug)")
-          btn_build_debug.connect("pressed") { on_build_game(false) }
+          btn_build_debug.connect("pressed", flags: ::Godot::ConnectFlags::Deferred) { on_build_game(false) }
           btn_row.call("add_child", btn_build_debug)
         end
 
         btn_build_rel = Godot.create(Godot::Button)
         if btn_build_rel
           btn_build_rel.call("set_text", "Build Game (Release -O3)")
-          btn_build_rel.connect("pressed") { on_build_game(true) }
+          btn_build_rel.connect("pressed", flags: ::Godot::ConnectFlags::Deferred) { on_build_game(true) }
           btn_row.call("add_child", btn_build_rel)
         end
 
         btn_pkg = Godot.create(Godot::Button)
         if btn_pkg
           btn_pkg.call("set_text", "Package Standalone Game")
-          btn_pkg.connect("pressed") { on_package_game }
+          btn_pkg.connect("pressed", flags: ::Godot::ConnectFlags::Deferred) { on_package_game }
           btn_row.call("add_child", btn_pkg)
         end
 
         btn_clean = Godot.create(Godot::Button)
         if btn_clean
           btn_clean.call("set_text", "Clean Artifacts")
-          btn_clean.connect("pressed") { on_clean_build }
+          btn_clean.connect("pressed", flags: ::Godot::ConnectFlags::Deferred) { on_clean_build }
           btn_row.call("add_child", btn_clean)
         end
 
         btn_reload = Godot.create(Godot::Button)
         if btn_reload
           btn_reload.call("set_text", "Reload GDExtensions")
-          btn_reload.connect("pressed") { on_reload_extensions }
+          btn_reload.connect("pressed", flags: ::Godot::ConnectFlags::Deferred) { on_reload_extensions }
           btn_row.call("add_child", btn_reload)
         end
 
@@ -531,9 +531,13 @@ module Godot
       args << "-o"
       args << out_lib
 
+      out_dir = File.dirname(out_lib)
+      Dir.mkdir_p(out_dir) unless Dir.exists?(out_dir)
+
+      compiler_env = CrystalIntegrationPlugin.build_compiler_env
       log_info("Executing: crystal #{args.join(" ")}")
       output_io = IO::Memory.new
-      status = Process.run("crystal", args, output: output_io, error: output_io)
+      status = Process.run("crystal", args, env: compiler_env, output: output_io, error: output_io)
       output_str = output_io.to_s.strip
 
       if !output_str.empty?
@@ -556,12 +560,22 @@ module Godot
           rescue
           end
         end
+        addon_bin_target = "addons/crystal_integration/bin/#{File.basename(out_lib)}"
+        if File.directory?("addons/crystal_integration/bin")
+          begin
+            File.copy(out_lib, addon_bin_target)
+            log_info("Synced binary to addon: #{addon_bin_target}")
+          rescue
+          end
+        end
         on_reload_extensions
       else
         log_error("Crystal build failed with exit code #{status.exit_code}.")
+        CrystalIntegrationPlugin.report_build_failure("Crystal build", output_str, output_str, status.exit_code)
       end
     rescue ex
       log_error("Error during build: #{ex.message}")
+      CrystalIntegrationPlugin.report_build_failure("Crystal build", "", "Error during build: #{ex.message}", 1)
     end
 
     def on_package_game : Void
@@ -594,11 +608,16 @@ module Godot
     end
 
     def on_reload_extensions : Void
+      if Godot::CrystalIntegrationPlugin.building? || Godot::CrystalIntegrationPlugin.reload_pending?
+        log_info("Build or reload already in progress, skipping duplicate request.")
+        return
+      end
       gd_ext_mgr = Godot::GDExtensionManager.new(Godot::GDExtensionManager.singleton_ptr)
       ext_path = "res://addons/crystal_integration/crystal.gdextension"
       if gd_ext_mgr.is_extension_loaded(ext_path)
-        status = gd_ext_mgr.reload_extension(ext_path)
-        log_info("GDExtension reload status: #{status}")
+        Godot::CrystalIntegrationPlugin.reload_pending = true
+        gd_ext_mgr.call_deferred("reload_extension", ext_path)
+        log_info("Scheduled deferred GDExtension reload.")
       else
         log_info("GDExtension not dynamically reloadable or loaded under another path.")
       end

@@ -156,6 +156,9 @@ static GDExtensionInterfaceGetVariantFromTypeConstructor gd_get_variant_from_typ
 /** Retrieves a constructor function to unbox a Godot Variant into a native C type */
 static GDExtensionInterfaceGetVariantToTypeConstructor gd_get_variant_to_type_constructor = nullptr;
 
+/** Creates a placeholder script instance for GDExtension scripts in editor */
+static GDExtensionInterfacePlaceHolderScriptInstanceCreate gd_placeholder_script_instance_create = nullptr;
+
 // ==============================================================================
 // Godot Engine Diagnostic & Logging Interfaces
 // ==============================================================================
@@ -251,6 +254,8 @@ struct VariantArg {
 
 typedef void (*CrystalSignalCallbackFn)(uint64_t target_id, const char *signal_name, const VariantArg *args, int arg_count);
 static std::vector<CrystalSignalCallbackFn> g_crystal_signal_callbacks;
+typedef void (*CrystalDeinitCallbackFn)();
+static std::unordered_map<GDExtensionClassLibraryPtr, std::vector<CrystalDeinitCallbackFn>> g_library_deinit_callbacks;
 
 static GDExtensionMethodBindPtr mb_object_connect = nullptr;
 static GDExtensionMethodBindPtr mb_object_is_connected = nullptr;
@@ -337,6 +342,13 @@ static void bridge_type_from_variant(int variant_type, void *dst, const void *va
         *(const char**)dst = s_type_str_buf;
         return;
     }
+    if (variant_type == GDEXTENSION_VARIANT_TYPE_OBJECT && gd_variant_get_type) {
+        GDExtensionVariantType actual_type = gd_variant_get_type((GDExtensionConstVariantPtr)variant);
+        if (actual_type != GDEXTENSION_VARIANT_TYPE_OBJECT) {
+            *(void**)dst = nullptr;
+            return;
+        }
+    }
     if (gd_get_variant_to_type_constructor) {
         GDExtensionTypeFromVariantConstructorFunc conv = gd_get_variant_to_type_constructor((GDExtensionVariantType)variant_type);
         if (conv) {
@@ -395,8 +407,6 @@ static GDExtensionMethodBindPtr mb_set_process = nullptr;
  */
 static void godot_log_print(const char *msg) {
     if (!msg) return;
-    printf("%s\n", msg);
-    fflush(stdout);
 
     if (gd_util_print && gd_variant_from_string && gd_string_new_with_utf8_chars && gd_variant_destroy) {
         void *gd_str = malloc(sizeof(void*));
@@ -410,6 +420,9 @@ static void godot_log_print(const char *msg) {
             gd_string_destroy(gd_str);
         }
         free(gd_str);
+    } else {
+        printf("%s\n", msg);
+        fflush(stdout);
     }
 }
 
@@ -420,8 +433,6 @@ static void godot_log_print(const char *msg) {
  */
 static void godot_log_printerr(const char *msg) {
     if (!msg) return;
-    fprintf(stderr, "%s\n", msg);
-    fflush(stderr);
 
     if (gd_util_printerr && gd_variant_from_string && gd_string_new_with_utf8_chars && gd_variant_destroy) {
         void *gd_str = malloc(sizeof(void*));
@@ -435,6 +446,9 @@ static void godot_log_printerr(const char *msg) {
             gd_string_destroy(gd_str);
         }
         free(gd_str);
+    } else {
+        fprintf(stderr, "%s\n", msg);
+        fflush(stderr);
     }
 }
 
@@ -450,9 +464,9 @@ static void godot_log_error(const char *desc, const char *msg, const char *func,
     fflush(stderr);
 
     if (gd_print_error_with_message && msg && msg[0] != '\0') {
-        gd_print_error_with_message(safe_desc, msg, safe_func, safe_file, line, 0);
+        gd_print_error_with_message(safe_desc, msg, safe_func, safe_file, line, 1);
     } else if (gd_print_error) {
-        gd_print_error(safe_desc, safe_func, safe_file, line, 0);
+        gd_print_error(safe_desc, safe_func, safe_file, line, 1);
     }
 }
 
@@ -468,9 +482,9 @@ static void godot_log_warning(const char *desc, const char *msg, const char *fun
     fflush(stderr);
 
     if (gd_print_warning_with_message && msg && msg[0] != '\0') {
-        gd_print_warning_with_message(safe_desc, msg, safe_func, safe_file, line, 0);
+        gd_print_warning_with_message(safe_desc, msg, safe_func, safe_file, line, 1);
     } else if (gd_print_warning) {
-        gd_print_warning(safe_desc, safe_func, safe_file, line, 0);
+        gd_print_warning(safe_desc, safe_func, safe_file, line, 1);
     }
 }
 
@@ -478,20 +492,26 @@ static void godot_log_warning(const char *desc, const char *msg, const char *fun
 // String & StringName Allocation Helpers
 // ==============================================================================
 
-/** Allocates and initializes a heap-backed Godot StringName instance */
+static std::unordered_map<std::string, void*> s_string_name_cache;
+
+/** Allocates and initializes a heap-backed Godot StringName instance (interned) */
 static void* make_string_name(const char *name) {
+    const char *k = name ? name : "";
+    auto it = s_string_name_cache.find(k);
+    if (it != s_string_name_cache.end()) {
+        return it->second;
+    }
     void *sn = malloc(sizeof(void*));
-    gd_string_name_new_with_utf8_chars(sn, name);
+    gd_string_name_new_with_utf8_chars(sn, k);
+    s_string_name_cache[k] = sn;
     return sn;
 }
 
-/** Destroys and frees a heap-backed Godot StringName instance */
+/** Destroys and frees a heap-backed Godot StringName instance (no-op: interned for engine lifetime) */
 static void free_string_name(void *sn) {
-    if (!sn) return;
-    if (gd_string_name_destroy) {
-        gd_string_name_destroy(sn);
-    }
-    free(sn);
+    // StringNames are interned in s_string_name_cache for engine lifetime.
+    // Calling gd_string_name_destroy on static engine strings corrupts Godot's
+    // static string pool and causes 'BUG: Unreferenced static string to 0' at exit.
 }
 
 /** Allocates and initializes a heap-backed Godot String instance */
@@ -613,8 +633,133 @@ struct GenericExtensionInstance {
     const CrystalClassDesc *desc;       /** Metadata descriptor for the class */
 };
 
-/** Global list of registered classes for unregistration on shutdown (deque ensures pointer stability) */
-static std::deque<CrystalClassDesc> g_registered_classes;
+/**
+ * Persistent class descriptor holding heap-allocated C++ storage for strings and metadata.
+ * Ensures pointers passed to Godot ClassDB (cinfo.class_userdata) remain valid and at
+ * invariant memory addresses across hot reloads and DLL unload cycles.
+ */
+struct PersistentClassDesc {
+    std::string name;
+    std::string parent_name;
+    std::string icon_path;
+
+    std::vector<std::string> prop_names;
+    std::vector<std::string> prop_type_names;
+    std::vector<std::string> prop_hint_strings;
+    std::vector<CrystalPropertyDesc> properties;
+
+    std::vector<std::string> sig_names;
+    std::vector<std::vector<std::string>> sig_arg_names;
+    std::vector<std::vector<CrystalSignalArgDesc>> sig_args;
+    std::vector<CrystalSignalDesc> signals;
+
+    std::vector<std::string> const_enum_names;
+    std::vector<std::string> const_names;
+    std::vector<CrystalConstantDesc> constants;
+
+    CrystalClassDesc desc;
+
+    void update_from(const CrystalClassDesc *p_desc) {
+        if (!p_desc) return;
+        name = p_desc->name ? p_desc->name : "";
+        parent_name = p_desc->parent_name ? p_desc->parent_name : "";
+        icon_path = p_desc->icon_path ? p_desc->icon_path : "";
+
+        // Copy properties
+        prop_names.clear();
+        prop_type_names.clear();
+        prop_hint_strings.clear();
+        properties.clear();
+
+        if (p_desc->properties && p_desc->property_count > 0) {
+            prop_names.resize(p_desc->property_count);
+            prop_type_names.resize(p_desc->property_count);
+            prop_hint_strings.resize(p_desc->property_count);
+            properties.resize(p_desc->property_count);
+
+            for (int i = 0; i < p_desc->property_count; i++) {
+                prop_names[i] = p_desc->properties[i].name ? p_desc->properties[i].name : "";
+                prop_type_names[i] = p_desc->properties[i].type_name ? p_desc->properties[i].type_name : "";
+                prop_hint_strings[i] = p_desc->properties[i].hint_string ? p_desc->properties[i].hint_string : "";
+
+                properties[i] = p_desc->properties[i];
+                properties[i].name = prop_names[i].c_str();
+                properties[i].type_name = prop_type_names[i].c_str();
+                properties[i].hint_string = prop_hint_strings[i].c_str();
+            }
+        }
+
+        // Copy signals
+        sig_names.clear();
+        sig_arg_names.clear();
+        sig_args.clear();
+        signals.clear();
+
+        if (p_desc->signals && p_desc->signal_count > 0) {
+            sig_names.resize(p_desc->signal_count);
+            sig_arg_names.resize(p_desc->signal_count);
+            sig_args.resize(p_desc->signal_count);
+            signals.resize(p_desc->signal_count);
+
+            for (int i = 0; i < p_desc->signal_count; i++) {
+                sig_names[i] = p_desc->signals[i].name ? p_desc->signals[i].name : "";
+                signals[i] = p_desc->signals[i];
+                signals[i].name = sig_names[i].c_str();
+
+                int ac = p_desc->signals[i].arg_count;
+                if (p_desc->signals[i].args && ac > 0) {
+                    sig_arg_names[i].resize(ac);
+                    sig_args[i].resize(ac);
+                    for (int a = 0; a < ac; a++) {
+                        sig_arg_names[i][a] = p_desc->signals[i].args[a].name ? p_desc->signals[i].args[a].name : "";
+                        sig_args[i][a] = p_desc->signals[i].args[a];
+                        sig_args[i][a].name = sig_arg_names[i][a].c_str();
+                    }
+                    signals[i].args = sig_args[i].data();
+                    signals[i].arg_count = ac;
+                } else {
+                    signals[i].args = nullptr;
+                    signals[i].arg_count = 0;
+                }
+            }
+        }
+
+        // Copy constants
+        const_enum_names.clear();
+        const_names.clear();
+        constants.clear();
+
+        if (p_desc->constants && p_desc->constant_count > 0) {
+            const_enum_names.resize(p_desc->constant_count);
+            const_names.resize(p_desc->constant_count);
+            constants.resize(p_desc->constant_count);
+
+            for (int i = 0; i < p_desc->constant_count; i++) {
+                const_enum_names[i] = p_desc->constants[i].enum_name ? p_desc->constants[i].enum_name : "";
+                const_names[i] = p_desc->constants[i].constant_name ? p_desc->constants[i].constant_name : "";
+                constants[i] = p_desc->constants[i];
+                constants[i].enum_name = const_enum_names[i].c_str();
+                constants[i].constant_name = const_names[i].c_str();
+            }
+        }
+
+        // Copy top-level descriptor
+        desc = *p_desc;
+        desc.name = name.c_str();
+        desc.parent_name = parent_name.c_str();
+        desc.icon_path = icon_path.empty() ? nullptr : icon_path.c_str();
+        desc.properties = properties.empty() ? nullptr : properties.data();
+        desc.property_count = (int)properties.size();
+        desc.signals = signals.empty() ? nullptr : signals.data();
+        desc.signal_count = (int)signals.size();
+        desc.constants = constants.empty() ? nullptr : constants.data();
+        desc.constant_count = (int)constants.size();
+        desc.parent_desc = nullptr;
+    }
+};
+
+/** Persistent map of registered classes ensuring stable pointers for Godot ClassDB */
+static std::unordered_map<std::string, PersistentClassDesc*> g_persistent_class_descs;
 static GDExtensionInitializationLevel g_current_init_level = GDEXTENSION_INITIALIZATION_SCENE;
 static std::vector<std::pair<GDExtensionClassLibraryPtr, CrystalClassDesc*>> g_deferred_editor_classes;
 static std::unordered_map<GDExtensionClassLibraryPtr, std::vector<std::string>> g_library_editor_classes;
@@ -706,6 +851,25 @@ static bool is_tool_desc(const CrystalClassDesc *desc) {
     return false;
 }
 
+static bool is_refcounted_desc(const CrystalClassDesc *desc) {
+    if (!desc) return false;
+    const CrystalClassDesc *curr = desc;
+    while (curr) {
+        if (curr->parent_name) {
+            if (strcmp(curr->parent_name, "RefCounted") == 0 ||
+                strcmp(curr->parent_name, "Resource") == 0 ||
+                strcmp(curr->parent_name, "ResourceFormatLoader") == 0 ||
+                strcmp(curr->parent_name, "ResourceFormatSaver") == 0 ||
+                strcmp(curr->parent_name, "EditorSyntaxHighlighter") == 0 ||
+                strcmp(curr->parent_name, "EditorDebuggerPlugin") == 0) {
+                return true;
+            }
+        }
+        curr = curr->parent_desc;
+    }
+    return false;
+}
+
 /**
  * Instantiates a new Godot Object for a registered Crystal class.
  *
@@ -725,10 +889,18 @@ static GDExtensionObjectPtr generic_class_create(void *p_class_userdata, GDExten
 
     // Find the closest native Godot parent class to construct
     const CrystalClassDesc *root_desc = desc;
-    while (root_desc->parent_desc) {
+    int depth = 0;
+    while (root_desc->parent_desc && depth++ < 32) {
         root_desc = root_desc->parent_desc;
     }
     const char *native_parent = root_desc->parent_name;
+    if (!native_parent || native_parent[0] == '\0') {
+        native_parent = "Object";
+    }
+    if (!desc->name || desc->name[0] == '\0') {
+        godot_log_error("generic_class_create called with null/empty desc->name", nullptr, "generic_class_create", __FILE__, __LINE__);
+        return nullptr;
+    }
 
     void *parent_sn = make_string_name(native_parent);
     void *class_sn = make_string_name(desc->name);
@@ -880,63 +1052,6 @@ static void generic_virtual_build(GDExtensionClassInstancePtr p_instance, const 
     if (inst->desc->call_virtual) inst->desc->call_virtual(inst->crystal_instance, "_build", 0.0);
 }
 
-/**
- * Legacy virtual method resolution for Godot 4.1/4.2.
- */
-static void *g_sn_pp = nullptr;
-static void *g_sn_p = nullptr;
-static void *g_sn_r = nullptr;
-static void *g_sn_et = nullptr;
-static void *g_sn_xt = nullptr;
-static void *g_sn_b = nullptr;
-
-static GDExtensionClassCallVirtual generic_class_get_virtual(void *p_class_userdata, GDExtensionConstStringNamePtr p_name) {
-    const CrystalClassDesc *desc = (const CrystalClassDesc*)p_class_userdata;
-    if (!desc) return nullptr;
-
-    if (!g_sn_pp) {
-        g_sn_pp = make_string_name("_physics_process");
-        g_sn_p = make_string_name("_process");
-        g_sn_r = make_string_name("_ready");
-        g_sn_et = make_string_name("_enter_tree");
-        g_sn_xt = make_string_name("_exit_tree");
-        g_sn_b = make_string_name("_build");
-    }
-
-    if (desc->has_physics_process && memcmp(p_name, g_sn_pp, sizeof(void*)) == 0) {
-        return generic_virtual_physics_process;
-    }
-    if (desc->has_process && memcmp(p_name, g_sn_p, sizeof(void*)) == 0) {
-        return generic_virtual_process;
-    }
-    if (desc->has_ready && memcmp(p_name, g_sn_r, sizeof(void*)) == 0) {
-        return generic_virtual_ready;
-    }
-    if (desc->has_enter_tree && memcmp(p_name, g_sn_et, sizeof(void*)) == 0) {
-        return generic_virtual_enter_tree;
-    }
-    if (desc->has_exit_tree && memcmp(p_name, g_sn_xt, sizeof(void*)) == 0) {
-        return generic_virtual_exit_tree;
-    }
-    if (memcmp(p_name, g_sn_b, sizeof(void*)) == 0) {
-        return generic_virtual_build;
-    }
-
-    return nullptr;
-}
-
-static std::unordered_set<std::string> g_interned_virtual_methods;
-
-static const char* intern_virtual_method(const char *name) {
-    if (!name) return nullptr;
-    auto it = g_interned_virtual_methods.find(name);
-    if (it != g_interned_virtual_methods.end()) {
-        return it->c_str();
-    }
-    auto res = g_interned_virtual_methods.insert(name);
-    return res.first->c_str();
-}
-
 static bool string_name_to_cstr(GDExtensionConstStringNamePtr sn, char *out, size_t max_len) {
     if (!sn || !out || max_len == 0) return false;
     out[0] = '\0';
@@ -960,6 +1075,47 @@ static bool string_name_to_cstr(GDExtensionConstStringNamePtr sn, char *out, siz
     return false;
 }
 
+static GDExtensionClassCallVirtual generic_class_get_virtual(void *p_class_userdata, GDExtensionConstStringNamePtr p_name) {
+    const CrystalClassDesc *desc = (const CrystalClassDesc*)p_class_userdata;
+    if (!desc) return nullptr;
+
+    char method_buf[64];
+    if (!string_name_to_cstr(p_name, method_buf, sizeof(method_buf))) return nullptr;
+
+    if (desc->has_physics_process && strcmp(method_buf, "_physics_process") == 0) {
+        return generic_virtual_physics_process;
+    }
+    if (desc->has_process && strcmp(method_buf, "_process") == 0) {
+        return generic_virtual_process;
+    }
+    if (desc->has_ready && strcmp(method_buf, "_ready") == 0) {
+        return generic_virtual_ready;
+    }
+    if (desc->has_enter_tree && strcmp(method_buf, "_enter_tree") == 0) {
+        return generic_virtual_enter_tree;
+    }
+    if (desc->has_exit_tree && strcmp(method_buf, "_exit_tree") == 0) {
+        return generic_virtual_exit_tree;
+    }
+    if (strcmp(method_buf, "_build") == 0) {
+        return generic_virtual_build;
+    }
+
+    return nullptr;
+}
+
+static std::unordered_set<std::string> g_interned_virtual_methods;
+
+static const char* intern_virtual_method(const char *name) {
+    if (!name) return nullptr;
+    auto it = g_interned_virtual_methods.find(name);
+    if (it != g_interned_virtual_methods.end()) {
+        return it->c_str();
+    }
+    auto res = g_interned_virtual_methods.insert(name);
+    return res.first->c_str();
+}
+
 /**
  * Resolves virtual call user data for Godot 4 virtual methods.
  * Returning non-null indicates the virtual method is overridden by the extension.
@@ -974,29 +1130,130 @@ static void *generic_class_get_virtual_call_data(void *p_class_userdata, GDExten
         return nullptr;
     }
 
-    // Built-in lifecycle methods
-    if (strcmp(method_buf, "_ready") == 0) {
-        return desc->has_ready ? (void*)intern_virtual_method("_ready") : nullptr;
+    // Built-in lifecycle methods (check both with and without leading underscore)
+    if (strcmp(method_buf, "_ready") == 0 || strcmp(method_buf, "ready") == 0) {
+        return desc->has_ready ? (void*)intern_virtual_method(method_buf) : nullptr;
     }
-    if (strcmp(method_buf, "_process") == 0) {
-        return desc->has_process ? (void*)intern_virtual_method("_process") : nullptr;
+    if (strcmp(method_buf, "_process") == 0 || strcmp(method_buf, "process") == 0) {
+        return desc->has_process ? (void*)intern_virtual_method(method_buf) : nullptr;
     }
-    if (strcmp(method_buf, "_physics_process") == 0) {
-        return desc->has_physics_process ? (void*)intern_virtual_method("_physics_process") : nullptr;
+    if (strcmp(method_buf, "_physics_process") == 0 || strcmp(method_buf, "physics_process") == 0) {
+        return desc->has_physics_process ? (void*)intern_virtual_method(method_buf) : nullptr;
     }
-    if (strcmp(method_buf, "_enter_tree") == 0) {
-        return desc->has_enter_tree ? (void*)intern_virtual_method("_enter_tree") : nullptr;
+    if (strcmp(method_buf, "_enter_tree") == 0 || strcmp(method_buf, "enter_tree") == 0) {
+        return desc->has_enter_tree ? (void*)intern_virtual_method(method_buf) : nullptr;
     }
-    if (strcmp(method_buf, "_exit_tree") == 0) {
-        return desc->has_exit_tree ? (void*)intern_virtual_method("_exit_tree") : nullptr;
+    if (strcmp(method_buf, "_exit_tree") == 0 || strcmp(method_buf, "exit_tree") == 0) {
+        return desc->has_exit_tree ? (void*)intern_virtual_method(method_buf) : nullptr;
     }
-    if (strcmp(method_buf, "_build") == 0) {
-        return (void*)intern_virtual_method("_build");
+    if (strcmp(method_buf, "_build") == 0 || strcmp(method_buf, "build") == 0) {
+        return (void*)intern_virtual_method(method_buf);
     }
 
-    // Generic virtual method queried via Crystal callback
-    if (desc->has_virtual_method && desc->has_virtual_method(desc, method_buf)) {
-        return (void*)intern_virtual_method(method_buf);
+    // Direct resolution for first-class script language extension classes
+    if (desc->name) {
+        const char *norm_name = (method_buf[0] == '_') ? method_buf : nullptr;
+        char prefixed[130];
+        if (!norm_name) {
+            prefixed[0] = '_';
+            strncpy(prefixed + 1, method_buf, sizeof(prefixed) - 2);
+            prefixed[sizeof(prefixed) - 1] = '\0';
+            norm_name = prefixed;
+        }
+
+        if (strcmp(desc->name, "CrystalLanguage") == 0) {
+            if (strcmp(norm_name, "_get_name") == 0 ||
+                strcmp(norm_name, "_get_type") == 0 ||
+                strcmp(norm_name, "_get_extension") == 0 ||
+                strcmp(norm_name, "_get_recognized_extensions") == 0 ||
+                strcmp(norm_name, "_get_reserved_words") == 0 ||
+                strcmp(norm_name, "_is_control_flow_keyword") == 0 ||
+                strcmp(norm_name, "_get_comment_delimiters") == 0 ||
+                strcmp(norm_name, "_get_doc_comment_delimiters") == 0 ||
+                strcmp(norm_name, "_get_string_delimiters") == 0 ||
+                strcmp(norm_name, "_make_template") == 0 ||
+                strcmp(norm_name, "_get_built_in_templates") == 0 ||
+                strcmp(norm_name, "_is_using_templates") == 0 ||
+                strcmp(norm_name, "_validate") == 0 ||
+                strcmp(norm_name, "_validate_path") == 0 ||
+                strcmp(norm_name, "_create_script") == 0 ||
+                strcmp(norm_name, "_has_named_classes") == 0 ||
+                strcmp(norm_name, "_supports_builtin_mode") == 0 ||
+                strcmp(norm_name, "_supports_documentation") == 0 ||
+                strcmp(norm_name, "_can_inherit_from_file") == 0 ||
+                strcmp(norm_name, "_find_function") == 0 ||
+                strcmp(norm_name, "_make_function") == 0 ||
+                strcmp(norm_name, "_can_make_function") == 0 ||
+                strcmp(norm_name, "_open_in_external_editor") == 0 ||
+                strcmp(norm_name, "_overrides_external_editor") == 0 ||
+                strcmp(norm_name, "_preferred_file_name_casing") == 0 ||
+                strcmp(norm_name, "_complete_code") == 0 ||
+                strcmp(norm_name, "_lookup_code") == 0 ||
+                strcmp(norm_name, "_auto_indent_code") == 0 ||
+                strcmp(norm_name, "_handles_global_class_type") == 0 ||
+                strcmp(norm_name, "_get_global_class_name") == 0) {
+                return (void*)intern_virtual_method(norm_name);
+            }
+        } else if (strcmp(desc->name, "ResourceFormatLoaderCrystal") == 0) {
+            if (strcmp(norm_name, "_get_recognized_extensions") == 0 ||
+                strcmp(norm_name, "_handles_type") == 0 ||
+                strcmp(norm_name, "_load") == 0 ||
+                strcmp(norm_name, "_recognize_path") == 0) {
+                return (void*)intern_virtual_method(norm_name);
+            }
+        } else if (strcmp(desc->name, "ResourceFormatSaverCrystal") == 0) {
+            if (strcmp(norm_name, "_get_recognized_extensions") == 0 ||
+                strcmp(norm_name, "_recognize") == 0 ||
+                strcmp(norm_name, "_save") == 0 ||
+                strcmp(norm_name, "_set_uid") == 0) {
+                return (void*)intern_virtual_method(norm_name);
+            }
+        } else if (strcmp(desc->name, "CrystalHighlighter") == 0) {
+            if (strcmp(norm_name, "_get_line_syntax_highlighting") == 0 ||
+                strcmp(norm_name, "_clear_highlighting_cache") == 0 ||
+                strcmp(norm_name, "_update_cache") == 0) {
+                return (void*)intern_virtual_method(norm_name);
+            }
+        } else if (strcmp(desc->name, "CrystalScript") == 0) {
+            if (strcmp(norm_name, "_can_instantiate") == 0 ||
+                strcmp(norm_name, "_inherits_script") == 0 ||
+                strcmp(norm_name, "_get_base_script") == 0 ||
+                strcmp(norm_name, "_get_global_name") == 0 ||
+                strcmp(norm_name, "_get_instance_base_type") == 0 ||
+                strcmp(norm_name, "_instance_create") == 0 ||
+                strcmp(norm_name, "_instance_has") == 0 ||
+                strcmp(norm_name, "_has_source_code") == 0 ||
+                strcmp(norm_name, "_get_source_code") == 0 ||
+                strcmp(norm_name, "_set_source_code") == 0 ||
+                strcmp(norm_name, "_reload") == 0 ||
+                strcmp(norm_name, "_is_valid") == 0 ||
+                strcmp(norm_name, "_is_tool") == 0 ||
+                strcmp(norm_name, "_get_language") == 0 ||
+                strcmp(norm_name, "_placeholder_instance_create") == 0 ||
+                strcmp(norm_name, "_update_exports") == 0) {
+                return (void*)intern_virtual_method(norm_name);
+            }
+        }
+    }
+
+    // Generic virtual method queried via Crystal callback (check verbatim, un-prefixed, and prefixed)
+    if (desc->has_virtual_method) {
+        if (desc->has_virtual_method(desc, method_buf)) {
+            return (void*)intern_virtual_method(method_buf);
+        }
+        if (method_buf[0] == '_') {
+            if (desc->has_virtual_method(desc, method_buf + 1)) {
+                return (void*)intern_virtual_method(method_buf);
+            }
+        } else {
+            char alt_buf[130];
+            alt_buf[0] = '_';
+            strncpy(alt_buf + 1, method_buf, sizeof(alt_buf) - 2);
+            alt_buf[sizeof(alt_buf) - 1] = '\0';
+            if (desc->has_virtual_method(desc, alt_buf)) {
+                return (void*)intern_virtual_method(method_buf);
+            }
+        }
     }
 
     return nullptr;
@@ -1019,34 +1276,34 @@ static void generic_class_call_virtual_with_data(
     const char *method_name = (const char*)p_virtual_call_userdata;
     if (!method_name) return;
 
-    if (strcmp(method_name, "_ready") == 0) {
+    if (strcmp(method_name, "_ready") == 0 || strcmp(method_name, "ready") == 0) {
         if (is_editor_active() && !is_tool_desc(inst->desc)) return;
         if (inst->desc->call_virtual) inst->desc->call_virtual(inst->crystal_instance, "_ready", 0.0);
         return;
     }
-    if (strcmp(method_name, "_process") == 0) {
+    if (strcmp(method_name, "_process") == 0 || strcmp(method_name, "process") == 0) {
         if (is_editor_active() && !is_tool_desc(inst->desc)) return;
         double delta = (p_args && p_args[0]) ? *(const double*)p_args[0] : 0.016666666666666666;
         if (inst->desc->call_virtual) inst->desc->call_virtual(inst->crystal_instance, "_process", delta);
         return;
     }
-    if (strcmp(method_name, "_physics_process") == 0) {
+    if (strcmp(method_name, "_physics_process") == 0 || strcmp(method_name, "physics_process") == 0) {
         if (is_editor_active() && !is_tool_desc(inst->desc)) return;
         double delta = (p_args && p_args[0]) ? *(const double*)p_args[0] : 0.016666666666666666;
         if (inst->desc->call_virtual) inst->desc->call_virtual(inst->crystal_instance, "_physics_process", delta);
         return;
     }
-    if (strcmp(method_name, "_enter_tree") == 0) {
+    if (strcmp(method_name, "_enter_tree") == 0 || strcmp(method_name, "enter_tree") == 0) {
         if (is_editor_active() && !is_tool_desc(inst->desc)) return;
         if (inst->desc->call_virtual) inst->desc->call_virtual(inst->crystal_instance, "_enter_tree", 0.0);
         return;
     }
-    if (strcmp(method_name, "_exit_tree") == 0) {
+    if (strcmp(method_name, "_exit_tree") == 0 || strcmp(method_name, "exit_tree") == 0) {
         if (is_editor_active() && !is_tool_desc(inst->desc)) return;
         if (inst->desc->call_virtual) inst->desc->call_virtual(inst->crystal_instance, "_exit_tree", 0.0);
         return;
     }
-    if (strcmp(method_name, "_build") == 0) {
+    if (strcmp(method_name, "_build") == 0 || strcmp(method_name, "build") == 0) {
         if (r_ret) *(uint8_t*)r_ret = 1;
         if (inst->desc->call_virtual) inst->desc->call_virtual(inst->crystal_instance, "_build", 0.0);
         return;
@@ -1419,38 +1676,73 @@ static bool is_editor_class(const CrystalClassDesc *desc) {
  * @return 1 on success, 0 on failure.
  */
 static int bridge_register_class(const CrystalClassDesc *p_desc) {
-    if (!p_desc || !g_library) return 0;
+    if (!p_desc || !p_desc->name || !g_library) return 0;
 
-    if (g_all_registered_class_names.find(p_desc->name) != g_all_registered_class_names.end() || is_class_registered_in_engine(p_desc->name)) {
+    std::string cname = p_desc->name;
+    auto it = g_persistent_class_descs.find(cname);
+    if (it != g_persistent_class_descs.end()) {
+        // Class was already registered with Godot ClassDB in a previous load or earlier module.
+        // Update the persistent descriptor in-place so runtime callbacks and properties invoke the new DLL.
+        PersistentClassDesc *pcd = it->second;
+        pcd->update_from(p_desc);
+
+        // Re-link parent_desc if parent is in the persistent map
+        if (!pcd->parent_name.empty()) {
+            auto pit = g_persistent_class_descs.find(pcd->parent_name);
+            if (pit != g_persistent_class_descs.end()) {
+                pcd->desc.parent_desc = &pit->second->desc;
+            }
+        }
+        // Re-link any children that inherit from this class
+        for (auto &pair : g_persistent_class_descs) {
+            if (pair.second != pcd && pair.second->parent_name == pcd->name) {
+                pair.second->desc.parent_desc = &pcd->desc;
+            }
+        }
+
         char log_buf[256];
         snprintf(log_buf, sizeof(log_buf), "[CrystalBridge] Notice: Class '%s' already registered with ClassDB. Skipping duplicate registration safely.", p_desc->name);
         godot_log_print(log_buf);
         return 1;
     }
-    g_all_registered_class_names.insert(p_desc->name);
 
-    g_registered_classes.push_back(*p_desc);
-    CrystalClassDesc *desc = &g_registered_classes.back();
+    // Allocate persistent descriptor whose address will remain invariant for Godot ClassDB
+    PersistentClassDesc *pcd = new PersistentClassDesc();
+    pcd->update_from(p_desc);
+    g_persistent_class_descs[cname] = pcd;
+    g_all_registered_class_names.insert(cname);
 
-    // Link parent_desc if parent is also a registered Crystal class
-    desc->parent_desc = nullptr;
-    for (size_t i = 0; i < g_registered_classes.size() - 1; i++) {
-        if (strcmp(g_registered_classes[i].name, desc->parent_name) == 0) {
-            desc->parent_desc = &g_registered_classes[i];
-            break;
+    // Link parent_desc if parent is already known
+    if (!pcd->parent_name.empty()) {
+        auto pit = g_persistent_class_descs.find(pcd->parent_name);
+        if (pit != g_persistent_class_descs.end()) {
+            pcd->desc.parent_desc = &pit->second->desc;
+        }
+    }
+    // Link any children that were registered before this parent
+    for (auto &pair : g_persistent_class_descs) {
+        if (pair.second != pcd && pair.second->parent_name == pcd->name) {
+            pair.second->desc.parent_desc = &pcd->desc;
         }
     }
 
-    // Defer editor-specific classes if Godot is still at SCENE initialization level
-    if (g_current_init_level < GDEXTENSION_INITIALIZATION_EDITOR && is_editor_class(desc)) {
-        char log_buf[128];
-        snprintf(log_buf, sizeof(log_buf), "  [ClassDB] Deferring editor class %s < %s to EDITOR level", desc->name, desc->parent_name);
+    if (is_class_registered_in_engine(p_desc->name)) {
+        char log_buf[256];
+        snprintf(log_buf, sizeof(log_buf), "[CrystalBridge] Notice: Class '%s' already registered with ClassDB in engine. Skipping duplicate registration safely.", p_desc->name);
         godot_log_print(log_buf);
-        g_deferred_editor_classes.push_back({g_library, desc});
         return 1;
     }
 
-    do_classdb_register(desc);
+    // Defer editor-specific classes if Godot is still at SCENE initialization level
+    if (g_current_init_level < GDEXTENSION_INITIALIZATION_EDITOR && is_editor_class(&pcd->desc)) {
+        char log_buf[128];
+        snprintf(log_buf, sizeof(log_buf), "  [ClassDB] Deferring editor class %s < %s to EDITOR level", pcd->desc.name, pcd->desc.parent_name);
+        godot_log_print(log_buf);
+        g_deferred_editor_classes.push_back({g_library, &pcd->desc});
+        return 1;
+    }
+
+    do_classdb_register(&pcd->desc);
     return 1;
 }
 
@@ -1513,6 +1805,7 @@ static void bridge_method_bind_call(GDExtensionMethodBindPtr method_bind, GDExte
 
 /** Internal buffer storing raw XML documentation strings until the editor is ready */
 static std::vector<std::string> g_editor_doc_xmls;
+static std::unordered_set<std::string> g_loaded_editor_doc_xmls;
 
 /**
  * Queues an XML documentation string for registration with Godot's Help system.
@@ -1521,7 +1814,12 @@ static std::vector<std::string> g_editor_doc_xmls;
  */
 static void bridge_load_editor_help_xml(const char *xml) {
     if (!xml) return;
-    g_editor_doc_xmls.push_back(std::string(xml));
+    std::string s(xml);
+    if (g_loaded_editor_doc_xmls.find(s) != g_loaded_editor_doc_xmls.end()) {
+        return;
+    }
+    g_loaded_editor_doc_xmls.insert(s);
+    g_editor_doc_xmls.push_back(s);
     if (g_current_init_level >= GDEXTENSION_INITIALIZATION_EDITOR && gd_editor_help_load_xml_from_utf8_chars) {
         gd_editor_help_load_xml_from_utf8_chars(xml);
     }
@@ -1910,6 +2208,26 @@ static void bridge_object_call(GDExtensionObjectPtr instance, const char *method
     bridge_call_method_vararg(mb_object_call, instance, method_name, args, arg_count);
 }
 
+static GDExtensionMethodBindPtr mb_object_is_class = nullptr;
+static GDExtensionMethodBindPtr mb_refcounted_reference = nullptr;
+
+static bool bridge_is_object_refcounted(GDExtensionObjectPtr obj) {
+    if (!obj || !gd_classdb_get_method_bind || !gd_object_method_bind_ptrcall) return false;
+    if (!mb_object_is_class) {
+        void *sn_obj = make_string_name("Object");
+        void *sn_ic = make_string_name("is_class");
+        mb_object_is_class = gd_classdb_get_method_bind(sn_obj, sn_ic, 2619796661ULL);
+        free_string_name(sn_obj); free_string_name(sn_ic);
+    }
+    if (!mb_object_is_class) return false;
+    void *sn_rc = make_string_name("RefCounted");
+    const void *args[1] = { sn_rc };
+    uint8_t is_rc = 0;
+    gd_object_method_bind_ptrcall(mb_object_is_class, obj, (const GDExtensionConstTypePtr*)args, &is_rc);
+    free_string_name(sn_rc);
+    return is_rc != 0;
+}
+
 /** Calls an Object method and unboxes the return value as a Godot Object pointer */
 static GDExtensionObjectPtr bridge_object_call_ret_object(GDExtensionObjectPtr instance, const char *method_name, const BridgeSignalArg *args, int arg_count) {
     if (!instance || !method_name || !gd_classdb_get_method_bind || !gd_object_method_bind_call) return nullptr;
@@ -1925,6 +2243,18 @@ static GDExtensionObjectPtr bridge_object_call_ret_object(GDExtensionObjectPtr i
     bridge_call_method_vararg_ret(mb_object_call, instance, method_name, args, arg_count, var_ret);
 
     GDExtensionObjectPtr ret_obj = bridge_object_from_variant(var_ret);
+    if (ret_obj && bridge_is_object_refcounted(ret_obj)) {
+        if (!mb_refcounted_reference) {
+            void *sn_rc = make_string_name("RefCounted");
+            void *sn_ref = make_string_name("reference");
+            mb_refcounted_reference = gd_classdb_get_method_bind(sn_rc, sn_ref, 2240911060ULL);
+            free_string_name(sn_rc); free_string_name(sn_ref);
+        }
+        if (mb_refcounted_reference && gd_object_method_bind_ptrcall) {
+            uint8_t success = 0;
+            gd_object_method_bind_ptrcall(mb_refcounted_reference, ret_obj, nullptr, &success);
+        }
+    }
     if (gd_variant_destroy) gd_variant_destroy(var_ret);
     return ret_obj;
 }
@@ -2227,7 +2557,6 @@ static GDExtensionObjectPtr bridge_resource_loader_load(const char *path, const 
     GDExtensionObjectPtr ret_obj = nullptr;
     bridge_type_from_variant(GDEXTENSION_VARIANT_TYPE_OBJECT, &ret_obj, var_ret);
 
-    static GDExtensionMethodBindPtr mb_refcounted_reference = nullptr;
     if (ret_obj && !mb_refcounted_reference) {
         void *sn_rc = make_string_name("RefCounted");
         void *sn_ref = make_string_name("reference");
@@ -2572,6 +2901,16 @@ static void bridge_ret_dictionary_lookup_code(void *r_ret) {
     dict_set_variant(r_ret, "type", GDEXTENSION_VARIANT_TYPE_INT, &v_type);
 }
 
+static void bridge_ret_dictionary_global_class(void *r_ret, const char *class_name, const char *base_type, const char *icon_path) {
+    bridge_ret_dictionary_empty(r_ret);
+    if (!class_name || class_name[0] == '\0') return;
+    dict_set_variant(r_ret, "name", GDEXTENSION_VARIANT_TYPE_STRING, &class_name);
+    const char *b_type = (base_type && base_type[0] != '\0') ? base_type : "Node";
+    dict_set_variant(r_ret, "base_type", GDEXTENSION_VARIANT_TYPE_STRING, &b_type);
+    const char *i_path = icon_path ? icon_path : "";
+    dict_set_variant(r_ret, "icon_path", GDEXTENSION_VARIANT_TYPE_STRING, &i_path);
+}
+
 static GDExtensionMethodBindPtr mb_text_edit_get_line = nullptr;
 
 static int bridge_text_edit_get_line(void *text_edit, int64_t line, char *out_buf, int max_len) {
@@ -2764,7 +3103,8 @@ static void custom_callable_call(void *callable_userdata, const GDExtensionConst
         }
     }
 
-    for (auto cb : g_crystal_signal_callbacks) {
+    std::vector<CrystalSignalCallbackFn> callbacks = g_crystal_signal_callbacks;
+    for (auto cb : callbacks) {
         if (cb) {
             cb(
                 binding->target_id,
@@ -2827,6 +3167,26 @@ static void bridge_register_signal_callback(CrystalSignalCallbackFn fn) {
     }
     g_crystal_signal_callbacks.push_back(fn);
 }
+
+static void bridge_register_deinit_callback(CrystalDeinitCallbackFn fn) {
+    if (!fn) return;
+    auto &cbs = g_library_deinit_callbacks[g_library];
+    for (auto existing : cbs) {
+        if (existing == fn) return;
+    }
+    cbs.push_back(fn);
+}
+
+static int g_loader_registered = 0;
+static int g_saver_registered = 0;
+static int g_language_registered = 0;
+
+static int bridge_is_loader_registered() { return g_loader_registered; }
+static void bridge_set_loader_registered(int r) { g_loader_registered = r; }
+static int bridge_is_saver_registered() { return g_saver_registered; }
+static void bridge_set_saver_registered(int r) { g_saver_registered = r; }
+static int bridge_is_language_registered() { return g_language_registered; }
+static void bridge_set_language_registered(int r) { g_language_registered = r; }
 
 static void bridge_object_connect_signal(GDExtensionObjectPtr instance, const char *signal_name, uint32_t flags) {
     if (!instance || !signal_name || !gd_classdb_get_method_bind || !gd_object_method_bind_ptrcall) return;
@@ -2976,6 +3336,18 @@ static void bridge_object_disconnect_signal(GDExtensionObjectPtr instance, const
  * Stable C-ABI function pointer table passed to Crystal during initialization.
  * Crystal mirrors this struct in LibGodot::BridgeAPI.
  */
+static void* bridge_placeholder_script_instance_create(void* p_language, void* p_script, const void* p_owner_arg) {
+    if (!gd_placeholder_script_instance_create) return nullptr;
+    GDExtensionObjectPtr owner = nullptr;
+    if (p_owner_arg) {
+        owner = *(GDExtensionObjectPtr*)p_owner_arg;
+        if (!owner) {
+            owner = (GDExtensionObjectPtr)p_owner_arg;
+        }
+    }
+    return gd_placeholder_script_instance_create((GDExtensionObjectPtr)p_language, (GDExtensionObjectPtr)p_script, owner);
+}
+
 struct BridgeAPI {
     int (*register_class)(const CrystalClassDesc *desc);
     GDExtensionMethodBindPtr (*get_method_bind)(const char *class_name, const char *method_name, int64_t hash);
@@ -2985,6 +3357,8 @@ struct BridgeAPI {
     GDExtensionObjectPtr (*get_singleton)(const char *name);
     void* (*make_string_name)(const char *name);
     void (*free_string_name)(void *sn);
+    void* (*make_string)(const char *str);
+    void (*free_string)(void *s);
     void (*type_from_variant)(int type, void *dst, const void *variant);
     void (*variant_from_type)(int type, void *variant, const void *src);
     void (*log_print)(const char *msg);
@@ -3025,10 +3399,19 @@ struct BridgeAPI {
     void (*ret_dictionary_validate)(void *r_ret, uint8_t valid);
     void (*ret_dictionary_complete_code)(void *r_ret);
     void (*ret_dictionary_lookup_code)(void *r_ret);
+    void (*ret_dictionary_global_class)(void *r_ret, const char *class_name, const char *base_type, const char *icon_path);
+    void* (*placeholder_script_instance_create)(void *p_language, void *p_script, const void *p_owner_arg);
     int (*text_edit_get_line)(void *text_edit, int64_t line, char *out_buf, int max_len);
     void (*object_connect_signal)(GDExtensionObjectPtr instance, const char *signal_name, uint32_t flags);
     void (*object_disconnect_signal)(GDExtensionObjectPtr instance, const char *signal_name);
     void (*register_signal_callback)(CrystalSignalCallbackFn fn);
+    void (*register_deinit_callback)(CrystalDeinitCallbackFn fn);
+    int (*is_loader_registered)();
+    void (*set_loader_registered)(int r);
+    int (*is_saver_registered)();
+    void (*set_saver_registered)(int r);
+    int (*is_language_registered)();
+    void (*set_language_registered)(int r);
 };
 
 static BridgeAPI g_bridge_api = {
@@ -3040,6 +3423,8 @@ static BridgeAPI g_bridge_api = {
     bridge_get_singleton,
     make_string_name,
     free_string_name,
+    make_string,
+    free_string,
     bridge_type_from_variant,
     bridge_variant_from_type,
     godot_log_print,
@@ -3080,10 +3465,19 @@ static BridgeAPI g_bridge_api = {
     bridge_ret_dictionary_validate,
     bridge_ret_dictionary_complete_code,
     bridge_ret_dictionary_lookup_code,
+    bridge_ret_dictionary_global_class,
+    bridge_placeholder_script_instance_create,
     bridge_text_edit_get_line,
     bridge_object_connect_signal,
     bridge_object_disconnect_signal,
-    bridge_register_signal_callback
+    bridge_register_signal_callback,
+    bridge_register_deinit_callback,
+    bridge_is_loader_registered,
+    bridge_set_loader_registered,
+    bridge_is_saver_registered,
+    bridge_set_saver_registered,
+    bridge_is_language_registered,
+    bridge_set_language_registered
 };
 
 // ==============================================================================
@@ -3264,6 +3658,32 @@ static std::unordered_set<std::string> g_loaded_module_paths;
 static std::unordered_set<void*> g_initialized_init_fns;
 /** Count of active GDExtension initializations sharing this bridge */
 static int g_active_extension_count = 0;
+
+static uint64_t bridge_get_file_mtime(const char *path) {
+    if (!path || path[0] == '\0') return 0;
+#ifdef _WIN32
+    WIN32_FILE_ATTRIBUTE_DATA fad;
+    if (GetFileAttributesExA(path, GetFileExInfoStandard, &fad)) {
+        ULARGE_INTEGER uli;
+        uli.LowPart = fad.ftLastWriteTime.dwLowDateTime;
+        uli.HighPart = fad.ftLastWriteTime.dwHighDateTime;
+        return uli.QuadPart;
+    }
+    return 0;
+#else
+    struct stat st;
+    if (stat(path, &st) == 0) {
+        return (uint64_t)st.st_mtime;
+    }
+    return 0;
+#endif
+}
+
+struct LoadedModuleInfo {
+    HMODULE handle;
+    uint64_t mtime;
+};
+static std::unordered_map<std::string, LoadedModuleInfo> g_loaded_modules_map;
 
 static void init_gc_library() {
     if (!gd_gc_register_my_thread) {
@@ -3458,19 +3878,19 @@ static void load_crystal_game_library() {
     unsigned long pid = bridge_get_pid();
 
 #ifdef _WIN32
-    const char *candidate_names[] = { "game.dll", "crystal_addon.dll", "plugin.dll" };
+    const char *candidate_names[] = { "plugin.dll", "game.dll", "crystal_addon.dll" };
     const char *path_sep = "\\";
     const char *shadow_ext = "dll";
 #elif defined(__ANDROID__) || defined(ANDROID)
-    const char *candidate_names[] = { "libgame.so", "libcrystal_addon.so", "libplugin.so" };
+    const char *candidate_names[] = { "libplugin.so", "libgame.so", "libcrystal_addon.so" };
     const char *path_sep = "/";
     const char *shadow_ext = "so";
 #elif defined(__APPLE__)
-    const char *candidate_names[] = { "game.dylib", "libgame.dylib", "crystal_addon.dylib", "plugin.dylib" };
+    const char *candidate_names[] = { "plugin.dylib", "game.dylib", "libgame.dylib", "crystal_addon.dylib" };
     const char *path_sep = "/";
     const char *shadow_ext = "dylib";
 #else
-    const char *candidate_names[] = { "game.so", "crystal_addon.so", "plugin.so" };
+    const char *candidate_names[] = { "plugin.so", "game.so", "crystal_addon.so" };
     const char *path_sep = "/";
     const char *shadow_ext = "so";
 #endif
@@ -3482,14 +3902,22 @@ static void load_crystal_game_library() {
 #ifdef _WIN32
         SetDllDirectoryA(bridge_dir);
 #endif
+        bool loaded_game_or_addon = false;
         for (size_t c = 0; c < sizeof(candidate_names) / sizeof(candidate_names[0]); c++) {
-            if (!is_editor_active() && strstr(candidate_names[c], "plugin") != nullptr) {
+            bool is_plugin = (strstr(candidate_names[c], "plugin") != nullptr);
+            if (!is_editor_active() && is_plugin) {
+                continue;
+            }
+            if (loaded_game_or_addon && !is_plugin) {
                 continue;
             }
             char test_path[MAX_PATH] = {0};
             snprintf(test_path, sizeof(test_path), "%s%s%s", bridge_dir, path_sep, candidate_names[c]);
             if (bridge_file_exists(test_path)) {
                 to_load.push_back(std::string(test_path));
+                if (!is_plugin) {
+                    loaded_game_or_addon = true;
+                }
             }
         }
 
@@ -3568,10 +3996,20 @@ static void load_crystal_game_library() {
 #else
         const char *fallbacks[] = { "addons/crystal_integration/bin/plugin.so", "addons/crystal_integration/bin/game.so", "addons/crystal_addon/bin/game.so", "bin/game.so", "game.so" };
 #endif
+        bool fallback_loaded_game = false;
         for (size_t i = 0; i < sizeof(fallbacks) / sizeof(fallbacks[0]); i++) {
+            bool is_plugin = (strstr(fallbacks[i], "plugin") != nullptr);
+            if (!is_editor_active() && is_plugin) {
+                continue;
+            }
+            if (fallback_loaded_game && !is_plugin) {
+                continue;
+            }
             if (bridge_file_exists(fallbacks[i])) {
                 to_load.push_back(std::string(fallbacks[i]));
-                break;
+                if (!is_plugin) {
+                    fallback_loaded_game = true;
+                }
             }
         }
     }
@@ -3616,6 +4054,13 @@ static void load_crystal_game_library() {
             snprintf(canonical_path, sizeof(canonical_path), "%s", candidate_path.c_str());
         }
 #endif
+        uint64_t current_mtime = bridge_get_file_mtime(candidate_path.c_str());
+        auto it_loaded = g_loaded_modules_map.find(canonical_path);
+        if (it_loaded != g_loaded_modules_map.end() && it_loaded->second.mtime == current_mtime && current_mtime != 0) {
+            // Module is already loaded and has not been recompiled on disk
+            continue;
+        }
+
         if (g_loaded_module_paths.find(canonical_path) != g_loaded_module_paths.end()) {
             continue;
         }
@@ -3692,6 +4137,7 @@ static void load_crystal_game_library() {
         }
 
         if (hModule) {
+            g_loaded_modules_map[canonical_path] = { hModule, current_mtime };
             g_loaded_module_paths.insert(canonical_path);
             g_hGame = hModule;
             g_loaded_modules.push_back(hModule);
@@ -3699,10 +4145,7 @@ static void load_crystal_game_library() {
             ensure_gc_thread_registered();
             CrystalInitFn init_fn = (CrystalInitFn)bridge_get_proc(hModule, "crystal_godot_init");
             if (init_fn) {
-                if (g_initialized_init_fns.find((void*)init_fn) == g_initialized_init_fns.end()) {
-                    g_initialized_init_fns.insert((void*)init_fn);
-                    init_fn(&g_bridge_api);
-                }
+                init_fn(&g_bridge_api);
             } else {
                 godot_log_error("Failed to find 'crystal_godot_init' in loaded library", nullptr, "load_crystal_game_library", __FILE__, __LINE__);
             }
@@ -3789,53 +4232,63 @@ static void initialize_crystal_module(void *p_userdata, GDExtensionInitializatio
  * Editor classes are unregistered at EDITOR level before editor types are destroyed;
  * Scene classes are unregistered at SCENE level.
  */
+#ifdef _WIN32
+static bool s_handler_installed = false;
+static PVOID g_veh_handler = NULL;
+#endif
+
 static void deinitialize_crystal_module(void *p_userdata, GDExtensionInitializationLevel p_level) {
     GDExtensionClassLibraryPtr lib = (GDExtensionClassLibraryPtr)p_userdata;
     if (p_userdata) {
         g_library = lib;
     }
     if (p_level == GDEXTENSION_INITIALIZATION_EDITOR) {
-        if (lib && g_library_editor_classes.find(lib) != g_library_editor_classes.end()) {
-            auto &classes = g_library_editor_classes[lib];
-            if (!classes.empty() && gd_classdb_unregister_extension_class) {
-                godot_log_print("[CrystalBridge] Unregistering Editor classes at EDITOR level...");
-                for (int i = (int)classes.size() - 1; i >= 0; i--) {
-                    void *sn = make_string_name(classes[i].c_str());
-                    gd_classdb_unregister_extension_class(lib, sn);
-                    free_string_name(sn);
+        // Run Crystal deinitialization callbacks (e.g. unregistering ResourceFormatLoader, ResourceFormatSaver, ScriptLanguage)
+        // BEFORE unregistering classes from ClassDB so instances can be cleanly removed from singletons while their types exist.
+        if (lib) {
+            auto it = g_library_deinit_callbacks.find(lib);
+            if (it != g_library_deinit_callbacks.end()) {
+                for (auto fn : it->second) {
+                    if (fn) fn();
                 }
+                g_library_deinit_callbacks.erase(it);
             }
+        }
+
+        if (lib && g_library_editor_classes.find(lib) != g_library_editor_classes.end()) {
             g_library_editor_classes.erase(lib);
         }
     } else if (p_level == GDEXTENSION_INITIALIZATION_SCENE) {
-        if (lib && g_library_scene_classes.find(lib) != g_library_scene_classes.end()) {
-            auto &classes = g_library_scene_classes[lib];
-            if (!classes.empty() && gd_classdb_unregister_extension_class) {
-                godot_log_print("[CrystalBridge] Unregistering Crystal classes...");
-                for (int i = (int)classes.size() - 1; i >= 0; i--) {
-                    void *sn = make_string_name(classes[i].c_str());
-                    gd_classdb_unregister_extension_class(lib, sn);
-                    free_string_name(sn);
+        if (lib) {
+            auto it = g_library_deinit_callbacks.find(lib);
+            if (it != g_library_deinit_callbacks.end()) {
+                for (auto fn : it->second) {
+                    if (fn) fn();
                 }
+                g_library_deinit_callbacks.erase(it);
             }
+        }
+
+        if (lib && g_library_scene_classes.find(lib) != g_library_scene_classes.end()) {
             g_library_scene_classes.erase(lib);
         }
         g_active_extension_count--;
         if (g_active_extension_count <= 0) {
             g_active_extension_count = 0;
+            g_library_deinit_callbacks.clear();
             g_library_scene_classes.clear();
             g_library_editor_classes.clear();
-            g_registered_classes.clear();
+            // Retain g_persistent_class_descs and g_all_registered_class_names:
+            // Godot ClassDB retains class_userdata pointers across reloads. Preserving them prevents dangling pointers.
             g_deferred_editor_classes.clear();
             g_editor_doc_xmls.clear();
-            g_all_registered_class_names.clear();
-            if (g_sn_pp) { free_string_name(g_sn_pp); g_sn_pp = nullptr; }
-            if (g_sn_p) { free_string_name(g_sn_p); g_sn_p = nullptr; }
-            if (g_sn_r) { free_string_name(g_sn_r); g_sn_r = nullptr; }
-            if (g_sn_et) { free_string_name(g_sn_et); g_sn_et = nullptr; }
-            if (g_sn_xt) { free_string_name(g_sn_xt); g_sn_xt = nullptr; }
-            if (g_sn_b) { free_string_name(g_sn_b); g_sn_b = nullptr; }
+            g_loader_registered = 0;
+            g_saver_registered = 0;
+            g_language_registered = 0;
             unload_crystal_game_library();
+#ifdef _WIN32
+            // Retain g_veh_handler so heap corruption or termination faults during process exit are captured
+#endif
             godot_log_print("[CrystalBridge] Crystal module deinitialized.");
         }
     }
@@ -3858,10 +4311,11 @@ static void deinitialize_crystal_module(void *p_userdata, GDExtensionInitializat
  */
 #ifdef _WIN32
 static LONG WINAPI custom_crash_handler(PEXCEPTION_POINTERS pExceptionInfo) {
-    if (pExceptionInfo->ExceptionRecord->ExceptionCode == EXCEPTION_ACCESS_VIOLATION) {
+    DWORD code = pExceptionInfo->ExceptionRecord->ExceptionCode;
+    if (code == EXCEPTION_ACCESS_VIOLATION || code == 0xC0000374) {
         void *faulting_addr = pExceptionInfo->ExceptionRecord->ExceptionAddress;
-        ULONG_PTR access_type = pExceptionInfo->ExceptionRecord->ExceptionInformation[0];
-        ULONG_PTR target_addr = pExceptionInfo->ExceptionRecord->ExceptionInformation[1];
+        ULONG_PTR access_type = (code == EXCEPTION_ACCESS_VIOLATION) ? pExceptionInfo->ExceptionRecord->ExceptionInformation[0] : 0;
+        ULONG_PTR target_addr = (code == EXCEPTION_ACCESS_VIOLATION) ? pExceptionInfo->ExceptionRecord->ExceptionInformation[1] : 0;
 
         HMODULE hMod = NULL;
         char mod_name[MAX_PATH] = "Unknown";
@@ -3873,10 +4327,10 @@ static LONG WINAPI custom_crash_handler(PEXCEPTION_POINTERS pExceptionInfo) {
         char report[4096];
         int pos = snprintf(report, sizeof(report),
             "\n==================== CRASH INTERCEPTED ====================\n"
-            "Access Violation (0xC0000005) attempting to %s address 0x%llx\n"
+            "Exception Code: 0x%08lx (%s)\n"
             "Faulting instruction at: %p in module %s (offset 0x%llx)\n"
             "Callstack:\n",
-            access_type == 0 ? "read" : "write", (unsigned long long)target_addr,
+            (unsigned long)code, (code == 0xC0000374 ? "STATUS_HEAP_CORRUPTION" : "ACCESS_VIOLATION"),
             faulting_addr, mod_name, (unsigned long long)((uintptr_t)faulting_addr - (uintptr_t)hMod));
 
         void *backtrace[32];
@@ -3926,14 +4380,31 @@ extern "C" GDE_EXPORT GDExtensionBool crystal_library_init(
     GDExtensionClassLibraryPtr p_library,
     GDExtensionInitialization *r_initialization
 ) {
+#ifdef _WIN32
+    // Pin crystal_bridge in memory so Godot's FreeLibrary during GDExtension reload
+    // does NOT unmap the bridge DLL. Godot's ClassDB retains function pointers
+    // (generic_class_create, generic_class_call_virtual_with_data, etc.) and
+    // class_userdata pointers across reloads; unmapping the DLL causes immediate
+    // ACCESS_VIOLATION (0xC0000005) crashes when Godot dispatches to unmapped code.
+    HMODULE hBridgeMod = NULL;
+    GetModuleHandleExA(
+        GET_MODULE_HANDLE_EX_FLAG_PIN | GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS,
+        (LPCSTR)&crystal_library_init,
+        &hBridgeMod
+    );
+#elif !defined(__APPLE__) && !defined(__ANDROID__)
+    Dl_info dli;
+    if (dladdr((void*)&crystal_library_init, &dli) && dli.dli_fname) {
+        dlopen(dli.dli_fname, RTLD_NOW | RTLD_NODELETE);
+    }
+#endif
     g_active_extension_count++;
     init_gc_library();
     ensure_gc_thread_registered();
 #ifdef _WIN32
-    static bool s_handler_installed = false;
     if (!s_handler_installed) {
         s_handler_installed = true;
-        AddVectoredExceptionHandler(1, custom_crash_handler);
+        g_veh_handler = AddVectoredExceptionHandler(1, custom_crash_handler);
     }
 #endif
     gd_get_proc_address = p_get_proc_address;
@@ -3988,6 +4459,7 @@ extern "C" GDE_EXPORT GDExtensionBool crystal_library_init(
     gd_callable_custom_create2 = (GDExtensionInterfaceCallableCustomCreate2)p_get_proc_address("callable_custom_create2");
     gd_callable_custom_create = (GDExtensionInterfaceCallableCustomCreate)p_get_proc_address("callable_custom_create");
     gd_variant_new_nil = (GDExtensionInterfaceVariantNewNil)p_get_proc_address("variant_new_nil");
+    gd_placeholder_script_instance_create = (GDExtensionInterfacePlaceHolderScriptInstanceCreate)p_get_proc_address("placeholder_script_instance_create");
 
     if (gd_variant_get_ptr_destructor) {
         gd_string_destroy = gd_variant_get_ptr_destructor(GDEXTENSION_VARIANT_TYPE_STRING);
