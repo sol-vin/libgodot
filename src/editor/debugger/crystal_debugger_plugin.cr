@@ -25,6 +25,13 @@ module Godot
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
       @@instance = self
+      cleanup_proc = ->{
+        if inst = @@instance
+          inst.cleanup rescue nil
+        end
+      }
+      CrystalIntegrationPlugin.on_cleanup = cleanup_proc
+      Bridge.set_debugger_cleanup(cleanup_proc)
     end
 
     def self.instance : CrystalDebuggerPlugin?
@@ -89,7 +96,7 @@ module Godot
       return if session.pointer.null?
 
       controller = DebuggerSessionController.new(session_id, session, @lldb_path)
-      controller.create_and_add_tab
+      # controller.create_and_add_tab
 
       # Setup lockstep multiplayer callback:
       # If any instance hits a breakpoint, pause all other multiplayer instances
@@ -192,5 +199,16 @@ module Godot
     def poll : Void
       @sessions.each_value(&.poll)
     end
+
+    # Cleans up all active debugger sessions and resets singleton
+    def cleanup : Void
+      @sessions.each_value do |ctrl|
+        ctrl.cleanup rescue nil
+      end
+      @sessions.clear
+      @active_breakpoints.clear
+      @@instance = nil
+    end
   end
 end
+

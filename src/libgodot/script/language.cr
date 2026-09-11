@@ -64,6 +64,9 @@ module Godot
           Godot.print("[CrystalLanguage.unregister] Calling engine.unregister_script_language...")
           err = engine.unregister_script_language(lang)
           Godot.print("[CrystalLanguage.unregister] unregister_script_language returned: #{err}")
+          if err == 0
+            lang.destroy rescue nil
+          end
         rescue ex
           Godot.print("[CrystalLanguage.unregister] Rescued error: #{ex.message}")
         end

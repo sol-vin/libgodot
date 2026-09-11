@@ -841,9 +841,18 @@ module Godot
       if @@mb_ref_unreference.null?
         @@mb_ref_unreference = Bridge.get_method_bind("RefCounted", "unreference", 2240911060_i64)
       end
+      target_ptr = @pointer
+      target_id = signal_target_id
       ret = 0_u8
-      Bridge.ptrcall(@@mb_ref_unreference, @pointer, Pointer(Pointer(Void)).null, pointerof(ret).as(Void*))
-      ret != 0_u8
+      Bridge.ptrcall(@@mb_ref_unreference, target_ptr, Pointer(Pointer(Void)).null, pointerof(ret).as(Void*))
+      should_free = (ret != 0_u8)
+      if should_free
+        @destroyed = true
+        @pointer = Pointer(Void).null
+        Godot.clear_signal_subscriptions(target_id)
+        Bridge.object_destroy(target_ptr)
+      end
+      should_free
     end
 
     def get_reference_count : Int64

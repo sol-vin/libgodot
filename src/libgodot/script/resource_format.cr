@@ -37,6 +37,10 @@ module Godot
         end
       end
       Bridge.set_loader_registered(false)
+      ref_count = loader.get_reference_count rescue 0_i64
+      if ref_count > 0
+        loader.unreference rescue nil
+      end
       @@instance = nil
       @@registered = false
     end
@@ -161,6 +165,14 @@ module Godot
       if Bridge.is_saver_registered?
         return
       end
+      rl_ptr = Bridge.get_singleton("ResourceLoader")
+      if !rl_ptr.null?
+        r_loader = Godot::ResourceLoader.new(rl_ptr)
+        if r_loader.call_str("get_resource_type", "test.cr") == "CrystalScript"
+          Bridge.set_saver_registered(true)
+          return
+        end
+      end
       rs_ptr = Bridge.get_singleton("ResourceSaver")
       return if rs_ptr.null?
       if saver = Godot.create(Godot::ResourceFormatSaverCrystal)
@@ -184,6 +196,10 @@ module Godot
         end
       end
       Bridge.set_saver_registered(false)
+      ref_count = saver.get_reference_count rescue 0_i64
+      if ref_count > 0
+        saver.unreference rescue nil
+      end
       @@instance = nil
       @@registered = false
     end

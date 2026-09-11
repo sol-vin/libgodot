@@ -33,6 +33,7 @@ module Godot
   @@file_last_disk_mtime : Hash(String, ::Time) = Hash(String, ::Time).new
   @@building : Bool = false
   @@reload_pending : Bool = false
+  class_property on_cleanup : Proc(Void)? = nil
 
   def self.building? : Bool
     @@building
@@ -103,6 +104,7 @@ module Godot
             ed_settings.call("set_initial_value", "docks/filesystem/textfile_extensions", new_val, false)
             Godot.print("[CrystalIntegrationPlugin] Added 'cr' to EditorSettings docks/filesystem/textfile_extensions: #{new_val}")
           end
+          ed_settings.unreference rescue nil
         end
       end
 
@@ -145,28 +147,41 @@ module Godot
         rescue
         end
       end
+      highlighter.unreference rescue nil
       @@crystal_highlighter = nil
     end
 
-    @@cached_icon_texture = nil
-
     if btn = @@compile_button
       if !btn.pointer.null?
+        btn.set_button_icon(Godot::Texture2D.new(Pointer(Void).null)) rescue nil
         if inst = @@instance
           inst.remove_control_from_container(Godot::EditorPlugin::CustomControlContainer::ContainerToolbar.value, btn) rescue nil
         end
-        btn.queue_free rescue nil
+        btn.destroy rescue nil
       end
       @@compile_button = nil
     end
 
+    if tex = @@cached_icon_texture
+      @@cached_icon_texture = nil
+      Godot.print("[CrystalIntegrationPlugin] Cleaning up cached icon, ptr=#{tex.pointer}, refcount=#{tex.get_reference_count}")
+      tex.unreference rescue nil
+    end
+
     if dbg_plug = @@debugger_plugin
+      Godot.print("[CrystalIntegrationPlugin] Cleaning up @@debugger_plugin, pointer=#{dbg_plug.pointer}")
       if !dbg_plug.pointer.null?
         begin
+          Bridge.trigger_debugger_cleanup rescue nil
+          if on_cl = @@on_cleanup
+            on_cl.call rescue nil
+          end
           if inst = @@instance
             inst.remove_debugger_plugin(dbg_plug) rescue nil
           end
-        rescue
+          dbg_plug.unreference rescue nil
+        rescue ex
+          Godot.print("[CrystalIntegrationPlugin] Error in debugger cleanup: #{ex.message}")
         end
       end
       @@debugger_plugin = nil
@@ -174,9 +189,54 @@ module Godot
 
     if panel = @@crystal_panel
       if !panel.pointer.null?
-        panel.queue_free rescue nil
+        parent = panel.call_obj("get_parent")
+        Godot.print("[CrystalIntegrationPlugin] crystal_panel parent is: #{parent ? parent.call_str("get_class") : "nil"}")
+        if parent && !parent.pointer.null?
+          parent_class = parent.call_str("get_class")
+          if parent_class == "EditorDock"
+            grandparent = parent.call_obj("get_parent")
+            Godot.print("[CrystalIntegrationPlugin] EditorDock parent is: #{grandparent ? grandparent.call_str("get_class") : "nil"}")
+            if grandparent && !grandparent.pointer.null?
+              grandparent.call("remove_child", parent) rescue nil
+            end
+            parent.call("remove_child", panel) rescue nil
+            panel.destroy rescue nil
+            parent.destroy rescue nil
+          else
+            parent.call("remove_child", panel) rescue nil
+            panel.destroy rescue nil
+          end
+        else
+          panel.destroy rescue nil
+        end
       end
       @@crystal_panel = nil
+    end
+
+    # Clear main screen button icon in editor UI to prevent icon leaks at exit
+    if !Godot::EditorInterface.singleton_ptr.null?
+      ed_iface = Godot::EditorInterface.new(Godot::EditorInterface.singleton_ptr)
+      base_ctrl = ed_iface.get_base_control
+      if !base_ctrl.pointer.null?
+        ["Crystal", "CrystalPanel"].each do |target_name|
+          if found = base_ctrl.call_obj("find_child", target_name, true, false)
+            if !found.pointer.null?
+              cls = found.call_str("get_class")
+              Godot.print("[CrystalIntegrationPlugin] Found node '#{target_name}' in base_ctrl: #{cls}")
+              if cls == "Button"
+                b_btn = Godot::Button.new(found.pointer)
+                b_btn.set_button_icon(Godot::Texture2D.new(Pointer(Void).null)) rescue nil
+                b_parent = found.call_obj("get_parent")
+                if b_parent && !b_parent.pointer.null?
+                  b_parent.call("remove_child", found) rescue nil
+                end
+                found.destroy rescue nil
+                Godot.print("[CrystalIntegrationPlugin] Removed and destroyed main screen button '#{target_name}'")
+              end
+            end
+          end
+        end
+      end
     end
 
     if dlg = @@error_dialog
@@ -185,6 +245,8 @@ module Godot
       end
       @@error_dialog = nil
     end
+
+    ClassRegistry.cleanup rescue nil
 
     @@building = false
     @@reload_pending = false
@@ -246,6 +308,7 @@ module Godot
     if !ed_settings.pointer.null?
       custom_lldb = ed_settings.call_str("get_setting", "crystal/debugger/lldb_path")
       lldb_path = custom_lldb unless custom_lldb.empty?
+      ed_settings.unreference rescue nil
     end
 
     if Debugger::LldbDriver.available?(lldb_path)
@@ -348,13 +411,13 @@ module Godot
       Godot.print("[CrystalIntegrationPlugin] Main screen queried: _get_plugin_name -> 'Crystal'")
     when "_get_plugin_icon"
       return if ret.null?
-      tex = self.class.get_crystal_icon_texture
-      if tex && !tex.pointer.null?
+      if tex = self.class.get_crystal_icon_texture
         Bridge.ret_ref(ret, tex.pointer)
+        Godot.print("[CrystalIntegrationPlugin] Main screen queried: _get_plugin_icon -> #{tex.pointer}")
       else
         Bridge.ret_ref(ret, Pointer(Void).null)
+        Godot.print("[CrystalIntegrationPlugin] Main screen queried: _get_plugin_icon -> null")
       end
-      Godot.print("[CrystalIntegrationPlugin] Main screen queried: _get_plugin_icon -> #{tex ? "icon" : "null"}")
     when "_make_visible"
       visible = !args.null? && !args[0].null? && (args[0].as(UInt8*).value != 0_u8)
       make_crystal_panel_visible(visible)
@@ -384,27 +447,17 @@ module Godot
     end
 
     icon_tex : Godot::Texture2D? = nil
-    ["res://addons/crystal_integration/crystal_icon.svg", "res://crystal_icon.svg"].each do |p|
-      res = Godot.load(p, "Texture2D")
-      if res && !res.pointer.null?
-        icon_tex = Godot::Texture2D.new(res.pointer)
-        break
-      end
-    end
-
-    if !icon_tex || icon_tex.pointer.null?
-      img = Godot.create(Godot::Image)
-      if img && !img.pointer.null?
-        err = img.load_svg_from_string(CRYSTAL_ICON_SVG, 1.0_f64)
-        if err == 0_i64
-          itex = Godot.create(Godot::ImageTexture)
-          if itex && !itex.pointer.null?
-            itex.set_image(img)
-            icon_tex = itex
-          end
+    img = Godot.create(Godot::Image)
+    if img && !img.pointer.null?
+      err = img.load_svg_from_string(CRYSTAL_ICON_SVG, 1.0_f64)
+      if err == 0_i64
+        itex = Godot.create(Godot::ImageTexture)
+        if itex && !itex.pointer.null?
+          itex.set_image(img)
+          icon_tex = itex
         end
-        img.unreference rescue nil
       end
+      img.unreference rescue nil
     end
 
     @@cached_icon_texture = icon_tex
@@ -450,7 +503,6 @@ module Godot
 
     if icon_tex && !icon_tex.pointer.null?
       btn.set_button_icon(icon_tex)
-      btn.call("set_button_icon", icon_tex)
       btn.call("set_text", "Build")
     else
       btn.call("set_text", "Build Crystal")
@@ -633,6 +685,10 @@ module Godot
   # If the buffer was modified in-editor inside Godot, changes are flushed to disk.
   def self.sync_script_file(base_ed : Godot::Object, path : String) : Void
     return if path.empty? || !path.ends_with?(".cr")
+    if !Godot::DisplayServer.singleton_ptr.null?
+      ds = Godot::DisplayServer.new(Godot::DisplayServer.singleton_ptr)
+      return if ds.call_str("get_name") == "headless"
+    end
     return if Godot::ProjectSettings.singleton_ptr.null?
     ps = Godot::ProjectSettings.new(Godot::ProjectSettings.singleton_ptr)
     fs_path = ps.call_str("globalize_path", path).gsub('\\', '/')
@@ -680,6 +736,10 @@ module Godot
 
   # Saves all open scripts and scenes in the editor before compiling so modifications on disk are up to date
   def self.save_open_editor_files : Void
+    if !Godot::DisplayServer.singleton_ptr.null?
+      ds = Godot::DisplayServer.new(Godot::DisplayServer.singleton_ptr)
+      return if ds.call_str("get_name") == "headless"
+    end
     return if Godot::EditorInterface.singleton_ptr.null?
     ei = Godot::EditorInterface.new(Godot::EditorInterface.singleton_ptr)
     begin
@@ -757,6 +817,7 @@ module Godot
           if btn = @@compile_button
             btn.call("set_text", "Reloading...") rescue nil
           end
+          Godot::Bridge.set_reloading(true)
           gd_ext_mgr.call_deferred("reload_extension", ext_path)
           Godot.print("[CrystalIntegrationPlugin] Scheduled deferred GDExtension reload.")
         else

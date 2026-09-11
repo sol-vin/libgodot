@@ -2324,8 +2324,8 @@ static bool bridge_object_call_ret_bool(GDExtensionObjectPtr instance, const cha
  * and returns a thread-local UTF-8 buffer pointer.
  */
 static const char* bridge_object_call_ret_string(GDExtensionObjectPtr instance, const char *method_name, const BridgeSignalArg *args, int arg_count) {
-    static thread_local char s_call_str_buf[1024];
-    s_call_str_buf[0] = '\0';
+    static thread_local std::string s_call_str_storage;
+    s_call_str_storage.clear();
     if (!instance || !method_name || !gd_classdb_get_method_bind || !gd_object_method_bind_call) return "";
     if (!mb_object_call) {
         void *sn_obj = make_string_name("Object");
@@ -2341,14 +2341,15 @@ static const char* bridge_object_call_ret_string(GDExtensionObjectPtr instance, 
     if (gd_variant_stringify && gd_string_to_utf8_chars) {
         alignas(void*) char gd_str[8] = {0};
         gd_variant_stringify(var_ret, gd_str);
-        int64_t len = gd_string_to_utf8_chars(gd_str, s_call_str_buf, sizeof(s_call_str_buf) - 1);
-        if (len >= 0 && len < (int64_t)sizeof(s_call_str_buf)) {
-            s_call_str_buf[len] = '\0';
+        int64_t len = gd_string_to_utf8_chars(gd_str, nullptr, 0);
+        if (len > 0) {
+            s_call_str_storage.resize((size_t)len);
+            gd_string_to_utf8_chars(gd_str, &s_call_str_storage[0], len);
         }
         if (gd_string_destroy) gd_string_destroy(gd_str);
     }
     if (gd_variant_destroy) gd_variant_destroy(var_ret);
-    return s_call_str_buf;
+    return s_call_str_storage.c_str();
 }
 
 // ==============================================================================
@@ -3188,6 +3189,22 @@ static void bridge_set_saver_registered(int r) { g_saver_registered = r; }
 static int bridge_is_language_registered() { return g_language_registered; }
 static void bridge_set_language_registered(int r) { g_language_registered = r; }
 
+static int s_is_reloading = 0;
+static void bridge_set_reloading(int reloading) { s_is_reloading = reloading; }
+
+typedef void (*CrystalCleanupCallbackFn)(void);
+static CrystalCleanupCallbackFn s_debugger_cleanup_fn = nullptr;
+
+static void bridge_set_debugger_cleanup(CrystalCleanupCallbackFn fn) {
+    s_debugger_cleanup_fn = fn;
+}
+
+static void bridge_trigger_debugger_cleanup() {
+    if (s_debugger_cleanup_fn) {
+        s_debugger_cleanup_fn();
+    }
+}
+
 static void bridge_object_connect_signal(GDExtensionObjectPtr instance, const char *signal_name, uint32_t flags) {
     if (!instance || !signal_name || !gd_classdb_get_method_bind || !gd_object_method_bind_ptrcall) return;
     if (!gd_callable_custom_create2 && !gd_callable_custom_create) return;
@@ -3412,6 +3429,9 @@ struct BridgeAPI {
     void (*set_saver_registered)(int r);
     int (*is_language_registered)();
     void (*set_language_registered)(int r);
+    void (*set_reloading)(int r);
+    void (*set_debugger_cleanup)(void (*fn)());
+    void (*trigger_debugger_cleanup)();
 };
 
 static BridgeAPI g_bridge_api = {
@@ -3477,7 +3497,10 @@ static BridgeAPI g_bridge_api = {
     bridge_is_saver_registered,
     bridge_set_saver_registered,
     bridge_is_language_registered,
-    bridge_set_language_registered
+    bridge_set_language_registered,
+    bridge_set_reloading,
+    bridge_set_debugger_cleanup,
+    bridge_trigger_debugger_cleanup
 };
 
 // ==============================================================================
@@ -3521,6 +3544,9 @@ extern "C" {
     }
     GDE_EXPORT const BridgeAPI* crystal_bridge_get_api() {
         return &g_bridge_api;
+    }
+    GDE_EXPORT void crystal_bridge_set_reloading(int reloading) {
+        bridge_set_reloading(reloading);
     }
 }
 
@@ -4209,6 +4235,7 @@ static void initialize_crystal_module(void *p_userdata, GDExtensionInitializatio
         g_library = (GDExtensionClassLibraryPtr)p_userdata;
     }
     g_current_init_level = p_level;
+    s_is_reloading = 0;
     if (p_level == GDEXTENSION_INITIALIZATION_SCENE) {
         init_common_method_binds();
         godot_log_print("[CrystalBridge] Initializing generic Crystal GDExtension host...");
@@ -4237,6 +4264,16 @@ static bool s_handler_installed = false;
 static PVOID g_veh_handler = NULL;
 #endif
 
+/**
+ * Checks whether the Godot engine process is currently shutting down.
+ * Standalone runners always shut down on deinit.
+ * In editor mode, deinitialization only occurs during engine shutdown or an
+ * explicit GDExtension reload (triggered via bridge_set_reloading(1)).
+ */
+static bool is_engine_shutting_down() {
+    return (s_is_reloading == 0);
+}
+
 static void deinitialize_crystal_module(void *p_userdata, GDExtensionInitializationLevel p_level) {
     GDExtensionClassLibraryPtr lib = (GDExtensionClassLibraryPtr)p_userdata;
     if (p_userdata) {
@@ -4255,8 +4292,16 @@ static void deinitialize_crystal_module(void *p_userdata, GDExtensionInitializat
             }
         }
 
-        if (lib && g_library_editor_classes.find(lib) != g_library_editor_classes.end()) {
-            g_library_editor_classes.erase(lib);
+        if (lib && is_engine_shutting_down() && gd_classdb_unregister_extension_class) {
+            auto it_ed = g_library_editor_classes.find(lib);
+            if (it_ed != g_library_editor_classes.end()) {
+                for (int i = (int)it_ed->second.size() - 1; i >= 0; i--) {
+                    void *sn = make_string_name(it_ed->second[i].c_str());
+                    gd_classdb_unregister_extension_class(lib, sn);
+                    free_string_name(sn);
+                }
+                g_library_editor_classes.erase(it_ed);
+            }
         }
     } else if (p_level == GDEXTENSION_INITIALIZATION_SCENE) {
         if (lib) {
@@ -4269,11 +4314,50 @@ static void deinitialize_crystal_module(void *p_userdata, GDExtensionInitializat
             }
         }
 
-        if (lib && g_library_scene_classes.find(lib) != g_library_scene_classes.end()) {
-            g_library_scene_classes.erase(lib);
+        if (lib) {
+            if (is_engine_shutting_down() && gd_classdb_unregister_extension_class) {
+                auto it_ed = g_library_editor_classes.find(lib);
+                if (it_ed != g_library_editor_classes.end()) {
+                    for (int i = (int)it_ed->second.size() - 1; i >= 0; i--) {
+                        void *sn = make_string_name(it_ed->second[i].c_str());
+                        gd_classdb_unregister_extension_class(lib, sn);
+                        free_string_name(sn);
+                    }
+                    g_library_editor_classes.erase(it_ed);
+                }
+
+                auto it_sc = g_library_scene_classes.find(lib);
+                if (it_sc != g_library_scene_classes.end()) {
+                    for (int i = (int)it_sc->second.size() - 1; i >= 0; i--) {
+                        void *sn = make_string_name(it_sc->second[i].c_str());
+                        gd_classdb_unregister_extension_class(lib, sn);
+                        free_string_name(sn);
+                    }
+                    g_library_scene_classes.erase(it_sc);
+                }
+            } else {
+                g_library_editor_classes.erase(lib);
+                g_library_scene_classes.erase(lib);
+            }
         }
         g_active_extension_count--;
         if (g_active_extension_count <= 0) {
+            if (is_engine_shutting_down() && gd_classdb_unregister_extension_class) {
+                for (auto &pair : g_library_editor_classes) {
+                    for (int i = (int)pair.second.size() - 1; i >= 0; i--) {
+                        void *sn = make_string_name(pair.second[i].c_str());
+                        gd_classdb_unregister_extension_class(pair.first, sn);
+                        free_string_name(sn);
+                    }
+                }
+                for (auto &pair : g_library_scene_classes) {
+                    for (int i = (int)pair.second.size() - 1; i >= 0; i--) {
+                        void *sn = make_string_name(pair.second[i].c_str());
+                        gd_classdb_unregister_extension_class(pair.first, sn);
+                        free_string_name(sn);
+                    }
+                }
+            }
             g_active_extension_count = 0;
             g_library_deinit_callbacks.clear();
             g_library_scene_classes.clear();
@@ -4285,6 +4369,7 @@ static void deinitialize_crystal_module(void *p_userdata, GDExtensionInitializat
             g_loader_registered = 0;
             g_saver_registered = 0;
             g_language_registered = 0;
+            s_is_reloading = 0;
             unload_crystal_game_library();
 #ifdef _WIN32
             // Retain g_veh_handler so heap corruption or termination faults during process exit are captured
