@@ -72,7 +72,9 @@ module Godot
       return if ds.call_str("get_name") == "headless"
     end
 
+    ensure_theme_icons
     setup_toolbar_button
+    setup_new_script_button
     setup_main_screen_panel
     setup_debugger_plugin
     ensure_highlighter_registered
@@ -124,7 +126,9 @@ module Godot
         end
       end
 
+      self.class.ensure_theme_icons
       self.class.setup_toolbar_button
+      self.class.setup_new_script_button
       self.class.setup_main_screen_panel
       self.class.setup_debugger_plugin
 
@@ -138,6 +142,43 @@ module Godot
     end
 
     emit_ready_in_editor
+  end
+
+  # Registers Crystal icons into Godot's EditorIcons theme so ScriptCreateDialog and FileSystem dock display proper icons
+  def self.ensure_theme_icons : Void
+    return unless has_editor_interface?
+    return if Godot::EditorInterface.singleton_ptr.null?
+    ed_iface = Godot::EditorInterface.new(Godot::EditorInterface.singleton_ptr)
+    base_ctrl = ed_iface.get_base_control
+    return if base_ctrl.pointer.null?
+
+    theme = base_ctrl.get_theme
+    return if theme.pointer.null?
+
+    if icon_tex = get_crystal_icon_texture
+      ["CrystalScript", "CrystalLanguage", "Crystal"].each do |type_name|
+        theme.set_icon(type_name, "EditorIcons", icon_tex) rescue nil
+      end
+      Godot.print("[CrystalIntegrationPlugin] Registered Crystal theme icons into EditorIcons theme.")
+    end
+  rescue ex
+    Godot.printerr("[CrystalIntegrationPlugin] Notice: theme icons registration: #{ex.message}")
+  end
+
+  def self.clear_theme_icons : Void
+    return unless has_editor_interface?
+    return if Godot::EditorInterface.singleton_ptr.null?
+    ed_iface = Godot::EditorInterface.new(Godot::EditorInterface.singleton_ptr)
+    base_ctrl = ed_iface.get_base_control
+    return if base_ctrl.pointer.null?
+
+    theme = base_ctrl.get_theme
+    return if theme.pointer.null?
+
+    ["CrystalScript", "CrystalLanguage", "Crystal"].each do |type_name|
+      theme.clear_icon(type_name, "EditorIcons") rescue nil
+    end
+  rescue
   end
 
   def self.cleanup : Void
@@ -165,6 +206,23 @@ module Godot
         btn.destroy rescue nil
       end
       @@compile_button = nil
+    end
+
+    if btn = @@create_script_button
+      if !btn.pointer.null?
+        if inst = @@instance
+          inst.remove_control_from_container(Godot::EditorPlugin::CustomControlContainer::ContainerToolbar.value, btn) rescue nil
+        end
+        btn.destroy rescue nil
+      end
+      @@create_script_button = nil
+    end
+
+    if dlg = @@create_script_dialog
+      if !dlg.pointer.null?
+        dlg.queue_free rescue nil
+      end
+      @@create_script_dialog = nil
     end
 
     if tex = @@cached_icon_texture
@@ -243,6 +301,8 @@ module Godot
         end
       end
     end
+
+    clear_theme_icons
 
     if dlg = @@error_dialog
       if !dlg.pointer.null?
@@ -408,24 +468,19 @@ module Godot
     when "_has_main_screen"
       return if ret.null?
       ret.as(UInt8*).value = 1_u8
-      Godot.print("[CrystalIntegrationPlugin] Main screen queried: _has_main_screen -> true")
     when "_get_plugin_name"
       return if ret.null?
       Bridge.ret_string(ret, "Crystal")
-      Godot.print("[CrystalIntegrationPlugin] Main screen queried: _get_plugin_name -> 'Crystal'")
     when "_get_plugin_icon"
       return if ret.null?
       if tex = self.class.get_crystal_icon_texture
         Bridge.ret_ref(ret, tex.pointer)
-        Godot.print("[CrystalIntegrationPlugin] Main screen queried: _get_plugin_icon -> #{tex.pointer}")
       else
         Bridge.ret_ref(ret, Pointer(Void).null)
-        Godot.print("[CrystalIntegrationPlugin] Main screen queried: _get_plugin_icon -> null")
       end
     when "_make_visible"
       visible = !args.null? && !args[0].null? && (args[0].as(UInt8*).value != 0_u8)
       make_crystal_panel_visible(visible)
-      Godot.print("[CrystalIntegrationPlugin] Main screen visibility toggled: _make_visible(#{visible})")
     end
   end
 
@@ -563,6 +618,218 @@ module Godot
 
   def setup_toolbar_button : Void
     self.class.setup_toolbar_button
+  end
+
+  @@create_script_button : Godot::Button? = nil
+  @@create_script_dialog : Godot::ConfirmationDialog? = nil
+
+  def self.setup_new_script_button : Void
+    return unless has_editor_interface?
+    return if Godot::EditorInterface.singleton_ptr.null?
+    ed_iface = Godot::EditorInterface.new(Godot::EditorInterface.singleton_ptr)
+    base_ctrl = ed_iface.get_base_control
+    return if base_ctrl.pointer.null?
+
+    if !Godot::DisplayServer.singleton_ptr.null?
+      ds = Godot::DisplayServer.new(Godot::DisplayServer.singleton_ptr)
+      return if ds.call_str("get_name") == "headless"
+    end
+
+    existing = base_ctrl.call_obj("find_child", "NewCrystalScriptToolbarButton", true, false)
+    if existing && !existing.pointer.null?
+      btn = Godot::Button.new(existing.pointer)
+      @@create_script_button = btn
+      Godot.clear_signal_subscriptions(btn.signal_target_id)
+      btn.connect("pressed", flags: ::Godot::ConnectFlags::Deferred) do |_args|
+        show_create_script_dialog
+      end
+      return
+    end
+
+    btn = Godot.create(Godot::Button)
+    return unless btn
+    btn.call("set_name", "NewCrystalScriptToolbarButton")
+    btn.call("set_flat", true)
+    btn.call("set_theme_type_variation", "RunBarButton")
+    btn.call("set_text", "+ Script")
+    btn.call("set_tooltip_text", "Create New Crystal Script (.cr)")
+    btn.call("set_focus_mode", 0)
+
+    btn.connect("pressed", flags: ::Godot::ConnectFlags::Deferred) do |_args|
+      show_create_script_dialog
+    end
+
+    if inst = @@instance
+      inst.add_control_to_container(Godot::EditorPlugin::CustomControlContainer::ContainerToolbar.value, btn) rescue nil
+    elsif title_bar = base_ctrl.call_obj("find_child", "EditorTitleBar", true, false)
+      title_bar.call("add_child", btn) rescue nil
+    end
+
+    if title_bar = btn.call_obj("get_parent")
+      if compile_btn = @@compile_button
+        if !compile_btn.pointer.null?
+          c_idx = compile_btn.call_i64("get_index") rescue -1_i64
+          if c_idx >= 0
+            title_bar.call("move_child", btn, c_idx + 1) rescue nil
+          end
+        end
+      end
+    end
+
+    @@create_script_button = btn
+  rescue ex
+    Godot.printerr("[CrystalIntegrationPlugin] Warning: could not setup new script button: #{ex.message}")
+  end
+
+  def setup_new_script_button : Void
+    self.class.setup_new_script_button
+  end
+
+  def self.show_create_script_dialog : Void
+    return unless has_editor_interface?
+    return if Godot::EditorInterface.singleton_ptr.null?
+    ed_iface = Godot::EditorInterface.new(Godot::EditorInterface.singleton_ptr)
+    base_ctrl = ed_iface.get_base_control
+    return if base_ctrl.pointer.null?
+
+    if dlg = @@create_script_dialog
+      if !dlg.pointer.null?
+        dlg.call("popup_centered", Godot::Vector2i.new(520, 360))
+        return
+      end
+    end
+
+    dlg = Godot.create(Godot::ConfirmationDialog)
+    return unless dlg
+    dlg.call("set_name", "CrystalScriptCreateDialog")
+    dlg.call("set_title", "Create New Crystal Script")
+    dlg.call("set_ok_button_text", "Create")
+    dlg.call("set_cancel_button_text", "Cancel")
+
+    vbox = Godot.create(Godot::VBoxContainer)
+    return unless vbox
+    vbox.call("set_name", "DialogVBox")
+    dlg.call("add_child", vbox)
+
+    # Class Name Row
+    lbl_class = Godot.create(Godot::Label)
+    lbl_class.call("set_text", "Class Name:") if lbl_class
+    vbox.call("add_child", lbl_class) if lbl_class
+
+    class_edit = Godot.create(Godot::LineEdit)
+    return unless class_edit
+    class_edit.call("set_placeholder", "e.g. Player, GameController, LevelManager")
+    class_edit.call("set_text", "NewNode")
+    vbox.call("add_child", class_edit)
+
+    # Base Type Row
+    lbl_base = Godot.create(Godot::Label)
+    lbl_base.call("set_text", "Inherits:") if lbl_base
+    vbox.call("add_child", lbl_base) if lbl_base
+
+    base_opt = Godot.create(Godot::OptionButton)
+    return unless base_opt
+    common_nodes = ["Node", "Node2D", "Node3D", "CharacterBody3D", "CharacterBody2D", "Control", "Resource", "RefCounted"]
+    common_nodes.each_with_index do |node_name, idx|
+      base_opt.call("add_item", node_name, idx)
+    end
+    base_opt.call("select", 0)
+    vbox.call("add_child", base_opt)
+
+    # Template Row
+    lbl_tmpl = Godot.create(Godot::Label)
+    lbl_tmpl.call("set_text", "Template:") if lbl_tmpl
+    vbox.call("add_child", lbl_tmpl) if lbl_tmpl
+
+    tmpl_opt = Godot.create(Godot::OptionButton)
+    return unless tmpl_opt
+    tmpl_opt.call("add_item", "Standard Node (_ready & _process)", 0)
+    tmpl_opt.call("add_item", "Physics Movement (CharacterBody)", 1)
+    tmpl_opt.call("add_item", "Tool Script (@[Tool] In-Editor Execution)", 2)
+    tmpl_opt.call("add_item", "Empty Class", 3)
+    tmpl_opt.call("select", 0)
+    vbox.call("add_child", tmpl_opt)
+
+    # Path Row
+    lbl_path = Godot.create(Godot::Label)
+    lbl_path.call("set_text", "Path:") if lbl_path
+    vbox.call("add_child", lbl_path) if lbl_path
+
+    path_edit = Godot.create(Godot::LineEdit)
+    return unless path_edit
+    path_edit.call("set_text", "res://src/new_node.cr")
+    vbox.call("add_child", path_edit)
+
+    # Auto-update path when class name changes
+    class_edit.connect("text_changed") do |args|
+      if args && args.size > 0
+        raw_name = args[0].to_s.strip
+        if !raw_name.empty?
+          snake = raw_name.underscore rescue raw_name.downcase
+          path_edit.call("set_text", "res://src/#{snake}.cr")
+        end
+      end
+    end
+
+    # Auto-select movement template if CharacterBody is chosen
+    base_opt.connect("item_selected") do |args|
+      if args && args.size > 0
+        idx = args[0].as_i64 rescue 0_i64
+        selected_base = common_nodes[idx]? || "Node"
+        if selected_base.includes?("CharacterBody")
+          tmpl_opt.call("select", 1)
+        end
+      end
+    end
+
+    # On Confirm: write file, scan filesystem, open in editor
+    dlg.connect("confirmed") do |_args|
+      raw_class = class_edit.call_str("get_text").strip
+      raw_class = "NewNode" if raw_class.empty?
+      b_idx = base_opt.call_i64("get_selected") rescue 0_i64
+      b_type = common_nodes[b_idx]? || "Node"
+      t_idx = tmpl_opt.call_i64("get_selected") rescue 0_i64
+      target_path = path_edit.call_str("get_text").strip
+      target_path = "res://src/#{raw_class.downcase}.cr" if target_path.empty?
+      target_path = "#{target_path}.cr" unless target_path.ends_with?(".cr")
+
+      code = case t_idx
+      when 1
+        "require \"libgodot\"\n\n# #{raw_class} character with physics movement\nnode #{raw_class} < #{b_type} do\n  @[Export(range: 1.0_f32..20.0_f32, step: 0.5_f32)]\n  property speed : Float32 = 5.0_f32\n\n  def _physics_process(delta : Float64) : Void\n    # Physics movement logic\n  end\nend\n"
+      when 2
+        "require \"libgodot\"\n\n# In-editor tool script #{raw_class}\n@[Tool]\nnode #{raw_class} < #{b_type} do\n  def _ready : Void\n    # Runs in editor\n  end\n\n  def _process(delta : Float64) : Void\n  end\nend\n"
+      when 3
+        "require \"libgodot\"\n\nnode #{raw_class} < #{b_type} do\nend\n"
+      else
+        "require \"libgodot\"\n\n# #{raw_class} node\nnode #{raw_class} < #{b_type} do\n  def _ready : Void\n    Godot.print(\"#{raw_class} initialized\")\n  end\n\n  def _process(delta : Float64) : Void\n  end\nend\n"
+      end
+
+      disk_path = if target_path.starts_with?("res://")
+        target_path.sub("res://", "")
+      else
+        target_path
+      end
+
+      dir_name = File.dirname(disk_path)
+      Dir.mkdir_p(dir_name) unless dir_name.empty? || dir_name == "."
+      File.write(disk_path, code)
+      Godot.print("[CrystalIntegrationPlugin] Created new Crystal script: #{target_path}")
+
+      if !Godot::EditorInterface.singleton_ptr.null?
+        ed_iface = Godot::EditorInterface.new(Godot::EditorInterface.singleton_ptr)
+        r_fs = ed_iface.get_resource_filesystem
+        if !r_fs.pointer.null?
+          r_fs.scan rescue nil
+        end
+        ed_iface.call("edit_script", target_path) rescue nil
+      end
+    end
+
+    base_ctrl.call("add_child", dlg)
+    @@create_script_dialog = dlg
+    dlg.call("popup_centered", Godot::Vector2i.new(520, 360))
+  rescue ex
+    Godot.printerr("[CrystalIntegrationPlugin] Warning: could not show create script dialog: #{ex.message}")
   end
 
   # Tracks the active build error dialog to prevent multiple windows

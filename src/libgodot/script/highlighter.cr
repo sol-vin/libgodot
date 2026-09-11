@@ -65,9 +65,8 @@ module Godot
         Bridge.ret_packed_string_array(ret, ["Crystal", "cr", "CrystalScript"])
       when "_create"
         hl = Godot.create(Godot::CrystalHighlighter)
-        if hl
+        if hl && !hl.pointer.null?
           Bridge.ret_ref(ret, hl.pointer)
-          hl.unreference
         else
           Bridge.ret_ref(ret, Pointer(Void).null)
         end

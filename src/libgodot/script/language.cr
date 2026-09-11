@@ -34,15 +34,13 @@ module Godot
 
       # Clean up any leftover defunct language instances from previous loads
       begin
-        count = engine.call_i64("get_script_language_count")
+        count = engine.get_script_language_count
         (count - 1).downto(0) do |i|
-          existing = engine.call_obj("get_script_language", i)
+          existing = engine.get_script_language(i)
           if existing && !existing.pointer.null?
-            cls = existing.call_str("get_class") rescue ""
-            if cls == "CrystalLanguage" || cls == "ScriptLanguageExtension"
-              lang_obj = Godot::ScriptLanguage.new(existing.pointer)
-              engine.unregister_script_language(lang_obj)
-              lang_obj.destroy rescue nil
+            lname = existing.call_str("get_name") rescue ""
+            if lname == "Crystal"
+              engine.unregister_script_language(existing)
             end
           end
         end
@@ -51,38 +49,33 @@ module Godot
 
       if lang = Godot.create(Godot::CrystalLanguage)
         @@instance = lang
-        engine.register_script_language(lang)
+        err = engine.register_script_language(lang)
         Bridge.set_language_registered(true)
         Bridge.set_language_object(lang.pointer)
         @@registered = true
+      else
+        Godot.printerr("[CrystalLanguage.ensure_registered] FAILED to create CrystalLanguage instance!")
       end
     end
 
     def self.unregister : Void
-      Godot.print("[CrystalLanguage.unregister] Entering, @@registered=#{@@registered}")
       return unless @@registered
       return unless (lang = @@instance) && !lang.pointer.null?
-      Godot.print("[CrystalLanguage.unregister] lang pointer=#{lang.pointer}")
       eng_ptr = Bridge.get_singleton("Engine")
-      Godot.print("[CrystalLanguage.unregister] eng_ptr=#{eng_ptr}")
       unless eng_ptr.null?
         engine = Godot::Engine.new(eng_ptr)
         begin
-          Godot.print("[CrystalLanguage.unregister] Calling engine.unregister_script_language...")
           err = engine.unregister_script_language(lang)
-          Godot.print("[CrystalLanguage.unregister] unregister_script_language returned: #{err}")
           if err == 0
             lang.destroy rescue nil
           end
-        rescue ex
-          Godot.print("[CrystalLanguage.unregister] Rescued error: #{ex.message}")
+        rescue
         end
       end
       Bridge.set_language_registered(false)
       Bridge.set_language_object(Pointer(Void).null)
       @@instance = nil
       @@registered = false
-      Godot.print("[CrystalLanguage.unregister] Done successfully.")
     end
 
     def self.singleton_instance : CrystalLanguage
@@ -280,29 +273,43 @@ module Godot
         c_name = "NewNode" if c_name.empty?
         b_name = "Node" if b_name.empty?
 
-        code = "require \"libgodot\"\n\nnode #{c_name} < #{b_name} do\n  def _ready : Void\n  end\n\n  def _process(delta : Float64) : Void\n  end\nend\n"
-        script = Godot.create(Godot::CrystalScript)
-        if script
-          script.set_source_code(code)
-          Bridge.ret_ref(ret, script.pointer)
-          script.unreference
+        code = if !template.empty?
+          template.gsub("_CLASS_", c_name).gsub("_BASE_", b_name)
         else
+          "require \"libgodot\"\n\nnode #{c_name} < #{b_name} do\n  def _ready : Void\n  end\n\n  def _process(delta : Float64) : Void\n  end\nend\n"
+        end
+
+        begin
+          script = Godot.create(Godot::CrystalScript)
+          if script && !script.pointer.null?
+            script.set_source_code(code)
+            Bridge.ret_ref(ret, script.pointer)
+          else
+            Godot.printerr("[CrystalLanguage._make_template] Error: Failed to create CrystalScript resource!")
+            Bridge.ret_ref(ret, Pointer(Void).null)
+          end
+        rescue ex
+          Godot.printerr("[CrystalLanguage._make_template] Exception: #{ex.message}")
           Bridge.ret_ref(ret, Pointer(Void).null)
         end
       when "_get_built_in_templates"
         Bridge.ret_array_empty(ret)
       when "_is_using_templates"
-        ret.as(UInt8*).value = 1_u8
+        ret.as(UInt8*).value = 0_u8
       when "_validate"
         Bridge.ret_dictionary_validate(ret, true)
       when "_validate_path"
         Bridge.ret_string(ret, "")
       when "_create_script"
-        script = Godot.create(Godot::CrystalScript)
-        if script
-          Bridge.ret_ref(ret, script.pointer)
-          script.unreference
-        else
+        begin
+          script = Godot.create(Godot::CrystalScript)
+          if script && !script.pointer.null?
+            Bridge.ret_ref(ret, script.pointer)
+          else
+            Bridge.ret_ref(ret, Pointer(Void).null)
+          end
+        rescue ex
+          Godot.printerr("[CrystalLanguage._create_script] Exception: #{ex.message}")
           Bridge.ret_ref(ret, Pointer(Void).null)
         end
       when "_has_named_classes"

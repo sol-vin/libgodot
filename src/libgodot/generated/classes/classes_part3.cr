@@ -1,139 +1,5 @@
 # Generated classes part 3 (in topological order)
 module Godot
-  # GDScript language server.
-  #
-  # Provides access to certain features that are implemented in the language server.
-  # **Note:** This class is not a language server client that can be used to access LSP functionality. It only provides access to a limited set of features that is implemented using the same technical foundation as the language server.
-  class GDScriptLanguageProtocol < Godot::JSONRPC
-    def initialize(pointer : Void* = Pointer(Void).null)
-      super(pointer)
-    end
-    @@mb_get_text_document : Void* = Pointer(Void).null
-    # Returns the language server's `GDScriptTextDocument` instance.
-    def get_text_document() : GDScriptTextDocument
-      if @@mb_get_text_document.null?
-        @@mb_get_text_document = Bridge.get_method_bind("GDScriptLanguageProtocol", "get_text_document", 770545799_i64)
-      end
-      ret_ptr = Pointer(Void).null
-      Bridge.ptrcall(@@mb_get_text_document, @pointer, Pointer(Pointer(Void)).null, pointerof(ret_ptr).as(Void*))
-      GDScriptTextDocument.new(ret_ptr)
-    end
-    @@mb_get_workspace : Void* = Pointer(Void).null
-    # Returns the language server's `GDScriptWorkspace` instance.
-    def get_workspace() : GDScriptWorkspace
-      if @@mb_get_workspace.null?
-        @@mb_get_workspace = Bridge.get_method_bind("GDScriptLanguageProtocol", "get_workspace", 969295246_i64)
-      end
-      ret_ptr = Pointer(Void).null
-      Bridge.ptrcall(@@mb_get_workspace, @pointer, Pointer(Pointer(Void)).null, pointerof(ret_ptr).as(Void*))
-      GDScriptWorkspace.new(ret_ptr)
-    end
-    @@mb_is_smart_resolve_enabled : Void* = Pointer(Void).null
-    # Returns `true` if the language server is providing the smart resolve feature, `false` otherwise. The feature can be configured through the editor settings.
-    def is_smart_resolve_enabled() : Bool
-      if @@mb_is_smart_resolve_enabled.null?
-        @@mb_is_smart_resolve_enabled = Bridge.get_method_bind("GDScriptLanguageProtocol", "is_smart_resolve_enabled", 36873697_i64)
-      end
-      ret = 0_u8
-      Bridge.ptrcall(@@mb_is_smart_resolve_enabled, @pointer, Pointer(Pointer(Void)).null, pointerof(ret).as(Void*))
-      ret != 0_u8
-    end
-    @@mb_is_initialized : Void* = Pointer(Void).null
-    # Returns `true` if the language server was initialized by a language server client, `false` otherwise.
-    def is_initialized() : Bool
-      if @@mb_is_initialized.null?
-        @@mb_is_initialized = Bridge.get_method_bind("GDScriptLanguageProtocol", "is_initialized", 36873697_i64)
-      end
-      ret = 0_u8
-      Bridge.ptrcall(@@mb_is_initialized, @pointer, Pointer(Pointer(Void)).null, pointerof(ret).as(Void*))
-      ret != 0_u8
-    end
-    @@mb_initialize : Void* = Pointer(Void).null
-    def godot_initialize(params : Void*) : Void*
-      if @@mb_initialize.null?
-        @@mb_initialize = Bridge.get_method_bind("GDScriptLanguageProtocol", "initialize", 3762224011_i64)
-      end
-      val_0 = params
-      arg_0 = pointerof(val_0).as(Void*)
-      args = [arg_0]
-      ret_var = StaticArray(UInt8, 24).new(0_u8)
-      Bridge.ptrcall(@@mb_initialize, @pointer, args.to_unsafe.as(Void**), ret_var.to_unsafe.as(Void*))
-      ret_ptr = Pointer(Void).null
-      Bridge.type_from_variant(24, pointerof(ret_ptr).as(Void*), ret_var.to_unsafe.as(Void*))
-      ret_ptr
-    end
-    @@mb_initialized : Void* = Pointer(Void).null
-    def initialized(params : Void*) : Void
-      if @@mb_initialized.null?
-        @@mb_initialized = Bridge.get_method_bind("GDScriptLanguageProtocol", "initialized", 1114965689_i64)
-      end
-      val_0 = params
-      arg_0 = pointerof(val_0).as(Void*)
-      args = [arg_0]
-      Bridge.ptrcall(@@mb_initialized, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
-    end
-    @@mb_on_client_connected : Void* = Pointer(Void).null
-    def on_client_connected() : Int64
-      if @@mb_on_client_connected.null?
-        @@mb_on_client_connected = Bridge.get_method_bind("GDScriptLanguageProtocol", "on_client_connected", 166280745_i64)
-      end
-      ret = 0_i64
-      Bridge.ptrcall(@@mb_on_client_connected, @pointer, Pointer(Pointer(Void)).null, pointerof(ret).as(Void*))
-      ret
-    end
-    @@mb_on_client_disconnected : Void* = Pointer(Void).null
-    def on_client_disconnected(client_id : Int64) : Void
-      if @@mb_on_client_disconnected.null?
-        @@mb_on_client_disconnected = Bridge.get_method_bind("GDScriptLanguageProtocol", "on_client_disconnected", 1286410249_i64)
-      end
-      val_0 = client_id
-      arg_0 = pointerof(val_0).as(Void*)
-      args = [arg_0]
-      Bridge.ptrcall(@@mb_on_client_disconnected, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
-    end
-    @@mb_notify_client : Void* = Pointer(Void).null
-    def notify_client(method : String, params : Void*, client_id : Int64) : Void
-      if @@mb_notify_client.null?
-        @@mb_notify_client = Bridge.get_method_bind("GDScriptLanguageProtocol", "notify_client", 2511212011_i64)
-      end
-      str_0 = Bridge.make_string(method)
-      arg_0 = str_0
-      val_1 = params
-      arg_1 = pointerof(val_1).as(Void*)
-      val_2 = client_id
-      arg_2 = pointerof(val_2).as(Void*)
-      args = [arg_0, arg_1, arg_2]
-      Bridge.ptrcall(@@mb_notify_client, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
-    ensure
-      Bridge.free_string(str_0)
-    end
-  end
-  # A GDScript syntax highlighter that can be used with `TextEdit` and `CodeEdit` nodes.
-  #
-  # **Note:** This class can only be used for editor plugins because it relies on editor settings.
-  #
-  # ```gdscript
-  #
-  # var code_preview = TextEdit.new()
-  # var highlighter = GDScriptSyntaxHighlighter.new()
-  # code_preview.syntax_highlighter = highlighter
-  #
-  # ```
-  # ```csharp
-  #
-  # var codePreview = new TextEdit();
-  # var highlighter = new GDScriptSyntaxHighlighter();
-  # codePreview.SyntaxHighlighter = highlighter;
-  #
-  # ```
-  class GDScriptSyntaxHighlighter < Godot::EditorSyntaxHighlighter
-    def initialize(pointer : Void* = Pointer(Void).null)
-      super(pointer)
-    end
-  end
-  # Document related language server functionality.
-  #
-  # Provides language server functionality related to documents.
   class GDScriptTextDocument < Godot::RefCounted
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -355,9 +221,6 @@ module Godot
       ret_ptr
     end
   end
-  # Workspace related language server functionality.
-  #
-  # Provides language server functionality related to the workspace.
   class GDScriptWorkspace < Godot::RefCounted
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -379,7 +242,6 @@ module Godot
       Bridge.free_string(str_1)
     end
     @@mb_get_file_path : Void* = Pointer(Void).null
-    # Converts a URI to a file path.
     def get_file_path(uri : String) : String
       if @@mb_get_file_path.null?
         @@mb_get_file_path = Bridge.get_method_bind("GDScriptWorkspace", "get_file_path", 1703090593_i64)
@@ -392,7 +254,6 @@ module Godot
       Bridge.free_string(str_0)
     end
     @@mb_get_file_uri : Void* = Pointer(Void).null
-    # Converts a file path to a URI.
     def get_file_uri(path : String) : String
       if @@mb_get_file_uri.null?
         @@mb_get_file_uri = Bridge.get_method_bind("GDScriptWorkspace", "get_file_uri", 3135753539_i64)
@@ -405,7 +266,6 @@ module Godot
       Bridge.free_string(str_0)
     end
     @@mb_generate_script_api : Void* = Pointer(Void).null
-    # Returns the interface of the script in a machine-readable format.
     def generate_script_api(path : String) : Void*
       if @@mb_generate_script_api.null?
         @@mb_generate_script_api = Bridge.get_method_bind("GDScriptWorkspace", "generate_script_api", 2786125124_i64)
@@ -473,10 +333,6 @@ module Godot
       Bridge.free_string(str_0)
     end
   end
-  # Represents a glTF accessor.
-  #
-  # GLTFAccessor is a data structure representing a glTF `accessor` that would be found in the `"accessors"` array. A buffer is a blob of binary data. A buffer view is a slice of a buffer. An accessor is a typed interpretation of the data in a buffer view.
-  # Most custom data stored in glTF does not need accessors, only buffer views (see `GLTFBufferView`). Accessors are for more advanced use cases such as interleaved mesh data encoded for the GPU.
   class GLTFAccessor < Godot::Resource
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -505,7 +361,6 @@ module Godot
       ComponentTypeUnsignedLong = 5135_i64
     end
     @@mb_from_dictionary : Void* = Pointer(Void).null
-    # Creates a new GLTFAccessor instance by parsing the given `Dictionary`.
     def from_dictionary(dictionary : Void*) : GLTFAccessor
       if @@mb_from_dictionary.null?
         @@mb_from_dictionary = Bridge.get_method_bind("GLTFAccessor", "from_dictionary", 3495091019_i64)
@@ -518,7 +373,6 @@ module Godot
       GLTFAccessor.new(ret_ptr)
     end
     @@mb_to_dictionary : Void* = Pointer(Void).null
-    # Serializes this GLTFAccessor instance into a `Dictionary`.
     def to_dictionary() : Void*
       if @@mb_to_dictionary.null?
         @@mb_to_dictionary = Bridge.get_method_bind("GLTFAccessor", "to_dictionary", 3102165223_i64)
@@ -856,8 +710,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_loop, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_additional_data : Void* = Pointer(Void).null
-    # Gets additional arbitrary data in this `GLTFAnimation` instance. This can be used to keep per-node state data in `GLTFDocumentExtension` classes, which is important because they are stateless.
-    # The argument should be the `GLTFDocumentExtension` name (does not have to match the extension name in the glTF file), and the return value can be anything you set. If nothing was set, the return value is `null`.
     def get_additional_data(extension_name : String) : Void*
       if @@mb_get_additional_data.null?
         @@mb_get_additional_data = Bridge.get_method_bind("GLTFAnimation", "get_additional_data", 2138907829_i64)
@@ -874,8 +726,6 @@ module Godot
       Bridge.free_string_name(sn_0)
     end
     @@mb_set_additional_data : Void* = Pointer(Void).null
-    # Sets additional arbitrary data in this `GLTFAnimation` instance. This can be used to keep per-node state data in `GLTFDocumentExtension` classes, which is important because they are stateless.
-    # The first argument should be the `GLTFDocumentExtension` name (does not have to match the extension name in the glTF file), and the second argument can be anything you want.
     def set_additional_data(extension_name : String, additional_data : Void*) : Void
       if @@mb_set_additional_data.null?
         @@mb_set_additional_data = Bridge.get_method_bind("GLTFAnimation", "set_additional_data", 3776071444_i64)
@@ -890,16 +740,11 @@ module Godot
       Bridge.free_string_name(sn_0)
     end
   end
-  # Represents a glTF buffer view.
-  #
-  # GLTFBufferView is a data structure representing a glTF `bufferView` that would be found in the `"bufferViews"` array. A buffer is a blob of binary data. A buffer view is a slice of a buffer that can be used to identify and extract data from the buffer.
-  # Most custom uses of buffers only need to use the `buffer`, `byte_length`, and `byte_offset`. The `byte_stride` and `indices` properties are for more advanced use cases such as interleaved mesh data encoded for the GPU.
   class GLTFBufferView < Godot::Resource
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
     end
     @@mb_load_buffer_view_data : Void* = Pointer(Void).null
-    # Loads the buffer view data from the buffer referenced by this buffer view in the given `GLTFState`. Interleaved data with a byte stride is not yet supported by this method. The data is returned as a `PackedByteArray`.
     def load_buffer_view_data(state : GLTFState) : Void*
       if @@mb_load_buffer_view_data.null?
         @@mb_load_buffer_view_data = Bridge.get_method_bind("GLTFBufferView", "load_buffer_view_data", 3945446907_i64)
@@ -912,7 +757,6 @@ module Godot
       ret_ptr
     end
     @@mb_from_dictionary : Void* = Pointer(Void).null
-    # Creates a new GLTFBufferView instance by parsing the given `Dictionary`.
     def from_dictionary(dictionary : Void*) : GLTFBufferView
       if @@mb_from_dictionary.null?
         @@mb_from_dictionary = Bridge.get_method_bind("GLTFBufferView", "from_dictionary", 2594413512_i64)
@@ -925,7 +769,6 @@ module Godot
       GLTFBufferView.new(ret_ptr)
     end
     @@mb_to_dictionary : Void* = Pointer(Void).null
-    # Serializes this GLTFBufferView instance into a `Dictionary`.
     def to_dictionary() : Void*
       if @@mb_to_dictionary.null?
         @@mb_to_dictionary = Bridge.get_method_bind("GLTFBufferView", "to_dictionary", 3102165223_i64)
@@ -1049,15 +892,11 @@ module Godot
       Bridge.ptrcall(@@mb_set_vertex_attributes, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
   end
-  # Represents a glTF camera.
-  #
-  # Represents a camera as defined by the base glTF spec.
   class GLTFCamera < Godot::Resource
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
     end
     @@mb_from_node : Void* = Pointer(Void).null
-    # Create a new GLTFCamera instance from the given Godot `Camera3D` node.
     def from_node(camera_node : Camera3D) : GLTFCamera
       if @@mb_from_node.null?
         @@mb_from_node = Bridge.get_method_bind("GLTFCamera", "from_node", 237784_i64)
@@ -1070,7 +909,6 @@ module Godot
       GLTFCamera.new(ret_ptr)
     end
     @@mb_to_node : Void* = Pointer(Void).null
-    # Converts this GLTFCamera instance into a Godot `Camera3D` node.
     def to_node() : Camera3D
       if @@mb_to_node.null?
         @@mb_to_node = Bridge.get_method_bind("GLTFCamera", "to_node", 2285090890_i64)
@@ -1080,7 +918,6 @@ module Godot
       Camera3D.new(ret_ptr)
     end
     @@mb_from_dictionary : Void* = Pointer(Void).null
-    # Creates a new GLTFCamera instance by parsing the given `Dictionary`.
     def from_dictionary(dictionary : Void*) : GLTFCamera
       if @@mb_from_dictionary.null?
         @@mb_from_dictionary = Bridge.get_method_bind("GLTFCamera", "from_dictionary", 2495512509_i64)
@@ -1093,7 +930,6 @@ module Godot
       GLTFCamera.new(ret_ptr)
     end
     @@mb_to_dictionary : Void* = Pointer(Void).null
-    # Serializes this GLTFCamera instance into a `Dictionary`.
     def to_dictionary() : Void*
       if @@mb_to_dictionary.null?
         @@mb_to_dictionary = Bridge.get_method_bind("GLTFCamera", "to_dictionary", 3102165223_i64)
@@ -1198,11 +1034,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_depth_near, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
   end
-  # `GLTFDocument` extension class.
-  #
-  # Extends the functionality of the `GLTFDocument` class by allowing you to run arbitrary code at various stages of glTF import or export.
-  # To use, make a new class extending GLTFDocumentExtension, override any methods you need, make an instance of your class, and register it using `#GLTFDocument.register_gltf_document_extension`.
-  # **Note:** All GLTFDocumentExtension classes are duplicated when beginning the import or export process. Except for configuration values, these classes must be stateless in order to function properly. If you need to store data, use the `set_additional_data` and `get_additional_data` methods in `GLTFState` or `GLTFNode`.
   class GLTFDocumentExtension < Godot::Resource
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -1213,15 +1044,11 @@ module Godot
       super(pointer)
     end
   end
-  # Represents a glTF light.
-  #
-  # Represents a light as defined by the `KHR_lights_punctual` glTF extension.
   class GLTFLight < Godot::Resource
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
     end
     @@mb_from_node : Void* = Pointer(Void).null
-    # Create a new GLTFLight instance from the given Godot `Light3D` node.
     def from_node(light_node : Light3D) : GLTFLight
       if @@mb_from_node.null?
         @@mb_from_node = Bridge.get_method_bind("GLTFLight", "from_node", 3907677874_i64)
@@ -1234,7 +1061,6 @@ module Godot
       GLTFLight.new(ret_ptr)
     end
     @@mb_to_node : Void* = Pointer(Void).null
-    # Converts this GLTFLight instance into a Godot `Light3D` node.
     def to_node() : Light3D
       if @@mb_to_node.null?
         @@mb_to_node = Bridge.get_method_bind("GLTFLight", "to_node", 2040811672_i64)
@@ -1244,7 +1070,6 @@ module Godot
       Light3D.new(ret_ptr)
     end
     @@mb_from_dictionary : Void* = Pointer(Void).null
-    # Creates a new GLTFLight instance by parsing the given `Dictionary`.
     def from_dictionary(dictionary : Void*) : GLTFLight
       if @@mb_from_dictionary.null?
         @@mb_from_dictionary = Bridge.get_method_bind("GLTFLight", "from_dictionary", 4057087208_i64)
@@ -1257,7 +1082,6 @@ module Godot
       GLTFLight.new(ret_ptr)
     end
     @@mb_to_dictionary : Void* = Pointer(Void).null
-    # Serializes this GLTFLight instance into a `Dictionary`.
     def to_dictionary() : Void*
       if @@mb_to_dictionary.null?
         @@mb_to_dictionary = Bridge.get_method_bind("GLTFLight", "to_dictionary", 3102165223_i64)
@@ -1411,9 +1235,6 @@ module Godot
       Bridge.free_string_name(sn_0)
     end
   end
-  # GLTFMesh represents a glTF mesh.
-  #
-  # GLTFMesh handles 3D mesh data imported from glTF files. It includes properties for blend channels, blend weights, instance materials, and the mesh itself.
   class GLTFMesh < Godot::Resource
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -1495,8 +1316,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_instance_materials, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_additional_data : Void* = Pointer(Void).null
-    # Gets additional arbitrary data in this `GLTFMesh` instance. This can be used to keep per-node state data in `GLTFDocumentExtension` classes, which is important because they are stateless.
-    # The argument should be the `GLTFDocumentExtension` name (does not have to match the extension name in the glTF file), and the return value can be anything you set. If nothing was set, the return value is `null`.
     def get_additional_data(extension_name : String) : Void*
       if @@mb_get_additional_data.null?
         @@mb_get_additional_data = Bridge.get_method_bind("GLTFMesh", "get_additional_data", 2138907829_i64)
@@ -1513,8 +1332,6 @@ module Godot
       Bridge.free_string_name(sn_0)
     end
     @@mb_set_additional_data : Void* = Pointer(Void).null
-    # Sets additional arbitrary data in this `GLTFMesh` instance. This can be used to keep per-node state data in `GLTFDocumentExtension` classes, which is important because they are stateless.
-    # The first argument should be the `GLTFDocumentExtension` name (does not have to match the extension name in the glTF file), and the second argument can be anything you want.
     def set_additional_data(extension_name : String, additional_data : Void*) : Void
       if @@mb_set_additional_data.null?
         @@mb_set_additional_data = Bridge.get_method_bind("GLTFMesh", "set_additional_data", 3776071444_i64)
@@ -1529,10 +1346,6 @@ module Godot
       Bridge.free_string_name(sn_0)
     end
   end
-  # glTF node class.
-  #
-  # Represents a glTF node. glTF nodes may have names, transforms, children (other glTF nodes), and more specialized properties (represented by their own classes).
-  # glTF nodes generally exist inside of `GLTFState` which represents all data of a glTF file. Most of GLTFNode's properties are indices of other data in the glTF file. You can extend a glTF node with additional properties by using `#get_additional_data` and `#set_additional_data`.
   class GLTFNode < Godot::Resource
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -1766,7 +1579,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_children, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_append_child_index : Void* = Pointer(Void).null
-    # Appends the given child node index to the `children` array.
     def append_child_index(child_index : Int64) : Void
       if @@mb_append_child_index.null?
         @@mb_append_child_index = Bridge.get_method_bind("GLTFNode", "append_child_index", 1286410249_i64)
@@ -1815,8 +1627,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_visible, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_additional_data : Void* = Pointer(Void).null
-    # Gets additional arbitrary data in this `GLTFNode` instance. This can be used to keep per-node state data in `GLTFDocumentExtension` classes, which is important because they are stateless.
-    # The argument should be the `GLTFDocumentExtension` name (does not have to match the extension name in the glTF file), and the return value can be anything you set. If nothing was set, the return value is `null`.
     def get_additional_data(extension_name : String) : Void*
       if @@mb_get_additional_data.null?
         @@mb_get_additional_data = Bridge.get_method_bind("GLTFNode", "get_additional_data", 2138907829_i64)
@@ -1833,8 +1643,6 @@ module Godot
       Bridge.free_string_name(sn_0)
     end
     @@mb_set_additional_data : Void* = Pointer(Void).null
-    # Sets additional arbitrary data in this `GLTFNode` instance. This can be used to keep per-node state data in `GLTFDocumentExtension` classes, which is important because they are stateless.
-    # The first argument should be the `GLTFDocumentExtension` name (does not have to match the extension name in the glTF file), and the second argument can be anything you want.
     def set_additional_data(extension_name : String, additional_data : Void*) : Void
       if @@mb_set_additional_data.null?
         @@mb_set_additional_data = Bridge.get_method_bind("GLTFNode", "set_additional_data", 3776071444_i64)
@@ -1849,8 +1657,6 @@ module Godot
       Bridge.free_string_name(sn_0)
     end
     @@mb_get_scene_node_path : Void* = Pointer(Void).null
-    # Returns the `NodePath` that this GLTF node will have in the Godot scene tree after being imported. This is useful when importing glTF object model pointers with `GLTFObjectModelProperty`, for handling extensions such as `KHR_animation_pointer` or `KHR_interactivity`.
-    # If `handle_skeletons` is `true`, paths to skeleton bone glTF nodes will be resolved properly. For example, a path that would be `^"A/B/C/Bone1/Bone2/Bone3"` if `false` will become `^"A/B/C/Skeleton3D:Bone3"`.
     def get_scene_node_path(gltf_state : GLTFState, handle_skeletons : Bool) : NodePath
       if @@mb_get_scene_node_path.null?
         @@mb_get_scene_node_path = Bridge.get_method_bind("GLTFNode", "get_scene_node_path", 573359477_i64)
@@ -1865,11 +1671,6 @@ module Godot
       NodePath.new(ret_ptr)
     end
   end
-  # Describes how to access a property as defined in the glTF object model.
-  #
-  # GLTFObjectModelProperty defines a mapping between a property in the glTF object model and a NodePath in the Godot scene tree. This can be used to animate properties in a glTF file using the `KHR_animation_pointer` extension, or to access them through an engine-agnostic script such as a behavior graph as defined by the `KHR_interactivity` extension.
-  # The glTF property is identified by JSON pointer(s) stored in `json_pointers`, while the Godot property it maps to is defined by `node_paths`. In most cases `json_pointers` and `node_paths` will each only have one item, but in some cases a single glTF JSON pointer will map to multiple Godot properties, or a single Godot property will be mapped to multiple glTF JSON pointers, or it might be a many-to-many relationship.
-  # `Expression` objects can be used to define conversions between the data, such as when glTF defines an angle in radians and Godot uses degrees. The `object_model_type` property defines the type of data stored in the glTF file as defined by the object model, see `GLTFObjectModelType` for possible values.
   class GLTFObjectModelProperty < Godot::RefCounted
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -1888,7 +1689,6 @@ module Godot
       GltfObjectModelTypeInt = 10_i64
     end
     @@mb_append_node_path : Void* = Pointer(Void).null
-    # Appends a `NodePath` to `node_paths`. This can be used by `GLTFDocumentExtension` classes to define how a glTF object model property maps to a Godot property, or multiple Godot properties. Prefer using `#append_path_to_property` for simple cases. Be sure to also call `#set_types` once (the order does not matter).
     def append_node_path(node_path : NodePath) : Void
       if @@mb_append_node_path.null?
         @@mb_append_node_path = Bridge.get_method_bind("GLTFObjectModelProperty", "append_node_path", 1348162250_i64)
@@ -1899,7 +1699,6 @@ module Godot
       Bridge.ptrcall(@@mb_append_node_path, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_append_path_to_property : Void* = Pointer(Void).null
-    # High-level wrapper over `#append_node_path` that handles the most common cases. It constructs a new `NodePath` using `node_path` as a base and appends `prop_name` to the subpath. Be sure to also call `#set_types` once (the order does not matter).
     def append_path_to_property(node_path : NodePath, prop_name : String) : Void
       if @@mb_append_path_to_property.null?
         @@mb_append_path_to_property = Bridge.get_method_bind("GLTFObjectModelProperty", "append_path_to_property", 1331931644_i64)
@@ -1914,7 +1713,6 @@ module Godot
       Bridge.free_string_name(sn_1)
     end
     @@mb_get_accessor_type : Void* = Pointer(Void).null
-    # The GLTF accessor type associated with this property's `object_model_type`. See `GLTFAccessor.accessor_type` for possible values, and see `GLTFObjectModelType` for how the object model type maps to accessor types.
     def get_accessor_type() : Int64
       if @@mb_get_accessor_type.null?
         @@mb_get_accessor_type = Bridge.get_method_bind("GLTFObjectModelProperty", "get_accessor_type", 1998183368_i64)
@@ -1971,7 +1769,6 @@ module Godot
       Godot::Array.new(ret_ptr)
     end
     @@mb_has_node_paths : Void* = Pointer(Void).null
-    # Returns `true` if `node_paths` is not empty. This is used during import to determine if a `GLTFObjectModelProperty` can handle converting a glTF object model property to a Godot property.
     def has_node_paths() : Bool
       if @@mb_has_node_paths.null?
         @@mb_has_node_paths = Bridge.get_method_bind("GLTFObjectModelProperty", "has_node_paths", 36873697_i64)
@@ -2019,7 +1816,6 @@ module Godot
       Godot::Array.new(ret_ptr)
     end
     @@mb_has_json_pointers : Void* = Pointer(Void).null
-    # Returns `true` if `json_pointers` is not empty. This is used during export to determine if a `GLTFObjectModelProperty` can handle converting a Godot property to a glTF object model property.
     def has_json_pointers() : Bool
       if @@mb_has_json_pointers.null?
         @@mb_has_json_pointers = Bridge.get_method_bind("GLTFObjectModelProperty", "has_json_pointers", 36873697_i64)
@@ -2058,7 +1854,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_variant_type, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_set_types : Void* = Pointer(Void).null
-    # Sets the `variant_type` and `object_model_type` properties. This is a convenience method to set both properties at once, since they are almost always known at the same time. This method should be called once. Calling it again with the same values will have no effect.
     def set_types(variant_type : Int64, obj_model_type : Int64) : Void
       if @@mb_set_types.null?
         @@mb_set_types = Bridge.get_method_bind("GLTFObjectModelProperty", "set_types", 4150728237_i64)
@@ -2071,15 +1866,11 @@ module Godot
       Bridge.ptrcall(@@mb_set_types, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
   end
-  # Represents a glTF physics body.
-  #
-  # Represents a physics body as an intermediary between the `OMI_physics_body` glTF data and Godot's nodes, and it's abstracted in a way that allows adding support for different glTF physics extensions in the future.
   class GLTFPhysicsBody < Godot::Resource
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
     end
     @@mb_from_node : Void* = Pointer(Void).null
-    # Creates a new GLTFPhysicsBody instance from the given Godot `CollisionObject3D` node.
     def from_node(body_node : CollisionObject3D) : GLTFPhysicsBody
       if @@mb_from_node.null?
         @@mb_from_node = Bridge.get_method_bind("GLTFPhysicsBody", "from_node", 420544174_i64)
@@ -2092,7 +1883,6 @@ module Godot
       GLTFPhysicsBody.new(ret_ptr)
     end
     @@mb_to_node : Void* = Pointer(Void).null
-    # Converts this GLTFPhysicsBody instance into a Godot `CollisionObject3D` node.
     def to_node() : CollisionObject3D
       if @@mb_to_node.null?
         @@mb_to_node = Bridge.get_method_bind("GLTFPhysicsBody", "to_node", 3224013656_i64)
@@ -2102,7 +1892,6 @@ module Godot
       CollisionObject3D.new(ret_ptr)
     end
     @@mb_from_dictionary : Void* = Pointer(Void).null
-    # Creates a new GLTFPhysicsBody instance by parsing the given `Dictionary` in the `OMI_physics_body` glTF extension format.
     def from_dictionary(dictionary : Void*) : GLTFPhysicsBody
       if @@mb_from_dictionary.null?
         @@mb_from_dictionary = Bridge.get_method_bind("GLTFPhysicsBody", "from_dictionary", 1177544336_i64)
@@ -2115,7 +1904,6 @@ module Godot
       GLTFPhysicsBody.new(ret_ptr)
     end
     @@mb_to_dictionary : Void* = Pointer(Void).null
-    # Serializes this GLTFPhysicsBody instance into a `Dictionary`. It will be in the format expected by the `OMI_physics_body` glTF extension.
     def to_dictionary() : Void*
       if @@mb_to_dictionary.null?
         @@mb_to_dictionary = Bridge.get_method_bind("GLTFPhysicsBody", "to_dictionary", 3102165223_i64)
@@ -2277,15 +2065,11 @@ module Godot
       Bridge.ptrcall(@@mb_set_inertia_tensor, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
   end
-  # Represents a glTF physics shape.
-  #
-  # Represents a physics shape as defined by the `OMI_physics_shape` or `OMI_collider` glTF extensions. This class is an intermediary between the glTF data and Godot's nodes, and it's abstracted in a way that allows adding support for different glTF physics extensions in the future.
   class GLTFPhysicsShape < Godot::Resource
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
     end
     @@mb_from_node : Void* = Pointer(Void).null
-    # Creates a new GLTFPhysicsShape instance from the given Godot `CollisionShape3D` node.
     def from_node(shape_node : CollisionShape3D) : GLTFPhysicsShape
       if @@mb_from_node.null?
         @@mb_from_node = Bridge.get_method_bind("GLTFPhysicsShape", "from_node", 3613751275_i64)
@@ -2298,7 +2082,6 @@ module Godot
       GLTFPhysicsShape.new(ret_ptr)
     end
     @@mb_to_node : Void* = Pointer(Void).null
-    # Converts this GLTFPhysicsShape instance into a Godot `CollisionShape3D` node.
     def to_node(cache_shapes : Bool) : CollisionShape3D
       if @@mb_to_node.null?
         @@mb_to_node = Bridge.get_method_bind("GLTFPhysicsShape", "to_node", 563689933_i64)
@@ -2311,7 +2094,6 @@ module Godot
       CollisionShape3D.new(ret_ptr)
     end
     @@mb_from_resource : Void* = Pointer(Void).null
-    # Creates a new GLTFPhysicsShape instance from the given Godot `Shape3D` resource.
     def from_resource(shape_resource : Shape3D) : GLTFPhysicsShape
       if @@mb_from_resource.null?
         @@mb_from_resource = Bridge.get_method_bind("GLTFPhysicsShape", "from_resource", 3845569786_i64)
@@ -2324,7 +2106,6 @@ module Godot
       GLTFPhysicsShape.new(ret_ptr)
     end
     @@mb_to_resource : Void* = Pointer(Void).null
-    # Converts this GLTFPhysicsShape instance into a Godot `Shape3D` resource.
     def to_resource(cache_shapes : Bool) : Shape3D
       if @@mb_to_resource.null?
         @@mb_to_resource = Bridge.get_method_bind("GLTFPhysicsShape", "to_resource", 1913542110_i64)
@@ -2337,7 +2118,6 @@ module Godot
       Shape3D.new(ret_ptr)
     end
     @@mb_from_dictionary : Void* = Pointer(Void).null
-    # Creates a new GLTFPhysicsShape instance by parsing the given `Dictionary`.
     def from_dictionary(dictionary : Void*) : GLTFPhysicsShape
       if @@mb_from_dictionary.null?
         @@mb_from_dictionary = Bridge.get_method_bind("GLTFPhysicsShape", "from_dictionary", 2390691823_i64)
@@ -2350,7 +2130,6 @@ module Godot
       GLTFPhysicsShape.new(ret_ptr)
     end
     @@mb_to_dictionary : Void* = Pointer(Void).null
-    # Serializes this GLTFPhysicsShape instance into a `Dictionary` in the format defined by `OMI_physics_shape`.
     def to_dictionary() : Void*
       if @@mb_to_dictionary.null?
         @@mb_to_dictionary = Bridge.get_method_bind("GLTFPhysicsShape", "to_dictionary", 3102165223_i64)
@@ -2564,7 +2343,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_unique_names, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_godot_bone_node : Void* = Pointer(Void).null
-    # Returns a `Dictionary` that maps skeleton bone indices to the indices of glTF nodes. This property is unused during import, and only set during export. In a glTF file, a bone is a node, so Godot converts skeleton bones to glTF nodes.
     def get_godot_bone_node() : Void*
       if @@mb_get_godot_bone_node.null?
         @@mb_get_godot_bone_node = Bridge.get_method_bind("GLTFSkeleton", "get_godot_bone_node", 2382534195_i64)
@@ -2574,7 +2352,6 @@ module Godot
       ret_ptr
     end
     @@mb_set_godot_bone_node : Void* = Pointer(Void).null
-    # Sets a `Dictionary` that maps skeleton bone indices to the indices of glTF nodes. This property is unused during import, and only set during export. In a glTF file, a bone is a node, so Godot converts skeleton bones to glTF nodes.
     def set_godot_bone_node(godot_bone_node : Void*) : Void
       if @@mb_set_godot_bone_node.null?
         @@mb_set_godot_bone_node = Bridge.get_method_bind("GLTFSkeleton", "set_godot_bone_node", 4155329257_i64)
@@ -2801,9 +2578,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_godot_skin, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
   end
-  # Archived glTF extension for specular/glossy materials.
-  #
-  # KHR_materials_pbrSpecularGlossiness is an archived glTF extension. This means that it is deprecated and not recommended for new files. However, it is still supported for loading old files.
   class GLTFSpecGloss < Godot::Resource
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -2904,7 +2678,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_spec_gloss_img, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
   end
-  # GLTFTexture represents a texture in a glTF file.
   class GLTFTexture < Godot::Resource
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -2948,9 +2721,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_sampler, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
   end
-  # Represents a glTF texture sampler
-  #
-  # Represents a texture sampler as defined by the base glTF spec. Texture samplers in glTF specify how to sample data from the texture's base image, when rendering the texture on an object.
   class GLTFTextureSampler < Godot::Resource
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -3032,11 +2802,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_wrap_t, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
   end
-  # A 2D particle emitter.
-  #
-  # 2D particle node used to create a variety of particle systems and effects. `GPUParticles2D` features an emitter that generates some number of particles at a given rate.
-  # Use the `process_material` property to add a `ParticleProcessMaterial` to configure particle appearance and behavior. Alternatively, you can add a `ShaderMaterial` which will be applied to all particles.
-  # 2D particles can optionally collide with `LightOccluder2D`, but they don't collide with `PhysicsBody2D` nodes.
   class GPUParticles2D < Godot::Node2D
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -3214,8 +2979,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_interp_to_end, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_request_particles_process : Void* = Pointer(Void).null
-    # Requests the particles to process for extra process time during a single frame.
-    # `process_time` defines the time that the particles will process while emitting is on. `process_time_residual` defines the time that particles will process with emitting turned off for the simulation. When combined with `speed_scale` set to `0.0`, this is useful to be able to seek a particle system timeline.
     def request_particles_process(process_time : Float64, process_time_residual : Float64) : Void
       if @@mb_request_particles_process.null?
         @@mb_request_particles_process = Bridge.get_method_bind("GPUParticles2D", "request_particles_process", 2019720106_i64)
@@ -3410,8 +3173,6 @@ module Godot
       Texture2D.new(ret_ptr)
     end
     @@mb_capture_rect : Void* = Pointer(Void).null
-    # Returns a rectangle containing the positions of all existing particles.
-    # **Note:** When using threaded rendering this method synchronizes the rendering thread. Calling it often may have a negative impact on performance.
     def capture_rect() : Rect2
       if @@mb_capture_rect.null?
         @@mb_capture_rect = Bridge.get_method_bind("GPUParticles2D", "capture_rect", 1639390495_i64)
@@ -3421,9 +3182,6 @@ module Godot
       Rect2.new(ret_ptr)
     end
     @@mb_restart : Void* = Pointer(Void).null
-    # Restarts the particle emission cycle, clearing existing particles. To avoid particles vanishing from the viewport, wait for the `finished` signal before calling.
-    # **Note:** The `finished` signal is only emitted by `one_shot` emitters.
-    # If `keep_seed` is `true`, the current random seed will be preserved. Useful for seeking and playback.
     def restart(keep_seed : Bool) : Void
       if @@mb_restart.null?
         @@mb_restart = Bridge.get_method_bind("GPUParticles2D", "restart", 107499316_i64)
@@ -3453,10 +3211,6 @@ module Godot
       NodePath.new(ret_ptr)
     end
     @@mb_emit_particle : Void* = Pointer(Void).null
-    # Emits a single particle. Whether `xform`, `velocity`, `color` and `custom` are applied depends on the value of `flags`. See `EmitFlags`.
-    # The default ParticleProcessMaterial needs to have `ParticleProcessMaterial.particle_flag_preserve_color` set to `true` to correctly use the color given from this function.
-    # Additionally, it will use the contents of `custom` as `(rotation, lifetime, animation, lifetime randomness)`.
-    # **Note:** `#emit_particle` is only supported on the Forward+ and Mobile rendering methods, not Compatibility.
     def emit_particle(xform : Transform2D, velocity : Vector2, color : Color, custom : Color, flags : Int64) : Void
       if @@mb_emit_particle.null?
         @@mb_emit_particle = Bridge.get_method_bind("GPUParticles2D", "emit_particle", 2179202058_i64)
@@ -3551,7 +3305,6 @@ module Godot
       ret
     end
     @@mb_convert_from_particles : Void* = Pointer(Void).null
-    # Sets this node's properties to match a given `CPUParticles2D` node.
     def convert_from_particles(particles : Node) : Void
       if @@mb_convert_from_particles.null?
         @@mb_convert_from_particles = Bridge.get_method_bind("GPUParticles2D", "convert_from_particles", 1078189570_i64)
@@ -3619,10 +3372,6 @@ module Godot
       ret
     end
   end
-  # A 3D particle emitter.
-  #
-  # 3D particle node used to create a variety of particle systems and effects. `GPUParticles3D` features an emitter that generates some number of particles at a given rate.
-  # Use `process_material` to add a `ParticleProcessMaterial` to configure particle appearance and behavior. Alternatively, you can add a `ShaderMaterial` which will be applied to all particles.
   class GPUParticles3D < Godot::GeometryInstance3D
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -4019,7 +3768,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_draw_passes, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_set_draw_pass_mesh : Void* = Pointer(Void).null
-    # Sets the `Mesh` that is drawn at index `pass`.
     def set_draw_pass_mesh(pass : Int64, mesh : Mesh) : Void
       if @@mb_set_draw_pass_mesh.null?
         @@mb_set_draw_pass_mesh = Bridge.get_method_bind("GPUParticles3D", "set_draw_pass_mesh", 969122797_i64)
@@ -4041,7 +3789,6 @@ module Godot
       ret
     end
     @@mb_get_draw_pass_mesh : Void* = Pointer(Void).null
-    # Returns the `Mesh` that is drawn at index `pass`.
     def get_draw_pass_mesh(pass : Int64) : Mesh
       if @@mb_get_draw_pass_mesh.null?
         @@mb_get_draw_pass_mesh = Bridge.get_method_bind("GPUParticles3D", "get_draw_pass_mesh", 1576363275_i64)
@@ -4073,9 +3820,6 @@ module Godot
       Skin.new(ret_ptr)
     end
     @@mb_restart : Void* = Pointer(Void).null
-    # Restarts the particle emission cycle, clearing existing particles. To avoid particles vanishing from the viewport, wait for the `finished` signal before calling.
-    # **Note:** The `finished` signal is only emitted by `one_shot` emitters.
-    # If `keep_seed` is `true`, the current random seed will be preserved. Useful for seeking and playback.
     def restart(keep_seed : Bool) : Void
       if @@mb_restart.null?
         @@mb_restart = Bridge.get_method_bind("GPUParticles3D", "restart", 107499316_i64)
@@ -4086,7 +3830,6 @@ module Godot
       Bridge.ptrcall(@@mb_restart, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_capture_aabb : Void* = Pointer(Void).null
-    # Returns the axis-aligned bounding box that contains all the particles that are active in the current frame.
     def capture_aabb() : AABB
       if @@mb_capture_aabb.null?
         @@mb_capture_aabb = Bridge.get_method_bind("GPUParticles3D", "capture_aabb", 1068685055_i64)
@@ -4115,10 +3858,6 @@ module Godot
       NodePath.new(ret_ptr)
     end
     @@mb_emit_particle : Void* = Pointer(Void).null
-    # Emits a single particle. Whether `xform`, `velocity`, `color` and `custom` are applied depends on the value of `flags`. See `EmitFlags`.
-    # The default ParticleProcessMaterial needs to have `ParticleProcessMaterial.particle_flag_preserve_color` set to `true` to correctly use the color given from this function.
-    # Additionally, it will use the contents of `custom` as `(rotation, lifetime, animation, lifetime randomness)`.
-    # **Note:** `#emit_particle` is only supported on the Forward+ and Mobile rendering methods, not Compatibility.
     def emit_particle(xform : Transform3D, velocity : Vector3, color : Color, custom : Color, flags : Int64) : Void
       if @@mb_emit_particle.null?
         @@mb_emit_particle = Bridge.get_method_bind("GPUParticles3D", "emit_particle", 992173727_i64)
@@ -4232,7 +3971,6 @@ module Godot
       ret
     end
     @@mb_convert_from_particles : Void* = Pointer(Void).null
-    # Sets this node's properties to match a given `CPUParticles3D` node.
     def convert_from_particles(particles : Node) : Void
       if @@mb_convert_from_particles.null?
         @@mb_convert_from_particles = Bridge.get_method_bind("GPUParticles3D", "convert_from_particles", 1078189570_i64)
@@ -4262,8 +4000,6 @@ module Godot
       ret
     end
     @@mb_request_particles_process : Void* = Pointer(Void).null
-    # Requests the particles to process for extra process time during a single frame.
-    # `process_time` defines the time that the particles will process while emitting is on. `process_time_residual` defines the time that particles will process with emitting turned off for the simulation. When combined with `speed_scale` set to `0.0`, this is useful to be able to seek a particle system timeline.
     def request_particles_process(process_time : Float64, process_time_residual : Float64) : Void
       if @@mb_request_particles_process.null?
         @@mb_request_particles_process = Bridge.get_method_bind("GPUParticles3D", "request_particles_process", 66938510_i64)
@@ -4276,12 +4012,6 @@ module Godot
       Bridge.ptrcall(@@mb_request_particles_process, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
   end
-  # Abstract base class for 3D particle attractors.
-  #
-  # Particle attractors can be used to attract particles towards the attractor's origin, or to push them away from the attractor's origin.
-  # Particle attractors work in real-time and can be moved, rotated and scaled during gameplay. Unlike collision shapes, non-uniform scaling of attractors is also supported.
-  # Attractors can be temporarily disabled by hiding them, or by setting their `strength` to `0.0`.
-  # **Note:** Particle attractors only affect `GPUParticles3D`, not `CPUParticles3D`.
   class GPUParticlesAttractor3D < Godot::VisualInstance3D
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -4363,11 +4093,6 @@ module Godot
       ret
     end
   end
-  # A box-shaped attractor that influences particles from `GPUParticles3D` nodes.
-  #
-  # A box-shaped attractor that influences particles from `GPUParticles3D` nodes. Can be used to attract particles towards its origin, or to push them away from its origin.
-  # Particle attractors work in real-time and can be moved, rotated and scaled during gameplay. Unlike collision shapes, non-uniform scaling of attractors is also supported.
-  # **Note:** Particle attractors only affect `GPUParticles3D`, not `CPUParticles3D`.
   class GPUParticlesAttractorBox3D < Godot::GPUParticlesAttractor3D
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -4392,11 +4117,6 @@ module Godot
       ret
     end
   end
-  # A spheroid-shaped attractor that influences particles from `GPUParticles3D` nodes.
-  #
-  # A spheroid-shaped attractor that influences particles from `GPUParticles3D` nodes. Can be used to attract particles towards its origin, or to push them away from its origin.
-  # Particle attractors work in real-time and can be moved, rotated and scaled during gameplay. Unlike collision shapes, non-uniform scaling of attractors is also supported.
-  # **Note:** Particle attractors only affect `GPUParticles3D`, not `CPUParticles3D`.
   class GPUParticlesAttractorSphere3D < Godot::GPUParticlesAttractor3D
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -4421,12 +4141,6 @@ module Godot
       ret
     end
   end
-  # A box-shaped attractor with varying directions and strengths defined in it that influences particles from `GPUParticles3D` nodes.
-  #
-  # A box-shaped attractor with varying directions and strengths defined in it that influences particles from `GPUParticles3D` nodes.
-  # Unlike `GPUParticlesAttractorBox3D`, `GPUParticlesAttractorVectorField3D` uses a `texture` to affect attraction strength within the box. This can be used to create complex attraction scenarios where particles travel in different directions depending on their location. This can be useful for weather effects such as sandstorms.
-  # Particle attractors work in real-time and can be moved, rotated and scaled during gameplay. Unlike collision shapes, non-uniform scaling of attractors is also supported.
-  # **Note:** Particle attractors only affect `GPUParticles3D`, not `CPUParticles3D`.
   class GPUParticlesAttractorVectorField3D < Godot::GPUParticlesAttractor3D
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -4470,14 +4184,6 @@ module Godot
       Texture3D.new(ret_ptr)
     end
   end
-  # Abstract base class for 3D particle collision shapes affecting `GPUParticles3D` nodes.
-  #
-  # Particle collision shapes can be used to make particles stop or bounce against them.
-  # Particle collision shapes work in real-time and can be moved, rotated and scaled during gameplay. Unlike attractors, non-uniform scaling of collision shapes is *not* supported.
-  # Particle collision shapes can be temporarily disabled by hiding them.
-  # **Note:** `ParticleProcessMaterial.collision_mode` must be `ParticleProcessMaterial.COLLISION_RIGID` or `ParticleProcessMaterial.COLLISION_HIDE_ON_CONTACT` on the `GPUParticles3D`'s process material for collision to work.
-  # **Note:** Particle collision only affects `GPUParticles3D`, not `CPUParticles3D`.
-  # **Note:** Particles pushed by a collider that is being moved will not be interpolated, which can result in visible stuttering. This can be alleviated by setting `GPUParticles3D.fixed_fps` to `0` or a value that matches or exceeds the target framerate.
   class GPUParticlesCollision3D < Godot::VisualInstance3D
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -4502,12 +4208,6 @@ module Godot
       ret
     end
   end
-  # A box-shaped 3D particle collision shape affecting `GPUParticles3D` nodes.
-  #
-  # A box-shaped 3D particle collision shape affecting `GPUParticles3D` nodes.
-  # Particle collision shapes work in real-time and can be moved, rotated and scaled during gameplay. Unlike attractors, non-uniform scaling of collision shapes is *not* supported.
-  # **Note:** `ParticleProcessMaterial.collision_mode` must be `ParticleProcessMaterial.COLLISION_RIGID` or `ParticleProcessMaterial.COLLISION_HIDE_ON_CONTACT` on the `GPUParticles3D`'s process material for collision to work.
-  # **Note:** Particle collision only affects `GPUParticles3D`, not `CPUParticles3D`.
   class GPUParticlesCollisionBox3D < Godot::GPUParticlesCollision3D
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -4532,13 +4232,6 @@ module Godot
       ret
     end
   end
-  # A real-time heightmap-shaped 3D particle collision shape affecting `GPUParticles3D` nodes.
-  #
-  # A real-time heightmap-shaped 3D particle collision shape affecting `GPUParticles3D` nodes.
-  # Heightmap shapes allow for efficiently representing collisions for convex and concave objects with a single "floor" (such as terrain). This is less flexible than `GPUParticlesCollisionSDF3D`, but it doesn't require a baking step.
-  # `GPUParticlesCollisionHeightField3D` can also be regenerated in real-time when it is moved, when the camera moves, or even continuously. This makes `GPUParticlesCollisionHeightField3D` a good choice for weather effects such as rain and snow and games with highly dynamic geometry. However, this class is limited since heightmaps cannot represent overhangs (e.g. indoors or caves).
-  # **Note:** `ParticleProcessMaterial.collision_mode` must be `true` on the `GPUParticles3D`'s process material for collision to work.
-  # **Note:** Particle collision only affects `GPUParticles3D`, not `CPUParticles3D`.
   class GPUParticlesCollisionHeightField3D < Godot::GPUParticlesCollision3D
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -4633,7 +4326,6 @@ module Godot
       ret
     end
     @@mb_set_heightfield_mask_value : Void* = Pointer(Void).null
-    # Based on `value`, enables or disables the specified layer in the `heightfield_mask`, given a `layer_number` between `1` and `20`, inclusive.
     def set_heightfield_mask_value(layer_number : Int64, value : Bool) : Void
       if @@mb_set_heightfield_mask_value.null?
         @@mb_set_heightfield_mask_value = Bridge.get_method_bind("GPUParticlesCollisionHeightField3D", "set_heightfield_mask_value", 300928843_i64)
@@ -4646,7 +4338,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_heightfield_mask_value, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_heightfield_mask_value : Void* = Pointer(Void).null
-    # Returns `true` if the specified layer of the `heightfield_mask` is enabled, given a `layer_number` between `1` and `20`, inclusive.
     def get_heightfield_mask_value(layer_number : Int64) : Bool
       if @@mb_get_heightfield_mask_value.null?
         @@mb_get_heightfield_mask_value = Bridge.get_method_bind("GPUParticlesCollisionHeightField3D", "get_heightfield_mask_value", 1116898809_i64)
@@ -4678,14 +4369,6 @@ module Godot
       ret != 0_u8
     end
   end
-  # A baked signed distance field 3D particle collision shape affecting `GPUParticles3D` nodes.
-  #
-  # A baked signed distance field 3D particle collision shape affecting `GPUParticles3D` nodes.
-  # Signed distance fields (SDF) allow for efficiently representing approximate collision shapes for convex and concave objects of any shape. This is more flexible than `GPUParticlesCollisionHeightField3D`, but it requires a baking step.
-  # **Baking:** The signed distance field texture can be baked by selecting the `GPUParticlesCollisionSDF3D` node in the editor, then clicking **Bake SDF** at the top of the 3D viewport. Any *visible* `MeshInstance3D`s within the `size` will be taken into account for baking, regardless of their `GeometryInstance3D.gi_mode`.
-  # **Note:** Baking a `GPUParticlesCollisionSDF3D`'s `texture` is only possible within the editor, as there is no bake method exposed for use in exported projects. However, it's still possible to load pre-baked `Texture3D`s into its `texture` property in an exported project.
-  # **Note:** `ParticleProcessMaterial.collision_mode` must be `ParticleProcessMaterial.COLLISION_RIGID` or `ParticleProcessMaterial.COLLISION_HIDE_ON_CONTACT` on the `GPUParticles3D`'s process material for collision to work.
-  # **Note:** Particle collision only affects `GPUParticles3D`, not `CPUParticles3D`.
   class GPUParticlesCollisionSDF3D < Godot::GPUParticlesCollision3D
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -4795,7 +4478,6 @@ module Godot
       ret
     end
     @@mb_set_bake_mask_value : Void* = Pointer(Void).null
-    # Based on `value`, enables or disables the specified layer in the `bake_mask`, given a `layer_number` between 1 and 32.
     def set_bake_mask_value(layer_number : Int64, value : Bool) : Void
       if @@mb_set_bake_mask_value.null?
         @@mb_set_bake_mask_value = Bridge.get_method_bind("GPUParticlesCollisionSDF3D", "set_bake_mask_value", 300928843_i64)
@@ -4808,7 +4490,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_bake_mask_value, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_bake_mask_value : Void* = Pointer(Void).null
-    # Returns whether or not the specified layer of the `bake_mask` is enabled, given a `layer_number` between 1 and 32.
     def get_bake_mask_value(layer_number : Int64) : Bool
       if @@mb_get_bake_mask_value.null?
         @@mb_get_bake_mask_value = Bridge.get_method_bind("GPUParticlesCollisionSDF3D", "get_bake_mask_value", 1116898809_i64)
@@ -4821,12 +4502,6 @@ module Godot
       ret != 0_u8
     end
   end
-  # A sphere-shaped 3D particle collision shape affecting `GPUParticles3D` nodes.
-  #
-  # A sphere-shaped 3D particle collision shape affecting `GPUParticles3D` nodes.
-  # Particle collision shapes work in real-time and can be moved, rotated and scaled during gameplay. Unlike attractors, non-uniform scaling of collision shapes is *not* supported.
-  # **Note:** `ParticleProcessMaterial.collision_mode` must be `ParticleProcessMaterial.COLLISION_RIGID` or `ParticleProcessMaterial.COLLISION_HIDE_ON_CONTACT` on the `GPUParticles3D`'s process material for collision to work.
-  # **Note:** Particle collision only affects `GPUParticles3D`, not `CPUParticles3D`.
   class GPUParticlesCollisionSphere3D < Godot::GPUParticlesCollision3D
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -4851,10 +4526,6 @@ module Godot
       ret
     end
   end
-  # A physics joint that allows for complex movement and rotation between two 3D physics bodies.
-  #
-  # The `Generic6DOFJoint3D` (6 Degrees Of Freedom) joint allows for implementing custom types of joints by locking the rotation and translation of certain axes.
-  # The first 3 DOF represent the linear motion of the physics bodies and the last 3 DOF represent the angular motion of the physics bodies. Each axis can be either locked, or limited.
   class Generic6DOFJoint3D < Godot::Joint3D
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -5041,8 +4712,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_set_angular_target_rotation : Void* = Pointer(Void).null
-    # Sets the target angular orientation as a body-space quaternion describing the desired orientation of body B relative to body A. Replaces any previously set target and supersedes `PARAM_ANGULAR_SPRING_EQUILIBRIUM_POINT` until `#clear_angular_target_rotation` is called.
-    # **Note:** Only for Jolt backend. Other 3D physics backends may ignore this value.
     def set_angular_target_rotation(target_rotation : Quaternion) : Void
       if @@mb_set_angular_target_rotation.null?
         @@mb_set_angular_target_rotation = Bridge.get_method_bind("Generic6DOFJoint3D", "set_angular_target_rotation", 1727505552_i64)
@@ -5053,7 +4722,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_angular_target_rotation, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_angular_target_rotation : Void* = Pointer(Void).null
-    # Returns the joint's current angular target as a body-space quaternion. If no explicit target was set via `#set_angular_target_rotation`, the value is derived from `PARAM_ANGULAR_SPRING_EQUILIBRIUM_POINT` on backends that support it; other backends return the identity quaternion.
     def get_angular_target_rotation() : Quaternion
       if @@mb_get_angular_target_rotation.null?
         @@mb_get_angular_target_rotation = Bridge.get_method_bind("Generic6DOFJoint3D", "get_angular_target_rotation", 1222331677_i64)
@@ -5063,7 +4731,6 @@ module Godot
       Quaternion.new(ret_ptr)
     end
     @@mb_has_target_rotation : Void* = Pointer(Void).null
-    # Returns `true` if a quaternion angular target was explicitly set via `#set_angular_target_rotation` and has not been cleared. Returns `false` when the joint is driven by `PARAM_ANGULAR_SPRING_EQUILIBRIUM_POINT` only.
     def has_target_rotation() : Bool
       if @@mb_has_target_rotation.null?
         @@mb_has_target_rotation = Bridge.get_method_bind("Generic6DOFJoint3D", "has_target_rotation", 36873697_i64)
@@ -5073,7 +4740,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_clear_angular_target_rotation : Void* = Pointer(Void).null
-    # Clears the quaternion angular target. After clearing, the joint is driven by `PARAM_ANGULAR_SPRING_EQUILIBRIUM_POINT` on each axis as configured.
     def clear_angular_target_rotation() : Void
       if @@mb_clear_angular_target_rotation.null?
         @@mb_clear_angular_target_rotation = Bridge.get_method_bind("Generic6DOFJoint3D", "clear_angular_target_rotation", 3218959716_i64)
@@ -5081,9 +4747,6 @@ module Godot
       Bridge.ptrcall(@@mb_clear_angular_target_rotation, @pointer, Pointer(Pointer(Void)).null, Pointer(Void).null)
     end
   end
-  # Provides methods for some common 2D geometric operations.
-  #
-  # Provides a set of helper functions to create geometric shapes, compute intersections between shapes, and process various other geometric operations in 2D.
   class Geometry2D < Godot::Object
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -5107,7 +4770,6 @@ module Godot
       EndRound = 4_i64
     end
     @@mb_is_point_in_circle : Void* = Pointer(Void).null
-    # Returns `true` if `point` is inside the circle or if it's located exactly *on* the circle's boundary, otherwise returns `false`.
     def is_point_in_circle(point : Vector2, circle_position : Vector2, circle_radius : Float64) : Bool
       if @@mb_is_point_in_circle.null?
         @@mb_is_point_in_circle = Bridge.get_method_bind("Geometry2D", "is_point_in_circle", 2929491703_i64)
@@ -5124,7 +4786,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_segment_intersects_circle : Void* = Pointer(Void).null
-    # Given the 2D segment (`segment_from`, `segment_to`), returns the position on the segment (as a number between 0 and 1) at which the segment hits the circle that is located at position `circle_position` and has radius `circle_radius`. If the segment does not intersect the circle, -1 is returned (this is also the case if the line extending the segment would intersect the circle, but the segment does not).
     def segment_intersects_circle(segment_from : Vector2, segment_to : Vector2, circle_position : Vector2, circle_radius : Float64) : Float64
       if @@mb_segment_intersects_circle.null?
         @@mb_segment_intersects_circle = Bridge.get_method_bind("Geometry2D", "segment_intersects_circle", 1356928167_i64)
@@ -5143,7 +4804,6 @@ module Godot
       ret
     end
     @@mb_segment_intersects_segment : Void* = Pointer(Void).null
-    # Checks if two line segments intersect, with line `a` between `from_a` and `to_a` and line `b` between `from_b` and `to_b`. If the line segments intersect, the point of intersection is returned as a `Vector2`. If no intersection takes place, `null` is returned.
     def segment_intersects_segment(from_a : Vector2, to_a : Vector2, from_b : Vector2, to_b : Vector2) : Void*
       if @@mb_segment_intersects_segment.null?
         @@mb_segment_intersects_segment = Bridge.get_method_bind("Geometry2D", "segment_intersects_segment", 2058025344_i64)
@@ -5164,37 +4824,6 @@ module Godot
       ret_ptr
     end
     @@mb_line_intersects_line : Void* = Pointer(Void).null
-    # Returns the point of intersection between the two lines (`from_a`, `dir_a`) and (`from_b`, `dir_b`). Returns a `Vector2`, or `null` if the lines are parallel.
-    # `from` and `dir` are *not* endpoints of a line segment or ray but the slope (`dir`) and a known point (`from`) on that line. To get the intersection between two line segments, use `#segment_intersects_segment`.
-    #
-    # ```gdscript
-    #
-    # var from_a = Vector2.ZERO
-    # var dir_a = Vector2.RIGHT
-    # var from_b = Vector2.DOWN
-    #
-    # # Returns Vector2(1, 0)
-    # Geometry2D.line_intersects_line(from_a, dir_a, from_b, Vector2(1, -1))
-    # # Returns Vector2(-1, 0)
-    # Geometry2D.line_intersects_line(from_a, dir_a, from_b, Vector2(-1, -1))
-    # # Returns null
-    # Geometry2D.line_intersects_line(from_a, dir_a, from_b, Vector2.RIGHT)
-    #
-    # ```
-    # ```csharp
-    #
-    # var fromA = Vector2.Zero;
-    # var dirA = Vector2.Right;
-    # var fromB = Vector2.Down;
-    #
-    # // Returns new Vector2(1, 0)
-    # Geometry2D.LineIntersectsLine(fromA, dirA, fromB, new Vector2(1, -1));
-    # // Returns new Vector2(-1, 0)
-    # Geometry2D.LineIntersectsLine(fromA, dirA, fromB, new Vector2(-1, -1));
-    # // Returns null
-    # Geometry2D.LineIntersectsLine(fromA, dirA, fromB, Vector2.Right);
-    #
-    # ```
     def line_intersects_line(from_a : Vector2, dir_a : Vector2, from_b : Vector2, dir_b : Vector2) : Void*
       if @@mb_line_intersects_line.null?
         @@mb_line_intersects_line = Bridge.get_method_bind("Geometry2D", "line_intersects_line", 2058025344_i64)
@@ -5215,7 +4844,6 @@ module Godot
       ret_ptr
     end
     @@mb_get_closest_points_between_segments : Void* = Pointer(Void).null
-    # Given the two 2D segments (`p1`, `q1`) and (`p2`, `q2`), finds those two points on the two segments that are closest to each other. Returns a `PackedVector2Array` that contains this point on (`p1`, `q1`) as well the accompanying point on (`p2`, `q2`).
     def get_closest_points_between_segments(p1 : Vector2, q1 : Vector2, p2 : Vector2, q2 : Vector2) : Void*
       if @@mb_get_closest_points_between_segments.null?
         @@mb_get_closest_points_between_segments = Bridge.get_method_bind("Geometry2D", "get_closest_points_between_segments", 3344690961_i64)
@@ -5234,7 +4862,6 @@ module Godot
       ret_ptr
     end
     @@mb_get_closest_point_to_segment : Void* = Pointer(Void).null
-    # Returns the 2D point on the 2D segment (`s1`, `s2`) that is closest to `point`. The returned point will always be inside the specified segment.
     def get_closest_point_to_segment(point : Vector2, s1 : Vector2, s2 : Vector2) : Vector2
       if @@mb_get_closest_point_to_segment.null?
         @@mb_get_closest_point_to_segment = Bridge.get_method_bind("Geometry2D", "get_closest_point_to_segment", 4172901909_i64)
@@ -5251,7 +4878,6 @@ module Godot
       ret
     end
     @@mb_get_closest_point_to_segment_uncapped : Void* = Pointer(Void).null
-    # Returns the 2D point on the 2D line defined by (`s1`, `s2`) that is closest to `point`. The returned point can be inside the segment (`s1`, `s2`) or outside of it, i.e. somewhere on the line extending from the segment.
     def get_closest_point_to_segment_uncapped(point : Vector2, s1 : Vector2, s2 : Vector2) : Vector2
       if @@mb_get_closest_point_to_segment_uncapped.null?
         @@mb_get_closest_point_to_segment_uncapped = Bridge.get_method_bind("Geometry2D", "get_closest_point_to_segment_uncapped", 4172901909_i64)
@@ -5268,7 +4894,6 @@ module Godot
       ret
     end
     @@mb_point_is_inside_triangle : Void* = Pointer(Void).null
-    # Returns if `point` is inside the triangle specified by `a`, `b` and `c`.
     def point_is_inside_triangle(point : Vector2, a : Vector2, b : Vector2, c : Vector2) : Bool
       if @@mb_point_is_inside_triangle.null?
         @@mb_point_is_inside_triangle = Bridge.get_method_bind("Geometry2D", "point_is_inside_triangle", 1025948137_i64)
@@ -5287,8 +4912,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_is_polygon_clockwise : Void* = Pointer(Void).null
-    # Returns `true` if `polygon`'s vertices are ordered in clockwise order, otherwise returns `false`.
-    # **Note:** Assumes a Cartesian coordinate system where `+x` is right and `+y` is up. If using screen coordinates (`+y` is down), the result will need to be flipped (i.e. a `true` result will indicate counter-clockwise).
     def is_polygon_clockwise(polygon : Void*) : Bool
       if @@mb_is_polygon_clockwise.null?
         @@mb_is_polygon_clockwise = Bridge.get_method_bind("Geometry2D", "is_polygon_clockwise", 1361156557_i64)
@@ -5301,7 +4924,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_is_point_in_polygon : Void* = Pointer(Void).null
-    # Returns `true` if `point` is inside `polygon` or if it's located exactly *on* polygon's boundary, otherwise returns `false`.
     def is_point_in_polygon(point : Vector2, polygon : Void*) : Bool
       if @@mb_is_point_in_polygon.null?
         @@mb_is_point_in_polygon = Bridge.get_method_bind("Geometry2D", "is_point_in_polygon", 738277916_i64)
@@ -5316,7 +4938,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_triangulate_polygon : Void* = Pointer(Void).null
-    # Triangulates the polygon specified by the points in `polygon`. Returns a `PackedInt32Array` where each triangle consists of three consecutive point indices into `polygon` (i.e. the returned array will have `n * 3` elements, with `n` being the number of found triangles). Output triangles will always be counter clockwise, and the contour will be flipped if it's clockwise. If the triangulation did not succeed, an empty `PackedInt32Array` is returned.
     def triangulate_polygon(polygon : Void*) : Void*
       if @@mb_triangulate_polygon.null?
         @@mb_triangulate_polygon = Bridge.get_method_bind("Geometry2D", "triangulate_polygon", 1389921771_i64)
@@ -5329,7 +4950,6 @@ module Godot
       ret_ptr
     end
     @@mb_triangulate_delaunay : Void* = Pointer(Void).null
-    # Triangulates the area specified by discrete set of `points` such that no point is inside the circumcircle of any resulting triangle. Returns a `PackedInt32Array` where each triangle consists of three consecutive point indices into `points` (i.e. the returned array will have `n * 3` elements, with `n` being the number of found triangles). If the triangulation did not succeed, an empty `PackedInt32Array` is returned.
     def triangulate_delaunay(points : Void*) : Void*
       if @@mb_triangulate_delaunay.null?
         @@mb_triangulate_delaunay = Bridge.get_method_bind("Geometry2D", "triangulate_delaunay", 1389921771_i64)
@@ -5342,7 +4962,6 @@ module Godot
       ret_ptr
     end
     @@mb_convex_hull : Void* = Pointer(Void).null
-    # Given an array of `Vector2`s, returns the convex hull as a list of points in counterclockwise order. The last point is the same as the first one.
     def convex_hull(points : Void*) : Void*
       if @@mb_convex_hull.null?
         @@mb_convex_hull = Bridge.get_method_bind("Geometry2D", "convex_hull", 2004331998_i64)
@@ -5355,7 +4974,6 @@ module Godot
       ret_ptr
     end
     @@mb_decompose_polygon_in_convex : Void* = Pointer(Void).null
-    # Decomposes the `polygon` into multiple convex hulls and returns an array of `PackedVector2Array`.
     def decompose_polygon_in_convex(polygon : Void*) : Godot::Array
       if @@mb_decompose_polygon_in_convex.null?
         @@mb_decompose_polygon_in_convex = Bridge.get_method_bind("Geometry2D", "decompose_polygon_in_convex", 3982393695_i64)
@@ -5368,8 +4986,6 @@ module Godot
       Godot::Array.new(ret_ptr)
     end
     @@mb_merge_polygons : Void* = Pointer(Void).null
-    # Merges (combines) `polygon_a` and `polygon_b` and returns an array of merged polygons. This performs `OPERATION_UNION` between polygons.
-    # The operation may result in an outer polygon (boundary) and multiple inner polygons (holes) produced which could be distinguished by calling `#is_polygon_clockwise`.
     def merge_polygons(polygon_a : Void*, polygon_b : Void*) : Godot::Array
       if @@mb_merge_polygons.null?
         @@mb_merge_polygons = Bridge.get_method_bind("Geometry2D", "merge_polygons", 3637387053_i64)
@@ -5384,8 +5000,6 @@ module Godot
       Godot::Array.new(ret_ptr)
     end
     @@mb_clip_polygons : Void* = Pointer(Void).null
-    # Clips `polygon_a` against `polygon_b` and returns an array of clipped polygons. This performs `OPERATION_DIFFERENCE` between polygons. Returns an empty array if `polygon_b` completely overlaps `polygon_a`.
-    # If `polygon_b` is enclosed by `polygon_a`, returns an outer polygon (boundary) and inner polygon (hole) which could be distinguished by calling `#is_polygon_clockwise`.
     def clip_polygons(polygon_a : Void*, polygon_b : Void*) : Godot::Array
       if @@mb_clip_polygons.null?
         @@mb_clip_polygons = Bridge.get_method_bind("Geometry2D", "clip_polygons", 3637387053_i64)
@@ -5400,8 +5014,6 @@ module Godot
       Godot::Array.new(ret_ptr)
     end
     @@mb_intersect_polygons : Void* = Pointer(Void).null
-    # Intersects `polygon_a` with `polygon_b` and returns an array of intersected polygons. This performs `OPERATION_INTERSECTION` between polygons. In other words, returns common area shared by polygons. Returns an empty array if no intersection occurs.
-    # The operation may result in an outer polygon (boundary) and inner polygon (hole) produced which could be distinguished by calling `#is_polygon_clockwise`.
     def intersect_polygons(polygon_a : Void*, polygon_b : Void*) : Godot::Array
       if @@mb_intersect_polygons.null?
         @@mb_intersect_polygons = Bridge.get_method_bind("Geometry2D", "intersect_polygons", 3637387053_i64)
@@ -5416,8 +5028,6 @@ module Godot
       Godot::Array.new(ret_ptr)
     end
     @@mb_exclude_polygons : Void* = Pointer(Void).null
-    # Mutually excludes common area defined by intersection of `polygon_a` and `polygon_b` (see `#intersect_polygons`) and returns an array of excluded polygons. This performs `OPERATION_XOR` between polygons. In other words, returns all but common area between polygons.
-    # The operation may result in an outer polygon (boundary) and inner polygon (hole) produced which could be distinguished by calling `#is_polygon_clockwise`.
     def exclude_polygons(polygon_a : Void*, polygon_b : Void*) : Godot::Array
       if @@mb_exclude_polygons.null?
         @@mb_exclude_polygons = Bridge.get_method_bind("Geometry2D", "exclude_polygons", 3637387053_i64)
@@ -5432,7 +5042,6 @@ module Godot
       Godot::Array.new(ret_ptr)
     end
     @@mb_clip_polyline_with_polygon : Void* = Pointer(Void).null
-    # Clips `polyline` against `polygon` and returns an array of clipped polylines. This performs `OPERATION_DIFFERENCE` between the polyline and the polygon. This operation can be thought of as cutting a line with a closed shape.
     def clip_polyline_with_polygon(polyline : Void*, polygon : Void*) : Godot::Array
       if @@mb_clip_polyline_with_polygon.null?
         @@mb_clip_polyline_with_polygon = Bridge.get_method_bind("Geometry2D", "clip_polyline_with_polygon", 3637387053_i64)
@@ -5447,7 +5056,6 @@ module Godot
       Godot::Array.new(ret_ptr)
     end
     @@mb_intersect_polyline_with_polygon : Void* = Pointer(Void).null
-    # Intersects `polyline` with `polygon` and returns an array of intersected polylines. This performs `OPERATION_INTERSECTION` between the polyline and the polygon. This operation can be thought of as chopping a line with a closed shape.
     def intersect_polyline_with_polygon(polyline : Void*, polygon : Void*) : Godot::Array
       if @@mb_intersect_polyline_with_polygon.null?
         @@mb_intersect_polyline_with_polygon = Bridge.get_method_bind("Geometry2D", "intersect_polyline_with_polygon", 3637387053_i64)
@@ -5462,27 +5070,6 @@ module Godot
       Godot::Array.new(ret_ptr)
     end
     @@mb_offset_polygon : Void* = Pointer(Void).null
-    # Inflates or deflates `polygon` by `delta` units (pixels). If `delta` is positive, makes the polygon grow outward. If `delta` is negative, shrinks the polygon inward. Returns an array of polygons because inflating/deflating may result in multiple discrete polygons. Returns an empty array if `delta` is negative and the absolute value of it approximately exceeds the minimum bounding rectangle dimensions of the polygon.
-    # Each polygon's vertices will be rounded as determined by `join_type`.
-    # The operation may result in an outer polygon (boundary) and inner polygon (hole) produced which could be distinguished by calling `#is_polygon_clockwise`.
-    # **Note:** To translate the polygon's vertices specifically, multiply them to a `Transform2D`:
-    #
-    # ```gdscript
-    #
-    # var polygon = PackedVector2Array([Vector2(0, 0), Vector2(100, 0), Vector2(100, 100), Vector2(0, 100)])
-    # var offset = Vector2(50, 50)
-    # polygon = Transform2D(0, offset) * polygon
-    # print(polygon) # Prints [(50.0, 50.0), (150.0, 50.0), (150.0, 150.0), (50.0, 150.0)]
-    #
-    # ```
-    # ```csharp
-    #
-    # Vector2[] polygon = [new Vector2(0, 0), new Vector2(100, 0), new Vector2(100, 100), new Vector2(0, 100)];
-    # var offset = new Vector2(50, 50);
-    # polygon = new Transform2D(0, offset) * polygon;
-    # GD.Print((Variant)polygon); // Prints [(50, 50), (150, 50), (150, 150), (50, 150)]
-    #
-    # ```
     def offset_polygon(polygon : Void*, delta : Float64, join_type : Int64) : Godot::Array
       if @@mb_offset_polygon.null?
         @@mb_offset_polygon = Bridge.get_method_bind("Geometry2D", "offset_polygon", 1275354010_i64)
@@ -5499,10 +5086,6 @@ module Godot
       Godot::Array.new(ret_ptr)
     end
     @@mb_offset_polyline : Void* = Pointer(Void).null
-    # Inflates or deflates `polyline` by `delta` units (pixels), producing polygons. If `delta` is positive, makes the polyline grow outward. Returns an array of polygons because inflating/deflating may result in multiple discrete polygons. If `delta` is negative, returns an empty array.
-    # Each polygon's vertices will be rounded as determined by `join_type`.
-    # Each polygon's endpoints will be rounded as determined by `end_type`.
-    # The operation may result in an outer polygon (boundary) and inner polygon (hole) produced which could be distinguished by calling `#is_polygon_clockwise`.
     def offset_polyline(polyline : Void*, delta : Float64, join_type : Int64, end_type : Int64) : Godot::Array
       if @@mb_offset_polyline.null?
         @@mb_offset_polyline = Bridge.get_method_bind("Geometry2D", "offset_polyline", 2328231778_i64)
@@ -5521,7 +5104,6 @@ module Godot
       Godot::Array.new(ret_ptr)
     end
     @@mb_make_atlas : Void* = Pointer(Void).null
-    # Given an array of `Vector2`s representing tiles, builds an atlas. The returned dictionary has two keys: `points` is a `PackedVector2Array` that specifies the positions of each tile, `size` contains the overall size of the whole atlas as `Vector2i`.
     def make_atlas(sizes : Void*) : Void*
       if @@mb_make_atlas.null?
         @@mb_make_atlas = Bridge.get_method_bind("Geometry2D", "make_atlas", 1337682371_i64)
@@ -5534,15 +5116,6 @@ module Godot
       ret_ptr
     end
     @@mb_bresenham_line : Void* = Pointer(Void).null
-    # Returns the [$2]($1) between the `from` and `to` points. A Bresenham line is a series of pixels that draws a line and is always 1-pixel thick on every row and column of the drawing (never more, never less).
-    # Example code to draw a line between two `Marker2D` nodes using a series of `#CanvasItem.draw_rect` calls:
-    # ```gdscript
-    #
-    # func _draw():
-    # 	for pixel in Geometry2D.bresenham_line($MarkerA.position, $MarkerB.position):
-    # 		draw_rect(Rect2(pixel, Vector2.ONE), Color.WHITE)
-    #
-    # ```
     def bresenham_line(from : Vector2i, to : Vector2i) : Godot::Array
       if @@mb_bresenham_line.null?
         @@mb_bresenham_line = Bridge.get_method_bind("Geometry2D", "bresenham_line", 1989391000_i64)
@@ -5557,15 +5130,11 @@ module Godot
       Godot::Array.new(ret_ptr)
     end
   end
-  # Provides methods for some common 3D geometric operations.
-  #
-  # Provides a set of helper functions to create geometric shapes, compute intersections between shapes, and process various other geometric operations in 3D.
   class Geometry3D < Godot::Object
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
     end
     @@mb_compute_convex_mesh_points : Void* = Pointer(Void).null
-    # Calculates and returns all the vertex points of a convex shape defined by an array of `planes`.
     def compute_convex_mesh_points(planes : Godot::Array) : Void*
       if @@mb_compute_convex_mesh_points.null?
         @@mb_compute_convex_mesh_points = Bridge.get_method_bind("Geometry3D", "compute_convex_mesh_points", 1936902142_i64)
@@ -5578,7 +5147,6 @@ module Godot
       ret_ptr
     end
     @@mb_build_box_planes : Void* = Pointer(Void).null
-    # Returns an array with 6 `Plane`s that describe the sides of a box centered at the origin. The box size is defined by `extents`, which represents one (positive) corner of the box (i.e. half its actual size).
     def build_box_planes(extents : Vector3) : Godot::Array
       if @@mb_build_box_planes.null?
         @@mb_build_box_planes = Bridge.get_method_bind("Geometry3D", "build_box_planes", 3622277145_i64)
@@ -5591,7 +5159,6 @@ module Godot
       Godot::Array.new(ret_ptr)
     end
     @@mb_build_cylinder_planes : Void* = Pointer(Void).null
-    # Returns an array of `Plane`s closely bounding a faceted cylinder centered at the origin with radius `radius` and height `height`. The parameter `sides` defines how many planes will be generated for the round part of the cylinder. The parameter `axis` describes the axis along which the cylinder is oriented (0 for X, 1 for Y, 2 for Z).
     def build_cylinder_planes(radius : Float64, height : Float64, sides : Int64, axis : Int64) : Godot::Array
       if @@mb_build_cylinder_planes.null?
         @@mb_build_cylinder_planes = Bridge.get_method_bind("Geometry3D", "build_cylinder_planes", 449920067_i64)
@@ -5610,7 +5177,6 @@ module Godot
       Godot::Array.new(ret_ptr)
     end
     @@mb_build_capsule_planes : Void* = Pointer(Void).null
-    # Returns an array of `Plane`s closely bounding a faceted capsule centered at the origin with radius `radius` and height `height`. The parameter `sides` defines how many planes will be generated for the side part of the capsule, whereas `lats` gives the number of latitudinal steps at the bottom and top of the capsule. The parameter `axis` describes the axis along which the capsule is oriented (0 for X, 1 for Y, 2 for Z).
     def build_capsule_planes(radius : Float64, height : Float64, sides : Int64, lats : Int64, axis : Int64) : Godot::Array
       if @@mb_build_capsule_planes.null?
         @@mb_build_capsule_planes = Bridge.get_method_bind("Geometry3D", "build_capsule_planes", 2113592876_i64)
@@ -5631,7 +5197,6 @@ module Godot
       Godot::Array.new(ret_ptr)
     end
     @@mb_get_closest_points_between_segments : Void* = Pointer(Void).null
-    # Given the two 3D segments (`p1`, `p2`) and (`q1`, `q2`), finds those two points on the two segments that are closest to each other. Returns a `PackedVector3Array` that contains this point on (`p1`, `p2`) as well the accompanying point on (`q1`, `q2`).
     def get_closest_points_between_segments(p1 : Vector3, p2 : Vector3, q1 : Vector3, q2 : Vector3) : Void*
       if @@mb_get_closest_points_between_segments.null?
         @@mb_get_closest_points_between_segments = Bridge.get_method_bind("Geometry3D", "get_closest_points_between_segments", 1056373962_i64)
@@ -5650,7 +5215,6 @@ module Godot
       ret_ptr
     end
     @@mb_get_closest_point_to_segment : Void* = Pointer(Void).null
-    # Returns the 3D point on the 3D segment (`s1`, `s2`) that is closest to `point`. The returned point will always be inside the specified segment.
     def get_closest_point_to_segment(point : Vector3, s1 : Vector3, s2 : Vector3) : Vector3
       if @@mb_get_closest_point_to_segment.null?
         @@mb_get_closest_point_to_segment = Bridge.get_method_bind("Geometry3D", "get_closest_point_to_segment", 2168193209_i64)
@@ -5667,7 +5231,6 @@ module Godot
       ret
     end
     @@mb_get_closest_point_to_segment_uncapped : Void* = Pointer(Void).null
-    # Returns the 3D point on the 3D line defined by (`s1`, `s2`) that is closest to `point`. The returned point can be inside the segment (`s1`, `s2`) or outside of it, i.e. somewhere on the line extending from the segment.
     def get_closest_point_to_segment_uncapped(point : Vector3, s1 : Vector3, s2 : Vector3) : Vector3
       if @@mb_get_closest_point_to_segment_uncapped.null?
         @@mb_get_closest_point_to_segment_uncapped = Bridge.get_method_bind("Geometry3D", "get_closest_point_to_segment_uncapped", 2168193209_i64)
@@ -5684,8 +5247,6 @@ module Godot
       ret
     end
     @@mb_get_triangle_barycentric_coords : Void* = Pointer(Void).null
-    # Returns a `Vector3` containing weights based on how close a 3D position (`point`) is to a triangle's different vertices (`a`, `b` and `c`). This is useful for interpolating between the data of different vertices in a triangle. One example use case is using this to smoothly rotate over a mesh instead of relying solely on face normals.
-    # [$2]($1)
     def get_triangle_barycentric_coords(point : Vector3, a : Vector3, b : Vector3, c : Vector3) : Vector3
       if @@mb_get_triangle_barycentric_coords.null?
         @@mb_get_triangle_barycentric_coords = Bridge.get_method_bind("Geometry3D", "get_triangle_barycentric_coords", 1362048029_i64)
@@ -5704,7 +5265,6 @@ module Godot
       ret
     end
     @@mb_ray_intersects_triangle : Void* = Pointer(Void).null
-    # Tests if the 3D ray starting at `from` with the direction of `dir` intersects the triangle specified by `a`, `b` and `c`. If yes, returns the point of intersection as `Vector3`. If no intersection takes place, returns `null`.
     def ray_intersects_triangle(from : Vector3, dir : Vector3, a : Vector3, b : Vector3, c : Vector3) : Void*
       if @@mb_ray_intersects_triangle.null?
         @@mb_ray_intersects_triangle = Bridge.get_method_bind("Geometry3D", "ray_intersects_triangle", 1718655448_i64)
@@ -5727,7 +5287,6 @@ module Godot
       ret_ptr
     end
     @@mb_segment_intersects_triangle : Void* = Pointer(Void).null
-    # Tests if the segment (`from`, `to`) intersects the triangle `a`, `b`, `c`. If yes, returns the point of intersection as `Vector3`. If no intersection takes place, returns `null`.
     def segment_intersects_triangle(from : Vector3, to : Vector3, a : Vector3, b : Vector3, c : Vector3) : Void*
       if @@mb_segment_intersects_triangle.null?
         @@mb_segment_intersects_triangle = Bridge.get_method_bind("Geometry3D", "segment_intersects_triangle", 1718655448_i64)
@@ -5750,7 +5309,6 @@ module Godot
       ret_ptr
     end
     @@mb_segment_intersects_sphere : Void* = Pointer(Void).null
-    # Checks if the segment (`from`, `to`) intersects the sphere that is located at `sphere_position` and has radius `sphere_radius`. If no, returns an empty `PackedVector3Array`. If yes, returns a `PackedVector3Array` containing the point of intersection and the sphere's normal at the point of intersection.
     def segment_intersects_sphere(from : Vector3, to : Vector3, sphere_position : Vector3, sphere_radius : Float64) : Void*
       if @@mb_segment_intersects_sphere.null?
         @@mb_segment_intersects_sphere = Bridge.get_method_bind("Geometry3D", "segment_intersects_sphere", 4080141172_i64)
@@ -5769,7 +5327,6 @@ module Godot
       ret_ptr
     end
     @@mb_segment_intersects_cylinder : Void* = Pointer(Void).null
-    # Checks if the segment (`from`, `to`) intersects the cylinder with height `height` that is centered at the origin and has radius `radius`. If no, returns an empty `PackedVector3Array`. If an intersection takes place, the returned array contains the point of intersection and the cylinder's normal at the point of intersection.
     def segment_intersects_cylinder(from : Vector3, to : Vector3, height : Float64, radius : Float64) : Void*
       if @@mb_segment_intersects_cylinder.null?
         @@mb_segment_intersects_cylinder = Bridge.get_method_bind("Geometry3D", "segment_intersects_cylinder", 2361316491_i64)
@@ -5788,7 +5345,6 @@ module Godot
       ret_ptr
     end
     @@mb_segment_intersects_convex : Void* = Pointer(Void).null
-    # Given a convex hull defined though the `Plane`s in the array `planes`, tests if the segment (`from`, `to`) intersects with that hull. If an intersection is found, returns a `PackedVector3Array` containing the point the intersection and the hull's normal. Otherwise, returns an empty array.
     def segment_intersects_convex(from : Vector3, to : Vector3, planes : Godot::Array) : Void*
       if @@mb_segment_intersects_convex.null?
         @@mb_segment_intersects_convex = Bridge.get_method_bind("Geometry3D", "segment_intersects_convex", 537425332_i64)
@@ -5805,7 +5361,6 @@ module Godot
       ret_ptr
     end
     @@mb_clip_polygon : Void* = Pointer(Void).null
-    # Clips the polygon defined by the points in `points` against the `plane` and returns the points of the clipped polygon.
     def clip_polygon(points : Void*, plane : Plane) : Void*
       if @@mb_clip_polygon.null?
         @@mb_clip_polygon = Bridge.get_method_bind("Geometry3D", "clip_polygon", 2603188319_i64)
@@ -5820,7 +5375,6 @@ module Godot
       ret_ptr
     end
     @@mb_tetrahedralize_delaunay : Void* = Pointer(Void).null
-    # Tetrahedralizes the volume specified by a discrete set of `points` in 3D space, ensuring that no point lies within the circumsphere of any resulting tetrahedron. The method returns a `PackedInt32Array` where each tetrahedron consists of four consecutive point indices into the `points` array (resulting in an array with `n * 4` elements, where `n` is the number of tetrahedra found). If the tetrahedralization is unsuccessful, an empty `PackedInt32Array` is returned.
     def tetrahedralize_delaunay(points : Void*) : Void*
       if @@mb_tetrahedralize_delaunay.null?
         @@mb_tetrahedralize_delaunay = Bridge.get_method_bind("Geometry3D", "tetrahedralize_delaunay", 1230191221_i64)
@@ -5833,15 +5387,11 @@ module Godot
       ret_ptr
     end
   end
-  # Provides access to an embedded Godot instance.
-  #
-  # GodotInstance represents a running Godot instance that is controlled from an outside codebase, without a perpetual main loop. It is created by the C API `libgodot_create_godot_instance`. Only one may be created per process.
   class GodotInstance < Godot::Object
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
     end
     @@mb_start : Void* = Pointer(Void).null
-    # Finishes this instance's startup sequence. Returns `true` on success.
     def start() : Bool
       if @@mb_start.null?
         @@mb_start = Bridge.get_method_bind("GodotInstance", "start", 2240911060_i64)
@@ -5851,7 +5401,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_is_started : Void* = Pointer(Void).null
-    # Returns `true` if this instance has been fully started.
     def is_started() : Bool
       if @@mb_is_started.null?
         @@mb_is_started = Bridge.get_method_bind("GodotInstance", "is_started", 2240911060_i64)
@@ -5861,7 +5410,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_iteration : Void* = Pointer(Void).null
-    # Runs a single iteration of the main loop. Returns `true` if the engine is attempting to quit.
     def iteration() : Bool
       if @@mb_iteration.null?
         @@mb_iteration = Bridge.get_method_bind("GodotInstance", "iteration", 2240911060_i64)
@@ -5871,7 +5419,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_focus_in : Void* = Pointer(Void).null
-    # Notifies the instance that it is now in focus.
     def focus_in() : Void
       if @@mb_focus_in.null?
         @@mb_focus_in = Bridge.get_method_bind("GodotInstance", "focus_in", 3218959716_i64)
@@ -5879,7 +5426,6 @@ module Godot
       Bridge.ptrcall(@@mb_focus_in, @pointer, Pointer(Pointer(Void)).null, Pointer(Void).null)
     end
     @@mb_focus_out : Void* = Pointer(Void).null
-    # Notifies the instance that it is now not in focus.
     def focus_out() : Void
       if @@mb_focus_out.null?
         @@mb_focus_out = Bridge.get_method_bind("GodotInstance", "focus_out", 3218959716_i64)
@@ -5887,7 +5433,6 @@ module Godot
       Bridge.ptrcall(@@mb_focus_out, @pointer, Pointer(Pointer(Void)).null, Pointer(Void).null)
     end
     @@mb_pause : Void* = Pointer(Void).null
-    # Notifies the instance that it is going to be paused.
     def pause() : Void
       if @@mb_pause.null?
         @@mb_pause = Bridge.get_method_bind("GodotInstance", "pause", 3218959716_i64)
@@ -5895,7 +5440,6 @@ module Godot
       Bridge.ptrcall(@@mb_pause, @pointer, Pointer(Pointer(Void)).null, Pointer(Void).null)
     end
     @@mb_resume : Void* = Pointer(Void).null
-    # Notifies the instance that it is being resumed.
     def resume() : Void
       if @@mb_resume.null?
         @@mb_resume = Bridge.get_method_bind("GodotInstance", "resume", 3218959716_i64)
@@ -5903,10 +5447,6 @@ module Godot
       Bridge.ptrcall(@@mb_resume, @pointer, Pointer(Pointer(Void)).null, Pointer(Void).null)
     end
   end
-  # A color transition.
-  #
-  # This resource describes a color transition by defining a set of colored points and how to interpolate between them.
-  # See also `Curve` which supports more complex easing methods, but does not support colors.
   class Gradient < Godot::Resource
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -5922,7 +5462,6 @@ module Godot
       GradientColorSpaceOklab = 2_i64
     end
     @@mb_add_point : Void* = Pointer(Void).null
-    # Adds the specified color to the gradient, with the specified offset.
     def add_point(offset : Float64, color : Color) : Void
       if @@mb_add_point.null?
         @@mb_add_point = Bridge.get_method_bind("Gradient", "add_point", 3629403827_i64)
@@ -5935,7 +5474,6 @@ module Godot
       Bridge.ptrcall(@@mb_add_point, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_remove_point : Void* = Pointer(Void).null
-    # Removes the color at index `point`.
     def remove_point(point : Int64) : Void
       if @@mb_remove_point.null?
         @@mb_remove_point = Bridge.get_method_bind("Gradient", "remove_point", 1286410249_i64)
@@ -5946,7 +5484,6 @@ module Godot
       Bridge.ptrcall(@@mb_remove_point, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_set_offset : Void* = Pointer(Void).null
-    # Sets the offset for the gradient color at index `point`.
     def set_offset(point : Int64, offset : Float64) : Void
       if @@mb_set_offset.null?
         @@mb_set_offset = Bridge.get_method_bind("Gradient", "set_offset", 1602489585_i64)
@@ -5959,7 +5496,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_offset, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_offset : Void* = Pointer(Void).null
-    # Returns the offset of the gradient color at index `point`.
     def get_offset(point : Int64) : Float64
       if @@mb_get_offset.null?
         @@mb_get_offset = Bridge.get_method_bind("Gradient", "get_offset", 4025615559_i64)
@@ -5972,8 +5508,6 @@ module Godot
       ret
     end
     @@mb_reverse : Void* = Pointer(Void).null
-    # Reverses/mirrors the gradient.
-    # **Note:** This method mirrors all points around the middle of the gradient, which may produce unexpected results when `interpolation_mode` is set to `GRADIENT_INTERPOLATE_CONSTANT`.
     def reverse() : Void
       if @@mb_reverse.null?
         @@mb_reverse = Bridge.get_method_bind("Gradient", "reverse", 3218959716_i64)
@@ -5981,7 +5515,6 @@ module Godot
       Bridge.ptrcall(@@mb_reverse, @pointer, Pointer(Pointer(Void)).null, Pointer(Void).null)
     end
     @@mb_set_color : Void* = Pointer(Void).null
-    # Sets the color of the gradient color at index `point`.
     def set_color(point : Int64, color : Color) : Void
       if @@mb_set_color.null?
         @@mb_set_color = Bridge.get_method_bind("Gradient", "set_color", 2878471219_i64)
@@ -5994,7 +5527,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_color, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_color : Void* = Pointer(Void).null
-    # Returns the color of the gradient color at index `point`.
     def get_color(point : Int64) : Color
       if @@mb_get_color.null?
         @@mb_get_color = Bridge.get_method_bind("Gradient", "get_color", 2624840992_i64)
@@ -6007,7 +5539,6 @@ module Godot
       ret
     end
     @@mb_sample : Void* = Pointer(Void).null
-    # Returns the interpolated color specified by `offset`. `offset` should be between `0.0` and `1.0` (inclusive). Using a value lower than `0.0` will return the same color as `0.0`, and using a value higher than `1.0` will return the same color as `1.0`. If your input value is not within this range, consider using [method @GlobalScope.remap] on the input value with output values set to `0.0` and `1.0`.
     def sample(offset : Float64) : Color
       if @@mb_sample.null?
         @@mb_sample = Bridge.get_method_bind("Gradient", "sample", 1250405064_i64)
@@ -6020,7 +5551,6 @@ module Godot
       ret
     end
     @@mb_get_point_count : Void* = Pointer(Void).null
-    # Returns the number of colors in the gradient.
     def get_point_count() : Int64
       if @@mb_get_point_count.null?
         @@mb_get_point_count = Bridge.get_method_bind("Gradient", "get_point_count", 3905245786_i64)
@@ -6106,9 +5636,6 @@ module Godot
       ret
     end
   end
-  # A 1D texture that uses colors obtained from a `Gradient`.
-  #
-  # A 1D texture that obtains colors from a `Gradient` to fill the texture data. The texture is filled by sampling the gradient for each pixel. Therefore, the texture does not necessarily represent an exact copy of the gradient, as it may miss some colors if there are not enough pixels. See also `GradientTexture2D`, `CurveTexture` and `CurveXYZTexture`.
   class GradientTexture1D < Godot::Texture2D
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -6162,10 +5689,6 @@ module Godot
       ret != 0_u8
     end
   end
-  # A 2D texture that creates a pattern with colors obtained from a `Gradient`.
-  #
-  # A 2D texture that obtains colors from a `Gradient` to fill the texture data. This texture is able to transform a color transition into different patterns such as a linear or a radial gradient. The texture is filled by interpolating colors starting from `fill_from` to `fill_to` offsets by default, but the gradient fill can be repeated to cover the entire texture.
-  # The gradient is sampled individually for each pixel so it does not necessarily represent an exact copy of the gradient (see `width` and `height`). See also `GradientTexture1D`, `CurveTexture` and `CurveXYZTexture`.
   class GradientTexture2D < Godot::Texture2D
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -6316,12 +5839,6 @@ module Godot
       ret
     end
   end
-  # An editor for graph-like structures, using `GraphNode`s.
-  #
-  # `GraphEdit` provides tools for creation, manipulation, and display of various graphs. Its main purpose in the engine is to power the visual programming systems, such as visual shaders, but it is also available for use in user projects.
-  # `GraphEdit` by itself is only an empty container, representing an infinite grid where `GraphNode`s can be placed. Each `GraphNode` represents a node in the graph, a single unit of data in the connected scheme. `GraphEdit`, in turn, helps to control various interactions with nodes and between nodes. When the user attempts to connect, disconnect, or delete a `GraphNode`, a signal is emitted in the `GraphEdit`, but no action is taken by default. It is the responsibility of the programmer utilizing this control to implement the necessary logic to determine how each request should be handled.
-  # **Performance:** It is greatly advised to enable low-processor usage mode (see `OS.low_processor_usage_mode`) when using GraphEdits.
-  # **Note:** Keep in mind that `#Node.get_children` will also return the connection layer node named `_connection_layer` due to technical limitations. This behavior may change in future releases.
   class GraphEdit < Godot::Control
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -6335,8 +5852,6 @@ module Godot
       GridPatternDots = 1_i64
     end
     @@mb_connect_node : Void* = Pointer(Void).null
-    # Create a connection between the `from_port` of the `from_node` `GraphNode` and the `to_port` of the `to_node` `GraphNode`. If the connection already exists, no connection is created.
-    # Connections with `keep_alive` set to `false` may be deleted automatically if invalid during a redraw.
     def connect_node(from_node : String, from_port : Int64, to_node : String, to_port : Int64, keep_alive : Bool) : Int64
       if @@mb_connect_node.null?
         @@mb_connect_node = Bridge.get_method_bind("GraphEdit", "connect_node", 1376144231_i64)
@@ -6360,7 +5875,6 @@ module Godot
       Bridge.free_string_name(sn_2)
     end
     @@mb_is_node_connected : Void* = Pointer(Void).null
-    # Returns `true` if the `from_port` of the `from_node` `GraphNode` is connected to the `to_port` of the `to_node` `GraphNode`.
     def is_node_connected(from_node : String, from_port : Int64, to_node : String, to_port : Int64) : Bool
       if @@mb_is_node_connected.null?
         @@mb_is_node_connected = Bridge.get_method_bind("GraphEdit", "is_node_connected", 4216241294_i64)
@@ -6382,7 +5896,6 @@ module Godot
       Bridge.free_string_name(sn_2)
     end
     @@mb_disconnect_node : Void* = Pointer(Void).null
-    # Removes the connection between the `from_port` of the `from_node` `GraphNode` and the `to_port` of the `to_node` `GraphNode`. If the connection does not exist, no connection is removed.
     def disconnect_node(from_node : String, from_port : Int64, to_node : String, to_port : Int64) : Void
       if @@mb_disconnect_node.null?
         @@mb_disconnect_node = Bridge.get_method_bind("GraphEdit", "disconnect_node", 1933654315_i64)
@@ -6402,7 +5915,6 @@ module Godot
       Bridge.free_string_name(sn_2)
     end
     @@mb_set_connection_activity : Void* = Pointer(Void).null
-    # Sets the coloration of the connection between `from_node`'s `from_port` and `to_node`'s `to_port` with the color provided in the [theme_item activity] theme property. The color is linearly interpolated between the connection color and the activity color using `amount` as weight.
     def set_connection_activity(from_node : String, from_port : Int64, to_node : String, to_port : Int64, amount : Float64) : Void
       if @@mb_set_connection_activity.null?
         @@mb_set_connection_activity = Bridge.get_method_bind("GraphEdit", "set_connection_activity", 1141899943_i64)
@@ -6443,7 +5955,6 @@ module Godot
       Godot::Array.new(ret_ptr)
     end
     @@mb_get_connection_count : Void* = Pointer(Void).null
-    # Returns the number of connections from `from_port` of `from_node`.
     def get_connection_count(from_node : String, from_port : Int64) : Int64
       if @@mb_get_connection_count.null?
         @@mb_get_connection_count = Bridge.get_method_bind("GraphEdit", "get_connection_count", 861718734_i64)
@@ -6460,26 +5971,6 @@ module Godot
       Bridge.free_string_name(sn_0)
     end
     @@mb_get_closest_connection_at_point : Void* = Pointer(Void).null
-    # Returns the closest connection to the given point in screen space. If no connection is found within `max_distance` pixels, an empty `Dictionary` is returned.
-    # A connection is represented as a `Dictionary` in the form of:
-    # ```gdscript
-    #
-    # {
-    # 	from_node: StringName,
-    # 	from_port: int,
-    # 	to_node: StringName,
-    # 	to_port: int,
-    # 	keep_alive: bool
-    # }
-    #
-    # ```
-    # For example, getting a connection at a given mouse position can be achieved like this:
-    #
-    # ```gdscript
-    #
-    # var connection = get_closest_connection_at_point(mouse_event.get_position())
-    #
-    # ```
     def get_closest_connection_at_point(point : Vector2, max_distance : Float64) : Void*
       if @@mb_get_closest_connection_at_point.null?
         @@mb_get_closest_connection_at_point = Bridge.get_method_bind("GraphEdit", "get_closest_connection_at_point", 453879819_i64)
@@ -6494,40 +5985,6 @@ module Godot
       ret_ptr
     end
     @@mb_get_connection_list_from_node : Void* = Pointer(Void).null
-    # Returns an `Array` containing a list of all connections for `node`.
-    # A connection is represented as a `Dictionary` in the form of:
-    # ```gdscript
-    #
-    # {
-    # 	from_node: StringName,
-    # 	from_port: int,
-    # 	to_node: StringName,
-    # 	to_port: int,
-    # 	keep_alive: bool
-    # }
-    #
-    # ```
-    # **Example:** Get all connections on a specific port:
-    # ```gdscript
-    #
-    # func get_connection_list_from_port(node, port):
-    # 	var connections = get_connection_list_from_node(node)
-    # 	var result = []
-    # 	for connection in connections:
-    # 		var dict = {}
-    # 		if connection["from_node"] == node and connection["from_port"] == port:
-    # 			dict["node"] = connection["to_node"]
-    # 			dict["port"] = connection["to_port"]
-    # 			dict["type"] = "left"
-    # 			result.push_back(dict)
-    # 		elif connection["to_node"] == node and connection["to_port"] == port:
-    # 			dict["node"] = connection["from_node"]
-    # 			dict["port"] = connection["from_port"]
-    # 			dict["type"] = "right"
-    # 			result.push_back(dict)
-    # 	return result
-    #
-    # ```
     def get_connection_list_from_node(node : String) : Godot::Array
       if @@mb_get_connection_list_from_node.null?
         @@mb_get_connection_list_from_node = Bridge.get_method_bind("GraphEdit", "get_connection_list_from_node", 3147814860_i64)
@@ -6542,19 +5999,6 @@ module Godot
       Bridge.free_string_name(sn_0)
     end
     @@mb_get_connections_intersecting_with_rect : Void* = Pointer(Void).null
-    # Returns an `Array` containing the list of connections that intersect with the given `Rect2`.
-    # A connection is represented as a `Dictionary` in the form of:
-    # ```gdscript
-    #
-    # {
-    # 	from_node: StringName,
-    # 	from_port: int,
-    # 	to_node: StringName,
-    # 	to_port: int,
-    # 	keep_alive: bool
-    # }
-    #
-    # ```
     def get_connections_intersecting_with_rect(rect : Rect2) : Godot::Array
       if @@mb_get_connections_intersecting_with_rect.null?
         @@mb_get_connections_intersecting_with_rect = Bridge.get_method_bind("GraphEdit", "get_connections_intersecting_with_rect", 2709748719_i64)
@@ -6567,7 +6011,6 @@ module Godot
       Godot::Array.new(ret_ptr)
     end
     @@mb_clear_connections : Void* = Pointer(Void).null
-    # Removes all connections between nodes.
     def clear_connections() : Void
       if @@mb_clear_connections.null?
         @@mb_clear_connections = Bridge.get_method_bind("GraphEdit", "clear_connections", 3218959716_i64)
@@ -6575,9 +6018,6 @@ module Godot
       Bridge.ptrcall(@@mb_clear_connections, @pointer, Pointer(Pointer(Void)).null, Pointer(Void).null)
     end
     @@mb_force_connection_drag_end : Void* = Pointer(Void).null
-    # Ends the creation of the current connection. In other words, if you are dragging a connection you can use this method to abort the process and remove the line that followed your cursor.
-    # This is best used together with `connection_drag_started` and `connection_drag_ended` to add custom behavior like node addition through shortcuts.
-    # **Note:** This method suppresses any other connection request signals apart from `connection_drag_ended`.
     def force_connection_drag_end() : Void
       if @@mb_force_connection_drag_end.null?
         @@mb_force_connection_drag_end = Bridge.get_method_bind("GraphEdit", "force_connection_drag_end", 3218959716_i64)
@@ -6604,7 +6044,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_scroll_offset, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_add_valid_right_disconnect_type : Void* = Pointer(Void).null
-    # Allows to disconnect nodes when dragging from the right port of the `GraphNode`'s slot if it has the specified type. See also `#remove_valid_right_disconnect_type`.
     def add_valid_right_disconnect_type(get_type : Int64) : Void
       if @@mb_add_valid_right_disconnect_type.null?
         @@mb_add_valid_right_disconnect_type = Bridge.get_method_bind("GraphEdit", "add_valid_right_disconnect_type", 1286410249_i64)
@@ -6615,7 +6054,6 @@ module Godot
       Bridge.ptrcall(@@mb_add_valid_right_disconnect_type, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_remove_valid_right_disconnect_type : Void* = Pointer(Void).null
-    # Disallows to disconnect nodes when dragging from the right port of the `GraphNode`'s slot if it has the specified type. Use this to disable a disconnection previously allowed with `#add_valid_right_disconnect_type`.
     def remove_valid_right_disconnect_type(get_type : Int64) : Void
       if @@mb_remove_valid_right_disconnect_type.null?
         @@mb_remove_valid_right_disconnect_type = Bridge.get_method_bind("GraphEdit", "remove_valid_right_disconnect_type", 1286410249_i64)
@@ -6626,7 +6064,6 @@ module Godot
       Bridge.ptrcall(@@mb_remove_valid_right_disconnect_type, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_add_valid_left_disconnect_type : Void* = Pointer(Void).null
-    # Allows to disconnect nodes when dragging from the left port of the `GraphNode`'s slot if it has the specified type. See also `#remove_valid_left_disconnect_type`.
     def add_valid_left_disconnect_type(get_type : Int64) : Void
       if @@mb_add_valid_left_disconnect_type.null?
         @@mb_add_valid_left_disconnect_type = Bridge.get_method_bind("GraphEdit", "add_valid_left_disconnect_type", 1286410249_i64)
@@ -6637,7 +6074,6 @@ module Godot
       Bridge.ptrcall(@@mb_add_valid_left_disconnect_type, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_remove_valid_left_disconnect_type : Void* = Pointer(Void).null
-    # Disallows to disconnect nodes when dragging from the left port of the `GraphNode`'s slot if it has the specified type. Use this to disable a disconnection previously allowed with `#add_valid_left_disconnect_type`.
     def remove_valid_left_disconnect_type(get_type : Int64) : Void
       if @@mb_remove_valid_left_disconnect_type.null?
         @@mb_remove_valid_left_disconnect_type = Bridge.get_method_bind("GraphEdit", "remove_valid_left_disconnect_type", 1286410249_i64)
@@ -6648,8 +6084,6 @@ module Godot
       Bridge.ptrcall(@@mb_remove_valid_left_disconnect_type, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_add_valid_connection_type : Void* = Pointer(Void).null
-    # Allows the connection between two different port types. The port type is defined individually for the left and the right port of each slot with the `#GraphNode.set_slot` method.
-    # See also `#is_valid_connection_type` and `#remove_valid_connection_type`.
     def add_valid_connection_type(from_type : Int64, to_type : Int64) : Void
       if @@mb_add_valid_connection_type.null?
         @@mb_add_valid_connection_type = Bridge.get_method_bind("GraphEdit", "add_valid_connection_type", 3937882851_i64)
@@ -6662,8 +6096,6 @@ module Godot
       Bridge.ptrcall(@@mb_add_valid_connection_type, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_remove_valid_connection_type : Void* = Pointer(Void).null
-    # Disallows the connection between two different port types previously allowed by `#add_valid_connection_type`. The port type is defined individually for the left and the right port of each slot with the `#GraphNode.set_slot` method.
-    # See also `#is_valid_connection_type`.
     def remove_valid_connection_type(from_type : Int64, to_type : Int64) : Void
       if @@mb_remove_valid_connection_type.null?
         @@mb_remove_valid_connection_type = Bridge.get_method_bind("GraphEdit", "remove_valid_connection_type", 3937882851_i64)
@@ -6676,8 +6108,6 @@ module Godot
       Bridge.ptrcall(@@mb_remove_valid_connection_type, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_is_valid_connection_type : Void* = Pointer(Void).null
-    # Returns whether it's possible to make a connection between two different port types. The port type is defined individually for the left and the right port of each slot with the `#GraphNode.set_slot` method.
-    # See also `#add_valid_connection_type` and `#remove_valid_connection_type`.
     def is_valid_connection_type(from_type : Int64, to_type : Int64) : Bool
       if @@mb_is_valid_connection_type.null?
         @@mb_is_valid_connection_type = Bridge.get_method_bind("GraphEdit", "is_valid_connection_type", 2522259332_i64)
@@ -6692,7 +6122,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_get_connection_line : Void* = Pointer(Void).null
-    # Returns the points which would make up a connection between `from_node` and `to_node`.
     def get_connection_line(from_node : Vector2, to_node : Vector2) : Void*
       if @@mb_get_connection_line.null?
         @@mb_get_connection_line = Bridge.get_method_bind("GraphEdit", "get_connection_line", 3932192302_i64)
@@ -6707,7 +6136,6 @@ module Godot
       ret_ptr
     end
     @@mb_attach_graph_element_to_frame : Void* = Pointer(Void).null
-    # Attaches the `element` `GraphElement` to the `frame` `GraphFrame`.
     def attach_graph_element_to_frame(element : String, frame : String) : Void
       if @@mb_attach_graph_element_to_frame.null?
         @@mb_attach_graph_element_to_frame = Bridge.get_method_bind("GraphEdit", "attach_graph_element_to_frame", 3740211285_i64)
@@ -6723,7 +6151,6 @@ module Godot
       Bridge.free_string_name(sn_1)
     end
     @@mb_detach_graph_element_from_frame : Void* = Pointer(Void).null
-    # Detaches the `element` `GraphElement` from the `GraphFrame` it is currently attached to.
     def detach_graph_element_from_frame(element : String) : Void
       if @@mb_detach_graph_element_from_frame.null?
         @@mb_detach_graph_element_from_frame = Bridge.get_method_bind("GraphEdit", "detach_graph_element_from_frame", 3304788590_i64)
@@ -6736,7 +6163,6 @@ module Godot
       Bridge.free_string_name(sn_0)
     end
     @@mb_get_element_frame : Void* = Pointer(Void).null
-    # Returns the `GraphFrame` that contains the `GraphElement` with the given name.
     def get_element_frame(element : String) : GraphFrame
       if @@mb_get_element_frame.null?
         @@mb_get_element_frame = Bridge.get_method_bind("GraphEdit", "get_element_frame", 988084372_i64)
@@ -6751,7 +6177,6 @@ module Godot
       Bridge.free_string_name(sn_0)
     end
     @@mb_get_attached_nodes_of_frame : Void* = Pointer(Void).null
-    # Returns an array of node names that are attached to the `GraphFrame` with the given name.
     def get_attached_nodes_of_frame(frame : String) : Godot::Array
       if @@mb_get_attached_nodes_of_frame.null?
         @@mb_get_attached_nodes_of_frame = Bridge.get_method_bind("GraphEdit", "get_attached_nodes_of_frame", 689397652_i64)
@@ -7203,8 +6628,6 @@ module Godot
       ret_ptr
     end
     @@mb_get_menu_hbox : Void* = Pointer(Void).null
-    # Gets the `HBoxContainer` that contains the zooming and grid snap controls in the top left of the graph. You can use this method to reposition the toolbar or to add your own custom controls to it.
-    # **Warning:** This is a required internal node, removing and freeing it may cause a crash. If you wish to hide it or any of its children, use their `CanvasItem.visible` property.
     def get_menu_hbox() : HBoxContainer
       if @@mb_get_menu_hbox.null?
         @@mb_get_menu_hbox = Bridge.get_method_bind("GraphEdit", "get_menu_hbox", 3590609951_i64)
@@ -7214,7 +6637,6 @@ module Godot
       HBoxContainer.new(ret_ptr)
     end
     @@mb_arrange_nodes : Void* = Pointer(Void).null
-    # Rearranges selected nodes in a layout with minimum crossings between connections and uniform horizontal and vertical gap between nodes.
     def arrange_nodes() : Void
       if @@mb_arrange_nodes.null?
         @@mb_arrange_nodes = Bridge.get_method_bind("GraphEdit", "arrange_nodes", 3218959716_i64)
@@ -7222,7 +6644,6 @@ module Godot
       Bridge.ptrcall(@@mb_arrange_nodes, @pointer, Pointer(Pointer(Void)).null, Pointer(Void).null)
     end
     @@mb_set_selected : Void* = Pointer(Void).null
-    # Sets the specified `node` as the one selected.
     def set_selected(node : Node) : Void
       if @@mb_set_selected.null?
         @@mb_set_selected = Bridge.get_method_bind("GraphEdit", "set_selected", 1078189570_i64)
@@ -7233,9 +6654,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_selected, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
   end
-  # A container that represents a basic element that can be placed inside a `GraphEdit` control.
-  #
-  # `GraphElement` allows to create custom elements for a `GraphEdit` graph. By default such elements can be selected, resized, and repositioned, but they cannot be connected. For a graph element that allows for connections see `GraphNode`.
   class GraphElement < Godot::Container
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -7355,10 +6773,6 @@ module Godot
       ret
     end
   end
-  # GraphFrame is a special `GraphElement` that can be used to organize other `GraphElement`s inside a `GraphEdit`.
-  #
-  # GraphFrame is a special `GraphElement` to which other `GraphElement`s can be attached. It can be configured to automatically resize to enclose all attached `GraphElement`s. If the frame is moved, all the attached `GraphElement`s inside it will be moved as well.
-  # A GraphFrame is always kept behind the connection layer and other `GraphElement`s inside a `GraphEdit`.
   class GraphFrame < Godot::GraphElement
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -7383,8 +6797,6 @@ module Godot
       ""
     end
     @@mb_get_titlebar_hbox : Void* = Pointer(Void).null
-    # Returns the `HBoxContainer` used for the title bar, only containing a `Label` for displaying the title by default.
-    # This can be used to add custom controls to the title bar such as option or close buttons.
     def get_titlebar_hbox() : HBoxContainer
       if @@mb_get_titlebar_hbox.null?
         @@mb_get_titlebar_hbox = Bridge.get_method_bind("GraphFrame", "get_titlebar_hbox", 3590609951_i64)
@@ -7489,12 +6901,6 @@ module Godot
       ret
     end
   end
-  # A container with connection ports, representing a node in a `GraphEdit`.
-  #
-  # `GraphNode` allows to create nodes for a `GraphEdit` graph with customizable content based on its child controls. `GraphNode` is derived from `Container` and it is responsible for placing its children on screen. This works similar to `VBoxContainer`. Children, in turn, provide `GraphNode` with so-called slots, each of which can have a connection port on either side.
-  # Each `GraphNode` slot is defined by its index and can provide the node with up to two ports: one on the left, and one on the right. By convention the left port is also referred to as the **input port** and the right port is referred to as the **output port**. Each port can be enabled and configured individually, using different type and color. The type is an arbitrary value that you can define using your own considerations. The parent `GraphEdit` will receive this information on each connect and disconnect request.
-  # Slots can be configured in the Inspector dock once you add at least one child `Control`. The properties are grouped by each slot's index in the "Slot" section.
-  # **Note:** While GraphNode is set up using slots and slot indices, connections are made between the ports which are enabled. Because of that `GraphEdit` uses the port's index and not the slot's index. You can use `#get_input_port_slot` and `#get_output_port_slot` to get the slot index from the port index.
   class GraphNode < Godot::GraphElement
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -7519,7 +6925,6 @@ module Godot
       ""
     end
     @@mb_get_titlebar_hbox : Void* = Pointer(Void).null
-    # Returns the `HBoxContainer` used for the title bar, only containing a `Label` for displaying the title by default. This can be used to add custom controls to the title bar such as option or close buttons.
     def get_titlebar_hbox() : HBoxContainer
       if @@mb_get_titlebar_hbox.null?
         @@mb_get_titlebar_hbox = Bridge.get_method_bind("GraphNode", "get_titlebar_hbox", 3590609951_i64)
@@ -7529,13 +6934,6 @@ module Godot
       HBoxContainer.new(ret_ptr)
     end
     @@mb_set_slot : Void* = Pointer(Void).null
-    # Sets properties of the slot with the given `slot_index`.
-    # If `enable_left_port`/`enable_right_port` is `true`, a port will appear and the slot will be able to be connected from this side.
-    # With `type_left`/`type_right` an arbitrary type can be assigned to each port. Two ports can be connected if they share the same type, or if the connection between their types is allowed in the parent `GraphEdit` (see `#GraphEdit.add_valid_connection_type`). Keep in mind that the `GraphEdit` has the final say in accepting the connection. Type compatibility simply allows the `GraphEdit.connection_request` signal to be emitted.
-    # Ports can be further customized using `color_left`/`color_right` and `custom_icon_left`/`custom_icon_right`. The color parameter adds a tint to the icon. The custom icon can be used to override the default port dot.
-    # Additionally, `draw_stylebox` can be used to enable or disable drawing of the background stylebox for each slot. See [theme_item slot].
-    # Individual properties can also be set using one of the `set_slot_*` methods.
-    # **Note:** This method only sets properties of the slot. To create the slot itself, add a `Control`-derived child to the GraphNode.
     def set_slot(slot_index : Int64, enable_left_port : Bool, type_left : Int64, color_left : Color, enable_right_port : Bool, type_right : Int64, color_right : Color, custom_icon_left : Texture2D, custom_icon_right : Texture2D, draw_stylebox : Bool) : Void
       if @@mb_set_slot.null?
         @@mb_set_slot = Bridge.get_method_bind("GraphNode", "set_slot", 2873310869_i64)
@@ -7564,7 +6962,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_slot, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_clear_slot : Void* = Pointer(Void).null
-    # Disables the slot with the given `slot_index`. This will remove the corresponding input and output port from the GraphNode.
     def clear_slot(slot_index : Int64) : Void
       if @@mb_clear_slot.null?
         @@mb_clear_slot = Bridge.get_method_bind("GraphNode", "clear_slot", 1286410249_i64)
@@ -7575,7 +6972,6 @@ module Godot
       Bridge.ptrcall(@@mb_clear_slot, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_clear_all_slots : Void* = Pointer(Void).null
-    # Disables all slots of the GraphNode. This will remove all input/output ports from the GraphNode.
     def clear_all_slots() : Void
       if @@mb_clear_all_slots.null?
         @@mb_clear_all_slots = Bridge.get_method_bind("GraphNode", "clear_all_slots", 3218959716_i64)
@@ -7583,7 +6979,6 @@ module Godot
       Bridge.ptrcall(@@mb_clear_all_slots, @pointer, Pointer(Pointer(Void)).null, Pointer(Void).null)
     end
     @@mb_is_slot_enabled_left : Void* = Pointer(Void).null
-    # Returns `true` if left (input) side of the slot with the given `slot_index` is enabled.
     def is_slot_enabled_left(slot_index : Int64) : Bool
       if @@mb_is_slot_enabled_left.null?
         @@mb_is_slot_enabled_left = Bridge.get_method_bind("GraphNode", "is_slot_enabled_left", 1116898809_i64)
@@ -7596,7 +6991,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_set_slot_enabled_left : Void* = Pointer(Void).null
-    # Toggles the left (input) side of the slot with the given `slot_index`. If `enable` is `true`, a port will appear on the left side and the slot will be able to be connected from this side.
     def set_slot_enabled_left(slot_index : Int64, enable : Bool) : Void
       if @@mb_set_slot_enabled_left.null?
         @@mb_set_slot_enabled_left = Bridge.get_method_bind("GraphNode", "set_slot_enabled_left", 300928843_i64)
@@ -7609,7 +7003,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_slot_enabled_left, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_set_slot_type_left : Void* = Pointer(Void).null
-    # Sets the left (input) type of the slot with the given `slot_index` to `type`. If the value is negative, all connections will be disallowed to be created via user inputs.
     def set_slot_type_left(slot_index : Int64, get_type : Int64) : Void
       if @@mb_set_slot_type_left.null?
         @@mb_set_slot_type_left = Bridge.get_method_bind("GraphNode", "set_slot_type_left", 3937882851_i64)
@@ -7622,7 +7015,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_slot_type_left, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_slot_type_left : Void* = Pointer(Void).null
-    # Returns the left (input) type of the slot with the given `slot_index`.
     def get_slot_type_left(slot_index : Int64) : Int64
       if @@mb_get_slot_type_left.null?
         @@mb_get_slot_type_left = Bridge.get_method_bind("GraphNode", "get_slot_type_left", 923996154_i64)
@@ -7635,7 +7027,6 @@ module Godot
       ret
     end
     @@mb_set_slot_color_left : Void* = Pointer(Void).null
-    # Sets the `Color` of the left (input) side of the slot with the given `slot_index` to `color`.
     def set_slot_color_left(slot_index : Int64, color : Color) : Void
       if @@mb_set_slot_color_left.null?
         @@mb_set_slot_color_left = Bridge.get_method_bind("GraphNode", "set_slot_color_left", 2878471219_i64)
@@ -7648,7 +7039,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_slot_color_left, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_slot_color_left : Void* = Pointer(Void).null
-    # Returns the left (input) `Color` of the slot with the given `slot_index`.
     def get_slot_color_left(slot_index : Int64) : Color
       if @@mb_get_slot_color_left.null?
         @@mb_get_slot_color_left = Bridge.get_method_bind("GraphNode", "get_slot_color_left", 3457211756_i64)
@@ -7661,7 +7051,6 @@ module Godot
       ret
     end
     @@mb_set_slot_custom_icon_left : Void* = Pointer(Void).null
-    # Sets the custom `Texture2D` of the left (input) side of the slot with the given `slot_index` to `custom_icon`.
     def set_slot_custom_icon_left(slot_index : Int64, custom_icon : Texture2D) : Void
       if @@mb_set_slot_custom_icon_left.null?
         @@mb_set_slot_custom_icon_left = Bridge.get_method_bind("GraphNode", "set_slot_custom_icon_left", 666127730_i64)
@@ -7674,7 +7063,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_slot_custom_icon_left, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_slot_custom_icon_left : Void* = Pointer(Void).null
-    # Returns the left (input) custom `Texture2D` of the slot with the given `slot_index`.
     def get_slot_custom_icon_left(slot_index : Int64) : Texture2D
       if @@mb_get_slot_custom_icon_left.null?
         @@mb_get_slot_custom_icon_left = Bridge.get_method_bind("GraphNode", "get_slot_custom_icon_left", 3536238170_i64)
@@ -7687,7 +7075,6 @@ module Godot
       Texture2D.new(ret_ptr)
     end
     @@mb_set_slot_metadata_left : Void* = Pointer(Void).null
-    # Sets the custom metadata for the left (input) side of the slot with the given `slot_index` to `value`.
     def set_slot_metadata_left(slot_index : Int64, value : Void*) : Void
       if @@mb_set_slot_metadata_left.null?
         @@mb_set_slot_metadata_left = Bridge.get_method_bind("GraphNode", "set_slot_metadata_left", 2152698145_i64)
@@ -7700,7 +7087,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_slot_metadata_left, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_slot_metadata_left : Void* = Pointer(Void).null
-    # Returns the left (input) metadata of the slot with the given `slot_index`.
     def get_slot_metadata_left(slot_index : Int64) : Void*
       if @@mb_get_slot_metadata_left.null?
         @@mb_get_slot_metadata_left = Bridge.get_method_bind("GraphNode", "get_slot_metadata_left", 4227898402_i64)
@@ -7715,7 +7101,6 @@ module Godot
       ret_ptr
     end
     @@mb_is_slot_enabled_right : Void* = Pointer(Void).null
-    # Returns `true` if right (output) side of the slot with the given `slot_index` is enabled.
     def is_slot_enabled_right(slot_index : Int64) : Bool
       if @@mb_is_slot_enabled_right.null?
         @@mb_is_slot_enabled_right = Bridge.get_method_bind("GraphNode", "is_slot_enabled_right", 1116898809_i64)
@@ -7728,7 +7113,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_set_slot_enabled_right : Void* = Pointer(Void).null
-    # Toggles the right (output) side of the slot with the given `slot_index`. If `enable` is `true`, a port will appear on the right side and the slot will be able to be connected from this side.
     def set_slot_enabled_right(slot_index : Int64, enable : Bool) : Void
       if @@mb_set_slot_enabled_right.null?
         @@mb_set_slot_enabled_right = Bridge.get_method_bind("GraphNode", "set_slot_enabled_right", 300928843_i64)
@@ -7741,7 +7125,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_slot_enabled_right, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_set_slot_type_right : Void* = Pointer(Void).null
-    # Sets the right (output) type of the slot with the given `slot_index` to `type`. If the value is negative, all connections will be disallowed to be created via user inputs.
     def set_slot_type_right(slot_index : Int64, get_type : Int64) : Void
       if @@mb_set_slot_type_right.null?
         @@mb_set_slot_type_right = Bridge.get_method_bind("GraphNode", "set_slot_type_right", 3937882851_i64)
@@ -7754,7 +7137,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_slot_type_right, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_slot_type_right : Void* = Pointer(Void).null
-    # Returns the right (output) type of the slot with the given `slot_index`.
     def get_slot_type_right(slot_index : Int64) : Int64
       if @@mb_get_slot_type_right.null?
         @@mb_get_slot_type_right = Bridge.get_method_bind("GraphNode", "get_slot_type_right", 923996154_i64)
@@ -7767,7 +7149,6 @@ module Godot
       ret
     end
     @@mb_set_slot_color_right : Void* = Pointer(Void).null
-    # Sets the `Color` of the right (output) side of the slot with the given `slot_index` to `color`.
     def set_slot_color_right(slot_index : Int64, color : Color) : Void
       if @@mb_set_slot_color_right.null?
         @@mb_set_slot_color_right = Bridge.get_method_bind("GraphNode", "set_slot_color_right", 2878471219_i64)
@@ -7780,7 +7161,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_slot_color_right, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_slot_color_right : Void* = Pointer(Void).null
-    # Returns the right (output) `Color` of the slot with the given `slot_index`.
     def get_slot_color_right(slot_index : Int64) : Color
       if @@mb_get_slot_color_right.null?
         @@mb_get_slot_color_right = Bridge.get_method_bind("GraphNode", "get_slot_color_right", 3457211756_i64)
@@ -7793,7 +7173,6 @@ module Godot
       ret
     end
     @@mb_set_slot_custom_icon_right : Void* = Pointer(Void).null
-    # Sets the custom `Texture2D` of the right (output) side of the slot with the given `slot_index` to `custom_icon`.
     def set_slot_custom_icon_right(slot_index : Int64, custom_icon : Texture2D) : Void
       if @@mb_set_slot_custom_icon_right.null?
         @@mb_set_slot_custom_icon_right = Bridge.get_method_bind("GraphNode", "set_slot_custom_icon_right", 666127730_i64)
@@ -7806,7 +7185,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_slot_custom_icon_right, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_slot_custom_icon_right : Void* = Pointer(Void).null
-    # Returns the right (output) custom `Texture2D` of the slot with the given `slot_index`.
     def get_slot_custom_icon_right(slot_index : Int64) : Texture2D
       if @@mb_get_slot_custom_icon_right.null?
         @@mb_get_slot_custom_icon_right = Bridge.get_method_bind("GraphNode", "get_slot_custom_icon_right", 3536238170_i64)
@@ -7819,7 +7197,6 @@ module Godot
       Texture2D.new(ret_ptr)
     end
     @@mb_set_slot_metadata_right : Void* = Pointer(Void).null
-    # Sets the custom metadata for the right (output) side of the slot with the given `slot_index` to `value`.
     def set_slot_metadata_right(slot_index : Int64, value : Void*) : Void
       if @@mb_set_slot_metadata_right.null?
         @@mb_set_slot_metadata_right = Bridge.get_method_bind("GraphNode", "set_slot_metadata_right", 2152698145_i64)
@@ -7832,7 +7209,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_slot_metadata_right, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_slot_metadata_right : Void* = Pointer(Void).null
-    # Returns the right (output) metadata of the slot with the given `slot_index`.
     def get_slot_metadata_right(slot_index : Int64) : Void*
       if @@mb_get_slot_metadata_right.null?
         @@mb_get_slot_metadata_right = Bridge.get_method_bind("GraphNode", "get_slot_metadata_right", 4227898402_i64)
@@ -7847,7 +7223,6 @@ module Godot
       ret_ptr
     end
     @@mb_is_slot_draw_stylebox : Void* = Pointer(Void).null
-    # Returns `true` if the background `StyleBox` of the slot with the given `slot_index` is drawn.
     def is_slot_draw_stylebox(slot_index : Int64) : Bool
       if @@mb_is_slot_draw_stylebox.null?
         @@mb_is_slot_draw_stylebox = Bridge.get_method_bind("GraphNode", "is_slot_draw_stylebox", 1116898809_i64)
@@ -7860,7 +7235,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_set_slot_draw_stylebox : Void* = Pointer(Void).null
-    # Toggles the background `StyleBox` of the slot with the given `slot_index`.
     def set_slot_draw_stylebox(slot_index : Int64, enable : Bool) : Void
       if @@mb_set_slot_draw_stylebox.null?
         @@mb_set_slot_draw_stylebox = Bridge.get_method_bind("GraphNode", "set_slot_draw_stylebox", 300928843_i64)
@@ -7911,7 +7285,6 @@ module Godot
       ret
     end
     @@mb_get_input_port_count : Void* = Pointer(Void).null
-    # Returns the number of slots with an enabled input port.
     def get_input_port_count() : Int64
       if @@mb_get_input_port_count.null?
         @@mb_get_input_port_count = Bridge.get_method_bind("GraphNode", "get_input_port_count", 2455072627_i64)
@@ -7921,7 +7294,6 @@ module Godot
       ret
     end
     @@mb_get_input_port_position : Void* = Pointer(Void).null
-    # Returns the position of the input port with the given `port_idx`.
     def get_input_port_position(port_idx : Int64) : Vector2
       if @@mb_get_input_port_position.null?
         @@mb_get_input_port_position = Bridge.get_method_bind("GraphNode", "get_input_port_position", 3114997196_i64)
@@ -7934,7 +7306,6 @@ module Godot
       ret
     end
     @@mb_get_input_port_type : Void* = Pointer(Void).null
-    # Returns the type of the input port with the given `port_idx`.
     def get_input_port_type(port_idx : Int64) : Int64
       if @@mb_get_input_port_type.null?
         @@mb_get_input_port_type = Bridge.get_method_bind("GraphNode", "get_input_port_type", 3744713108_i64)
@@ -7947,7 +7318,6 @@ module Godot
       ret
     end
     @@mb_get_input_port_color : Void* = Pointer(Void).null
-    # Returns the `Color` of the input port with the given `port_idx`.
     def get_input_port_color(port_idx : Int64) : Color
       if @@mb_get_input_port_color.null?
         @@mb_get_input_port_color = Bridge.get_method_bind("GraphNode", "get_input_port_color", 2624840992_i64)
@@ -7960,7 +7330,6 @@ module Godot
       ret
     end
     @@mb_get_input_port_slot : Void* = Pointer(Void).null
-    # Returns the corresponding slot index of the input port with the given `port_idx`.
     def get_input_port_slot(port_idx : Int64) : Int64
       if @@mb_get_input_port_slot.null?
         @@mb_get_input_port_slot = Bridge.get_method_bind("GraphNode", "get_input_port_slot", 3744713108_i64)
@@ -7973,7 +7342,6 @@ module Godot
       ret
     end
     @@mb_get_output_port_count : Void* = Pointer(Void).null
-    # Returns the number of slots with an enabled output port.
     def get_output_port_count() : Int64
       if @@mb_get_output_port_count.null?
         @@mb_get_output_port_count = Bridge.get_method_bind("GraphNode", "get_output_port_count", 2455072627_i64)
@@ -7983,7 +7351,6 @@ module Godot
       ret
     end
     @@mb_get_output_port_position : Void* = Pointer(Void).null
-    # Returns the position of the output port with the given `port_idx`.
     def get_output_port_position(port_idx : Int64) : Vector2
       if @@mb_get_output_port_position.null?
         @@mb_get_output_port_position = Bridge.get_method_bind("GraphNode", "get_output_port_position", 3114997196_i64)
@@ -7996,7 +7363,6 @@ module Godot
       ret
     end
     @@mb_get_output_port_type : Void* = Pointer(Void).null
-    # Returns the type of the output port with the given `port_idx`.
     def get_output_port_type(port_idx : Int64) : Int64
       if @@mb_get_output_port_type.null?
         @@mb_get_output_port_type = Bridge.get_method_bind("GraphNode", "get_output_port_type", 3744713108_i64)
@@ -8009,7 +7375,6 @@ module Godot
       ret
     end
     @@mb_get_output_port_color : Void* = Pointer(Void).null
-    # Returns the `Color` of the output port with the given `port_idx`.
     def get_output_port_color(port_idx : Int64) : Color
       if @@mb_get_output_port_color.null?
         @@mb_get_output_port_color = Bridge.get_method_bind("GraphNode", "get_output_port_color", 2624840992_i64)
@@ -8022,7 +7387,6 @@ module Godot
       ret
     end
     @@mb_get_output_port_slot : Void* = Pointer(Void).null
-    # Returns the corresponding slot index of the output port with the given `port_idx`.
     def get_output_port_slot(port_idx : Int64) : Int64
       if @@mb_get_output_port_slot.null?
         @@mb_get_output_port_slot = Bridge.get_method_bind("GraphNode", "get_output_port_slot", 3744713108_i64)
@@ -8035,10 +7399,6 @@ module Godot
       ret
     end
   end
-  # A container that arranges its child controls in a grid layout.
-  #
-  # `GridContainer` arranges its child controls in a grid layout. The number of columns is specified by the `columns` property, whereas the number of rows depends on how many are needed for the child controls. The number of rows and columns is preserved for every size of the container.
-  # **Note:** `GridContainer` only works with child nodes inheriting from `Control`. It won't rearrange child nodes inheriting from `Node2D`.
   class GridContainer < Godot::Container
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -8063,13 +7423,6 @@ module Godot
       ret
     end
   end
-  # Node for 3D tile-based maps.
-  #
-  # GridMap lets you place meshes on a grid interactively. It works both from the editor and from scripts, which can help you create in-game level editors.
-  # GridMaps use a `MeshLibrary` which contains a list of tiles. Each tile is a mesh with materials plus optional collision and navigation shapes.
-  # A GridMap contains a collection of cells. Each grid cell refers to a tile in the `MeshLibrary`. All cells in the map have the same dimensions.
-  # Internally, a GridMap is split into a sparse collection of octants for efficient rendering and physics processing. Every octant has the same dimensions and can contain several cells.
-  # **Note:** GridMap doesn't extend `VisualInstance3D` and therefore can't be hidden or cull masked based on `VisualInstance3D.layers`. If you make a light not affect the first layer, the whole GridMap won't be lit by the light in question.
   class GridMap < Godot::Node3D
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -8118,7 +7471,6 @@ module Godot
       ret
     end
     @@mb_set_collision_mask_value : Void* = Pointer(Void).null
-    # Based on `value`, enables or disables the specified layer in the `collision_mask`, given a `layer_number` between 1 and 32.
     def set_collision_mask_value(layer_number : Int64, value : Bool) : Void
       if @@mb_set_collision_mask_value.null?
         @@mb_set_collision_mask_value = Bridge.get_method_bind("GridMap", "set_collision_mask_value", 300928843_i64)
@@ -8131,7 +7483,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_collision_mask_value, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_collision_mask_value : Void* = Pointer(Void).null
-    # Returns whether or not the specified layer of the `collision_mask` is enabled, given a `layer_number` between 1 and 32.
     def get_collision_mask_value(layer_number : Int64) : Bool
       if @@mb_get_collision_mask_value.null?
         @@mb_get_collision_mask_value = Bridge.get_method_bind("GridMap", "get_collision_mask_value", 1116898809_i64)
@@ -8144,7 +7495,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_set_collision_layer_value : Void* = Pointer(Void).null
-    # Based on `value`, enables or disables the specified layer in the `collision_layer`, given a `layer_number` between 1 and 32.
     def set_collision_layer_value(layer_number : Int64, value : Bool) : Void
       if @@mb_set_collision_layer_value.null?
         @@mb_set_collision_layer_value = Bridge.get_method_bind("GridMap", "set_collision_layer_value", 300928843_i64)
@@ -8157,7 +7507,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_collision_layer_value, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_collision_layer_value : Void* = Pointer(Void).null
-    # Returns whether or not the specified layer of the `collision_layer` is enabled, given a `layer_number` between 1 and 32.
     def get_collision_layer_value(layer_number : Int64) : Bool
       if @@mb_get_collision_layer_value.null?
         @@mb_get_collision_layer_value = Bridge.get_method_bind("GridMap", "get_collision_layer_value", 1116898809_i64)
@@ -8246,7 +7595,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_set_navigation_map : Void* = Pointer(Void).null
-    # Sets the `RID` of the navigation map this GridMap node should use for its cell baked navigation meshes.
     def set_navigation_map(navigation_map : Int64) : Void
       if @@mb_set_navigation_map.null?
         @@mb_set_navigation_map = Bridge.get_method_bind("GridMap", "set_navigation_map", 2722037293_i64)
@@ -8257,8 +7605,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_navigation_map, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_navigation_map : Void* = Pointer(Void).null
-    # Returns the `RID` of the navigation map this GridMap node uses for its cell baked navigation meshes.
-    # This function returns always the map set on the GridMap node and not the map on the NavigationServer. If the map is changed directly with the NavigationServer API the GridMap node will not be aware of the map change.
     def get_navigation_map() : Int64
       if @@mb_get_navigation_map.null?
         @@mb_get_navigation_map = Bridge.get_method_bind("GridMap", "get_navigation_map", 2944877500_i64)
@@ -8344,9 +7690,6 @@ module Godot
       ret
     end
     @@mb_set_cell_item : Void* = Pointer(Void).null
-    # Sets the mesh index for the cell referenced by its grid coordinates.
-    # A negative item index such as `INVALID_CELL_ITEM` will clear the cell.
-    # Optionally, the item's orientation can be passed. For valid orientation values, see `#get_orthogonal_index_from_basis`.
     def set_cell_item(position : Vector3i, item : Int64, orientation : Int64) : Void
       if @@mb_set_cell_item.null?
         @@mb_set_cell_item = Bridge.get_method_bind("GridMap", "set_cell_item", 3449088946_i64)
@@ -8361,7 +7704,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_cell_item, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_cell_item : Void* = Pointer(Void).null
-    # The `MeshLibrary` item index located at the given grid coordinates. If the cell is empty, `INVALID_CELL_ITEM` will be returned.
     def get_cell_item(position : Vector3i) : Int64
       if @@mb_get_cell_item.null?
         @@mb_get_cell_item = Bridge.get_method_bind("GridMap", "get_cell_item", 3724960147_i64)
@@ -8374,7 +7716,6 @@ module Godot
       ret
     end
     @@mb_get_cell_item_orientation : Void* = Pointer(Void).null
-    # The orientation of the cell at the given grid coordinates. `-1` is returned if the cell is empty.
     def get_cell_item_orientation(position : Vector3i) : Int64
       if @@mb_get_cell_item_orientation.null?
         @@mb_get_cell_item_orientation = Bridge.get_method_bind("GridMap", "get_cell_item_orientation", 3724960147_i64)
@@ -8387,7 +7728,6 @@ module Godot
       ret
     end
     @@mb_get_cell_item_basis : Void* = Pointer(Void).null
-    # Returns the basis that gives the specified cell its orientation.
     def get_cell_item_basis(position : Vector3i) : Basis
       if @@mb_get_cell_item_basis.null?
         @@mb_get_cell_item_basis = Bridge.get_method_bind("GridMap", "get_cell_item_basis", 3493604918_i64)
@@ -8400,7 +7740,6 @@ module Godot
       Basis.new(ret_ptr)
     end
     @@mb_get_basis_with_orthogonal_index : Void* = Pointer(Void).null
-    # Returns one of 24 possible rotations that lie along the vectors (x,y,z) with each component being either -1, 0, or 1. For further details, refer to the Godot source code.
     def get_basis_with_orthogonal_index(index : Int64) : Basis
       if @@mb_get_basis_with_orthogonal_index.null?
         @@mb_get_basis_with_orthogonal_index = Bridge.get_method_bind("GridMap", "get_basis_with_orthogonal_index", 2816196998_i64)
@@ -8413,7 +7752,6 @@ module Godot
       Basis.new(ret_ptr)
     end
     @@mb_get_orthogonal_index_from_basis : Void* = Pointer(Void).null
-    # This function considers a discretization of rotations into 24 points on unit sphere, lying along the vectors (x,y,z) with each component being either -1, 0, or 1, and returns the index (in the range from 0 to 23) of the point best representing the orientation of the object. For further details, refer to the Godot source code.
     def get_orthogonal_index_from_basis(basis : Basis) : Int64
       if @@mb_get_orthogonal_index_from_basis.null?
         @@mb_get_orthogonal_index_from_basis = Bridge.get_method_bind("GridMap", "get_orthogonal_index_from_basis", 4210359952_i64)
@@ -8426,7 +7764,6 @@ module Godot
       ret
     end
     @@mb_local_to_map : Void* = Pointer(Void).null
-    # Returns the map coordinates of the cell containing the given `local_position`. If `local_position` is in global coordinates, consider using `#Node3D.to_local` before passing it to this method. See also `#map_to_local`.
     def local_to_map(local_position : Vector3) : Vector3i
       if @@mb_local_to_map.null?
         @@mb_local_to_map = Bridge.get_method_bind("GridMap", "local_to_map", 1257687843_i64)
@@ -8439,7 +7776,6 @@ module Godot
       Vector3i.new(ret_ptr)
     end
     @@mb_map_to_local : Void* = Pointer(Void).null
-    # Returns the position of a grid cell in the GridMap's local coordinate space. The returned position is centered according to the values of `cell_center_x`, `cell_center_y`, and `cell_center_z`. To convert the returned value into global coordinates, use `#Node3D.to_global`. See also `#local_to_map`.
     def map_to_local(map_position : Vector3i) : Vector3
       if @@mb_map_to_local.null?
         @@mb_map_to_local = Bridge.get_method_bind("GridMap", "map_to_local", 1088329196_i64)
@@ -8452,7 +7788,6 @@ module Godot
       ret
     end
     @@mb_resource_changed : Void* = Pointer(Void).null
-    # This method does nothing.
     def resource_changed(resource : Resource) : Void
       if @@mb_resource_changed.null?
         @@mb_resource_changed = Bridge.get_method_bind("GridMap", "resource_changed", 968641751_i64)
@@ -8520,7 +7855,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_clear : Void* = Pointer(Void).null
-    # Clear all cells.
     def clear() : Void
       if @@mb_clear.null?
         @@mb_clear = Bridge.get_method_bind("GridMap", "clear", 3218959716_i64)
@@ -8528,7 +7862,6 @@ module Godot
       Bridge.ptrcall(@@mb_clear, @pointer, Pointer(Pointer(Void)).null, Pointer(Void).null)
     end
     @@mb_get_used_cells : Void* = Pointer(Void).null
-    # Returns an array of `Vector3` with the non-empty cell coordinates in the grid map.
     def get_used_cells() : Godot::Array
       if @@mb_get_used_cells.null?
         @@mb_get_used_cells = Bridge.get_method_bind("GridMap", "get_used_cells", 3995934104_i64)
@@ -8538,7 +7871,6 @@ module Godot
       Godot::Array.new(ret_ptr)
     end
     @@mb_get_used_cells_by_item : Void* = Pointer(Void).null
-    # Returns an array of all cells with the given item index specified in `item`.
     def get_used_cells_by_item(item : Int64) : Godot::Array
       if @@mb_get_used_cells_by_item.null?
         @@mb_get_used_cells_by_item = Bridge.get_method_bind("GridMap", "get_used_cells_by_item", 663333327_i64)
@@ -8551,7 +7883,6 @@ module Godot
       Godot::Array.new(ret_ptr)
     end
     @@mb_get_used_octants : Void* = Pointer(Void).null
-    # Returns an array of `Vector3i`s with the octant coordinates of the non-empty octants in the grid map.
     def get_used_octants() : Godot::Array
       if @@mb_get_used_octants.null?
         @@mb_get_used_octants = Bridge.get_method_bind("GridMap", "get_used_octants", 3995934104_i64)
@@ -8561,7 +7892,6 @@ module Godot
       Godot::Array.new(ret_ptr)
     end
     @@mb_get_used_octants_by_item : Void* = Pointer(Void).null
-    # Returns an array of `Vector3i`s with the octant coordinates of the octants that use the specified `item` in the grid map.
     def get_used_octants_by_item(item : Int64) : Godot::Array
       if @@mb_get_used_octants_by_item.null?
         @@mb_get_used_octants_by_item = Bridge.get_method_bind("GridMap", "get_used_octants_by_item", 663333327_i64)
@@ -8574,7 +7904,6 @@ module Godot
       Godot::Array.new(ret_ptr)
     end
     @@mb_get_used_cells_in_octant : Void* = Pointer(Void).null
-    # Returns an array of `Vector3i`s with the cell coordinates of non-empty cells inside the octant at `octant_coords`.
     def get_used_cells_in_octant(octant_coords : Vector3i) : Godot::Array
       if @@mb_get_used_cells_in_octant.null?
         @@mb_get_used_cells_in_octant = Bridge.get_method_bind("GridMap", "get_used_cells_in_octant", 2658725580_i64)
@@ -8587,7 +7916,6 @@ module Godot
       Godot::Array.new(ret_ptr)
     end
     @@mb_get_used_cells_in_octant_by_item : Void* = Pointer(Void).null
-    # Returns an array of `Vector3i`s with the cell coordinates of cells inside the octant at `octant_coords` that use the specified cell `item`.
     def get_used_cells_in_octant_by_item(octant_coords : Vector3i, item : Int64) : Godot::Array
       if @@mb_get_used_cells_in_octant_by_item.null?
         @@mb_get_used_cells_in_octant_by_item = Bridge.get_method_bind("GridMap", "get_used_cells_in_octant_by_item", 2384667821_i64)
@@ -8602,7 +7930,6 @@ module Godot
       Godot::Array.new(ret_ptr)
     end
     @@mb_get_octants_in_bounds : Void* = Pointer(Void).null
-    # Returns an array of `Vector3i` octant coordinates that are inside the given `bounds`, including octants that have no cells in use.
     def get_octants_in_bounds(bounds : AABB) : Godot::Array
       if @@mb_get_octants_in_bounds.null?
         @@mb_get_octants_in_bounds = Bridge.get_method_bind("GridMap", "get_octants_in_bounds", 2489849902_i64)
@@ -8615,7 +7942,6 @@ module Godot
       Godot::Array.new(ret_ptr)
     end
     @@mb_get_used_octants_in_bounds : Void* = Pointer(Void).null
-    # Returns an array of `Vector3i`s with the octant coordinates of non-empty octants that are inside the local `bounds`.
     def get_used_octants_in_bounds(bounds : AABB) : Godot::Array
       if @@mb_get_used_octants_in_bounds.null?
         @@mb_get_used_octants_in_bounds = Bridge.get_method_bind("GridMap", "get_used_octants_in_bounds", 2489849902_i64)
@@ -8628,7 +7954,6 @@ module Godot
       Godot::Array.new(ret_ptr)
     end
     @@mb_get_octant_coords_from_cell_coords : Void* = Pointer(Void).null
-    # Returns the `Vector3i` octant coordinates of the octant that the cell at `cell_coords` belongs to.
     def get_octant_coords_from_cell_coords(cell_coords : Vector3i) : Vector3i
       if @@mb_get_octant_coords_from_cell_coords.null?
         @@mb_get_octant_coords_from_cell_coords = Bridge.get_method_bind("GridMap", "get_octant_coords_from_cell_coords", 2075501597_i64)
@@ -8641,7 +7966,6 @@ module Godot
       Vector3i.new(ret_ptr)
     end
     @@mb_get_meshes : Void* = Pointer(Void).null
-    # Returns an array of `Transform3D` and `Mesh` references corresponding to the non-empty cells in the grid. The transforms are specified in local space. Even indices contain `Transform3D`s, while odd indices contain `Mesh`es related to the `Transform3D` in the index preceding it.
     def get_meshes() : Godot::Array
       if @@mb_get_meshes.null?
         @@mb_get_meshes = Bridge.get_method_bind("GridMap", "get_meshes", 3995934104_i64)
@@ -8651,8 +7975,6 @@ module Godot
       Godot::Array.new(ret_ptr)
     end
     @@mb_get_bake_meshes : Void* = Pointer(Void).null
-    # Returns an array of `ArrayMesh`es and `Transform3D` references of all bake meshes that exist within the current GridMap. Even indices contain `ArrayMesh`es, while odd indices contain `Transform3D`s that are always equal to `Transform3D.IDENTITY`.
-    # This method relies on the output of `#make_baked_meshes`, which will be called with `gen_lightmap_uv` set to `true` and `lightmap_uv_texel_size` set to `0.1` if it hasn't been called yet.
     def get_bake_meshes() : Godot::Array
       if @@mb_get_bake_meshes.null?
         @@mb_get_bake_meshes = Bridge.get_method_bind("GridMap", "get_bake_meshes", 2915620761_i64)
@@ -8662,7 +7984,6 @@ module Godot
       Godot::Array.new(ret_ptr)
     end
     @@mb_get_bake_mesh_instance : Void* = Pointer(Void).null
-    # Returns `RID` of a baked mesh with the given `idx`.
     def get_bake_mesh_instance(idx : Int64) : Int64
       if @@mb_get_bake_mesh_instance.null?
         @@mb_get_bake_mesh_instance = Bridge.get_method_bind("GridMap", "get_bake_mesh_instance", 937000113_i64)
@@ -8675,7 +7996,6 @@ module Godot
       ret
     end
     @@mb_clear_baked_meshes : Void* = Pointer(Void).null
-    # Clears all baked meshes. See `#make_baked_meshes`.
     def clear_baked_meshes() : Void
       if @@mb_clear_baked_meshes.null?
         @@mb_clear_baked_meshes = Bridge.get_method_bind("GridMap", "clear_baked_meshes", 3218959716_i64)
@@ -8683,8 +8003,6 @@ module Godot
       Bridge.ptrcall(@@mb_clear_baked_meshes, @pointer, Pointer(Pointer(Void)).null, Pointer(Void).null)
     end
     @@mb_make_baked_meshes : Void* = Pointer(Void).null
-    # Generates a baked mesh that represents all meshes in the assigned `MeshLibrary` for use with `LightmapGI`. If `gen_lightmap_uv` is `true`, UV2 data will be generated for each mesh currently used in the `GridMap`. Otherwise, only meshes that already have UV2 data present will be able to use baked lightmaps. When generating UV2, `lightmap_uv_texel_size` controls the texel density for lightmaps, with lower values resulting in more detailed lightmaps. `lightmap_uv_texel_size` is ignored if `gen_lightmap_uv` is `false`. See also `#get_bake_meshes`, which relies on the output of this method.
-    # **Note:** Calling this method will not actually bake lightmaps, as lightmap baking is performed using the `LightmapGI` node.
     def make_baked_meshes(gen_lightmap_uv : Bool, lightmap_uv_texel_size : Float64) : Void
       if @@mb_make_baked_meshes.null?
         @@mb_make_baked_meshes = Bridge.get_method_bind("GridMap", "make_baked_meshes", 3609286057_i64)
@@ -8735,15 +8053,11 @@ module Godot
       ret
     end
   end
-  # Editor for `GridMap` nodes.
-  #
-  # GridMapEditorPlugin provides access to the `GridMap` editor functionality.
   class GridMapEditorPlugin < Godot::EditorPlugin
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
     end
     @@mb_get_current_grid_map : Void* = Pointer(Void).null
-    # Returns the `GridMap` node currently edited by the grid map editor.
     def get_current_grid_map() : GridMap
       if @@mb_get_current_grid_map.null?
         @@mb_get_current_grid_map = Bridge.get_method_bind("GridMapEditorPlugin", "get_current_grid_map", 1184264483_i64)
@@ -8753,7 +8067,6 @@ module Godot
       GridMap.new(ret_ptr)
     end
     @@mb_set_selection : Void* = Pointer(Void).null
-    # Selects the cells inside the given bounds from `begin` to `end`.
     def set_selection(begin_val : Vector3i, end_val : Vector3i) : Void
       if @@mb_set_selection.null?
         @@mb_set_selection = Bridge.get_method_bind("GridMapEditorPlugin", "set_selection", 3659408297_i64)
@@ -8766,7 +8079,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_selection, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_clear_selection : Void* = Pointer(Void).null
-    # Deselects any currently selected cells.
     def clear_selection() : Void
       if @@mb_clear_selection.null?
         @@mb_clear_selection = Bridge.get_method_bind("GridMapEditorPlugin", "clear_selection", 3218959716_i64)
@@ -8774,7 +8086,6 @@ module Godot
       Bridge.ptrcall(@@mb_clear_selection, @pointer, Pointer(Pointer(Void)).null, Pointer(Void).null)
     end
     @@mb_get_selection : Void* = Pointer(Void).null
-    # Returns the cell coordinate bounds of the current selection. Use `#has_selection` to check if there is an active selection.
     def get_selection() : AABB
       if @@mb_get_selection.null?
         @@mb_get_selection = Bridge.get_method_bind("GridMapEditorPlugin", "get_selection", 1068685055_i64)
@@ -8784,7 +8095,6 @@ module Godot
       AABB.new(ret_ptr)
     end
     @@mb_has_selection : Void* = Pointer(Void).null
-    # Returns `true` if there are selected cells.
     def has_selection() : Bool
       if @@mb_has_selection.null?
         @@mb_has_selection = Bridge.get_method_bind("GridMapEditorPlugin", "has_selection", 36873697_i64)
@@ -8794,7 +8104,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_get_selected_cells : Void* = Pointer(Void).null
-    # Returns an array of `Vector3i`s with the selected cells' coordinates.
     def get_selected_cells() : Godot::Array
       if @@mb_get_selected_cells.null?
         @@mb_get_selected_cells = Bridge.get_method_bind("GridMapEditorPlugin", "get_selected_cells", 3995934104_i64)
@@ -8804,8 +8113,6 @@ module Godot
       Godot::Array.new(ret_ptr)
     end
     @@mb_set_selected_palette_item : Void* = Pointer(Void).null
-    # Selects the `MeshLibrary` item with the given index in the grid map editor's palette. If a negative index is given, no item will be selected. If a value greater than the last index is given, the last item will be selected.
-    # **Note:** The indices might not be in the same order as they appear in the editor's interface.
     def set_selected_palette_item(item : Int64) : Void
       if @@mb_set_selected_palette_item.null?
         @@mb_set_selected_palette_item = Bridge.get_method_bind("GridMapEditorPlugin", "set_selected_palette_item", 998575451_i64)
@@ -8816,8 +8123,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_selected_palette_item, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_selected_palette_item : Void* = Pointer(Void).null
-    # Returns the index of the selected `MeshLibrary` item in the grid map editor's palette or `-1` if no item is selected.
-    # **Note:** The indices might not be in the same order as they appear in the editor's interface.
     def get_selected_palette_item() : Int64
       if @@mb_get_selected_palette_item.null?
         @@mb_get_selected_palette_item = Bridge.get_method_bind("GridMapEditorPlugin", "get_selected_palette_item", 3905245786_i64)
@@ -8827,9 +8132,6 @@ module Godot
       ret
     end
   end
-  # A physics joint that restricts the movement of two 2D physics bodies to a fixed axis.
-  #
-  # A physics joint that restricts the movement of two 2D physics bodies to a fixed axis. For example, a `StaticBody2D` representing a piston base can be attached to a `RigidBody2D` representing the piston head, moving up and down.
   class GrooveJoint2D < Godot::Joint2D
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -8873,70 +8175,16 @@ module Godot
       ret
     end
   end
-  # A container that arranges its child controls horizontally and wraps them around at the borders.
-  #
-  # A variant of `FlowContainer` that can only arrange its child controls horizontally, wrapping them around at the borders. This is similar to how text in a book wraps around when no more words can fit on a line.
   class HFlowContainer < Godot::FlowContainer
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
     end
   end
-  # Used to create an HMAC for a message using a key.
-  #
-  # The HMACContext class is useful for advanced HMAC use cases, such as streaming the message as it supports creating the message over time rather than providing it all at once.
-  #
-  # ```gdscript
-  #
-  # extends Node
-  # var ctx = HMACContext.new()
-  #
-  # func _ready():
-  # 	var key = "supersecret".to_utf8_buffer()
-  # 	var err = ctx.start(HashingContext.HASH_SHA256, key)
-  # 	assert(err == OK)
-  # 	var msg1 = "this is ".to_utf8_buffer()
-  # 	var msg2 = "super duper secret".to_utf8_buffer()
-  # 	err = ctx.update(msg1)
-  # 	assert(err == OK)
-  # 	err = ctx.update(msg2)
-  # 	assert(err == OK)
-  # 	var hmac = ctx.finish()
-  # 	print(hmac.hex_encode())
-  #
-  #
-  # ```
-  # ```csharp
-  #
-  # using Godot;
-  # using System.Diagnostics;
-  #
-  # public partial class MyNode : Node
-  # {
-  # 	private HmacContext _ctx = new HmacContext();
-  #
-  # 	public override void _Ready()
-  # 	{
-  # 		byte[] key = "supersecret".ToUtf8Buffer();
-  # 		Error err = _ctx.Start(HashingContext.HashType.Sha256, key);
-  # 		Debug.Assert(err == Error.Ok);
-  # 		byte[] msg1 = "this is ".ToUtf8Buffer();
-  # 		byte[] msg2 = "super duper secret".ToUtf8Buffer();
-  # 		err = _ctx.Update(msg1);
-  # 		Debug.Assert(err == Error.Ok);
-  # 		err = _ctx.Update(msg2);
-  # 		Debug.Assert(err == Error.Ok);
-  # 		byte[] hmac = _ctx.Finish();
-  # 		GD.Print(hmac.HexEncode());
-  # 	}
-  # }
-  #
-  # ```
   class HMACContext < Godot::RefCounted
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
     end
     @@mb_start : Void* = Pointer(Void).null
-    # Initializes the HMACContext. This method cannot be called again on the same HMACContext until `#finish` has been called.
     def start(hash_type : Int64, key : Void*) : Int64
       if @@mb_start.null?
         @@mb_start = Bridge.get_method_bind("HMACContext", "start", 3537364598_i64)
@@ -8951,7 +8199,6 @@ module Godot
       ret
     end
     @@mb_update : Void* = Pointer(Void).null
-    # Updates the message to be HMACed. This can be called multiple times before `#finish` is called to append `data` to the message, but cannot be called until `#start` has been called.
     def update(data : Void*) : Int64
       if @@mb_update.null?
         @@mb_update = Bridge.get_method_bind("HMACContext", "update", 680677267_i64)
@@ -8964,7 +8211,6 @@ module Godot
       ret
     end
     @@mb_finish : Void* = Pointer(Void).null
-    # Returns the resulting HMAC. If the HMAC failed, an empty `PackedByteArray` is returned.
     def finish() : Void*
       if @@mb_finish.null?
         @@mb_finish = Bridge.get_method_bind("HMACContext", "finish", 2115431945_i64)
@@ -8974,9 +8220,6 @@ module Godot
       ret_ptr
     end
   end
-  # Abstract base class for scrollbars.
-  #
-  # Abstract base class for scrollbars, typically used to navigate through content that extends beyond the visible area of a control. Scrollbars are `Range`-based controls.
   class ScrollBar < Godot::Range
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -9001,33 +8244,21 @@ module Godot
       ret
     end
   end
-  # A horizontal scrollbar that goes from left (min) to right (max).
-  #
-  # A horizontal scrollbar, typically used to navigate through content that extends beyond the visible width of a control. It is a `Range`-based control and goes from left (min) to right (max).
   class HScrollBar < Godot::ScrollBar
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
     end
   end
-  # Abstract base class for separators.
-  #
-  # Abstract base class for separators, used for separating other controls. `Separator`s are purely visual and normally drawn as a `StyleBoxLine`.
   class Separator < Godot::Control
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
     end
   end
-  # A horizontal line used for separating other controls.
-  #
-  # A horizontal separator used for separating other controls that are arranged **vertically**. `HSeparator` is purely visual and normally drawn as a `StyleBoxLine`.
   class HSeparator < Godot::Separator
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
     end
   end
-  # Abstract base class for sliders.
-  #
-  # Abstract base class for sliders, used to adjust a value by moving a grabber along a horizontal or vertical axis. Sliders are `Range`-based controls.
   class Slider < Godot::Range
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -9134,17 +8365,11 @@ module Godot
       ret != 0_u8
     end
   end
-  # A horizontal slider that goes from left (min) to right (max).
-  #
-  # A horizontal slider, used to adjust a value by moving a grabber along a horizontal axis. It is a `Range`-based control and goes from left (min) to right (max).
   class HSlider < Godot::Slider
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
     end
   end
-  # A container that arranges child controls horizontally or vertically and provides grabbers for adjusting the split ratios between them.
-  #
-  # A container that arranges child controls horizontally or vertically and creates grabbers between them. The grabbers can be dragged around to change the size relations between the child controls.
   class SplitContainer < Godot::Container
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -9174,7 +8399,6 @@ module Godot
       ret_ptr
     end
     @@mb_clamp_split_offset : Void* = Pointer(Void).null
-    # Clamps the `split_offsets` values to ensure they are within valid ranges and do not overlap with each other. When overlaps occur, this method prioritizes one split offset (at index `priority_index`) by clamping any overlapping split offsets to it.
     def clamp_split_offset(priority_index : Int64) : Void
       if @@mb_clamp_split_offset.null?
         @@mb_clamp_split_offset = Bridge.get_method_bind("SplitContainer", "clamp_split_offset", 1995695955_i64)
@@ -9337,14 +8561,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_get_drag_area_controls : Void* = Pointer(Void).null
-    # Returns an `Array` of the drag area `Control`s. These are the interactable `Control` nodes between each child. For example, this can be used to add a pre-configured button to a drag area `Control` so that it rides along with the split bar. Try setting the `Button` anchors to `center` prior to the `#Node.reparent` call.
-    # ```gdscript
-    #
-    # $BarnacleButton.reparent($SplitContainer.get_drag_area_controls()`0`)
-    #
-    # ```
-    # **Note:** The drag area `Control`s are drawn over the `SplitContainer`'s children, so `CanvasItem` draw objects called from a drag area and children added to it will also appear over the `SplitContainer`'s children. Try setting `Control.mouse_filter` of custom children to `Control.MOUSE_FILTER_IGNORE` to prevent blocking the mouse from dragging if desired.
-    # **Warning:** These are required internal nodes, removing or freeing them may cause a crash.
     def get_drag_area_controls() : Godot::Array
       if @@mb_get_drag_area_controls.null?
         @@mb_get_drag_area_controls = Bridge.get_method_bind("SplitContainer", "get_drag_area_controls", 2915620761_i64)
@@ -9392,14 +8608,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_get_drag_area_control : Void* = Pointer(Void).null
-    # Returns the drag area `Control`. For example, you can move a pre-configured button into the drag area `Control` so that it rides along with the split bar. Try setting the `Button` anchors to `center` prior to the `reparent()` call.
-    # ```gdscript
-    #
-    # $BarnacleButton.reparent($SplitContainer.get_drag_area_control())
-    #
-    # ```
-    # **Note:** The drag area `Control` is drawn over the `SplitContainer`'s children, so `CanvasItem` draw objects called from the `Control` and children added to the `Control` will also appear over the `SplitContainer`'s children. Try setting `Control.mouse_filter` of custom children to `Control.MOUSE_FILTER_IGNORE` to prevent blocking the mouse from dragging if desired.
-    # **Warning:** This is a required internal node, removing and freeing it may cause a crash.
     def get_drag_area_control() : Control
       if @@mb_get_drag_area_control.null?
         @@mb_get_drag_area_control = Bridge.get_method_bind("SplitContainer", "get_drag_area_control", 829782337_i64)
@@ -9428,26 +8636,11 @@ module Godot
       ret
     end
   end
-  # A container that splits two child controls horizontally and provides a grabber for adjusting the split ratio.
-  #
-  # A container that accepts only two child controls, then arranges them horizontally and creates a divisor between them. The divisor can be dragged around to change the size relation between the child controls.
   class HSplitContainer < Godot::SplitContainer
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
     end
   end
-  # Low-level hyper-text transfer protocol client.
-  #
-  # Hyper-text transfer protocol client (sometimes called "User Agent"). Used to make HTTP requests to download web content, upload files and other data or to communicate with various services, among other use cases.
-  # See the `HTTPRequest` node for a higher-level alternative.
-  # **Note:** This client only needs to connect to a host once (see `#connect_to_host`) to send multiple requests. Because of this, methods that take URLs usually take just the part after the host instead of the full URL, as the client is already connected to a host. See `#request` for a full example and to get started.
-  # An `HTTPClient` should be reused between multiple requests or to connect to different hosts instead of creating one client per request. Supports Transport Layer Security (TLS), including server certificate verification. HTTP status codes in the 2xx range indicate success, 3xx redirection (i.e. "try again, but over here"), 4xx something was wrong with the request, and 5xx something went wrong on the server's side.
-  # For more information on HTTP, see [$2]($1) (or read [$2]($1) to get it straight from the source).
-  # **Note:** When exporting to Android, make sure to enable the `INTERNET` permission in the Android export preset before exporting the project or using one-click deploy. Otherwise, network communication of any kind will be blocked by Android.
-  # **Note:** It's recommended to use transport encryption (TLS) and to avoid sending sensitive information (such as login credentials) in HTTP GET URL parameters. Consider using HTTP POST requests or HTTP headers for such information instead.
-  # **Note:** When performing HTTP requests from a project exported to Web, keep in mind the remote server may not allow requests from foreign origins due to [$2]($1). If you host the server in question, you should modify its backend to allow requests from foreign origins by adding the `Access-Control-Allow-Origin: *` HTTP header.
-  # **Note:** TLS support is currently limited to TLSv1.2 and TLSv1.3. Attempting to connect to a server that only supports older (insecure) TLS versions will return an error.
-  # **Warning:** TLS certificate revocation and certificate pinning are currently not supported. Revoked certificates are accepted as long as they are otherwise valid. If this is a concern, you may want to use automatically managed certificates with a short validity period.
   class HTTPClient < Godot::RefCounted
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -9540,8 +8733,6 @@ module Godot
       ResponseNetworkAuthRequired = 511_i64
     end
     @@mb_connect_to_host : Void* = Pointer(Void).null
-    # Connects to a host. This needs to be done before any requests are sent.
-    # If no `port` is specified (or `-1` is used), it is automatically set to 80 for HTTP and 443 for HTTPS. You can pass the optional `tls_options` parameter to customize the trusted certification authorities, or the common name verification when using HTTPS. See `#TLSOptions.client` and `#TLSOptions.client_unsafe`.
     def connect_to_host(host : String, port : Int64, tls_options : TLSOptions) : Int64
       if @@mb_connect_to_host.null?
         @@mb_connect_to_host = Bridge.get_method_bind("HTTPClient", "connect_to_host", 504540374_i64)
@@ -9579,10 +8770,6 @@ module Godot
       StreamPeer.new(ret_ptr)
     end
     @@mb_request_raw : Void* = Pointer(Void).null
-    # Sends a raw HTTP request to the connected host with the given `method`.
-    # The URL parameter is usually just the part after the host, so for `https://example.com/index.php`, it is `/index.php`. When sending requests to an HTTP proxy server, it should be an absolute URL. For `HTTPClient.METHOD_OPTIONS` requests, `*` is also allowed. For `HTTPClient.METHOD_CONNECT` requests, it should be the authority component (`host:port`).
-    # `headers` are HTTP request headers.
-    # Sends the body data raw, as a byte array and does not encode it in any way.
     def request_raw(method : Int64, url : String, headers : Void*, body : Void*) : Int64
       if @@mb_request_raw.null?
         @@mb_request_raw = Bridge.get_method_bind("HTTPClient", "request_raw", 540161961_i64)
@@ -9603,29 +8790,6 @@ module Godot
       Bridge.free_string(str_1)
     end
     @@mb_request : Void* = Pointer(Void).null
-    # Sends an HTTP request to the connected host with the given `method`.
-    # The URL parameter is usually just the part after the host, so for `https://example.com/index.php`, it is `/index.php`. When sending requests to an HTTP proxy server, it should be an absolute URL. For `HTTPClient.METHOD_OPTIONS` requests, `*` is also allowed. For `HTTPClient.METHOD_CONNECT` requests, it should be the authority component (`host:port`).
-    # `headers` are HTTP request headers.
-    # To create a POST request with query strings to push to the server, do:
-    #
-    # ```gdscript
-    #
-    # var fields = { "username": "user", "password": "pass" }
-    # var query_string = http_client.query_string_from_dict(fields)
-    # var headers = ["Content-Type: application/x-www-form-urlencoded", "Content-Length: " + str(query_string.length())]
-    # var result = http_client.request(http_client.METHOD_POST, "/index.php", headers, query_string)
-    #
-    # ```
-    # ```csharp
-    #
-    # var fields = new Godot.Collections.Dictionary { { "username", "user" }, { "password", "pass" } };
-    # string queryString = new HttpClient().QueryStringFromDict(fields);
-    # string[] headers = ["Content-Type: application/x-www-form-urlencoded", $"Content-Length: {queryString.Length}"];
-    # var result = new HttpClient().Request(HttpClient.Method.Post, "index.php", headers, queryString);
-    #
-    # ```
-    #
-    # **Note:** The `body` parameter is ignored if `method` is `HTTPClient.METHOD_GET`. This is because GET methods can't contain request data. As a workaround, you can pass request data as a query string in the URL. See `#String.uri_encode` for an example.
     def request(method : Int64, url : String, headers : Void*, body : String) : Int64
       if @@mb_request.null?
         @@mb_request = Bridge.get_method_bind("HTTPClient", "request", 3778990155_i64)
@@ -9647,7 +8811,6 @@ module Godot
       Bridge.free_string(str_3)
     end
     @@mb_close : Void* = Pointer(Void).null
-    # Closes the current connection, allowing reuse of this `HTTPClient`.
     def close() : Void
       if @@mb_close.null?
         @@mb_close = Bridge.get_method_bind("HTTPClient", "close", 3218959716_i64)
@@ -9655,7 +8818,6 @@ module Godot
       Bridge.ptrcall(@@mb_close, @pointer, Pointer(Pointer(Void)).null, Pointer(Void).null)
     end
     @@mb_has_response : Void* = Pointer(Void).null
-    # If `true`, this `HTTPClient` has a response available.
     def has_response() : Bool
       if @@mb_has_response.null?
         @@mb_has_response = Bridge.get_method_bind("HTTPClient", "has_response", 36873697_i64)
@@ -9665,7 +8827,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_is_response_chunked : Void* = Pointer(Void).null
-    # If `true`, this `HTTPClient` has a response that is chunked.
     def is_response_chunked() : Bool
       if @@mb_is_response_chunked.null?
         @@mb_is_response_chunked = Bridge.get_method_bind("HTTPClient", "is_response_chunked", 36873697_i64)
@@ -9675,7 +8836,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_get_response_code : Void* = Pointer(Void).null
-    # Returns the response's HTTP status code.
     def get_response_code() : Int64
       if @@mb_get_response_code.null?
         @@mb_get_response_code = Bridge.get_method_bind("HTTPClient", "get_response_code", 3905245786_i64)
@@ -9685,7 +8845,6 @@ module Godot
       ret
     end
     @@mb_get_response_headers : Void* = Pointer(Void).null
-    # Returns the response headers.
     def get_response_headers() : Void*
       if @@mb_get_response_headers.null?
         @@mb_get_response_headers = Bridge.get_method_bind("HTTPClient", "get_response_headers", 2981934095_i64)
@@ -9695,15 +8854,6 @@ module Godot
       ret_ptr
     end
     @@mb_get_response_headers_as_dictionary : Void* = Pointer(Void).null
-    # Returns all response headers as a `Dictionary`. Each entry is composed by the header name, and a `String` containing the values separated by `"; "`. The casing is kept the same as the headers were received.
-    # ```gdscript
-    #
-    # {
-    # 	"content-length": 12,
-    # 	"Content-Type": "application/json; charset=UTF-8",
-    # }
-    #
-    # ```
     def get_response_headers_as_dictionary() : Void*
       if @@mb_get_response_headers_as_dictionary.null?
         @@mb_get_response_headers_as_dictionary = Bridge.get_method_bind("HTTPClient", "get_response_headers_as_dictionary", 2382534195_i64)
@@ -9713,9 +8863,6 @@ module Godot
       ret_ptr
     end
     @@mb_get_response_body_length : Void* = Pointer(Void).null
-    # Returns the response's body length.
-    # **Note:** Some Web servers may not send a body length. In this case, the value returned will be `-1`. If using chunked transfer encoding, the body length will also be `-1`.
-    # **Note:** This function always returns `-1` on the Web platform due to browsers limitations.
     def get_response_body_length() : Int64
       if @@mb_get_response_body_length.null?
         @@mb_get_response_body_length = Bridge.get_method_bind("HTTPClient", "get_response_body_length", 3905245786_i64)
@@ -9725,7 +8872,6 @@ module Godot
       ret
     end
     @@mb_read_response_body_chunk : Void* = Pointer(Void).null
-    # Reads one chunk from the response.
     def read_response_body_chunk() : Void*
       if @@mb_read_response_body_chunk.null?
         @@mb_read_response_body_chunk = Bridge.get_method_bind("HTTPClient", "read_response_body_chunk", 2115431945_i64)
@@ -9773,7 +8919,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_get_status : Void* = Pointer(Void).null
-    # Returns a `Status` constant. Need to call `#poll` in order to get status updates.
     def get_status() : Int64
       if @@mb_get_status.null?
         @@mb_get_status = Bridge.get_method_bind("HTTPClient", "get_status", 1426656811_i64)
@@ -9783,7 +8928,6 @@ module Godot
       ret
     end
     @@mb_poll : Void* = Pointer(Void).null
-    # This needs to be called in order to have any request processed. Check results with `#get_status`.
     def poll() : Int64
       if @@mb_poll.null?
         @@mb_poll = Bridge.get_method_bind("HTTPClient", "poll", 166280745_i64)
@@ -9793,8 +8937,6 @@ module Godot
       ret
     end
     @@mb_set_http_proxy : Void* = Pointer(Void).null
-    # Sets the proxy server for HTTP requests.
-    # The proxy server is unset if `host` is empty or `port` is -1.
     def set_http_proxy(host : String, port : Int64) : Void
       if @@mb_set_http_proxy.null?
         @@mb_set_http_proxy = Bridge.get_method_bind("HTTPClient", "set_http_proxy", 2956805083_i64)
@@ -9809,8 +8951,6 @@ module Godot
       Bridge.free_string(str_0)
     end
     @@mb_set_https_proxy : Void* = Pointer(Void).null
-    # Sets the proxy server for HTTPS requests.
-    # The proxy server is unset if `host` is empty or `port` is -1.
     def set_https_proxy(host : String, port : Int64) : Void
       if @@mb_set_https_proxy.null?
         @@mb_set_https_proxy = Bridge.get_method_bind("HTTPClient", "set_https_proxy", 2956805083_i64)
@@ -9825,44 +8965,6 @@ module Godot
       Bridge.free_string(str_0)
     end
     @@mb_query_string_from_dict : Void* = Pointer(Void).null
-    # Generates a GET/POST application/x-www-form-urlencoded style query string from a provided dictionary, e.g.:
-    #
-    # ```gdscript
-    #
-    # var fields = { "username": "user", "password": "pass" }
-    # var query_string = http_client.query_string_from_dict(fields)
-    # # Returns "username=user&password=pass"
-    #
-    # ```
-    # ```csharp
-    #
-    # var fields = new Godot.Collections.Dictionary { { "username", "user" }, { "password", "pass" } };
-    # string queryString = httpClient.QueryStringFromDict(fields);
-    # // Returns "username=user&password=pass"
-    #
-    # ```
-    #
-    # Furthermore, if a key has a `null` value, only the key itself is added, without equal sign and value. If the value is an array, for each value in it a pair with the same key is added.
-    #
-    # ```gdscript
-    #
-    # var fields = { "single": 123, "not_valued": null, "multiple": [22, 33, 44] }
-    # var query_string = http_client.query_string_from_dict(fields)
-    # # Returns "single=123&not_valued&multiple=22&multiple=33&multiple=44"
-    #
-    # ```
-    # ```csharp
-    #
-    # var fields = new Godot.Collections.Dictionary
-    # {
-    # 	{ "single", 123 },
-    # 	{ "notValued", default },
-    # 	{ "multiple", new Godot.Collections.Array { 22, 33, 44 } },
-    # };
-    # string queryString = httpClient.QueryStringFromDict(fields);
-    # // Returns "single=123&not_valued&multiple=22&multiple=33&multiple=44"
-    #
-    # ```
     def query_string_from_dict(fields : Void*) : String
       if @@mb_query_string_from_dict.null?
         @@mb_query_string_from_dict = Bridge.get_method_bind("HTTPClient", "query_string_from_dict", 2538086567_i64)
@@ -9873,163 +8975,6 @@ module Godot
       ""
     end
   end
-  # A node with the ability to send HTTP(S) requests.
-  #
-  # A node with the ability to send HTTP requests. Uses `HTTPClient` internally.
-  # Can be used to make HTTP requests, i.e. download or upload files or web content via HTTP.
-  # **Warning:** See the notes and warnings on `HTTPClient` for limitations, especially regarding TLS security.
-  # **Note:** When exporting to Android, make sure to enable the `INTERNET` permission in the Android export preset before exporting the project or using one-click deploy. Otherwise, network communication of any kind will be blocked by Android.
-  # **Example:** Contact a REST API and print one of its returned fields:
-  #
-  # ```gdscript
-  #
-  # func _ready():
-  # 	# Create an HTTP request node and connect its completion signal.
-  # 	var http_request = HTTPRequest.new()
-  # 	add_child(http_request)
-  # 	http_request.request_completed.connect(self._http_request_completed)
-  #
-  # 	# Perform a GET request. The URL below returns JSON as of writing.
-  # 	var error = http_request.request("https://httpbin.org/get")
-  # 	if error != OK:
-  # 		push_error("An error occurred in the HTTP request.")
-  #
-  # 	# Perform a POST request. The URL below returns JSON as of writing.
-  # 	# Note: Don't make simultaneous requests using a single HTTPRequest node.
-  # 	# The snippet below is provided for reference only.
-  # 	var body = JSON.stringify({"name": "Godette"})
-  # 	error = http_request.request("https://httpbin.org/post", [], HTTPClient.METHOD_POST, body)
-  # 	if error != OK:
-  # 		push_error("An error occurred in the HTTP request.")
-  #
-  # # Called when the HTTP request is completed.
-  # func _http_request_completed(result, response_code, headers, body):
-  # 	var json = JSON.new()
-  # 	json.parse(body.get_string_from_utf8())
-  # 	var response = json.get_data()
-  #
-  # 	# Will print the user agent string used by the HTTPRequest node (as recognized by httpbin.org).
-  # 	print(response.headers["User-Agent"])
-  #
-  # ```
-  # ```csharp
-  #
-  # public override void _Ready()
-  # {
-  # 	// Create an HTTP request node and connect its completion signal.
-  # 	var httpRequest = new HttpRequest();
-  # 	AddChild(httpRequest);
-  # 	httpRequest.RequestCompleted += HttpRequestCompleted;
-  #
-  # 	// Perform a GET request. The URL below returns JSON as of writing.
-  # 	Error error = httpRequest.Request("https://httpbin.org/get");
-  # 	if (error != Error.Ok)
-  # 	{
-  # 		GD.PushError("An error occurred in the HTTP request.");
-  # 	}
-  #
-  # 	// Perform a POST request. The URL below returns JSON as of writing.
-  # 	// Note: Don't make simultaneous requests using a single HTTPRequest node.
-  # 	// The snippet below is provided for reference only.
-  # 	string body = Json.Stringify(new Godot.Collections.Dictionary
-  # 	{
-  # 		{ "name", "Godette" }
-  # 	});
-  # 	error = httpRequest.Request("https://httpbin.org/post", null, HttpClient.Method.Post, body);
-  # 	if (error != Error.Ok)
-  # 	{
-  # 		GD.PushError("An error occurred in the HTTP request.");
-  # 	}
-  # }
-  #
-  # // Called when the HTTP request is completed.
-  # private void HttpRequestCompleted(long result, long responseCode, string[] headers, byte[] body)
-  # {
-  # 	var json = new Json();
-  # 	json.Parse(body.GetStringFromUtf8());
-  # 	var response = json.GetData().AsGodotDictionary();
-  #
-  # 	// Will print the user agent string used by the HTTPRequest node (as recognized by httpbin.org).
-  # 	GD.Print((response["headers"].AsGodotDictionary())["User-Agent"]);
-  # }
-  #
-  # ```
-  #
-  # **Example:** Load an image using `HTTPRequest` and display it:
-  #
-  # ```gdscript
-  #
-  # func _ready():
-  # 	# Create an HTTP request node and connect its completion signal.
-  # 	var http_request = HTTPRequest.new()
-  # 	add_child(http_request)
-  # 	http_request.request_completed.connect(self._http_request_completed)
-  #
-  # 	# Perform the HTTP request. The URL below returns a PNG image as of writing.
-  # 	var error = http_request.request("https://placehold.co/512.png")
-  # 	if error != OK:
-  # 		push_error("An error occurred in the HTTP request.")
-  #
-  # # Called when the HTTP request is completed.
-  # func _http_request_completed(result, response_code, headers, body):
-  # 	if result != HTTPRequest.RESULT_SUCCESS:
-  # 		push_error("Image couldn't be downloaded. Try a different image.")
-  #
-  # 	var image = Image.new()
-  # 	var error = image.load_png_from_buffer(body)
-  # 	if error != OK:
-  # 		push_error("Couldn't load the image.")
-  #
-  # 	var texture = ImageTexture.create_from_image(image)
-  #
-  # 	# Display the image in a TextureRect node.
-  # 	var texture_rect = TextureRect.new()
-  # 	add_child(texture_rect)
-  # 	texture_rect.texture = texture
-  #
-  # ```
-  # ```csharp
-  #
-  # public override void _Ready()
-  # {
-  # 	// Create an HTTP request node and connect its completion signal.
-  # 	var httpRequest = new HttpRequest();
-  # 	AddChild(httpRequest);
-  # 	httpRequest.RequestCompleted += HttpRequestCompleted;
-  #
-  # 	// Perform the HTTP request. The URL below returns a PNG image as of writing.
-  # 	Error error = httpRequest.Request("https://placehold.co/512.png");
-  # 	if (error != Error.Ok)
-  # 	{
-  # 		GD.PushError("An error occurred in the HTTP request.");
-  # 	}
-  # }
-  #
-  # // Called when the HTTP request is completed.
-  # private void HttpRequestCompleted(long result, long responseCode, string[] headers, byte[] body)
-  # {
-  # 	if (result != (long)HttpRequest.Result.Success)
-  # 	{
-  # 		GD.PushError("Image couldn't be downloaded. Try a different image.");
-  # 	}
-  # 	var image = new Image();
-  # 	Error error = image.LoadPngFromBuffer(body);
-  # 	if (error != Error.Ok)
-  # 	{
-  # 		GD.PushError("Couldn't load the image.");
-  # 	}
-  #
-  # 	var texture = ImageTexture.CreateFromImage(image);
-  #
-  # 	// Display the image in a TextureRect node.
-  # 	var textureRect = new TextureRect();
-  # 	AddChild(textureRect);
-  # 	textureRect.Texture = texture;
-  # }
-  #
-  # ```
-  #
-  # **Note:** `HTTPRequest` nodes will automatically handle decompression of response bodies. An `Accept-Encoding` header will be automatically added to each of your requests, unless one is already specified. Any response with a `Content-Encoding: gzip` header will automatically be decompressed and delivered to you as uncompressed bytes.
   class HTTPRequest < Godot::Node
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -10051,10 +8996,6 @@ module Godot
       ResultTimeout = 13_i64
     end
     @@mb_request : Void* = Pointer(Void).null
-    # Creates request on the underlying `HTTPClient`. If there is no configuration errors, it tries to connect using `#HTTPClient.connect_to_host` and passes parameters onto `#HTTPClient.request`.
-    # Returns `OK` if request is successfully created. (Does not imply that the server has responded), `ERR_UNCONFIGURED` if not in the tree, `ERR_BUSY` if still processing previous request, `ERR_INVALID_PARAMETER` if given string is not a valid URL format, or `ERR_CANT_CONNECT` if not using thread and the `HTTPClient` cannot connect to host.
-    # **Note:** When `method` is `HTTPClient.METHOD_GET`, the payload sent via `request_data` might be ignored by the server or even cause the server to reject the request (check [$2]($1) for more details). As a workaround, you can send data as a query string in the URL (see `#String.uri_encode` for an example).
-    # **Note:** It's recommended to use transport encryption (TLS) and to avoid sending sensitive information (such as login credentials) in HTTP GET URL parameters. Consider using HTTP POST requests or HTTP headers for such information instead.
     def request(url : String, custom_headers : Void*, method : Int64, request_data : String) : Int64
       if @@mb_request.null?
         @@mb_request = Bridge.get_method_bind("HTTPRequest", "request", 3215244323_i64)
@@ -10076,8 +9017,6 @@ module Godot
       Bridge.free_string(str_3)
     end
     @@mb_request_raw : Void* = Pointer(Void).null
-    # Creates request on the underlying `HTTPClient` using a raw array of bytes for the request body. If there is no configuration errors, it tries to connect using `#HTTPClient.connect_to_host` and passes parameters onto `#HTTPClient.request`.
-    # Returns `OK` if request is successfully created. (Does not imply that the server has responded), `ERR_UNCONFIGURED` if not in the tree, `ERR_BUSY` if still processing previous request, `ERR_INVALID_PARAMETER` if given string is not a valid URL format, or `ERR_CANT_CONNECT` if not using thread and the `HTTPClient` cannot connect to host.
     def request_raw(url : String, custom_headers : Void*, method : Int64, request_data_raw : Void*) : Int64
       if @@mb_request_raw.null?
         @@mb_request_raw = Bridge.get_method_bind("HTTPRequest", "request_raw", 2714829993_i64)
@@ -10098,7 +9037,6 @@ module Godot
       Bridge.free_string(str_0)
     end
     @@mb_cancel_request : Void* = Pointer(Void).null
-    # Cancels the current request.
     def cancel_request() : Void
       if @@mb_cancel_request.null?
         @@mb_cancel_request = Bridge.get_method_bind("HTTPRequest", "cancel_request", 3218959716_i64)
@@ -10106,7 +9044,6 @@ module Godot
       Bridge.ptrcall(@@mb_cancel_request, @pointer, Pointer(Pointer(Void)).null, Pointer(Void).null)
     end
     @@mb_set_tls_options : Void* = Pointer(Void).null
-    # Sets the `TLSOptions` to be used when connecting to an HTTPS server. See `#TLSOptions.client`.
     def set_tls_options(client_options : TLSOptions) : Void
       if @@mb_set_tls_options.null?
         @@mb_set_tls_options = Bridge.get_method_bind("HTTPRequest", "set_tls_options", 2210231844_i64)
@@ -10117,7 +9054,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_tls_options, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_http_client_status : Void* = Pointer(Void).null
-    # Returns the current status of the underlying `HTTPClient`.
     def get_http_client_status() : Int64
       if @@mb_get_http_client_status.null?
         @@mb_get_http_client_status = Bridge.get_method_bind("HTTPRequest", "get_http_client_status", 1426656811_i64)
@@ -10260,7 +9196,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_get_downloaded_bytes : Void* = Pointer(Void).null
-    # Returns the number of bytes this HTTPRequest downloaded.
     def get_downloaded_bytes() : Int64
       if @@mb_get_downloaded_bytes.null?
         @@mb_get_downloaded_bytes = Bridge.get_method_bind("HTTPRequest", "get_downloaded_bytes", 3905245786_i64)
@@ -10270,8 +9205,6 @@ module Godot
       ret
     end
     @@mb_get_body_size : Void* = Pointer(Void).null
-    # Returns the response body length.
-    # **Note:** Some Web servers may not send a body length. In this case, the value returned will be `-1`. If using chunked transfer encoding, the body length will also be `-1`.
     def get_body_size() : Int64
       if @@mb_get_body_size.null?
         @@mb_get_body_size = Bridge.get_method_bind("HTTPRequest", "get_body_size", 3905245786_i64)
@@ -10319,8 +9252,6 @@ module Godot
       ret
     end
     @@mb_set_http_proxy : Void* = Pointer(Void).null
-    # Sets the proxy server for HTTP requests.
-    # The proxy server is unset if `host` is empty or `port` is -1.
     def set_http_proxy(host : String, port : Int64) : Void
       if @@mb_set_http_proxy.null?
         @@mb_set_http_proxy = Bridge.get_method_bind("HTTPRequest", "set_http_proxy", 2956805083_i64)
@@ -10335,8 +9266,6 @@ module Godot
       Bridge.free_string(str_0)
     end
     @@mb_set_https_proxy : Void* = Pointer(Void).null
-    # Sets the proxy server for HTTPS requests.
-    # The proxy server is unset if `host` is empty or `port` is -1.
     def set_https_proxy(host : String, port : Int64) : Void
       if @@mb_set_https_proxy.null?
         @@mb_set_https_proxy = Bridge.get_method_bind("HTTPRequest", "set_https_proxy", 2956805083_i64)
@@ -10351,63 +9280,6 @@ module Godot
       Bridge.free_string(str_0)
     end
   end
-  # Provides functionality for computing cryptographic hashes chunk by chunk.
-  #
-  # The HashingContext class provides an interface for computing cryptographic hashes over multiple iterations. Useful for computing hashes of big files (so you don't have to load them all in memory), network streams, and data streams in general (so you don't have to hold buffers).
-  # The `HashType` enum shows the supported hashing algorithms.
-  #
-  # ```gdscript
-  #
-  # const CHUNK_SIZE = 1024
-  #
-  # func hash_file(path):
-  # 	# Check that file exists.
-  # 	if not FileAccess.file_exists(path):
-  # 		return
-  # 	# Start an SHA-256 context.
-  # 	var ctx = HashingContext.new()
-  # 	ctx.start(HashingContext.HASH_SHA256)
-  # 	# Open the file to hash.
-  # 	var file = FileAccess.open(path, FileAccess.READ)
-  # 	# Update the context after reading each chunk.
-  # 	while file.get_position() < file.get_length():
-  # 		var remaining = file.get_length() - file.get_position()
-  # 		ctx.update(file.get_buffer(min(remaining, CHUNK_SIZE)))
-  # 	# Get the computed hash.
-  # 	var res = ctx.finish()
-  # 	# Print the result as hex string and array.
-  # 	printt(res.hex_encode(), Array(res))
-  #
-  # ```
-  # ```csharp
-  #
-  # public const int ChunkSize = 1024;
-  #
-  # public void HashFile(string path)
-  # {
-  # 	// Check that file exists.
-  # 	if (!FileAccess.FileExists(path))
-  # 	{
-  # 		return;
-  # 	}
-  # 	// Start an SHA-256 context.
-  # 	var ctx = new HashingContext();
-  # 	ctx.Start(HashingContext.HashType.Sha256);
-  # 	// Open the file to hash.
-  # 	using var file = FileAccess.Open(path, FileAccess.ModeFlags.Read);
-  # 	// Update the context after reading each chunk.
-  # 	while (file.GetPosition() < file.GetLength())
-  # 	{
-  # 		int remaining = (int)(file.GetLength() - file.GetPosition());
-  # 		ctx.Update(file.GetBuffer(Mathf.Min(remaining, ChunkSize)));
-  # 	}
-  # 	// Get the computed hash.
-  # 	byte[] res = ctx.Finish();
-  # 	// Print the result as hex string and array.
-  # 	GD.PrintT(res.HexEncode(), (Variant)res);
-  # }
-  #
-  # ```
   class HashingContext < Godot::RefCounted
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -10418,7 +9290,6 @@ module Godot
       HashSha256 = 2_i64
     end
     @@mb_start : Void* = Pointer(Void).null
-    # Starts a new hash computation of the given `type` (e.g. `HASH_SHA256` to start computation of an SHA-256).
     def start(get_type : Int64) : Int64
       if @@mb_start.null?
         @@mb_start = Bridge.get_method_bind("HashingContext", "start", 3940338335_i64)
@@ -10431,7 +9302,6 @@ module Godot
       ret
     end
     @@mb_update : Void* = Pointer(Void).null
-    # Updates the computation with the given `chunk` of data.
     def update(chunk : Void*) : Int64
       if @@mb_update.null?
         @@mb_update = Bridge.get_method_bind("HashingContext", "update", 680677267_i64)
@@ -10444,7 +9314,6 @@ module Godot
       ret
     end
     @@mb_finish : Void* = Pointer(Void).null
-    # Closes the current context, and return the computed hash.
     def finish() : Void*
       if @@mb_finish.null?
         @@mb_finish = Bridge.get_method_bind("HashingContext", "finish", 2115431945_i64)
@@ -10454,28 +9323,6 @@ module Godot
       ret_ptr
     end
   end
-  # A 3D heightmap shape used for physics collision.
-  #
-  # A 3D heightmap shape, intended for use in physics to provide a shape for a `CollisionShape3D`. This type is most commonly used for terrain with vertices placed in a fixed-width grid.
-  # The heightmap is represented as a 2D grid of height values, which represent the position of grid points on the Y axis. Grid points are spaced 1 unit apart on the X and Z axes, and the grid is centered on the origin of the `CollisionShape3D` node. Internally, each grid square is divided into two triangles.
-  # Due to the nature of the heightmap, it cannot be used to model overhangs or caves, which would require multiple vertices at the same vertical location. Holes can be punched through the collision by assigning [constant @GDScript.NAN] to the height of the desired vertices. You could then insert meshes with their own separate collision to provide overhangs, caves, and so on.
-  # **Performance:** `HeightMapShape3D` is faster to check collisions against than `ConcavePolygonShape3D`, but it is significantly slower than primitive shapes like `BoxShape3D`.
-  # A heightmap collision shape can also be built by using an `Image` reference:
-  #
-  # ```gdscript
-  #
-  # var heightmap_texture = ResourceLoader.load("res://heightmap_image.exr")
-  # var heightmap_image = heightmap_texture.get_image()
-  # heightmap_image.convert(Image.FORMAT_RF)
-  #
-  # var height_min = 0.0
-  # var height_max = 10.0
-  #
-  # update_map_data_from_image(heightmap_image, height_min, height_max)
-  #
-  # ```
-  #
-  # **Note:** If you need to use a spacing different than 1 unit, you can adjust the `Node3D.scale` of the shape. However, keep in mind that GodotPhysics3D does not support non-uniform scaling: you'll need to scale the Y axis by the same amount as the X and Z axes, which means the values in `map_data` will need to be pre-scaled by the inverse of that scale. Also note that GodotPhysics3D does not support scaling at all for dynamic bodies (that is, non-frozen `RigidBody3D` nodes); to use a scaled `HeightMapShape3D` with those, you will need to use Jolt Physics.
   class HeightMapShape3D < Godot::Shape3D
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -10538,7 +9385,6 @@ module Godot
       ret_ptr
     end
     @@mb_get_min_height : Void* = Pointer(Void).null
-    # Returns the smallest height value found in `map_data`. Recalculates only when `map_data` changes.
     def get_min_height() : Float64
       if @@mb_get_min_height.null?
         @@mb_get_min_height = Bridge.get_method_bind("HeightMapShape3D", "get_min_height", 1740695150_i64)
@@ -10548,7 +9394,6 @@ module Godot
       ret
     end
     @@mb_get_max_height : Void* = Pointer(Void).null
-    # Returns the largest height value found in `map_data`. Recalculates only when `map_data` changes.
     def get_max_height() : Float64
       if @@mb_get_max_height.null?
         @@mb_get_max_height = Bridge.get_method_bind("HeightMapShape3D", "get_max_height", 1740695150_i64)
@@ -10558,10 +9403,6 @@ module Godot
       ret
     end
     @@mb_update_map_data_from_image : Void* = Pointer(Void).null
-    # Updates `map_data` with data read from an `Image` reference. Automatically resizes heightmap `map_width` and `map_depth` to fit the full image width and height.
-    # The image needs to be in either `Image.FORMAT_RF` (32 bit), `Image.FORMAT_RH` (16 bit), or `Image.FORMAT_R8` (8 bit).
-    # Each image pixel is read in as a float on the range from `0.0` (black pixel) to `1.0` (white pixel). This range value gets remapped to `height_min` and `height_max` to form the final height value.
-    # **Note:** Using a heightmap with 16-bit or 32-bit data, stored in EXR or HDR format is recommended. Using 8-bit height data, or a format like PNG that Godot imports as 8-bit, will result in a terraced terrain.
     def update_map_data_from_image(image : Image, height_min : Float64, height_max : Float64) : Void
       if @@mb_update_map_data_from_image.null?
         @@mb_update_map_data_from_image = Bridge.get_method_bind("HeightMapShape3D", "update_map_data_from_image", 2636652979_i64)
@@ -10576,9 +9417,6 @@ module Godot
       Bridge.ptrcall(@@mb_update_map_data_from_image, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
   end
-  # A physics joint that restricts the rotation of a 3D physics body around an axis relative to another physics body.
-  #
-  # A physics joint that restricts the rotation of a 3D physics body around an axis relative to another physics body. For example, Body A can be a `StaticBody3D` representing a door hinge that a `RigidBody3D` rotates around.
   class HingeJoint3D < Godot::Joint3D
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -10600,7 +9438,6 @@ module Godot
       FlagMax = 2_i64
     end
     @@mb_set_param : Void* = Pointer(Void).null
-    # Sets the value of the specified parameter.
     def set_param(param : Int64, value : Float64) : Void
       if @@mb_set_param.null?
         @@mb_set_param = Bridge.get_method_bind("HingeJoint3D", "set_param", 3082977519_i64)
@@ -10613,7 +9450,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_param, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_param : Void* = Pointer(Void).null
-    # Returns the value of the specified parameter.
     def get_param(param : Int64) : Float64
       if @@mb_get_param.null?
         @@mb_get_param = Bridge.get_method_bind("HingeJoint3D", "get_param", 4066002676_i64)
@@ -10626,7 +9462,6 @@ module Godot
       ret
     end
     @@mb_set_flag : Void* = Pointer(Void).null
-    # If `true`, enables the specified flag.
     def set_flag(flag : Int64, enabled : Bool) : Void
       if @@mb_set_flag.null?
         @@mb_set_flag = Bridge.get_method_bind("HingeJoint3D", "set_flag", 1083494620_i64)
@@ -10639,7 +9474,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_flag, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_flag : Void* = Pointer(Void).null
-    # Returns the value of the specified flag.
     def get_flag(flag : Int64) : Bool
       if @@mb_get_flag.null?
         @@mb_get_flag = Bridge.get_method_bind("HingeJoint3D", "get_flag", 2841369610_i64)
@@ -10652,9 +9486,6 @@ module Godot
       ret != 0_u8
     end
   end
-  # Internet protocol (IP) support functions such as DNS resolution.
-  #
-  # IP contains support functions for the Internet Protocol (IP). TCP/IP support is in different classes (see `StreamPeerTCP` and `TCPServer`). IP provides DNS hostname resolution support, both blocking and threaded.
   class IP < Godot::Object
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -10672,7 +9503,6 @@ module Godot
       TypeAny = 3_i64
     end
     @@mb_resolve_hostname : Void* = Pointer(Void).null
-    # Returns a given hostname's IPv4 or IPv6 address when resolved (blocking-type method). The address type returned depends on the `Type` constant given as `ip_type`.
     def resolve_hostname(host : String, ip_type : Int64) : String
       if @@mb_resolve_hostname.null?
         @@mb_resolve_hostname = Bridge.get_method_bind("IP", "resolve_hostname", 4283295457_i64)
@@ -10687,7 +9517,6 @@ module Godot
       Bridge.free_string(str_0)
     end
     @@mb_resolve_hostname_addresses : Void* = Pointer(Void).null
-    # Resolves a given hostname in a blocking way. Addresses are returned as an `Array` of IPv4 or IPv6 addresses depending on `ip_type`.
     def resolve_hostname_addresses(host : String, ip_type : Int64) : Void*
       if @@mb_resolve_hostname_addresses.null?
         @@mb_resolve_hostname_addresses = Bridge.get_method_bind("IP", "resolve_hostname_addresses", 773767525_i64)
@@ -10704,7 +9533,6 @@ module Godot
       Bridge.free_string(str_0)
     end
     @@mb_resolve_hostname_queue_item : Void* = Pointer(Void).null
-    # Creates a queue item to resolve a hostname to an IPv4 or IPv6 address depending on the `Type` constant given as `ip_type`. Returns the queue ID if successful, or `RESOLVER_INVALID_ID` on error.
     def resolve_hostname_queue_item(host : String, ip_type : Int64) : Int64
       if @@mb_resolve_hostname_queue_item.null?
         @@mb_resolve_hostname_queue_item = Bridge.get_method_bind("IP", "resolve_hostname_queue_item", 1749894742_i64)
@@ -10721,7 +9549,6 @@ module Godot
       Bridge.free_string(str_0)
     end
     @@mb_get_resolve_item_status : Void* = Pointer(Void).null
-    # Returns a queued hostname's status as a `ResolverStatus` constant, given its queue `id`.
     def get_resolve_item_status(id : Int64) : Int64
       if @@mb_get_resolve_item_status.null?
         @@mb_get_resolve_item_status = Bridge.get_method_bind("IP", "get_resolve_item_status", 3812250196_i64)
@@ -10734,7 +9561,6 @@ module Godot
       ret
     end
     @@mb_get_resolve_item_address : Void* = Pointer(Void).null
-    # Returns a queued hostname's IP address, given its queue `id`. Returns an empty string on error or if resolution hasn't happened yet (see `#get_resolve_item_status`).
     def get_resolve_item_address(id : Int64) : String
       if @@mb_get_resolve_item_address.null?
         @@mb_get_resolve_item_address = Bridge.get_method_bind("IP", "get_resolve_item_address", 844755477_i64)
@@ -10745,7 +9571,6 @@ module Godot
       ""
     end
     @@mb_get_resolve_item_addresses : Void* = Pointer(Void).null
-    # Returns resolved addresses, or an empty array if an error happened or resolution didn't happen yet (see `#get_resolve_item_status`).
     def get_resolve_item_addresses(id : Int64) : Godot::Array
       if @@mb_get_resolve_item_addresses.null?
         @@mb_get_resolve_item_addresses = Bridge.get_method_bind("IP", "get_resolve_item_addresses", 663333327_i64)
@@ -10758,7 +9583,6 @@ module Godot
       Godot::Array.new(ret_ptr)
     end
     @@mb_erase_resolve_item : Void* = Pointer(Void).null
-    # Removes a given item `id` from the queue. This should be used to free a queue after it has completed to enable more queries to happen.
     def erase_resolve_item(id : Int64) : Void
       if @@mb_erase_resolve_item.null?
         @@mb_erase_resolve_item = Bridge.get_method_bind("IP", "erase_resolve_item", 1286410249_i64)
@@ -10769,7 +9593,6 @@ module Godot
       Bridge.ptrcall(@@mb_erase_resolve_item, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_local_addresses : Void* = Pointer(Void).null
-    # Returns all the user's current IPv4 and IPv6 addresses as an array.
     def get_local_addresses() : Void*
       if @@mb_get_local_addresses.null?
         @@mb_get_local_addresses = Bridge.get_method_bind("IP", "get_local_addresses", 1139954409_i64)
@@ -10779,18 +9602,6 @@ module Godot
       ret_ptr
     end
     @@mb_get_local_interfaces : Void* = Pointer(Void).null
-    # Returns all network adapters as an array.
-    # Each adapter is a dictionary of the form:
-    # ```gdscript
-    #
-    # {
-    # 	"index": "1", # Interface index.
-    # 	"name": "eth0", # Interface name.
-    # 	"friendly": "Ethernet One", # A friendly name (might be empty).
-    # 	"addresses": ["192.168.1.101"], # An array of IP addresses associated to this interface.
-    # }
-    #
-    # ```
     def get_local_interfaces() : Godot::Array
       if @@mb_get_local_interfaces.null?
         @@mb_get_local_interfaces = Bridge.get_method_bind("IP", "get_local_interfaces", 3995934104_i64)
@@ -10800,7 +9611,6 @@ module Godot
       Godot::Array.new(ret_ptr)
     end
     @@mb_clear_cache : Void* = Pointer(Void).null
-    # Removes all of a `hostname`'s cached references. If no `hostname` is given, all cached IP addresses are removed.
     def clear_cache(hostname : String) : Void
       if @@mb_clear_cache.null?
         @@mb_clear_cache = Bridge.get_method_bind("IP", "clear_cache", 3005725572_i64)
@@ -10813,12 +9623,6 @@ module Godot
       Bridge.free_string(str_0)
     end
   end
-  # Image datatype.
-  #
-  # Native image datatype. Contains image data which can be converted to an `ImageTexture` and provides commonly used *image processing* methods. The maximum width and height for an `Image` are `MAX_WIDTH` and `MAX_HEIGHT`.
-  # An `Image` cannot be assigned to a texture property of an object directly (such as `Sprite2D.texture`), and has to be converted manually to an `ImageTexture` first.
-  # **Note:** Methods that modify the image data cannot be used on VRAM-compressed images. Use `#decompress` to convert the image to an uncompressed format first.
-  # **Note:** The maximum image size is 16384×16384 pixels due to graphics hardware limitations. Larger images may fail to import.
   class Image < Godot::Resource
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -10920,7 +9724,6 @@ module Godot
       AstcFormat8x8 = 1_i64
     end
     @@mb_get_width : Void* = Pointer(Void).null
-    # Returns the image's width.
     def get_width() : Int64
       if @@mb_get_width.null?
         @@mb_get_width = Bridge.get_method_bind("Image", "get_width", 3905245786_i64)
@@ -10930,7 +9733,6 @@ module Godot
       ret
     end
     @@mb_get_height : Void* = Pointer(Void).null
-    # Returns the image's height.
     def get_height() : Int64
       if @@mb_get_height.null?
         @@mb_get_height = Bridge.get_method_bind("Image", "get_height", 3905245786_i64)
@@ -10940,7 +9742,6 @@ module Godot
       ret
     end
     @@mb_get_size : Void* = Pointer(Void).null
-    # Returns the image's size (width and height).
     def get_size() : Vector2i
       if @@mb_get_size.null?
         @@mb_get_size = Bridge.get_method_bind("Image", "get_size", 3690982128_i64)
@@ -10950,7 +9751,6 @@ module Godot
       Vector2i.new(ret_ptr)
     end
     @@mb_has_mipmaps : Void* = Pointer(Void).null
-    # Returns `true` if the image has generated mipmaps.
     def has_mipmaps() : Bool
       if @@mb_has_mipmaps.null?
         @@mb_has_mipmaps = Bridge.get_method_bind("Image", "has_mipmaps", 36873697_i64)
@@ -10960,7 +9760,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_get_format : Void* = Pointer(Void).null
-    # Returns this image's format.
     def get_format() : Int64
       if @@mb_get_format.null?
         @@mb_get_format = Bridge.get_method_bind("Image", "get_format", 3847873762_i64)
@@ -10970,7 +9769,6 @@ module Godot
       ret
     end
     @@mb_get_data : Void* = Pointer(Void).null
-    # Returns a copy of the image's raw data.
     def get_data() : Void*
       if @@mb_get_data.null?
         @@mb_get_data = Bridge.get_method_bind("Image", "get_data", 2362200018_i64)
@@ -10980,7 +9778,6 @@ module Godot
       ret_ptr
     end
     @@mb_get_data_size : Void* = Pointer(Void).null
-    # Returns size (in bytes) of the image's raw data.
     def get_data_size() : Int64
       if @@mb_get_data_size.null?
         @@mb_get_data_size = Bridge.get_method_bind("Image", "get_data_size", 3905245786_i64)
@@ -10990,7 +9787,6 @@ module Godot
       ret
     end
     @@mb_convert : Void* = Pointer(Void).null
-    # Converts this image's format to the given `format`.
     def convert(format : Int64) : Void
       if @@mb_convert.null?
         @@mb_convert = Bridge.get_method_bind("Image", "convert", 2120693146_i64)
@@ -11001,7 +9797,6 @@ module Godot
       Bridge.ptrcall(@@mb_convert, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_mipmap_count : Void* = Pointer(Void).null
-    # Returns the number of mipmap levels or 0 if the image has no mipmaps. The largest main level image is not counted as a mipmap level by this method, so if you want to include it you can add 1 to this count.
     def get_mipmap_count() : Int64
       if @@mb_get_mipmap_count.null?
         @@mb_get_mipmap_count = Bridge.get_method_bind("Image", "get_mipmap_count", 3905245786_i64)
@@ -11011,7 +9806,6 @@ module Godot
       ret
     end
     @@mb_get_mipmap_offset : Void* = Pointer(Void).null
-    # Returns the offset where the image's mipmap with index `mipmap` is stored in the `data` dictionary.
     def get_mipmap_offset(mipmap : Int64) : Int64
       if @@mb_get_mipmap_offset.null?
         @@mb_get_mipmap_offset = Bridge.get_method_bind("Image", "get_mipmap_offset", 923996154_i64)
@@ -11024,7 +9818,6 @@ module Godot
       ret
     end
     @@mb_resize_to_po2 : Void* = Pointer(Void).null
-    # Resizes the image to the nearest power of 2 for the width and height. If `square` is `true`, sets width and height to be the same. New pixels are calculated using the `interpolation` mode defined via `Interpolation` constants.
     def resize_to_po2(square : Bool, interpolation : Int64) : Void
       if @@mb_resize_to_po2.null?
         @@mb_resize_to_po2 = Bridge.get_method_bind("Image", "resize_to_po2", 4189212329_i64)
@@ -11037,8 +9830,6 @@ module Godot
       Bridge.ptrcall(@@mb_resize_to_po2, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_resize : Void* = Pointer(Void).null
-    # Resizes the image to the given `width` and `height`. New pixels are calculated using the `interpolation` mode defined via `Interpolation` constants.
-    # **Note:** If the image's format is `FORMAT_RGBA4444`, `FORMAT_RGB565`, or `FORMAT_RGBE9995`, it will be temporarily converted to either `FORMAT_RGBA8` or `FORMAT_RGBAH`. This can affect the quality of the resized image.
     def resize(width : Int64, height : Int64, interpolation : Int64) : Void
       if @@mb_resize.null?
         @@mb_resize = Bridge.get_method_bind("Image", "resize", 994498151_i64)
@@ -11053,7 +9844,6 @@ module Godot
       Bridge.ptrcall(@@mb_resize, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_shrink_x2 : Void* = Pointer(Void).null
-    # Shrinks the image by a factor of 2 on each axis (this divides the pixel count by 4).
     def shrink_x2() : Void
       if @@mb_shrink_x2.null?
         @@mb_shrink_x2 = Bridge.get_method_bind("Image", "shrink_x2", 3218959716_i64)
@@ -11061,7 +9851,6 @@ module Godot
       Bridge.ptrcall(@@mb_shrink_x2, @pointer, Pointer(Pointer(Void)).null, Pointer(Void).null)
     end
     @@mb_crop : Void* = Pointer(Void).null
-    # Crops the image to the given `width` and `height`. If the specified size is larger than the current size, the extra area is filled with black pixels.
     def crop(width : Int64, height : Int64) : Void
       if @@mb_crop.null?
         @@mb_crop = Bridge.get_method_bind("Image", "crop", 3937882851_i64)
@@ -11074,7 +9863,6 @@ module Godot
       Bridge.ptrcall(@@mb_crop, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_flip_x : Void* = Pointer(Void).null
-    # Flips the image horizontally.
     def flip_x() : Void
       if @@mb_flip_x.null?
         @@mb_flip_x = Bridge.get_method_bind("Image", "flip_x", 3218959716_i64)
@@ -11082,7 +9870,6 @@ module Godot
       Bridge.ptrcall(@@mb_flip_x, @pointer, Pointer(Pointer(Void)).null, Pointer(Void).null)
     end
     @@mb_flip_y : Void* = Pointer(Void).null
-    # Flips the image vertically.
     def flip_y() : Void
       if @@mb_flip_y.null?
         @@mb_flip_y = Bridge.get_method_bind("Image", "flip_y", 3218959716_i64)
@@ -11090,21 +9877,22 @@ module Godot
       Bridge.ptrcall(@@mb_flip_y, @pointer, Pointer(Pointer(Void)).null, Pointer(Void).null)
     end
     @@mb_generate_mipmaps : Void* = Pointer(Void).null
-    # Generates mipmaps for the image. Mipmaps are precalculated lower-resolution copies of the image that are automatically used if the image needs to be scaled down when rendered. They help improve image quality and performance when rendering. This method returns an error if the image is compressed, in a custom format, or if the image's width/height is `0`. Enabling `renormalize` when generating mipmaps for normal map textures will make sure all resulting vector values are normalized.
-    # It is possible to check if the image has mipmaps by calling `#has_mipmaps` or `#get_mipmap_count`. Calling `#generate_mipmaps` on an image that already has mipmaps will replace existing mipmaps in the image.
-    def generate_mipmaps(renormalize : Bool) : Int64
+    def generate_mipmaps(renormalize : Bool, preserve_alpha_test_coverage : Bool, alpha_test_threshold : Float64) : Int64
       if @@mb_generate_mipmaps.null?
-        @@mb_generate_mipmaps = Bridge.get_method_bind("Image", "generate_mipmaps", 1633102583_i64)
+        @@mb_generate_mipmaps = Bridge.get_method_bind("Image", "generate_mipmaps", 991832544_i64)
       end
       val_0 = renormalize
       arg_0 = pointerof(val_0).as(Void*)
-      args = [arg_0]
+      val_1 = preserve_alpha_test_coverage
+      arg_1 = pointerof(val_1).as(Void*)
+      val_2 = alpha_test_threshold
+      arg_2 = pointerof(val_2).as(Void*)
+      args = [arg_0, arg_1, arg_2]
       ret = 0_i64
       Bridge.ptrcall(@@mb_generate_mipmaps, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
       ret
     end
     @@mb_clear_mipmaps : Void* = Pointer(Void).null
-    # Removes the image's mipmaps.
     def clear_mipmaps() : Void
       if @@mb_clear_mipmaps.null?
         @@mb_clear_mipmaps = Bridge.get_method_bind("Image", "clear_mipmaps", 3218959716_i64)
@@ -11112,7 +9900,6 @@ module Godot
       Bridge.ptrcall(@@mb_clear_mipmaps, @pointer, Pointer(Pointer(Void)).null, Pointer(Void).null)
     end
     @@mb_create : Void* = Pointer(Void).null
-    # Creates an empty image of the given size and format. If `use_mipmaps` is `true`, generates mipmaps for this image (see `#generate_mipmaps`).
     def create(width : Int64, height : Int64, use_mipmaps : Bool, format : Int64) : Image
       if @@mb_create.null?
         @@mb_create = Bridge.get_method_bind("Image", "create", 986942177_i64)
@@ -11131,7 +9918,6 @@ module Godot
       Image.new(ret_ptr)
     end
     @@mb_create_empty : Void* = Pointer(Void).null
-    # Creates an empty image of the given size and format. If `use_mipmaps` is `true`, generates mipmaps for this image (see `#generate_mipmaps`).
     def create_empty(width : Int64, height : Int64, use_mipmaps : Bool, format : Int64) : Image
       if @@mb_create_empty.null?
         @@mb_create_empty = Bridge.get_method_bind("Image", "create_empty", 986942177_i64)
@@ -11150,7 +9936,6 @@ module Godot
       Image.new(ret_ptr)
     end
     @@mb_create_from_data : Void* = Pointer(Void).null
-    # Creates a new image of the given size and format. Fills the image with the given raw data. If `use_mipmaps` is `true`, loads the mipmaps for this image from `data`. See `#generate_mipmaps`.
     def create_from_data(width : Int64, height : Int64, use_mipmaps : Bool, format : Int64, data : Void*) : Image
       if @@mb_create_from_data.null?
         @@mb_create_from_data = Bridge.get_method_bind("Image", "create_from_data", 299398494_i64)
@@ -11171,7 +9956,6 @@ module Godot
       Image.new(ret_ptr)
     end
     @@mb_set_data : Void* = Pointer(Void).null
-    # Overwrites data of an existing `Image`. Non-static equivalent of `#create_from_data`.
     def set_data(width : Int64, height : Int64, use_mipmaps : Bool, format : Int64, data : Void*) : Void
       if @@mb_set_data.null?
         @@mb_set_data = Bridge.get_method_bind("Image", "set_data", 2740482212_i64)
@@ -11190,7 +9974,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_data, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_is_empty : Void* = Pointer(Void).null
-    # Returns `true` if the image has no data.
     def is_empty() : Bool
       if @@mb_is_empty.null?
         @@mb_is_empty = Bridge.get_method_bind("Image", "is_empty", 36873697_i64)
@@ -11200,9 +9983,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_load : Void* = Pointer(Void).null
-    # Loads an image from file `path`. See [$2]($1) for a list of supported image formats and limitations.
-    # **Warning:** This method should only be used in the editor or in cases when you need to load external images at run-time, such as images located at the `user://` directory, and may not work in exported projects.
-    # See also `ImageTexture` description for usage examples.
     def load(path : String) : Int64
       if @@mb_load.null?
         @@mb_load = Bridge.get_method_bind("Image", "load", 166001499_i64)
@@ -11217,7 +9997,6 @@ module Godot
       Bridge.free_string(str_0)
     end
     @@mb_load_from_file : Void* = Pointer(Void).null
-    # Creates a new `Image` and loads data from the specified file.
     def load_from_file(path : String) : Image
       if @@mb_load_from_file.null?
         @@mb_load_from_file = Bridge.get_method_bind("Image", "load_from_file", 736337515_i64)
@@ -11232,7 +10011,6 @@ module Godot
       Bridge.free_string(str_0)
     end
     @@mb_save_png : Void* = Pointer(Void).null
-    # Saves the image as a PNG file to the file at `path`.
     def save_png(path : String) : Int64
       if @@mb_save_png.null?
         @@mb_save_png = Bridge.get_method_bind("Image", "save_png", 2113323047_i64)
@@ -11247,7 +10025,6 @@ module Godot
       Bridge.free_string(str_0)
     end
     @@mb_save_png_to_buffer : Void* = Pointer(Void).null
-    # Saves the image as a PNG file to a byte array.
     def save_png_to_buffer() : Void*
       if @@mb_save_png_to_buffer.null?
         @@mb_save_png_to_buffer = Bridge.get_method_bind("Image", "save_png_to_buffer", 2362200018_i64)
@@ -11257,8 +10034,6 @@ module Godot
       ret_ptr
     end
     @@mb_save_jpg : Void* = Pointer(Void).null
-    # Saves the image as a JPEG file to `path` with the specified `quality` between `0.01` and `1.0` (inclusive). Higher `quality` values result in better-looking output at the cost of larger file sizes. Recommended `quality` values are between `0.75` and `0.90`. Even at quality `1.00`, JPEG compression remains lossy.
-    # **Note:** JPEG does not save an alpha channel. If the `Image` contains an alpha channel, the image will still be saved, but the resulting JPEG file won't contain the alpha channel.
     def save_jpg(path : String, quality : Float64) : Int64
       if @@mb_save_jpg.null?
         @@mb_save_jpg = Bridge.get_method_bind("Image", "save_jpg", 2800019068_i64)
@@ -11275,8 +10050,6 @@ module Godot
       Bridge.free_string(str_0)
     end
     @@mb_save_jpg_to_buffer : Void* = Pointer(Void).null
-    # Saves the image as a JPEG file to a byte array with the specified `quality` between `0.01` and `1.0` (inclusive). Higher `quality` values result in better-looking output at the cost of larger byte array sizes (and therefore memory usage). Recommended `quality` values are between `0.75` and `0.90`. Even at quality `1.00`, JPEG compression remains lossy.
-    # **Note:** JPEG does not save an alpha channel. If the `Image` contains an alpha channel, the image will still be saved, but the resulting byte array won't contain the alpha channel.
     def save_jpg_to_buffer(quality : Float64) : Void*
       if @@mb_save_jpg_to_buffer.null?
         @@mb_save_jpg_to_buffer = Bridge.get_method_bind("Image", "save_jpg_to_buffer", 592235273_i64)
@@ -11289,8 +10062,6 @@ module Godot
       ret_ptr
     end
     @@mb_save_exr : Void* = Pointer(Void).null
-    # Saves the image as an EXR file to `path`. If `grayscale` is `true` and the image has only one channel, it will be saved explicitly as monochrome rather than one red channel. Set `color_image` to `true` when saving a color image, such as a screenshot. Negative values will be included when `color_image` is `false`, which may be useful for saving raw floating point data such as a lightmap that includes negative light information. Color component values in the resulting EXR file will not exceed `max_linear_value` if `max_linear_value` is not negative. This function will return `ERR_UNAVAILABLE` if Godot was compiled without the TinyEXR module.
-    # When saving screenshots of a project that uses HDR output, use `#Window.get_output_max_linear_value` for `max_linear_value`.
     def save_exr(path : String, grayscale : Bool, color_image : Bool, max_linear_value : Float64) : Int64
       if @@mb_save_exr.null?
         @@mb_save_exr = Bridge.get_method_bind("Image", "save_exr", 2018602448_i64)
@@ -11311,8 +10082,6 @@ module Godot
       Bridge.free_string(str_0)
     end
     @@mb_save_exr_to_buffer : Void* = Pointer(Void).null
-    # Saves the image as an EXR file to a byte array. If `grayscale` is `true` and the image has only one channel, it will be saved explicitly as monochrome rather than one red channel. Set `color_image` to `true` when saving a color image, such as a screenshot. Negative values will be included when `color_image` is `false`, which may be useful for saving raw floating point data such as a lightmap that includes negative light information. Color component values in the resulting EXR file will not exceed `max_linear_value` if `max_linear_value` is not negative. This function will return an empty byte array if Godot was compiled without the TinyEXR module.
-    # When saving screenshots of a project that uses HDR output, use `#Window.get_output_max_linear_value` for `max_linear_value`.
     def save_exr_to_buffer(grayscale : Bool, color_image : Bool, max_linear_value : Float64) : Void*
       if @@mb_save_exr_to_buffer.null?
         @@mb_save_exr_to_buffer = Bridge.get_method_bind("Image", "save_exr_to_buffer", 1477518536_i64)
@@ -11329,8 +10098,6 @@ module Godot
       ret_ptr
     end
     @@mb_save_dds : Void* = Pointer(Void).null
-    # Saves the image as a DDS (DirectDraw Surface) file to `path`. DDS is a container format that can store textures in various compression formats, such as DXT1, DXT5, or BC7. This function will return `ERR_UNAVAILABLE` if Godot was compiled without the DDS module.
-    # **Note:** The DDS module may be disabled in certain builds, which means `#save_dds` will return `ERR_UNAVAILABLE` when it is called from an exported project.
     def save_dds(path : String) : Int64
       if @@mb_save_dds.null?
         @@mb_save_dds = Bridge.get_method_bind("Image", "save_dds", 2113323047_i64)
@@ -11345,8 +10112,6 @@ module Godot
       Bridge.free_string(str_0)
     end
     @@mb_save_dds_to_buffer : Void* = Pointer(Void).null
-    # Saves the image as a DDS (DirectDraw Surface) file to a byte array. DDS is a container format that can store textures in various compression formats, such as DXT1, DXT5, or BC7. This function will return an empty byte array if Godot was compiled without the DDS module.
-    # **Note:** The DDS module may be disabled in certain builds, which means `#save_dds_to_buffer` will return an empty byte array when it is called from an exported project.
     def save_dds_to_buffer() : Void*
       if @@mb_save_dds_to_buffer.null?
         @@mb_save_dds_to_buffer = Bridge.get_method_bind("Image", "save_dds_to_buffer", 2362200018_i64)
@@ -11356,8 +10121,6 @@ module Godot
       ret_ptr
     end
     @@mb_save_webp : Void* = Pointer(Void).null
-    # Saves the image as a WebP (Web Picture) file to the file at `path`. By default it will save lossless. If `lossy` is `true`, the image will be saved lossy, using the `quality` setting between `0.0` and `1.0` (inclusive). Lossless WebP offers more efficient compression than PNG.
-    # **Note:** The WebP format is limited to a size of 16383×16383 pixels, while PNG can save larger images.
     def save_webp(path : String, lossy : Bool, quality : Float64) : Int64
       if @@mb_save_webp.null?
         @@mb_save_webp = Bridge.get_method_bind("Image", "save_webp", 2781156876_i64)
@@ -11376,8 +10139,6 @@ module Godot
       Bridge.free_string(str_0)
     end
     @@mb_save_webp_to_buffer : Void* = Pointer(Void).null
-    # Saves the image as a WebP (Web Picture) file to a byte array. By default it will save lossless. If `lossy` is `true`, the image will be saved lossy, using the `quality` setting between `0.0` and `1.0` (inclusive). Lossless WebP offers more efficient compression than PNG.
-    # **Note:** The WebP format is limited to a size of 16383×16383 pixels, while PNG can save larger images.
     def save_webp_to_buffer(lossy : Bool, quality : Float64) : Void*
       if @@mb_save_webp_to_buffer.null?
         @@mb_save_webp_to_buffer = Bridge.get_method_bind("Image", "save_webp_to_buffer", 1214628238_i64)
@@ -11392,7 +10153,6 @@ module Godot
       ret_ptr
     end
     @@mb_detect_alpha : Void* = Pointer(Void).null
-    # Returns `ALPHA_BLEND` if the image has data for alpha values. Returns `ALPHA_BIT` if all the alpha values are stored in a single bit. Returns `ALPHA_NONE` if no data for alpha values is found.
     def detect_alpha() : Int64
       if @@mb_detect_alpha.null?
         @@mb_detect_alpha = Bridge.get_method_bind("Image", "detect_alpha", 2030116505_i64)
@@ -11402,7 +10162,6 @@ module Godot
       ret
     end
     @@mb_is_invisible : Void* = Pointer(Void).null
-    # Returns `true` if all the image's pixels have an alpha value of 0. Returns `false` if any pixel has an alpha value higher than 0.
     def is_invisible() : Bool
       if @@mb_is_invisible.null?
         @@mb_is_invisible = Bridge.get_method_bind("Image", "is_invisible", 36873697_i64)
@@ -11412,7 +10171,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_detect_used_channels : Void* = Pointer(Void).null
-    # Returns the color channels used by this image. If the image is compressed, the original `source` must be specified.
     def detect_used_channels(source : Int64) : Int64
       if @@mb_detect_used_channels.null?
         @@mb_detect_used_channels = Bridge.get_method_bind("Image", "detect_used_channels", 2703139984_i64)
@@ -11425,10 +10183,6 @@ module Godot
       ret
     end
     @@mb_compress : Void* = Pointer(Void).null
-    # Compresses the image with a VRAM-compressed format to use less memory. Can not directly access pixel data while the image is compressed. Returns error if the chosen compression mode is not available.
-    # The `source` parameter helps to pick the best compression method for DXT and ETC2 formats. It is ignored for ASTC compression.
-    # The `profile` lets the user pick whether the compression should prioritize quality or a smaller size. Only ASTC compression uses this currently.
-    # **Note:** `#compress` is only supported in editor builds. When run in an exported project, this method always returns `ERR_UNAVAILABLE`.
     def compress(mode : Int64, source : Int64, profile : Int64) : Int64
       if @@mb_compress.null?
         @@mb_compress = Bridge.get_method_bind("Image", "compress", 3872125418_i64)
@@ -11445,10 +10199,6 @@ module Godot
       ret
     end
     @@mb_compress_from_channels : Void* = Pointer(Void).null
-    # Compresses the image with a VRAM-compressed format to use less memory. Can not directly access pixel data while the image is compressed. Returns error if the chosen compression mode is not available.
-    # This is an alternative to `#compress` that lets the user supply the channels used in order for the compressor to pick the best DXT, ETC2, and ASTC formats. For other formats (non DXT, ETC2, or ASTC), this argument is ignored.
-    # The `profile` lets the user pick whether the compression should prioritize quality or a smaller size. Only ASTC compression uses this currently.
-    # **Note:** `#compress_from_channels` is only supported in editor builds. When run in an exported project, this method always returns `ERR_UNAVAILABLE`.
     def compress_from_channels(mode : Int64, channels : Int64, profile : Int64) : Int64
       if @@mb_compress_from_channels.null?
         @@mb_compress_from_channels = Bridge.get_method_bind("Image", "compress_from_channels", 2576825933_i64)
@@ -11465,7 +10215,6 @@ module Godot
       ret
     end
     @@mb_decompress : Void* = Pointer(Void).null
-    # Decompresses the image if it is VRAM-compressed in a supported format. This increases memory utilization, but allows modifying the image. Returns `OK` if the format is supported, otherwise `ERR_UNAVAILABLE`. All VRAM-compressed formats supported by Godot can be decompressed with this method, except `FORMAT_ETC2_R11S`, `FORMAT_ETC2_RG11S`, and `FORMAT_ETC2_RGB8A1`.
     def decompress() : Int64
       if @@mb_decompress.null?
         @@mb_decompress = Bridge.get_method_bind("Image", "decompress", 166280745_i64)
@@ -11475,7 +10224,6 @@ module Godot
       ret
     end
     @@mb_is_compressed : Void* = Pointer(Void).null
-    # Returns `true` if the image is compressed.
     def is_compressed() : Bool
       if @@mb_is_compressed.null?
         @@mb_is_compressed = Bridge.get_method_bind("Image", "is_compressed", 36873697_i64)
@@ -11485,7 +10233,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_rotate_90 : Void* = Pointer(Void).null
-    # Rotates the image in the specified `direction` by `90` degrees. The width and height of the image must be greater than `1`. If the width and height are not equal, the image will be resized.
     def rotate_90(direction : Int64) : Void
       if @@mb_rotate_90.null?
         @@mb_rotate_90 = Bridge.get_method_bind("Image", "rotate_90", 1901204267_i64)
@@ -11496,7 +10243,6 @@ module Godot
       Bridge.ptrcall(@@mb_rotate_90, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_rotate_180 : Void* = Pointer(Void).null
-    # Rotates the image by `180` degrees. The width and height of the image must be greater than `1`.
     def rotate_180() : Void
       if @@mb_rotate_180.null?
         @@mb_rotate_180 = Bridge.get_method_bind("Image", "rotate_180", 3218959716_i64)
@@ -11504,7 +10250,6 @@ module Godot
       Bridge.ptrcall(@@mb_rotate_180, @pointer, Pointer(Pointer(Void)).null, Pointer(Void).null)
     end
     @@mb_fix_alpha_edges : Void* = Pointer(Void).null
-    # Blends low-alpha pixels with nearby pixels.
     def fix_alpha_edges() : Void
       if @@mb_fix_alpha_edges.null?
         @@mb_fix_alpha_edges = Bridge.get_method_bind("Image", "fix_alpha_edges", 3218959716_i64)
@@ -11512,7 +10257,6 @@ module Godot
       Bridge.ptrcall(@@mb_fix_alpha_edges, @pointer, Pointer(Pointer(Void)).null, Pointer(Void).null)
     end
     @@mb_premultiply_alpha : Void* = Pointer(Void).null
-    # Multiplies color values with alpha values. Resulting color values for a pixel are `(color * alpha)/256`. See also `CanvasItemMaterial.blend_mode`.
     def premultiply_alpha() : Void
       if @@mb_premultiply_alpha.null?
         @@mb_premultiply_alpha = Bridge.get_method_bind("Image", "premultiply_alpha", 3218959716_i64)
@@ -11520,8 +10264,6 @@ module Godot
       Bridge.ptrcall(@@mb_premultiply_alpha, @pointer, Pointer(Pointer(Void)).null, Pointer(Void).null)
     end
     @@mb_srgb_to_linear : Void* = Pointer(Void).null
-    # Converts the raw data from nonlinear sRGB encoding to linear encoding using a lookup table. Only works on images with `FORMAT_RGB8` or `FORMAT_RGBA8` formats.
-    # **Note:** The 8-bit formats required by this method are not suitable for storing linearly encoded values; a significant amount of color information will be lost in darker values. To maintain image quality, this method should not be used.
     def srgb_to_linear() : Void
       if @@mb_srgb_to_linear.null?
         @@mb_srgb_to_linear = Bridge.get_method_bind("Image", "srgb_to_linear", 3218959716_i64)
@@ -11529,7 +10271,6 @@ module Godot
       Bridge.ptrcall(@@mb_srgb_to_linear, @pointer, Pointer(Pointer(Void)).null, Pointer(Void).null)
     end
     @@mb_linear_to_srgb : Void* = Pointer(Void).null
-    # Converts the entire image from linear encoding to nonlinear sRGB encoding by using a lookup table. Only works on images with `FORMAT_RGB8` or `FORMAT_RGBA8` formats.
     def linear_to_srgb() : Void
       if @@mb_linear_to_srgb.null?
         @@mb_linear_to_srgb = Bridge.get_method_bind("Image", "linear_to_srgb", 3218959716_i64)
@@ -11537,7 +10278,6 @@ module Godot
       Bridge.ptrcall(@@mb_linear_to_srgb, @pointer, Pointer(Pointer(Void)).null, Pointer(Void).null)
     end
     @@mb_normal_map_to_xy : Void* = Pointer(Void).null
-    # Converts the image's data to represent coordinates on a 3D plane. This is used when the image represents a normal map. A normal map can add lots of detail to a 3D surface without increasing the polygon count.
     def normal_map_to_xy() : Void
       if @@mb_normal_map_to_xy.null?
         @@mb_normal_map_to_xy = Bridge.get_method_bind("Image", "normal_map_to_xy", 3218959716_i64)
@@ -11545,7 +10285,6 @@ module Godot
       Bridge.ptrcall(@@mb_normal_map_to_xy, @pointer, Pointer(Pointer(Void)).null, Pointer(Void).null)
     end
     @@mb_rgbe_to_srgb : Void* = Pointer(Void).null
-    # Converts a standard linear RGBE (Red Green Blue Exponent) image to an image that uses nonlinear sRGB encoding.
     def rgbe_to_srgb() : Image
       if @@mb_rgbe_to_srgb.null?
         @@mb_rgbe_to_srgb = Bridge.get_method_bind("Image", "rgbe_to_srgb", 564927088_i64)
@@ -11555,7 +10294,6 @@ module Godot
       Image.new(ret_ptr)
     end
     @@mb_bump_map_to_normal_map : Void* = Pointer(Void).null
-    # Converts a bump map to a normal map. A bump map provides a height offset per-pixel, while a normal map provides a normal direction per pixel.
     def bump_map_to_normal_map(bump_scale : Float64) : Void
       if @@mb_bump_map_to_normal_map.null?
         @@mb_bump_map_to_normal_map = Bridge.get_method_bind("Image", "bump_map_to_normal_map", 3423495036_i64)
@@ -11566,8 +10304,6 @@ module Godot
       Bridge.ptrcall(@@mb_bump_map_to_normal_map, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_compute_image_metrics : Void* = Pointer(Void).null
-    # Compute image metrics on the current image and the compared image. This can be used to calculate the similarity between two images.
-    # The dictionary contains `max`, `mean`, `mean_squared`, `root_mean_squared` and `peak_snr`.
     def compute_image_metrics(compared_image : Image, use_luma : Bool) : Void*
       if @@mb_compute_image_metrics.null?
         @@mb_compute_image_metrics = Bridge.get_method_bind("Image", "compute_image_metrics", 3080961247_i64)
@@ -11582,8 +10318,6 @@ module Godot
       ret_ptr
     end
     @@mb_blit_rect : Void* = Pointer(Void).null
-    # Copies `src_rect` from `src` image to this image at coordinates `dst`, clipped accordingly to both image bounds. This image and `src` image **must** have the same format. `src_rect` with non-positive size is treated as empty.
-    # **Note:** The alpha channel data in `src` will overwrite the corresponding data in this image at the target position. To blend alpha channels, use `#blend_rect` instead.
     def blit_rect(src : Image, src_rect : Rect2i, dst : Vector2i) : Void
       if @@mb_blit_rect.null?
         @@mb_blit_rect = Bridge.get_method_bind("Image", "blit_rect", 2903928755_i64)
@@ -11598,7 +10332,6 @@ module Godot
       Bridge.ptrcall(@@mb_blit_rect, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_blit_rect_mask : Void* = Pointer(Void).null
-    # Blits `src_rect` area from `src` image to this image at the coordinates given by `dst`, clipped accordingly to both image bounds. `src` pixel is copied onto `dst` if the corresponding `mask` pixel's alpha value is not 0. This image and `src` image **must** have the same format. `src` image and `mask` image **must** have the same size (width and height) but they can have different formats. `src_rect` with non-positive size is treated as empty.
     def blit_rect_mask(src : Image, mask : Image, src_rect : Rect2i, dst : Vector2i) : Void
       if @@mb_blit_rect_mask.null?
         @@mb_blit_rect_mask = Bridge.get_method_bind("Image", "blit_rect_mask", 3383581145_i64)
@@ -11615,8 +10348,6 @@ module Godot
       Bridge.ptrcall(@@mb_blit_rect_mask, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_blend_rect : Void* = Pointer(Void).null
-    # Alpha-blends `src_rect` from `src` image to this image at coordinates `dst`, clipped accordingly to both image bounds. This image and `src` image **must** have the same format. `src_rect` with non-positive size is treated as empty.
-    # **Note:** Simultaneously reading and writing to the same image reference may lead to unexpected results.
     def blend_rect(src : Image, src_rect : Rect2i, dst : Vector2i) : Void
       if @@mb_blend_rect.null?
         @@mb_blend_rect = Bridge.get_method_bind("Image", "blend_rect", 2903928755_i64)
@@ -11631,7 +10362,6 @@ module Godot
       Bridge.ptrcall(@@mb_blend_rect, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_blend_rect_mask : Void* = Pointer(Void).null
-    # Alpha-blends `src_rect` from `src` image to this image using `mask` image at coordinates `dst`, clipped accordingly to both image bounds. Alpha channels are required for both `src` and `mask`. `dst` pixels and `src` pixels will blend if the corresponding mask pixel's alpha value is not 0. This image and `src` image **must** have the same format. `src` image and `mask` image **must** have the same size (width and height) but they can have different formats. `src_rect` with non-positive size is treated as empty.
     def blend_rect_mask(src : Image, mask : Image, src_rect : Rect2i, dst : Vector2i) : Void
       if @@mb_blend_rect_mask.null?
         @@mb_blend_rect_mask = Bridge.get_method_bind("Image", "blend_rect_mask", 3383581145_i64)
@@ -11648,7 +10378,6 @@ module Godot
       Bridge.ptrcall(@@mb_blend_rect_mask, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_fill : Void* = Pointer(Void).null
-    # Fills the image with `color`.
     def fill(color : Color) : Void
       if @@mb_fill.null?
         @@mb_fill = Bridge.get_method_bind("Image", "fill", 2920490490_i64)
@@ -11659,7 +10388,6 @@ module Godot
       Bridge.ptrcall(@@mb_fill, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_fill_rect : Void* = Pointer(Void).null
-    # Fills `rect` with `color`.
     def fill_rect(rect : Rect2i, color : Color) : Void
       if @@mb_fill_rect.null?
         @@mb_fill_rect = Bridge.get_method_bind("Image", "fill_rect", 514693913_i64)
@@ -11672,7 +10400,6 @@ module Godot
       Bridge.ptrcall(@@mb_fill_rect, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_used_rect : Void* = Pointer(Void).null
-    # Returns a `Rect2i` enclosing the visible portion of the image, considering each pixel with a non-zero alpha channel as visible.
     def get_used_rect() : Rect2i
       if @@mb_get_used_rect.null?
         @@mb_get_used_rect = Bridge.get_method_bind("Image", "get_used_rect", 410525958_i64)
@@ -11682,7 +10409,6 @@ module Godot
       Rect2i.new(ret_ptr)
     end
     @@mb_get_region : Void* = Pointer(Void).null
-    # Returns a new `Image` that is a copy of this `Image`'s area specified with `region`.
     def get_region(region : Rect2i) : Image
       if @@mb_get_region.null?
         @@mb_get_region = Bridge.get_method_bind("Image", "get_region", 2601441065_i64)
@@ -11695,7 +10421,6 @@ module Godot
       Image.new(ret_ptr)
     end
     @@mb_copy_from : Void* = Pointer(Void).null
-    # Copies `src` image to this image.
     def copy_from(src : Image) : Void
       if @@mb_copy_from.null?
         @@mb_copy_from = Bridge.get_method_bind("Image", "copy_from", 532598488_i64)
@@ -11706,8 +10431,6 @@ module Godot
       Bridge.ptrcall(@@mb_copy_from, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_pixelv : Void* = Pointer(Void).null
-    # Returns the color of the pixel at `point`.
-    # This is the same as `#get_pixel`, but with a `Vector2i` argument instead of two integer arguments.
     def get_pixelv(point : Vector2i) : Color
       if @@mb_get_pixelv.null?
         @@mb_get_pixelv = Bridge.get_method_bind("Image", "get_pixelv", 1532707496_i64)
@@ -11720,8 +10443,6 @@ module Godot
       ret
     end
     @@mb_get_pixel : Void* = Pointer(Void).null
-    # Returns the color of the pixel at `(x, y)`.
-    # This is the same as `#get_pixelv`, but with two integer arguments instead of a `Vector2i` argument.
     def get_pixel(x : Int64, y : Int64) : Color
       if @@mb_get_pixel.null?
         @@mb_get_pixel = Bridge.get_method_bind("Image", "get_pixel", 2165839948_i64)
@@ -11736,30 +10457,6 @@ module Godot
       ret
     end
     @@mb_set_pixelv : Void* = Pointer(Void).null
-    # Sets the `Color` of the pixel at `point` to `color`.
-    #
-    # ```gdscript
-    #
-    # var img_width = 10
-    # var img_height = 5
-    # var img = Image.create(img_width, img_height, false, Image.FORMAT_RGBA8)
-    #
-    # img.set_pixelv(Vector2i(1, 2), Color.RED) # Sets the color at (1, 2) to red.
-    #
-    # ```
-    # ```csharp
-    #
-    # int imgWidth = 10;
-    # int imgHeight = 5;
-    # var img = Image.Create(imgWidth, imgHeight, false, Image.Format.Rgba8);
-    #
-    # img.SetPixelv(new Vector2I(1, 2), Colors.Red); // Sets the color at (1, 2) to red.
-    #
-    # ```
-    #
-    # This is the same as `#set_pixel`, but with a `Vector2i` argument instead of two integer arguments.
-    # **Note:** Depending on the image's format, the color set here may be clamped or lose precision. Do not assume the color returned by `#get_pixelv` to be identical to the one set here; any comparisons will likely need to use an approximation like `#Color.is_equal_approx`.
-    # **Note:** On grayscale image formats, only the red channel of `color` is used (and alpha if relevant). The green and blue channels are ignored.
     def set_pixelv(point : Vector2i, color : Color) : Void
       if @@mb_set_pixelv.null?
         @@mb_set_pixelv = Bridge.get_method_bind("Image", "set_pixelv", 287851464_i64)
@@ -11772,30 +10469,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_pixelv, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_set_pixel : Void* = Pointer(Void).null
-    # Sets the `Color` of the pixel at `(x, y)` to `color`.
-    #
-    # ```gdscript
-    #
-    # var img_width = 10
-    # var img_height = 5
-    # var img = Image.create(img_width, img_height, false, Image.FORMAT_RGBA8)
-    #
-    # img.set_pixel(1, 2, Color.RED) # Sets the color at (1, 2) to red.
-    #
-    # ```
-    # ```csharp
-    #
-    # int imgWidth = 10;
-    # int imgHeight = 5;
-    # var img = Image.Create(imgWidth, imgHeight, false, Image.Format.Rgba8);
-    #
-    # img.SetPixel(1, 2, Colors.Red); // Sets the color at (1, 2) to red.
-    #
-    # ```
-    #
-    # This is the same as `#set_pixelv`, but with a two integer arguments instead of a `Vector2i` argument.
-    # **Note:** Depending on the image's format, the color set here may be clamped or lose precision. Do not assume the color returned by `#get_pixel` to be identical to the one set here; any comparisons will likely need to use an approximation like `#Color.is_equal_approx`.
-    # **Note:** On grayscale image formats, only the red channel of `color` is used (and alpha if relevant). The green and blue channels are ignored.
     def set_pixel(x : Int64, y : Int64, color : Color) : Void
       if @@mb_set_pixel.null?
         @@mb_set_pixel = Bridge.get_method_bind("Image", "set_pixel", 3733378741_i64)
@@ -11810,7 +10483,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_pixel, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_adjust_bcs : Void* = Pointer(Void).null
-    # Adjusts this image's `brightness`, `contrast`, and `saturation` by the given values. Does not work if the image is compressed (see `#is_compressed`).
     def adjust_bcs(brightness : Float64, contrast : Float64, saturation : Float64) : Void
       if @@mb_adjust_bcs.null?
         @@mb_adjust_bcs = Bridge.get_method_bind("Image", "adjust_bcs", 2385087082_i64)
@@ -11825,7 +10497,6 @@ module Godot
       Bridge.ptrcall(@@mb_adjust_bcs, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_load_png_from_buffer : Void* = Pointer(Void).null
-    # Loads an image from the binary contents of a PNG file.
     def load_png_from_buffer(buffer : Void*) : Int64
       if @@mb_load_png_from_buffer.null?
         @@mb_load_png_from_buffer = Bridge.get_method_bind("Image", "load_png_from_buffer", 680677267_i64)
@@ -11838,7 +10509,6 @@ module Godot
       ret
     end
     @@mb_load_jpg_from_buffer : Void* = Pointer(Void).null
-    # Loads an image from the binary contents of a JPEG file.
     def load_jpg_from_buffer(buffer : Void*) : Int64
       if @@mb_load_jpg_from_buffer.null?
         @@mb_load_jpg_from_buffer = Bridge.get_method_bind("Image", "load_jpg_from_buffer", 680677267_i64)
@@ -11851,7 +10521,6 @@ module Godot
       ret
     end
     @@mb_load_webp_from_buffer : Void* = Pointer(Void).null
-    # Loads an image from the binary contents of a WebP file.
     def load_webp_from_buffer(buffer : Void*) : Int64
       if @@mb_load_webp_from_buffer.null?
         @@mb_load_webp_from_buffer = Bridge.get_method_bind("Image", "load_webp_from_buffer", 680677267_i64)
@@ -11864,8 +10533,6 @@ module Godot
       ret
     end
     @@mb_load_tga_from_buffer : Void* = Pointer(Void).null
-    # Loads an image from the binary contents of a TGA file.
-    # **Note:** This method is only available in engine builds with the TGA module enabled. By default, the TGA module is enabled, but it can be disabled at build-time using the `module_tga_enabled=no` SCons option.
     def load_tga_from_buffer(buffer : Void*) : Int64
       if @@mb_load_tga_from_buffer.null?
         @@mb_load_tga_from_buffer = Bridge.get_method_bind("Image", "load_tga_from_buffer", 680677267_i64)
@@ -11878,9 +10545,6 @@ module Godot
       ret
     end
     @@mb_load_bmp_from_buffer : Void* = Pointer(Void).null
-    # Loads an image from the binary contents of a BMP file.
-    # **Note:** Godot's BMP module doesn't support 16-bit per pixel images. Only 1-bit, 4-bit, 8-bit, 24-bit, and 32-bit per pixel images are supported.
-    # **Note:** This method is only available in engine builds with the BMP module enabled. By default, the BMP module is enabled, but it can be disabled at build-time using the `module_bmp_enabled=no` SCons option.
     def load_bmp_from_buffer(buffer : Void*) : Int64
       if @@mb_load_bmp_from_buffer.null?
         @@mb_load_bmp_from_buffer = Bridge.get_method_bind("Image", "load_bmp_from_buffer", 680677267_i64)
@@ -11893,9 +10557,6 @@ module Godot
       ret
     end
     @@mb_load_ktx_from_buffer : Void* = Pointer(Void).null
-    # Loads an image from the binary contents of a [$2]($1) file. Unlike most image formats, KTX can store VRAM-compressed data and embed mipmaps.
-    # **Note:** Godot's libktx implementation only supports 2D images. Cubemaps, texture arrays, and de-padding are not supported.
-    # **Note:** This method is only available in engine builds with the KTX module enabled. By default, the KTX module is enabled, but it can be disabled at build-time using the `module_ktx_enabled=no` SCons option.
     def load_ktx_from_buffer(buffer : Void*) : Int64
       if @@mb_load_ktx_from_buffer.null?
         @@mb_load_ktx_from_buffer = Bridge.get_method_bind("Image", "load_ktx_from_buffer", 680677267_i64)
@@ -11908,8 +10569,6 @@ module Godot
       ret
     end
     @@mb_load_dds_from_buffer : Void* = Pointer(Void).null
-    # Loads an image from the binary contents of a DDS file.
-    # **Note:** This method is only available in engine builds with the DDS module enabled. By default, the DDS module is enabled, but it can be disabled at build-time using the `module_dds_enabled=no` SCons option.
     def load_dds_from_buffer(buffer : Void*) : Int64
       if @@mb_load_dds_from_buffer.null?
         @@mb_load_dds_from_buffer = Bridge.get_method_bind("Image", "load_dds_from_buffer", 680677267_i64)
@@ -11922,7 +10581,6 @@ module Godot
       ret
     end
     @@mb_load_exr_from_buffer : Void* = Pointer(Void).null
-    # Loads an image from the binary contents of an OpenEXR file.
     def load_exr_from_buffer(buffer : Void*) : Int64
       if @@mb_load_exr_from_buffer.null?
         @@mb_load_exr_from_buffer = Bridge.get_method_bind("Image", "load_exr_from_buffer", 680677267_i64)
@@ -11935,9 +10593,6 @@ module Godot
       ret
     end
     @@mb_load_svg_from_buffer : Void* = Pointer(Void).null
-    # Loads an image from the UTF-8 binary contents of an **uncompressed** SVG file (**.svg**).
-    # **Note:** Beware when using compressed SVG files (like **.svgz**), they need to be `decompressed` before loading.
-    # **Note:** This method is only available in engine builds with the SVG module enabled. By default, the SVG module is enabled, but it can be disabled at build-time using the `module_svg_enabled=no` SCons option.
     def load_svg_from_buffer(buffer : Void*, scale : Float64) : Int64
       if @@mb_load_svg_from_buffer.null?
         @@mb_load_svg_from_buffer = Bridge.get_method_bind("Image", "load_svg_from_buffer", 311853421_i64)
@@ -11952,8 +10607,6 @@ module Godot
       ret
     end
     @@mb_load_svg_from_string : Void* = Pointer(Void).null
-    # Loads an image from the string contents of an SVG file (**.svg**).
-    # **Note:** This method is only available in engine builds with the SVG module enabled. By default, the SVG module is enabled, but it can be disabled at build-time using the `module_svg_enabled=no` SCons option.
     def load_svg_from_string(svg_str : String, scale : Float64) : Int64
       if @@mb_load_svg_from_string.null?
         @@mb_load_svg_from_string = Bridge.get_method_bind("Image", "load_svg_from_string", 3254053600_i64)
@@ -11970,9 +10623,6 @@ module Godot
       Bridge.free_string(str_0)
     end
   end
-  # Base class to add support for specific image formats.
-  #
-  # The engine supports multiple image formats out of the box (PNG, SVG, JPEG, WebP to name a few), but you can choose to implement support for additional image formats by extending `ImageFormatLoaderExtension`.
   class ImageFormatLoader < Godot::RefCounted
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -11983,16 +10633,11 @@ module Godot
       FlagConvertColors = 2_i64
     end
   end
-  # Base class for creating `ImageFormatLoader` extensions (adding support for extra image formats).
-  #
-  # The engine supports multiple image formats out of the box (PNG, SVG, JPEG, WebP to name a few), but you can choose to implement support for additional image formats by extending this class.
-  # Be sure to respect the documented return types and values. You should create an instance of it, and call `#add_format_loader` to register that loader during the initialization phase.
   class ImageFormatLoaderExtension < Godot::ImageFormatLoader
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
     end
     @@mb_add_format_loader : Void* = Pointer(Void).null
-    # Add this format loader to the engine, allowing it to recognize the file extensions returned by `#_get_recognized_extensions`.
     def add_format_loader() : Void
       if @@mb_add_format_loader.null?
         @@mb_add_format_loader = Bridge.get_method_bind("ImageFormatLoaderExtension", "add_format_loader", 3218959716_i64)
@@ -12000,7 +10645,6 @@ module Godot
       Bridge.ptrcall(@@mb_add_format_loader, @pointer, Pointer(Pointer(Void)).null, Pointer(Void).null)
     end
     @@mb_remove_format_loader : Void* = Pointer(Void).null
-    # Remove this format loader from the engine.
     def remove_format_loader() : Void
       if @@mb_remove_format_loader.null?
         @@mb_remove_format_loader = Bridge.get_method_bind("ImageFormatLoaderExtension", "remove_format_loader", 3218959716_i64)
@@ -12008,40 +10652,11 @@ module Godot
       Bridge.ptrcall(@@mb_remove_format_loader, @pointer, Pointer(Pointer(Void)).null, Pointer(Void).null)
     end
   end
-  # A `Texture2D` based on an `Image`.
-  #
-  # A `Texture2D` based on an `Image`. For an image to be displayed, an `ImageTexture` has to be created from it using the `#create_from_image` method:
-  # ```gdscript
-  #
-  # var image = Image.load_from_file("res://icon.svg")
-  # var texture = ImageTexture.create_from_image(image)
-  # $Sprite2D.texture = texture
-  #
-  # ```
-  # This way, textures can be created at run-time by loading images both from within the editor and externally.
-  # **Warning:** Prefer to load imported textures with [method @GDScript.load] over loading them from within the filesystem dynamically with `#Image.load`, as it may not work in exported projects:
-  # ```gdscript
-  #
-  # var texture = load("res://icon.svg")
-  # $Sprite2D.texture = texture
-  #
-  # ```
-  # This is because images have to be imported as a `CompressedTexture2D` first to be loaded with [method @GDScript.load]. If you'd still like to load an image file just like any other `Resource`, import it as an `Image` resource instead, and then load it normally using the [method @GDScript.load] method.
-  # **Note:** The image can be retrieved from an imported texture using the `#Texture2D.get_image` method, which returns a copy of the image:
-  # ```gdscript
-  #
-  # var texture = load("res://icon.svg")
-  # var image = texture.get_image()
-  #
-  # ```
-  # An `ImageTexture` is not meant to be operated from within the editor interface directly, and is mostly useful for rendering images on screen dynamically via code. If you need to generate images procedurally from within the editor, consider saving and importing images as custom texture resources implementing a new `EditorImportPlugin`.
-  # **Note:** The maximum texture size is 16384×16384 pixels due to graphics hardware limitations.
   class ImageTexture < Godot::Texture2D
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
     end
     @@mb_create_from_image : Void* = Pointer(Void).null
-    # Creates a new `ImageTexture` and initializes it by allocating and setting the data from an `Image`.
     def create_from_image(image : Image) : ImageTexture
       if @@mb_create_from_image.null?
         @@mb_create_from_image = Bridge.get_method_bind("ImageTexture", "create_from_image", 2775144163_i64)
@@ -12054,8 +10669,6 @@ module Godot
       ImageTexture.new(ret_ptr)
     end
     @@mb_set_image : Void* = Pointer(Void).null
-    # Replaces the texture's data with a new `Image`. This will re-allocate new memory for the texture.
-    # If you want to update the image, but don't need to change its parameters (format, size), use `#update` instead for better performance.
     def set_image(image : Image) : Void
       if @@mb_set_image.null?
         @@mb_set_image = Bridge.get_method_bind("ImageTexture", "set_image", 532598488_i64)
@@ -12066,9 +10679,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_image, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_update : Void* = Pointer(Void).null
-    # Replaces the texture's data with a new `Image`.
-    # **Note:** The texture has to be created using `#create_from_image` or initialized first with the `#set_image` method before it can be updated. The new image dimensions, format, and mipmaps configuration should match the existing texture's image configuration.
-    # Use this method over `#set_image` if you need to update the texture frequently, which is faster than allocating additional memory for a new texture each time.
     def update(image : Image) : Void
       if @@mb_update.null?
         @@mb_update = Bridge.get_method_bind("ImageTexture", "update", 532598488_i64)
@@ -12079,7 +10689,6 @@ module Godot
       Bridge.ptrcall(@@mb_update, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_set_size_override : Void* = Pointer(Void).null
-    # Resizes the texture to the specified dimensions.
     def set_size_override(size : Vector2i) : Void
       if @@mb_set_size_override.null?
         @@mb_set_size_override = Bridge.get_method_bind("ImageTexture", "set_size_override", 1130785943_i64)
@@ -12090,16 +10699,11 @@ module Godot
       Bridge.ptrcall(@@mb_set_size_override, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
   end
-  # Texture with 3 dimensions.
-  #
-  # `ImageTexture3D` is a 3-dimensional `ImageTexture` that has a width, height, and depth. See also `ImageTextureLayered`.
-  # 3D textures are typically used to store density maps for `FogMaterial`, color correction LUTs for `Environment`, vector fields for `GPUParticlesAttractorVectorField3D` and collision maps for `GPUParticlesCollisionSDF3D`. 3D textures can also be used in custom shaders.
   class ImageTexture3D < Godot::Texture3D
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
     end
     @@mb_create : Void* = Pointer(Void).null
-    # Creates the `ImageTexture3D` with specified `format`, `width`, `height`, and `depth`. If `use_mipmaps` is `true`, generates mipmaps for the `ImageTexture3D`.
     def create(format : Int64, width : Int64, height : Int64, depth : Int64, use_mipmaps : Bool, data : Godot::Array) : Int64
       if @@mb_create.null?
         @@mb_create = Bridge.get_method_bind("ImageTexture3D", "create", 1130379827_i64)
@@ -12122,7 +10726,6 @@ module Godot
       ret
     end
     @@mb_update : Void* = Pointer(Void).null
-    # Replaces the texture's existing data with the layers specified in `data`. The size of `data` must match the parameters that were used for `#create`. In other words, the texture cannot be resized or have its format changed by calling `#update`.
     def update(data : Godot::Array) : Void
       if @@mb_update.null?
         @@mb_update = Bridge.get_method_bind("ImageTexture3D", "update", 381264803_i64)
@@ -12133,39 +10736,11 @@ module Godot
       Bridge.ptrcall(@@mb_update, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
   end
-  # Mesh optimized for creating geometry manually.
-  #
-  # A mesh type optimized for creating geometry manually, similar to OpenGL 1.x immediate mode.
-  # Here's a sample on how to generate a triangular face:
-  #
-  # ```gdscript
-  #
-  # var mesh = ImmediateMesh.new()
-  # mesh.surface_begin(Mesh.PRIMITIVE_TRIANGLES)
-  # mesh.surface_add_vertex(Vector3.LEFT)
-  # mesh.surface_add_vertex(Vector3.FORWARD)
-  # mesh.surface_add_vertex(Vector3.ZERO)
-  # mesh.surface_end()
-  #
-  # ```
-  # ```csharp
-  #
-  # var mesh = new ImmediateMesh();
-  # mesh.SurfaceBegin(Mesh.PrimitiveType.Triangles);
-  # mesh.SurfaceAddVertex(Vector3.Left);
-  # mesh.SurfaceAddVertex(Vector3.Forward);
-  # mesh.SurfaceAddVertex(Vector3.Zero);
-  # mesh.SurfaceEnd();
-  #
-  # ```
-  #
-  # **Note:** Generating complex geometries with `ImmediateMesh` is highly inefficient. Instead, it is designed to generate simple geometry that changes often.
   class ImmediateMesh < Godot::Mesh
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
     end
     @@mb_surface_begin : Void* = Pointer(Void).null
-    # Begin a new surface.
     def surface_begin(primitive : Int64, material : Material) : Void
       if @@mb_surface_begin.null?
         @@mb_surface_begin = Bridge.get_method_bind("ImmediateMesh", "surface_begin", 2794442543_i64)
@@ -12178,7 +10753,6 @@ module Godot
       Bridge.ptrcall(@@mb_surface_begin, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_surface_set_color : Void* = Pointer(Void).null
-    # Set the color attribute that will be pushed with the next vertex.
     def surface_set_color(color : Color) : Void
       if @@mb_surface_set_color.null?
         @@mb_surface_set_color = Bridge.get_method_bind("ImmediateMesh", "surface_set_color", 2920490490_i64)
@@ -12189,7 +10763,6 @@ module Godot
       Bridge.ptrcall(@@mb_surface_set_color, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_surface_set_normal : Void* = Pointer(Void).null
-    # Set the normal attribute that will be pushed with the next vertex.
     def surface_set_normal(normal : Vector3) : Void
       if @@mb_surface_set_normal.null?
         @@mb_surface_set_normal = Bridge.get_method_bind("ImmediateMesh", "surface_set_normal", 3460891852_i64)
@@ -12200,8 +10773,6 @@ module Godot
       Bridge.ptrcall(@@mb_surface_set_normal, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_surface_set_tangent : Void* = Pointer(Void).null
-    # Set the tangent attribute that will be pushed with the next vertex.
-    # **Note:** Even though `tangent` is a `Plane`, it does not directly represent the tangent plane. Its `Plane.x`, `Plane.y`, and `Plane.z` represent the tangent vector and `Plane.d` should be either `-1` or `1`. See also `Mesh.ARRAY_TANGENT`.
     def surface_set_tangent(tangent : Plane) : Void
       if @@mb_surface_set_tangent.null?
         @@mb_surface_set_tangent = Bridge.get_method_bind("ImmediateMesh", "surface_set_tangent", 3505987427_i64)
@@ -12212,7 +10783,6 @@ module Godot
       Bridge.ptrcall(@@mb_surface_set_tangent, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_surface_set_uv : Void* = Pointer(Void).null
-    # Set the UV attribute that will be pushed with the next vertex.
     def surface_set_uv(uv : Vector2) : Void
       if @@mb_surface_set_uv.null?
         @@mb_surface_set_uv = Bridge.get_method_bind("ImmediateMesh", "surface_set_uv", 743155724_i64)
@@ -12223,7 +10793,6 @@ module Godot
       Bridge.ptrcall(@@mb_surface_set_uv, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_surface_set_uv2 : Void* = Pointer(Void).null
-    # Set the UV2 attribute that will be pushed with the next vertex.
     def surface_set_uv2(uv2 : Vector2) : Void
       if @@mb_surface_set_uv2.null?
         @@mb_surface_set_uv2 = Bridge.get_method_bind("ImmediateMesh", "surface_set_uv2", 743155724_i64)
@@ -12234,7 +10803,6 @@ module Godot
       Bridge.ptrcall(@@mb_surface_set_uv2, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_surface_add_vertex : Void* = Pointer(Void).null
-    # Add a 3D vertex using the current attributes previously set.
     def surface_add_vertex(vertex : Vector3) : Void
       if @@mb_surface_add_vertex.null?
         @@mb_surface_add_vertex = Bridge.get_method_bind("ImmediateMesh", "surface_add_vertex", 3460891852_i64)
@@ -12245,7 +10813,6 @@ module Godot
       Bridge.ptrcall(@@mb_surface_add_vertex, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_surface_add_vertex_2d : Void* = Pointer(Void).null
-    # Add a 2D vertex using the current attributes previously set.
     def surface_add_vertex_2d(vertex : Vector2) : Void
       if @@mb_surface_add_vertex_2d.null?
         @@mb_surface_add_vertex_2d = Bridge.get_method_bind("ImmediateMesh", "surface_add_vertex_2d", 743155724_i64)
@@ -12256,7 +10823,6 @@ module Godot
       Bridge.ptrcall(@@mb_surface_add_vertex_2d, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_surface_end : Void* = Pointer(Void).null
-    # End and commit current surface. Note that surface being created will not be visible until this function is called.
     def surface_end() : Void
       if @@mb_surface_end.null?
         @@mb_surface_end = Bridge.get_method_bind("ImmediateMesh", "surface_end", 3218959716_i64)
@@ -12264,7 +10830,6 @@ module Godot
       Bridge.ptrcall(@@mb_surface_end, @pointer, Pointer(Pointer(Void)).null, Pointer(Void).null)
     end
     @@mb_clear_surfaces : Void* = Pointer(Void).null
-    # Clear all surfaces.
     def clear_surfaces() : Void
       if @@mb_clear_surfaces.null?
         @@mb_clear_surfaces = Bridge.get_method_bind("ImmediateMesh", "clear_surfaces", 3218959716_i64)
@@ -12272,18 +10837,11 @@ module Godot
       Bridge.ptrcall(@@mb_clear_surfaces, @pointer, Pointer(Pointer(Void)).null, Pointer(Void).null)
     end
   end
-  # A `Resource` that contains vertex array-based geometry during the import process.
-  #
-  # ImporterMesh is a type of `Resource` analogous to `ArrayMesh`. It contains vertex array-based geometry, divided in *surfaces*. Each surface contains a completely separate array and a material used to draw it. Design wise, a mesh with multiple surfaces is preferred to a single surface, because objects created in 3D editing software commonly contain multiple materials.
-  # Unlike its runtime counterpart, `ImporterMesh` contains mesh data before various import steps, such as LOD and shadow mesh generation, have taken place. Modify surface data by calling `#clear`, followed by `#add_surface` for each surface.
   class ImporterMesh < Godot::Resource
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
     end
     @@mb_merge_importer_meshes : Void* = Pointer(Void).null
-    # Merges multiple `ImporterMesh`es into a single `ImporterMesh`. Each input mesh is transformed by the corresponding `Transform3D` in the `relative_transforms` array, which must be the same size as `importer_meshes`. Negative scales are supported, and the winding order in the mesh data will be corrected to account for this.
-    # If `deduplicate_surfaces` is `true` and multiple meshes have surfaces with the same names and formats, the surfaces will be merged together when the meshes are merged, and will use the material from the first matching surface. This is useful for reducing the number of surfaces in the resulting mesh, and avoids duplicating materials. Surfaces with bone weights will never be deduplicated. If `deduplicate_surfaces` is `false`, the surfaces will always be kept separate, and will be given unique names.
-    # **Warning:** Blend shapes and LODs are not supported and will be discarded. Do not use this function to discard blend shapes and LODs, as support for these may be added in the future.
     def merge_importer_meshes(importer_meshes : Godot::Array, relative_transforms : Godot::Array, deduplicate_surfaces : Bool) : ImporterMesh
       if @@mb_merge_importer_meshes.null?
         @@mb_merge_importer_meshes = Bridge.get_method_bind("ImporterMesh", "merge_importer_meshes", 1030647649_i64)
@@ -12300,7 +10858,6 @@ module Godot
       ImporterMesh.new(ret_ptr)
     end
     @@mb_add_blend_shape : Void* = Pointer(Void).null
-    # Adds name for a blend shape that will be added with `#add_surface`. Must be called before surface is added.
     def add_blend_shape(name : String) : Void
       if @@mb_add_blend_shape.null?
         @@mb_add_blend_shape = Bridge.get_method_bind("ImporterMesh", "add_blend_shape", 83702148_i64)
@@ -12313,7 +10870,6 @@ module Godot
       Bridge.free_string(str_0)
     end
     @@mb_get_blend_shape_count : Void* = Pointer(Void).null
-    # Returns the number of blend shapes that the mesh holds.
     def get_blend_shape_count() : Int64
       if @@mb_get_blend_shape_count.null?
         @@mb_get_blend_shape_count = Bridge.get_method_bind("ImporterMesh", "get_blend_shape_count", 3905245786_i64)
@@ -12323,7 +10879,6 @@ module Godot
       ret
     end
     @@mb_get_blend_shape_name : Void* = Pointer(Void).null
-    # Returns the name of the blend shape at this index.
     def get_blend_shape_name(blend_shape_idx : Int64) : String
       if @@mb_get_blend_shape_name.null?
         @@mb_get_blend_shape_name = Bridge.get_method_bind("ImporterMesh", "get_blend_shape_name", 844755477_i64)
@@ -12334,7 +10889,6 @@ module Godot
       ""
     end
     @@mb_set_blend_shape_mode : Void* = Pointer(Void).null
-    # Sets the blend shape mode.
     def set_blend_shape_mode(mode : Int64) : Void
       if @@mb_set_blend_shape_mode.null?
         @@mb_set_blend_shape_mode = Bridge.get_method_bind("ImporterMesh", "set_blend_shape_mode", 227983991_i64)
@@ -12345,7 +10899,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_blend_shape_mode, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_blend_shape_mode : Void* = Pointer(Void).null
-    # Returns the blend shape mode for this Mesh.
     def get_blend_shape_mode() : Int64
       if @@mb_get_blend_shape_mode.null?
         @@mb_get_blend_shape_mode = Bridge.get_method_bind("ImporterMesh", "get_blend_shape_mode", 836485024_i64)
@@ -12355,13 +10908,6 @@ module Godot
       ret
     end
     @@mb_add_surface : Void* = Pointer(Void).null
-    # Creates a new surface. `#Mesh.get_surface_count` will become the `surf_idx` for this new surface.
-    # Surfaces are created to be rendered using a `primitive`, which may be any of the values defined in `Mesh.PrimitiveType`.
-    # The `arrays` argument is an array of arrays. Each of the `Mesh.ARRAY_MAX` elements contains an array with some of the mesh data for this surface as described by the corresponding member of `Mesh.ArrayType` or `null` if it is not used by the surface. For example, `arrays`0`` is the array of vertices. That first vertex sub-array is always required; the others are optional. Adding an index array puts this surface into "index mode" where the vertex and other arrays become the sources of data and the index array defines the vertex order. All sub-arrays must have the same length as the vertex array (or be an exact multiple of the vertex array's length, when multiple elements of a sub-array correspond to a single vertex) or be empty, except for `Mesh.ARRAY_INDEX` if it is used.
-    # The `blend_shapes` argument is an array of vertex data for each blend shape. Each element is an array of the same structure as `arrays`, but `Mesh.ARRAY_VERTEX`, `Mesh.ARRAY_NORMAL`, and `Mesh.ARRAY_TANGENT` are set if and only if they are set in `arrays` and all other entries are `null`.
-    # The `lods` argument is a dictionary with `float` keys and `PackedInt32Array` values. Each entry in the dictionary represents an LOD level of the surface, where the value is the `Mesh.ARRAY_INDEX` array to use for the LOD level and the key is roughly proportional to the distance at which the LOD stats being used. I.e., increasing the key of an LOD also increases the distance that the objects has to be from the camera before the LOD is used.
-    # The `flags` argument is the bitwise OR of, as required: One value of `Mesh.ArrayCustomFormat` left shifted by `ARRAY_FORMAT_CUSTOMn_SHIFT` for each custom channel in use, `Mesh.ARRAY_FLAG_USE_DYNAMIC_UPDATE`, `Mesh.ARRAY_FLAG_USE_8_BONE_WEIGHTS`, or `Mesh.ARRAY_FLAG_USES_EMPTY_VERTEX_ARRAY`.
-    # **Note:** When using indices, it is recommended to only use points, lines, or triangles.
     def add_surface(primitive : Int64, arrays : Godot::Array, blend_shapes : Godot::Array, lods : Void*, material : Material, name : String, flags : Int64) : Void
       if @@mb_add_surface.null?
         @@mb_add_surface = Bridge.get_method_bind("ImporterMesh", "add_surface", 1740448849_i64)
@@ -12386,7 +10932,6 @@ module Godot
       Bridge.free_string(str_5)
     end
     @@mb_get_surface_count : Void* = Pointer(Void).null
-    # Returns the number of surfaces that the mesh holds.
     def get_surface_count() : Int64
       if @@mb_get_surface_count.null?
         @@mb_get_surface_count = Bridge.get_method_bind("ImporterMesh", "get_surface_count", 3905245786_i64)
@@ -12396,7 +10941,6 @@ module Godot
       ret
     end
     @@mb_get_surface_primitive_type : Void* = Pointer(Void).null
-    # Returns the primitive type of the requested surface (see `#add_surface`).
     def get_surface_primitive_type(surface_idx : Int64) : Int64
       if @@mb_get_surface_primitive_type.null?
         @@mb_get_surface_primitive_type = Bridge.get_method_bind("ImporterMesh", "get_surface_primitive_type", 3552571330_i64)
@@ -12409,7 +10953,6 @@ module Godot
       ret
     end
     @@mb_get_surface_name : Void* = Pointer(Void).null
-    # Gets the name assigned to this surface.
     def get_surface_name(surface_idx : Int64) : String
       if @@mb_get_surface_name.null?
         @@mb_get_surface_name = Bridge.get_method_bind("ImporterMesh", "get_surface_name", 844755477_i64)
@@ -12420,7 +10963,6 @@ module Godot
       ""
     end
     @@mb_get_surface_arrays : Void* = Pointer(Void).null
-    # Returns the arrays for the vertices, normals, UVs, etc. that make up the requested surface. See `#add_surface`.
     def get_surface_arrays(surface_idx : Int64) : Godot::Array
       if @@mb_get_surface_arrays.null?
         @@mb_get_surface_arrays = Bridge.get_method_bind("ImporterMesh", "get_surface_arrays", 663333327_i64)
@@ -12433,7 +10975,6 @@ module Godot
       Godot::Array.new(ret_ptr)
     end
     @@mb_get_surface_blend_shape_arrays : Void* = Pointer(Void).null
-    # Returns a single set of blend shape arrays for the requested blend shape index for a surface.
     def get_surface_blend_shape_arrays(surface_idx : Int64, blend_shape_idx : Int64) : Godot::Array
       if @@mb_get_surface_blend_shape_arrays.null?
         @@mb_get_surface_blend_shape_arrays = Bridge.get_method_bind("ImporterMesh", "get_surface_blend_shape_arrays", 2345056839_i64)
@@ -12448,7 +10989,6 @@ module Godot
       Godot::Array.new(ret_ptr)
     end
     @@mb_get_surface_lod_count : Void* = Pointer(Void).null
-    # Returns the number of lods that the mesh holds on a given surface.
     def get_surface_lod_count(surface_idx : Int64) : Int64
       if @@mb_get_surface_lod_count.null?
         @@mb_get_surface_lod_count = Bridge.get_method_bind("ImporterMesh", "get_surface_lod_count", 923996154_i64)
@@ -12461,7 +11001,6 @@ module Godot
       ret
     end
     @@mb_get_surface_lod_size : Void* = Pointer(Void).null
-    # Returns the screen ratio which activates a lod for a surface.
     def get_surface_lod_size(surface_idx : Int64, lod_idx : Int64) : Float64
       if @@mb_get_surface_lod_size.null?
         @@mb_get_surface_lod_size = Bridge.get_method_bind("ImporterMesh", "get_surface_lod_size", 3085491603_i64)
@@ -12476,7 +11015,6 @@ module Godot
       ret
     end
     @@mb_get_surface_lod_indices : Void* = Pointer(Void).null
-    # Returns the index buffer of a lod for a surface.
     def get_surface_lod_indices(surface_idx : Int64, lod_idx : Int64) : Void*
       if @@mb_get_surface_lod_indices.null?
         @@mb_get_surface_lod_indices = Bridge.get_method_bind("ImporterMesh", "get_surface_lod_indices", 1265128013_i64)
@@ -12491,7 +11029,6 @@ module Godot
       ret_ptr
     end
     @@mb_get_surface_material : Void* = Pointer(Void).null
-    # Returns a `Material` in a given surface. Surface is rendered using this material.
     def get_surface_material(surface_idx : Int64) : Material
       if @@mb_get_surface_material.null?
         @@mb_get_surface_material = Bridge.get_method_bind("ImporterMesh", "get_surface_material", 2897466400_i64)
@@ -12504,7 +11041,6 @@ module Godot
       Material.new(ret_ptr)
     end
     @@mb_get_surface_format : Void* = Pointer(Void).null
-    # Returns the format of the surface that the mesh holds.
     def get_surface_format(surface_idx : Int64) : Int64
       if @@mb_get_surface_format.null?
         @@mb_get_surface_format = Bridge.get_method_bind("ImporterMesh", "get_surface_format", 923996154_i64)
@@ -12517,7 +11053,6 @@ module Godot
       ret
     end
     @@mb_set_surface_name : Void* = Pointer(Void).null
-    # Sets a name for a given surface.
     def set_surface_name(surface_idx : Int64, name : String) : Void
       if @@mb_set_surface_name.null?
         @@mb_set_surface_name = Bridge.get_method_bind("ImporterMesh", "set_surface_name", 501894301_i64)
@@ -12532,7 +11067,6 @@ module Godot
       Bridge.free_string(str_1)
     end
     @@mb_set_surface_material : Void* = Pointer(Void).null
-    # Sets a `Material` for a given surface. Surface will be rendered using this material.
     def set_surface_material(surface_idx : Int64, material : Material) : Void
       if @@mb_set_surface_material.null?
         @@mb_set_surface_material = Bridge.get_method_bind("ImporterMesh", "set_surface_material", 3671737478_i64)
@@ -12545,11 +11079,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_surface_material, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_generate_lods : Void* = Pointer(Void).null
-    # Generates all lods for this ImporterMesh.
-    # `normal_merge_angle` is in degrees and used in the same way as the importer settings in `lods`.
-    # `normal_split_angle` is not used and only remains for compatibility with older versions of the API.
-    # The number of generated lods can be accessed using `#get_surface_lod_count`, and each LOD is available in `#get_surface_lod_size` and `#get_surface_lod_indices`.
-    # `bone_transform_array` is an `Array` which can be either empty or contain `Transform3D`s which, for each of the mesh's bone IDs, will apply mesh skinning when generating the LOD mesh variations. This is usually used to account for discrepancies in scale between the mesh itself and its skinning data.
     def generate_lods(normal_merge_angle : Float64, normal_split_angle : Float64, bone_transform_array : Godot::Array) : Void
       if @@mb_generate_lods.null?
         @@mb_generate_lods = Bridge.get_method_bind("ImporterMesh", "generate_lods", 2491878677_i64)
@@ -12564,9 +11093,6 @@ module Godot
       Bridge.ptrcall(@@mb_generate_lods, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_mesh : Void* = Pointer(Void).null
-    # Returns the mesh data represented by this `ImporterMesh` as a usable `ArrayMesh`.
-    # This method caches the returned mesh, and subsequent calls will return the cached data until `#clear` is called.
-    # If not yet cached and `base_mesh` is provided, `base_mesh` will be used and mutated.
     def get_mesh(base_mesh : ArrayMesh) : ArrayMesh
       if @@mb_get_mesh.null?
         @@mb_get_mesh = Bridge.get_method_bind("ImporterMesh", "get_mesh", 1457573577_i64)
@@ -12579,7 +11105,6 @@ module Godot
       ArrayMesh.new(ret_ptr)
     end
     @@mb_from_mesh : Void* = Pointer(Void).null
-    # Converts the given `Mesh` into an `ImporterMesh` by copying all its surfaces, blend shapes, materials, and metadata into a new `ImporterMesh` object.
     def from_mesh(mesh : Mesh) : ImporterMesh
       if @@mb_from_mesh.null?
         @@mb_from_mesh = Bridge.get_method_bind("ImporterMesh", "from_mesh", 283226343_i64)
@@ -12592,7 +11117,6 @@ module Godot
       ImporterMesh.new(ret_ptr)
     end
     @@mb_clear : Void* = Pointer(Void).null
-    # Removes all surfaces and blend shapes from this `ImporterMesh`.
     def clear() : Void
       if @@mb_clear.null?
         @@mb_clear = Bridge.get_method_bind("ImporterMesh", "clear", 3218959716_i64)
@@ -12600,7 +11124,6 @@ module Godot
       Bridge.ptrcall(@@mb_clear, @pointer, Pointer(Pointer(Void)).null, Pointer(Void).null)
     end
     @@mb_set_lightmap_size_hint : Void* = Pointer(Void).null
-    # Sets the size hint of this mesh for lightmap-unwrapping in UV-space.
     def set_lightmap_size_hint(size : Vector2i) : Void
       if @@mb_set_lightmap_size_hint.null?
         @@mb_set_lightmap_size_hint = Bridge.get_method_bind("ImporterMesh", "set_lightmap_size_hint", 1130785943_i64)
@@ -12611,7 +11134,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_lightmap_size_hint, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_lightmap_size_hint : Void* = Pointer(Void).null
-    # Returns the size hint of this mesh for lightmap-unwrapping in UV-space.
     def get_lightmap_size_hint() : Vector2i
       if @@mb_get_lightmap_size_hint.null?
         @@mb_get_lightmap_size_hint = Bridge.get_method_bind("ImporterMesh", "get_lightmap_size_hint", 3690982128_i64)
@@ -12816,10 +11338,6 @@ module Godot
       ret
     end
   end
-  # A singleton for handling inputs.
-  #
-  # The `Input` singleton handles key presses, mouse buttons and movement, gamepads, and input actions. Actions and their events can be set in the **Input Map** tab in **Project > Project Settings**, or with the `InputMap` class.
-  # **Note:** `Input`'s methods reflect the global input state and are not affected by `#Control.accept_event` or `#Viewport.set_input_as_handled`, as those methods only deal with the way input is propagated in the `SceneTree`.
   class Input < Godot::Object
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -12852,7 +11370,6 @@ module Godot
       CursorHelp = 16_i64
     end
     @@mb_is_anything_pressed : Void* = Pointer(Void).null
-    # Returns `true` if any action, key, joypad button, or mouse button is being pressed. This will also return `true` if any action is simulated via code by calling `#action_press`.
     def is_anything_pressed() : Bool
       if @@mb_is_anything_pressed.null?
         @@mb_is_anything_pressed = Bridge.get_method_bind("Input", "is_anything_pressed", 36873697_i64)
@@ -12862,29 +11379,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_is_key_pressed : Void* = Pointer(Void).null
-    # Returns `true` if you are pressing the Latin key in the current keyboard layout. You can pass a `Key` constant.
-    # `#is_key_pressed` is only recommended over `#is_physical_key_pressed` in non-game applications. This ensures that shortcut keys behave as expected depending on the user's keyboard layout, as keyboard shortcuts are generally dependent on the keyboard layout in non-game applications. If in doubt, use `#is_physical_key_pressed`.
-    # **Note:** Due to keyboard ghosting, `#is_key_pressed` may return `false` even if one of the action's keys is pressed. See [$2]($1) in the documentation for more information.
-    # **Note:** If you want to check if a key was just pressed by using its keycode, use Godot's input action system with `#is_action_just_pressed` or use the `#Node._input` method like this instead:
-    #
-    # ```gdscript
-    #
-    # func _input(event):
-    # 	if event is InputEventKey and not event.is_echo() and event.is_pressed() and event.keycode == KEY_SPACE:
-    # 		pass # Your code here.
-    #
-    # ```
-    # ```csharp
-    #
-    # public override void _Input(InputEvent @event)
-    # {
-    # 	if (@event is InputEventKey eventKey && !eventKey.IsEcho() && eventKey.Pressed && eventKey.Keycode == Key.Space)
-    # 	{
-    # 		// Your code here.
-    # 	}
-    # }
-    #
-    # ```
     def is_key_pressed(keycode : Int64) : Bool
       if @@mb_is_key_pressed.null?
         @@mb_is_key_pressed = Bridge.get_method_bind("Input", "is_key_pressed", 1938909964_i64)
@@ -12897,29 +11391,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_is_physical_key_pressed : Void* = Pointer(Void).null
-    # Returns `true` if you are pressing the key in the physical location on the 101/102-key US QWERTY keyboard. You can pass a `Key` constant.
-    # `#is_physical_key_pressed` is recommended over `#is_key_pressed` for in-game actions, as it will make `W`/`A`/`S`/`D` layouts work regardless of the user's keyboard layout. `#is_physical_key_pressed` will also ensure that the top row number keys work on any keyboard layout. If in doubt, use `#is_physical_key_pressed`.
-    # **Note:** Due to keyboard ghosting, `#is_physical_key_pressed` may return `false` even if one of the action's keys is pressed. See [$2]($1) in the documentation for more information.
-    # **Note:** If you want to check if a key was just pressed by using its physical keycode, use Godot's input action system with `#is_action_just_pressed` or use the `#Node._input` method like this instead:
-    #
-    # ```gdscript
-    #
-    # func _input(event):
-    # 	if event is InputEventKey and not event.is_echo() and event.is_pressed() and event.physical_keycode == KEY_SPACE:
-    # 		pass # Your code here.
-    #
-    # ```
-    # ```csharp
-    #
-    # public override void _Input(InputEvent @event)
-    # {
-    # 	if (@event is InputEventKey eventKey && !eventKey.IsEcho() && eventKey.Pressed && eventKey.PhysicalKeycode == Key.Space)
-    # 	{
-    # 		// Your code here.
-    # 	}
-    # }
-    #
-    # ```
     def is_physical_key_pressed(keycode : Int64) : Bool
       if @@mb_is_physical_key_pressed.null?
         @@mb_is_physical_key_pressed = Bridge.get_method_bind("Input", "is_physical_key_pressed", 1938909964_i64)
@@ -12932,27 +11403,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_is_key_label_pressed : Void* = Pointer(Void).null
-    # Returns `true` if you are pressing the key with the `keycode` printed on it. You can pass a `Key` constant or any Unicode character code.
-    # **Note:** If you want to check if a key was just pressed by using its label, use Godot's input action system with `#is_action_just_pressed` or use the `#Node._input` method like this instead:
-    #
-    # ```gdscript
-    #
-    # func _input(event):
-    # 	if event is InputEventKey and not event.is_echo() and event.is_pressed() and event.key_label == KEY_SPACE:
-    # 		pass # Your code here.
-    #
-    # ```
-    # ```csharp
-    #
-    # public override void _Input(InputEvent @event)
-    # {
-    # 	if (@event is InputEventKey eventKey && !eventKey.IsEcho() && eventKey.Pressed && eventKey.KeyLabel == Key.Space)
-    # 	{
-    # 		// Your code here.
-    # 	}
-    # }
-    #
-    # ```
     def is_key_label_pressed(keycode : Int64) : Bool
       if @@mb_is_key_label_pressed.null?
         @@mb_is_key_label_pressed = Bridge.get_method_bind("Input", "is_key_label_pressed", 1938909964_i64)
@@ -12965,27 +11415,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_is_mouse_button_pressed : Void* = Pointer(Void).null
-    # Returns `true` if you are pressing the mouse button specified with `MouseButton`.
-    # **Note:** If you want to check if a mouse button was just pressed, use Godot's input action system with `#is_action_just_pressed` or use the `#Node._input` method like this instead:
-    #
-    # ```gdscript
-    #
-    # func _input(event):
-    # 	if event is InputEventMouseButton and event.is_pressed() and event.button_index == MOUSE_BUTTON_LEFT:
-    # 		pass # Your code here.
-    #
-    # ```
-    # ```csharp
-    #
-    # public override void _Input(InputEvent @event)
-    # {
-    # 	if (@event is InputEventMouseButton eventMouseButton && eventMouseButton.Pressed && eventMouseButton.ButtonIndex == MouseButton.Left)
-    # 	{
-    # 		// Your code here.
-    # 	}
-    # }
-    #
-    # ```
     def is_mouse_button_pressed(button : Int64) : Bool
       if @@mb_is_mouse_button_pressed.null?
         @@mb_is_mouse_button_pressed = Bridge.get_method_bind("Input", "is_mouse_button_pressed", 1821097125_i64)
@@ -12998,27 +11427,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_is_joy_button_pressed : Void* = Pointer(Void).null
-    # Returns `true` if you are pressing the joypad button at index `button`.
-    # **Note:** If you want to check if a joypad button was just pressed, use Godot's input action system with `#is_action_just_pressed` or use the `#Node._input` method like this instead:
-    #
-    # ```gdscript
-    #
-    # func _input(event):
-    # 	if event is InputEventJoypadButton and event.is_pressed() and event.button_index == JOY_BUTTON_A:
-    # 		pass # Your code here.
-    #
-    # ```
-    # ```csharp
-    #
-    # public override void _Input(InputEvent @event)
-    # {
-    # 	if (@event is InputEventJoypadButton eventButton && eventButton.Pressed && eventButton.ButtonIndex == JoyButton.A)
-    # 	{
-    # 		// Your code here.
-    # 	}
-    # }
-    #
-    # ```
     def is_joy_button_pressed(device : Int64, button : Int64) : Bool
       if @@mb_is_joy_button_pressed.null?
         @@mb_is_joy_button_pressed = Bridge.get_method_bind("Input", "is_joy_button_pressed", 787208542_i64)
@@ -13033,9 +11441,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_is_action_pressed : Void* = Pointer(Void).null
-    # Returns `true` if you are pressing the action event.
-    # If `exact_match` is `false`, it ignores additional input modifiers for `InputEventKey` and `InputEventMouseButton` events, and the direction for `InputEventJoypadMotion` events.
-    # **Note:** Due to keyboard ghosting, `#is_action_pressed` may return `false` even if one of the action's keys is pressed. See [$2]($1) in the documentation for more information.
     def is_action_pressed(action : String, exact_match : Bool) : Bool
       if @@mb_is_action_pressed.null?
         @@mb_is_action_pressed = Bridge.get_method_bind("Input", "is_action_pressed", 1558498928_i64)
@@ -13052,12 +11457,6 @@ module Godot
       Bridge.free_string_name(sn_0)
     end
     @@mb_is_action_just_pressed : Void* = Pointer(Void).null
-    # Returns `true` when the user has *started* pressing the action event in the current frame or physics tick. It will only return `true` on the frame or tick that the user pressed down the button.
-    # This is useful for code that needs to run only once when an action is pressed, instead of every frame while it's pressed.
-    # If `exact_match` is `false`, it ignores additional input modifiers for `InputEventKey` and `InputEventMouseButton` events, and the direction for `InputEventJoypadMotion` events.
-    # **Note:** Returning `true` does not imply that the action is *still* pressed. An action can be pressed and released again rapidly, and `true` will still be returned so as not to miss input.
-    # **Note:** Due to keyboard ghosting, `#is_action_just_pressed` may return `false` even if one of the action's keys is pressed. See [$2]($1) in the documentation for more information.
-    # **Note:** During input handling (e.g. `#Node._input`), use `#InputEvent.is_action_pressed` instead to query the action state of the current event. See also `#is_action_just_pressed_by_event`.
     def is_action_just_pressed(action : String, exact_match : Bool) : Bool
       if @@mb_is_action_just_pressed.null?
         @@mb_is_action_just_pressed = Bridge.get_method_bind("Input", "is_action_just_pressed", 1558498928_i64)
@@ -13074,10 +11473,6 @@ module Godot
       Bridge.free_string_name(sn_0)
     end
     @@mb_is_action_just_released : Void* = Pointer(Void).null
-    # Returns `true` when the user *stops* pressing the action event in the current frame or physics tick. It will only return `true` on the frame or tick that the user releases the button.
-    # **Note:** Returning `true` does not imply that the action is *still* not pressed. An action can be released and pressed again rapidly, and `true` will still be returned so as not to miss input.
-    # If `exact_match` is `false`, it ignores additional input modifiers for `InputEventKey` and `InputEventMouseButton` events, and the direction for `InputEventJoypadMotion` events.
-    # **Note:** During input handling (e.g. `#Node._input`), use `#InputEvent.is_action_released` instead to query the action state of the current event. See also `#is_action_just_released_by_event`.
     def is_action_just_released(action : String, exact_match : Bool) : Bool
       if @@mb_is_action_just_released.null?
         @@mb_is_action_just_released = Bridge.get_method_bind("Input", "is_action_just_released", 1558498928_i64)
@@ -13094,11 +11489,6 @@ module Godot
       Bridge.free_string_name(sn_0)
     end
     @@mb_is_action_just_pressed_by_event : Void* = Pointer(Void).null
-    # Returns `true` when the user has *started* pressing the action event in the current frame or physics tick, and the first event that triggered action press in the current frame/physics tick was `event`. It will only return `true` on the frame or tick that the user pressed down the button.
-    # This is useful for code that needs to run only once when an action is pressed, and the action is processed during input handling (e.g. `#Node._input`).
-    # If `exact_match` is `false`, it ignores additional input modifiers for `InputEventKey` and `InputEventMouseButton` events, and the direction for `InputEventJoypadMotion` events.
-    # **Note:** Returning `true` does not imply that the action is *still* pressed. An action can be pressed and released again rapidly, and `true` will still be returned so as not to miss input.
-    # **Note:** Due to keyboard ghosting, `#is_action_just_pressed` may return `false` even if one of the action's keys is pressed. See [$2]($1) in the documentation for more information.
     def is_action_just_pressed_by_event(action : String, event : InputEvent, exact_match : Bool) : Bool
       if @@mb_is_action_just_pressed_by_event.null?
         @@mb_is_action_just_pressed_by_event = Bridge.get_method_bind("Input", "is_action_just_pressed_by_event", 551972873_i64)
@@ -13117,10 +11507,6 @@ module Godot
       Bridge.free_string_name(sn_0)
     end
     @@mb_is_action_just_released_by_event : Void* = Pointer(Void).null
-    # Returns `true` when the user *stops* pressing the action event in the current frame or physics tick, and the first event that triggered action release in the current frame/physics tick was `event`. It will only return `true` on the frame or tick that the user releases the button.
-    # This is useful when an action is processed during input handling (e.g. `#Node._input`).
-    # **Note:** Returning `true` does not imply that the action is *still* not pressed. An action can be released and pressed again rapidly, and `true` will still be returned so as not to miss input.
-    # If `exact_match` is `false`, it ignores additional input modifiers for `InputEventKey` and `InputEventMouseButton` events, and the direction for `InputEventJoypadMotion` events.
     def is_action_just_released_by_event(action : String, event : InputEvent, exact_match : Bool) : Bool
       if @@mb_is_action_just_released_by_event.null?
         @@mb_is_action_just_released_by_event = Bridge.get_method_bind("Input", "is_action_just_released_by_event", 551972873_i64)
@@ -13139,8 +11525,6 @@ module Godot
       Bridge.free_string_name(sn_0)
     end
     @@mb_get_action_strength : Void* = Pointer(Void).null
-    # Returns a value between `0.0` and `1.0` representing the intensity of the given action. In a joypad, for example, the further away the axis (analog sticks or L2, R2 triggers) is from the dead zone, the closer the value will be to `1.0`. If the action is mapped to a control that has no axis such as the keyboard, the value returned will be `0.0` or `1.0`.
-    # If `exact_match` is `false`, it ignores additional input modifiers for `InputEventKey` and `InputEventMouseButton` events, and the direction for `InputEventJoypadMotion` events.
     def get_action_strength(action : String, exact_match : Bool) : Float64
       if @@mb_get_action_strength.null?
         @@mb_get_action_strength = Bridge.get_method_bind("Input", "get_action_strength", 801543509_i64)
@@ -13157,8 +11541,6 @@ module Godot
       Bridge.free_string_name(sn_0)
     end
     @@mb_get_action_raw_strength : Void* = Pointer(Void).null
-    # Returns a value between `0.0` and `1.0` representing the raw intensity of the given action, ignoring the action's deadzone. In most cases, you should use `#get_action_strength` instead.
-    # If `exact_match` is `false`, it ignores additional input modifiers for `InputEventKey` and `InputEventMouseButton` events, and the direction for `InputEventJoypadMotion` events.
     def get_action_raw_strength(action : String, exact_match : Bool) : Float64
       if @@mb_get_action_raw_strength.null?
         @@mb_get_action_raw_strength = Bridge.get_method_bind("Input", "get_action_raw_strength", 801543509_i64)
@@ -13175,8 +11557,6 @@ module Godot
       Bridge.free_string_name(sn_0)
     end
     @@mb_get_axis : Void* = Pointer(Void).null
-    # Returns axis input value by specifying two actions, one negative and one positive.
-    # This is a shorthand for writing `Input.get_action_strength("positive_action") - Input.get_action_strength("negative_action")`.
     def get_axis(negative_action : String, positive_action : String) : Float64
       if @@mb_get_axis.null?
         @@mb_get_axis = Bridge.get_method_bind("Input", "get_axis", 1958752504_i64)
@@ -13194,9 +11574,6 @@ module Godot
       Bridge.free_string_name(sn_1)
     end
     @@mb_get_vector : Void* = Pointer(Void).null
-    # Returns an input vector by specifying four actions for the positive and negative X and Y axes.
-    # This method is useful when getting vector input, such as from a joystick, directional pad, arrows, or WASD. The vector has its length limited to `1.0` and has a circular deadzone, which is useful for using vector input as movement.
-    # By default, the deadzone is automatically calculated from the average of the action deadzones. However, you can override the deadzone to be whatever you want (on the range of `0.0` to `1.0`).
     def get_vector(negative_x : String, positive_x : String, negative_y : String, positive_y : String, deadzone : Float64) : Vector2
       if @@mb_get_vector.null?
         @@mb_get_vector = Bridge.get_method_bind("Input", "get_vector", 2479607902_i64)
@@ -13222,8 +11599,6 @@ module Godot
       Bridge.free_string_name(sn_3)
     end
     @@mb_add_joy_mapping : Void* = Pointer(Void).null
-    # Adds a new joypad mapping entry (in SDL format) to the mapping database, and optionally updates the already connected devices.
-    # **Note:** See [$2]($1) for more information about the SDL controller mapping format.
     def add_joy_mapping(mapping : String, update_existing : Bool) : Void
       if @@mb_add_joy_mapping.null?
         @@mb_add_joy_mapping = Bridge.get_method_bind("Input", "add_joy_mapping", 1168363258_i64)
@@ -13238,8 +11613,6 @@ module Godot
       Bridge.free_string(str_0)
     end
     @@mb_remove_joy_mapping : Void* = Pointer(Void).null
-    # Removes all mappings from the internal database that match the given GUID. All currently connected joypads that use this GUID will become unmapped.
-    # On Android, Godot will map to an internal fallback mapping.
     def remove_joy_mapping(guid : String) : Void
       if @@mb_remove_joy_mapping.null?
         @@mb_remove_joy_mapping = Bridge.get_method_bind("Input", "remove_joy_mapping", 83702148_i64)
@@ -13252,7 +11625,6 @@ module Godot
       Bridge.free_string(str_0)
     end
     @@mb_is_joy_known : Void* = Pointer(Void).null
-    # Returns `true` if the system knows the specified device. This means that it sets all button and axis indices. Unknown joypads are not expected to match these constants, but you can still retrieve events from them.
     def is_joy_known(device : Int64) : Bool
       if @@mb_is_joy_known.null?
         @@mb_is_joy_known = Bridge.get_method_bind("Input", "is_joy_known", 3067735520_i64)
@@ -13265,7 +11637,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_get_joy_axis : Void* = Pointer(Void).null
-    # Returns the current value of the joypad axis at index `axis`.
     def get_joy_axis(device : Int64, axis : Int64) : Float64
       if @@mb_get_joy_axis.null?
         @@mb_get_joy_axis = Bridge.get_method_bind("Input", "get_joy_axis", 4063175957_i64)
@@ -13280,7 +11651,6 @@ module Godot
       ret
     end
     @@mb_get_joy_name : Void* = Pointer(Void).null
-    # Returns the name of the joypad at the specified device index, e.g. `PS4 Controller`. Godot uses the [$2]($1) to determine gamepad names.
     def get_joy_name(device : Int64) : String
       if @@mb_get_joy_name.null?
         @@mb_get_joy_name = Bridge.get_method_bind("Input", "get_joy_name", 990163283_i64)
@@ -13291,7 +11661,6 @@ module Godot
       ""
     end
     @@mb_get_joy_guid : Void* = Pointer(Void).null
-    # Returns an SDL-compatible device GUID on platforms that use gamepad remapping, e.g. `030000004c050000c405000000010000`. Returns an empty string if it cannot be found. Godot uses SDL's internal mappings, supplemented by community-contributed mappings, to determine gamepad names and mappings based on this GUID.
     def get_joy_guid(device : Int64) : String
       if @@mb_get_joy_guid.null?
         @@mb_get_joy_guid = Bridge.get_method_bind("Input", "get_joy_guid", 844755477_i64)
@@ -13302,16 +11671,6 @@ module Godot
       ""
     end
     @@mb_get_joy_info : Void* = Pointer(Void).null
-    # Returns a dictionary with extra platform-specific information about the device, e.g. the raw gamepad name from the OS or the Steam Input index.
-    # On Windows, Linux, macOS, and iOS, the dictionary contains the following fields:
-    # `raw_name`: The name of the controller as it came from the OS, before getting renamed by the controller database.
-    # `vendor_id`: The USB vendor ID of the device.
-    # `product_id`: The USB product ID of the device.
-    # `serial_number`: The serial number of the device. This key won't be present if the serial number is unavailable.
-    # The dictionary can also include the following fields under selected platforms:
-    # `steam_input_index`: The Steam Input gamepad index (Windows, Linux, and macOS only). If the device is not a Steam Input device this key won't be present.
-    # `xinput_index`: The index of the controller in the XInput system (Windows only). This key won't be present for devices not handled by XInput.
-    # **Note:** The returned dictionary is always empty on Android and Web.
     def get_joy_info(device : Int64) : Void*
       if @@mb_get_joy_info.null?
         @@mb_get_joy_info = Bridge.get_method_bind("Input", "get_joy_info", 3485342025_i64)
@@ -13324,8 +11683,6 @@ module Godot
       ret_ptr
     end
     @@mb_should_ignore_device : Void* = Pointer(Void).null
-    # Queries whether an input device should be ignored or not. Devices can be ignored by setting the environment variable `SDL_GAMECONTROLLER_IGNORE_DEVICES`. See [$2]($1) for more information.
-    # **Note:** Some 3rd party tools can contribute to the list of ignored devices. For example, *SteamInput* creates virtual devices from physical devices for remapping purposes. To avoid handling the same input device twice, the original device is added to the ignore list.
     def should_ignore_device(vendor_id : Int64, product_id : Int64) : Bool
       if @@mb_should_ignore_device.null?
         @@mb_should_ignore_device = Bridge.get_method_bind("Input", "should_ignore_device", 2522259332_i64)
@@ -13340,8 +11697,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_get_connected_joypads : Void* = Pointer(Void).null
-    # Returns an `Array` containing the device IDs of all currently connected joypads.
-    # **Note:** The order of connected joypads can not be guaranteed to be the same after a project and/or the editor is restarted, because Godot doesn't save the order of joypad connections. Joypads are registered in the order they are discovered by Godot.
     def get_connected_joypads() : Godot::Array
       if @@mb_get_connected_joypads.null?
         @@mb_get_connected_joypads = Bridge.get_method_bind("Input", "get_connected_joypads", 2915620761_i64)
@@ -13351,9 +11706,6 @@ module Godot
       Godot::Array.new(ret_ptr)
     end
     @@mb_get_joy_vibration_strength : Void* = Pointer(Void).null
-    # Returns the strength of the joypad vibration: x is the strength of the weak motor, and y is the strength of the strong motor.
-    # **Note:** This method returns the same values that were passed to `#start_joy_vibration`, and these values do **not** change when the joypad's vibration runs out, they only get reset after a call to `#stop_joy_vibration`.
-    # If you want to check if a joypad is still vibrating, use `#is_joy_vibrating` instead.
     def get_joy_vibration_strength(device : Int64) : Vector2
       if @@mb_get_joy_vibration_strength.null?
         @@mb_get_joy_vibration_strength = Bridge.get_method_bind("Input", "get_joy_vibration_strength", 3114997196_i64)
@@ -13366,9 +11718,6 @@ module Godot
       ret
     end
     @@mb_get_joy_vibration_duration : Void* = Pointer(Void).null
-    # Returns the duration of the current vibration effect in seconds.
-    # **Note:** This method returns the same value that was passed to `#start_joy_vibration`, and this value does **not** change when the joypad's vibration runs out, it only gets reset after a call to `#stop_joy_vibration`.
-    # If you want to check if a joypad is still vibrating, use `#is_joy_vibrating` instead.
     def get_joy_vibration_duration(device : Int64) : Float64
       if @@mb_get_joy_vibration_duration.null?
         @@mb_get_joy_vibration_duration = Bridge.get_method_bind("Input", "get_joy_vibration_duration", 4025615559_i64)
@@ -13381,7 +11730,6 @@ module Godot
       ret
     end
     @@mb_get_joy_vibration_remaining_duration : Void* = Pointer(Void).null
-    # Returns the remaining duration of the current vibration effect in seconds.
     def get_joy_vibration_remaining_duration(device : Int64) : Float64
       if @@mb_get_joy_vibration_remaining_duration.null?
         @@mb_get_joy_vibration_remaining_duration = Bridge.get_method_bind("Input", "get_joy_vibration_remaining_duration", 4025615559_i64)
@@ -13394,8 +11742,6 @@ module Godot
       ret
     end
     @@mb_is_joy_vibrating : Void* = Pointer(Void).null
-    # Returns `true` if the joypad is still vibrating after a call to `#start_joy_vibration`.
-    # Unlike `#get_joy_vibration_strength` and `#get_joy_vibration_duration`, this method returns `false` after the joypad's vibration runs out.
     def is_joy_vibrating(device : Int64) : Bool
       if @@mb_is_joy_vibrating.null?
         @@mb_is_joy_vibrating = Bridge.get_method_bind("Input", "is_joy_vibrating", 3067735520_i64)
@@ -13408,8 +11754,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_has_joy_vibration : Void* = Pointer(Void).null
-    # Returns `true` if the joypad supports vibration. See also `#start_joy_vibration`.
-    # **Note:** For macOS, vibration is only supported in macOS 11 and later. When connected via USB, vibration is only supported for major brand controllers (except Xbox One and Xbox Series X/S controllers) due to macOS limitations.
     def has_joy_vibration(device : Int64) : Bool
       if @@mb_has_joy_vibration.null?
         @@mb_has_joy_vibration = Bridge.get_method_bind("Input", "has_joy_vibration", 1116898809_i64)
@@ -13422,14 +11766,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_start_joy_vibration : Void* = Pointer(Void).null
-    # Starts vibrating the joypad. See also `#has_joy_vibration` and `#is_joy_vibrating`.
-    # Joypads usually come with two rumble motors, a strong and a weak one.
-    # `weak_magnitude` is the strength of the weak motor (between `0.0` and `1.0`).
-    # `strong_magnitude` is the strength of the strong motor (between `0.0` and `1.0`).
-    # `duration` is the duration of the effect in seconds (a duration of `0.0` will try to play the vibration as long as possible, which is about 65 seconds).
-    # The vibration can be stopped early by calling `#stop_joy_vibration`.
-    # See also `#get_joy_vibration_strength` and `#get_joy_vibration_duration`.
-    # **Note:** For macOS, vibration is only supported in macOS 11 and later. When connected via USB, vibration is only supported for major brand controllers (except Xbox One and Xbox Series X/S controllers) due to macOS limitations.
     def start_joy_vibration(device : Int64, weak_magnitude : Float64, strong_magnitude : Float64, duration : Float64) : Void
       if @@mb_start_joy_vibration.null?
         @@mb_start_joy_vibration = Bridge.get_method_bind("Input", "start_joy_vibration", 2576575033_i64)
@@ -13446,7 +11782,6 @@ module Godot
       Bridge.ptrcall(@@mb_start_joy_vibration, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_stop_joy_vibration : Void* = Pointer(Void).null
-    # Stops the vibration of the joypad started with `#start_joy_vibration`.
     def stop_joy_vibration(device : Int64) : Void
       if @@mb_stop_joy_vibration.null?
         @@mb_stop_joy_vibration = Bridge.get_method_bind("Input", "stop_joy_vibration", 1286410249_i64)
@@ -13457,14 +11792,6 @@ module Godot
       Bridge.ptrcall(@@mb_stop_joy_vibration, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_vibrate_handheld : Void* = Pointer(Void).null
-    # Starts vibrating the handheld device for the specified duration in milliseconds.
-    # `amplitude` is the strength of the vibration, as a value between `0.0` and `1.0`. If set to `-1.0`, the default vibration strength of the device is used.
-    # **Note:** This method is implemented on Android, iOS, and Web. It has no effect on other platforms.
-    # **Note:** For Android, `#vibrate_handheld` requires enabling the `VIBRATE` permission in the export preset. Otherwise, `#vibrate_handheld` will have no effect.
-    # **Note:** For iOS, specifying the duration is only supported in iOS 13 and later.
-    # **Note:** For Web, the amplitude cannot be changed.
-    # **Note:** Some web browsers such as Safari and Firefox for Android do not support `#vibrate_handheld`.
-    # **Note:** Device settings such as vibration on/off, "do not disturb" mode or specific haptic feedback on/off may prevent `#vibrate_handheld` effects.
     def vibrate_handheld(duration_ms : Int64, amplitude : Float64) : Void
       if @@mb_vibrate_handheld.null?
         @@mb_vibrate_handheld = Bridge.get_method_bind("Input", "vibrate_handheld", 544894297_i64)
@@ -13496,9 +11823,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_get_gravity : Void* = Pointer(Void).null
-    # Returns the gravity in m/s² of the device's accelerometer sensor, if the device has one. Otherwise, the method returns `Vector3.ZERO`.
-    # **Note:** This method only works on Android and iOS. On other platforms, it always returns `Vector3.ZERO`.
-    # **Note:** For Android, [member ProjectSettings.input_devices/sensors/enable_gravity] must be enabled.
     def get_gravity() : Vector3
       if @@mb_get_gravity.null?
         @@mb_get_gravity = Bridge.get_method_bind("Input", "get_gravity", 3360562783_i64)
@@ -13508,10 +11832,6 @@ module Godot
       ret
     end
     @@mb_get_accelerometer : Void* = Pointer(Void).null
-    # Returns the acceleration in m/s² of the device's accelerometer sensor, if the device has one. Otherwise, the method returns `Vector3.ZERO`.
-    # Note this method returns an empty `Vector3` when running from the editor even when your device has an accelerometer. You must export your project to a supported device to read values from the accelerometer.
-    # **Note:** This method only works on Android and iOS. On other platforms, it always returns `Vector3.ZERO`.
-    # **Note:** For Android, [member ProjectSettings.input_devices/sensors/enable_accelerometer] must be enabled.
     def get_accelerometer() : Vector3
       if @@mb_get_accelerometer.null?
         @@mb_get_accelerometer = Bridge.get_method_bind("Input", "get_accelerometer", 3360562783_i64)
@@ -13521,9 +11841,6 @@ module Godot
       ret
     end
     @@mb_get_magnetometer : Void* = Pointer(Void).null
-    # Returns the magnetic field strength in micro-Tesla for all axes of the device's magnetometer sensor, if the device has one. Otherwise, the method returns `Vector3.ZERO`.
-    # **Note:** This method only works on Android and iOS. On other platforms, it always returns `Vector3.ZERO`.
-    # **Note:** For Android, [member ProjectSettings.input_devices/sensors/enable_magnetometer] must be enabled.
     def get_magnetometer() : Vector3
       if @@mb_get_magnetometer.null?
         @@mb_get_magnetometer = Bridge.get_method_bind("Input", "get_magnetometer", 3360562783_i64)
@@ -13533,9 +11850,6 @@ module Godot
       ret
     end
     @@mb_get_gyroscope : Void* = Pointer(Void).null
-    # Returns the rotation rate in rad/s around a device's X, Y, and Z axes of the gyroscope sensor, if the device has one. Otherwise, the method returns `Vector3.ZERO`.
-    # **Note:** This method only works on Android and iOS. On other platforms, it always returns `Vector3.ZERO`.
-    # **Note:** For Android, [member ProjectSettings.input_devices/sensors/enable_gyroscope] must be enabled.
     def get_gyroscope() : Vector3
       if @@mb_get_gyroscope.null?
         @@mb_get_gyroscope = Bridge.get_method_bind("Input", "get_gyroscope", 3360562783_i64)
@@ -13544,14 +11858,16 @@ module Godot
       Bridge.ptrcall(@@mb_get_gyroscope, @pointer, Pointer(Pointer(Void)).null, pointerof(ret).as(Void*))
       ret
     end
+    @@mb_get_device_orientation : Void* = Pointer(Void).null
+    def get_device_orientation() : Quaternion
+      if @@mb_get_device_orientation.null?
+        @@mb_get_device_orientation = Bridge.get_method_bind("Input", "get_device_orientation", 1222331677_i64)
+      end
+      ret_ptr = Pointer(Void).null
+      Bridge.ptrcall(@@mb_get_device_orientation, @pointer, Pointer(Pointer(Void)).null, pointerof(ret_ptr).as(Void*))
+      Quaternion.new(ret_ptr)
+    end
     @@mb_get_joy_accelerometer : Void* = Pointer(Void).null
-    # Returns the acceleration, including the force of gravity, in m/s² of the joypad's accelerometer sensor, if the joypad has one and it's currently enabled. Otherwise, the method returns `Vector3.ZERO`. See also `#get_joy_gravity` and `#set_joy_motion_sensors_enabled`.
-    # For a joypad held in front of you, the returned axes are defined as follows:
-    # +X ... -X: left ... right;
-    # +Y ... -Y: bottom ... top;
-    # +Z ... -Z: farther ... closer.
-    # The gravity part value is measured as a vector with length of `9.8` away from the center of the Earth, which is a negative Y value.
-    # **Note:** This feature is only supported on Windows, Linux, and macOS. On iOS, joypad accelerometer sensor reading is not supported due to OS limitations.
     def get_joy_accelerometer(device : Int64) : Vector3
       if @@mb_get_joy_accelerometer.null?
         @@mb_get_joy_accelerometer = Bridge.get_method_bind("Input", "get_joy_accelerometer", 711720468_i64)
@@ -13564,13 +11880,6 @@ module Godot
       ret
     end
     @@mb_get_joy_gravity : Void* = Pointer(Void).null
-    # Returns the gravity in m/s² of the joypad's accelerometer sensor, if the joypad has one and it's currently enabled. Otherwise, the method returns `Vector3.ZERO`. See also `#get_joy_accelerometer` and `#set_joy_motion_sensors_enabled`.
-    # For a joypad held in front of you, the returned axes are defined as follows:
-    # +X ... -X: left ... right;
-    # +Y ... -Y: bottom ... top;
-    # +Z ... -Z: farther ... closer.
-    # The gravity part value is measured as a vector with length of `9.8` away from the center of the Earth, which is a negative Y value.
-    # **Note:** This feature is only supported on Windows, Linux, and macOS. On iOS, joypad accelerometer sensor reading is not supported due to OS limitations.
     def get_joy_gravity(device : Int64) : Vector3
       if @@mb_get_joy_gravity.null?
         @@mb_get_joy_gravity = Bridge.get_method_bind("Input", "get_joy_gravity", 711720468_i64)
@@ -13583,14 +11892,6 @@ module Godot
       ret
     end
     @@mb_get_joy_gyroscope : Void* = Pointer(Void).null
-    # Returns the rotation rate in rad/s around a joypad's X, Y, and Z axes of the gyroscope sensor, if the joypad has one and it's currently enabled. Otherwise, the method returns `Vector3.ZERO`. See also `#set_joy_motion_sensors_enabled`.
-    # The rotation is positive in the counter-clockwise direction.
-    # For a joypad held in front of you, the returned axes are defined as follows:
-    # X: Angular speed around the X axis (pitch);
-    # Y: Angular speed around the Y axis (yaw);
-    # Z: Angular speed around the Z axis (roll).
-    # See `#start_joy_motion_sensors_calibration` for an example on how to use joypad gyroscope and gyroscope calibration in your games.
-    # **Note:** This feature is only supported on Windows, Linux, macOS, and iOS.
     def get_joy_gyroscope(device : Int64) : Vector3
       if @@mb_get_joy_gyroscope.null?
         @@mb_get_joy_gyroscope = Bridge.get_method_bind("Input", "get_joy_gyroscope", 711720468_i64)
@@ -13603,8 +11904,6 @@ module Godot
       ret
     end
     @@mb_get_joy_motion_sensors_rate : Void* = Pointer(Void).null
-    # Returns the joypad's motion sensor rate in Hz, if the joypad has motion sensors and they're currently enabled. See also `#set_joy_motion_sensors_enabled`.
-    # **Note:** This feature is only supported on Windows, Linux, macOS, and iOS.
     def get_joy_motion_sensors_rate(device : Int64) : Float64
       if @@mb_get_joy_motion_sensors_rate.null?
         @@mb_get_joy_motion_sensors_rate = Bridge.get_method_bind("Input", "get_joy_motion_sensors_rate", 2339986948_i64)
@@ -13617,9 +11916,6 @@ module Godot
       ret
     end
     @@mb_is_joy_motion_sensors_enabled : Void* = Pointer(Void).null
-    # Returns `true` if the requested joypad has motion sensors (gyroscope and/or accelerometer) and they are currently enabled. See also `#set_joy_motion_sensors_enabled` and `#has_joy_motion_sensors`.
-    # See `#start_joy_motion_sensors_calibration` for an example on how to use joypad motion sensors and calibration in your games.
-    # **Note:** This feature is only supported on Windows, Linux, macOS, and iOS.
     def is_joy_motion_sensors_enabled(device : Int64) : Bool
       if @@mb_is_joy_motion_sensors_enabled.null?
         @@mb_is_joy_motion_sensors_enabled = Bridge.get_method_bind("Input", "is_joy_motion_sensors_enabled", 1116898809_i64)
@@ -13632,11 +11928,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_set_joy_motion_sensors_enabled : Void* = Pointer(Void).null
-    # Enables or disables the motion sensors (gyroscope and/or accelerometer), if available, on the specified joypad.
-    # While the motion sensors are enabled, the gyroscope is calibrated automatically by default; see `#set_joy_motion_sensors_auto_calibration_enabled`.
-    # See `#start_joy_motion_sensors_calibration` for an example on how to use joypad motion sensors and calibration in your games.
-    # It's recommended to disable the motion sensors when they're no longer being used, because otherwise it might drain the controller battery faster.
-    # **Note:** This feature is only supported on Windows, Linux, macOS, and iOS.
     def set_joy_motion_sensors_enabled(device : Int64, enable : Bool) : Void
       if @@mb_set_joy_motion_sensors_enabled.null?
         @@mb_set_joy_motion_sensors_enabled = Bridge.get_method_bind("Input", "set_joy_motion_sensors_enabled", 300928843_i64)
@@ -13649,9 +11940,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_joy_motion_sensors_enabled, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_has_joy_motion_sensors : Void* = Pointer(Void).null
-    # Returns `true` if the joypad has motion sensors (gyroscope and/or accelerometer).
-    # **Note:** On iOS, joypad accelerometer sensor reading is not supported due to OS limitations.
-    # **Note:** This feature is only supported on Windows, Linux, macOS, and iOS.
     def has_joy_motion_sensors(device : Int64) : Bool
       if @@mb_has_joy_motion_sensors.null?
         @@mb_has_joy_motion_sensors = Bridge.get_method_bind("Input", "has_joy_motion_sensors", 1116898809_i64)
@@ -13664,113 +11952,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_start_joy_motion_sensors_calibration : Void* = Pointer(Void).null
-    # Starts the process of manually calibrating the specified joypad's gyroscope, if it has one.
-    # Once a joypad's gyroscope has been calibrated correctly (e.g. laying still on a table without being rotated), `#get_joy_gyroscope` will return values close or equal to `Vector3.ZERO` when the joypad is not being rotated.
-    # Since the gyroscope is calibrated automatically by default (see `#set_joy_motion_sensors_auto_calibration_enabled`), most games don't need to calibrate manually. If automatic calibration is enabled, it's paused while the manual calibration is in progress, and resumes when `#stop_joy_motion_sensors_calibration` is called.
-    # Here's an example of how to use joypad gyroscope and gyroscope calibration in your games:
-    #
-    # ```gdscript
-    #
-    # const GYRO_SENSITIVITY = 10.0
-    #
-    # func _ready():
-    # 	# In this example we only use the first connected joypad (id 0).
-    # 	if 0 not in Input.get_connected_joypads():
-    # 		return
-    #
-    # 	if not Input.has_joy_motion_sensors(0):
-    # 		return
-    #
-    # 	# We must enable the motion sensors before using them.
-    # 	Input.set_joy_motion_sensors_enabled(0, true)
-    #
-    # 	# (Tell the users here that they need to put their joypads on a flat surface and wait for confirmation.)
-    #
-    # 	# Start the calibration process.
-    # 	calibrate_motion()
-    #
-    # func _process(delta):
-    # 	# Only move the object if the joypad motion sensors are calibrated.
-    # 	if Input.is_joy_motion_sensors_calibrated(0):
-    # 		move_object(delta)
-    #
-    # func calibrate_motion():
-    # 	Input.start_joy_motion_sensors_calibration(0)
-    #
-    # 	# Wait for some time.
-    # 	await get_tree().create_timer(1.0).timeout
-    #
-    # 	Input.stop_joy_motion_sensors_calibration(0)
-    # 	# The joypad is now calibrated.
-    #
-    # func move_object(delta):
-    # 	var node: Node3D = ... # Put your node here.
-    #
-    # 	var gyro := Input.get_joy_gyroscope(0)
-    # 	node.rotation.x -= -gyro.y * GYRO_SENSITIVITY * delta # Use rotation around the Y axis (yaw) here.
-    # 	node.rotation.y += -gyro.x * GYRO_SENSITIVITY * delta # Use rotation around the X axis (pitch) here.
-    #
-    # ```
-    # ```csharp
-    #
-    # private const float GyroSensitivity = 10.0;
-    #
-    # public override void _Ready()
-    # {
-    # 	// In this example we only use the first connected joypad (id 0).
-    # 	if (!Input.GetConnectedJoypads().Contains(0))
-    # 	{
-    # 		return;
-    # 	}
-    #
-    # 	if (!Input.HasJoyMotionSensors(0))
-    # 	{
-    # 		return;
-    # 	}
-    #
-    # 	// We must enable the accelerometer and the gyroscope before using them.
-    # 	Input.SetJoyMotionSensorsEnabled(0, true);
-    #
-    # 	// (Tell the users here that they need to put their joypads on a flat surface and wait for confirmation.)
-    #
-    # 	// Start the calibration process.
-    # 	CalibrateMotion();
-    # }
-    #
-    # public override void _Process(double delta)
-    # {
-    # 	// Only move the object if the joypad motion sensors are calibrated.
-    # 	if (Input.IsJoyMotionSensorsCalibrated(0))
-    # 	{
-    # 		MoveObject(delta);
-    # 	}
-    # }
-    #
-    # private async Task CalibrateMotion()
-    # {
-    # 	Input.StartJoyMotionSensorsCalibration(0);
-    #
-    # 	// Wait for some time.
-    # 	await ToSignal(GetTree().CreateTimer(1.0), SceneTreeTimer.SignalName.Timeout);
-    #
-    # 	Input.StopJoyMotionSensorsCalibration(0);
-    # 	// The joypad is now calibrated.
-    # }
-    #
-    # private void MoveObject(double delta)
-    # {
-    # 	Node3D node = ... ; // Put your object here.
-    # 	Vector3 gyro = Input.GetJoyGyroscope(0);
-    # 	Vector3 rotation = node.Rotation;
-    # 	rotation.X -= -gyro.Y * GyroSensitivity * (float)delta; // Use rotation around the Y axis (yaw) here.
-    # 	rotation.Y += -gyro.X * GyroSensitivity * (float)delta; // Use rotation around the X axis (pitch) here.
-    # 	node.Rotation = rotation;
-    # }
-    #
-    # ```
-    #
-    # **Note:** Accelerometer sensor doesn't usually require calibration.
-    # **Note:** This feature is only supported on Windows, Linux, macOS, and iOS.
     def start_joy_motion_sensors_calibration(device : Int64) : Void
       if @@mb_start_joy_motion_sensors_calibration.null?
         @@mb_start_joy_motion_sensors_calibration = Bridge.get_method_bind("Input", "start_joy_motion_sensors_calibration", 1286410249_i64)
@@ -13781,9 +11962,6 @@ module Godot
       Bridge.ptrcall(@@mb_start_joy_motion_sensors_calibration, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_stop_joy_motion_sensors_calibration : Void* = Pointer(Void).null
-    # Stops the manual calibration process of the specified joypad's motion sensors.
-    # See `#start_joy_motion_sensors_calibration` for an example on how to use joypad motion sensors and calibration in your games.
-    # **Note:** This feature is only supported on Windows, Linux, macOS, and iOS.
     def stop_joy_motion_sensors_calibration(device : Int64) : Void
       if @@mb_stop_joy_motion_sensors_calibration.null?
         @@mb_stop_joy_motion_sensors_calibration = Bridge.get_method_bind("Input", "stop_joy_motion_sensors_calibration", 1286410249_i64)
@@ -13794,9 +11972,6 @@ module Godot
       Bridge.ptrcall(@@mb_stop_joy_motion_sensors_calibration, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_clear_joy_motion_sensors_calibration : Void* = Pointer(Void).null
-    # Clears the calibration information for the specified joypad's motion sensors, if it has any and if they were calibrated.
-    # See `#start_joy_motion_sensors_calibration` for an example on how to use joypad motion sensors and calibration in your games.
-    # **Note:** This feature is only supported on Windows, Linux, macOS, and iOS.
     def clear_joy_motion_sensors_calibration(device : Int64) : Void
       if @@mb_clear_joy_motion_sensors_calibration.null?
         @@mb_clear_joy_motion_sensors_calibration = Bridge.get_method_bind("Input", "clear_joy_motion_sensors_calibration", 1286410249_i64)
@@ -13807,11 +11982,6 @@ module Godot
       Bridge.ptrcall(@@mb_clear_joy_motion_sensors_calibration, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_joy_motion_sensors_calibration : Void* = Pointer(Void).null
-    # Returns the calibration information about the specified joypad's motion sensors in the form of a `Dictionary`, if it has any and if they have been calibrated, otherwise returns an empty `Dictionary`.
-    # The dictionary contains the following fields:
-    # `gyroscope_offset`: average offset in gyroscope values from `Vector2.ZERO` in rad/s.
-    # See `#start_joy_motion_sensors_calibration` for an example on how to use joypad motion sensors and calibration in your games.
-    # **Note:** This feature is only supported on Windows, Linux, macOS, and iOS.
     def get_joy_motion_sensors_calibration(device : Int64) : Void*
       if @@mb_get_joy_motion_sensors_calibration.null?
         @@mb_get_joy_motion_sensors_calibration = Bridge.get_method_bind("Input", "get_joy_motion_sensors_calibration", 3485342025_i64)
@@ -13824,9 +11994,6 @@ module Godot
       ret_ptr
     end
     @@mb_set_joy_motion_sensors_calibration : Void* = Pointer(Void).null
-    # Sets the specified joypad's calibration information. See also `#get_joy_motion_sensors_calibration`.
-    # See `#start_joy_motion_sensors_calibration` for an example on how to use joypad motion sensors and calibration in your games.
-    # **Note:** This feature is only supported on Windows, Linux, macOS, and iOS.
     def set_joy_motion_sensors_calibration(device : Int64, calibration_info : Void*) : Void
       if @@mb_set_joy_motion_sensors_calibration.null?
         @@mb_set_joy_motion_sensors_calibration = Bridge.get_method_bind("Input", "set_joy_motion_sensors_calibration", 64545446_i64)
@@ -13839,9 +12006,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_joy_motion_sensors_calibration, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_is_joy_motion_sensors_calibrated : Void* = Pointer(Void).null
-    # Returns `true` if the joypad's motion sensors have been calibrated.
-    # See `#start_joy_motion_sensors_calibration` for an example on how to use joypad motion sensors and calibration in your games.
-    # **Note:** This feature is only supported on Windows, Linux, macOS, and iOS.
     def is_joy_motion_sensors_calibrated(device : Int64) : Bool
       if @@mb_is_joy_motion_sensors_calibrated.null?
         @@mb_is_joy_motion_sensors_calibrated = Bridge.get_method_bind("Input", "is_joy_motion_sensors_calibrated", 1116898809_i64)
@@ -13854,9 +12018,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_is_joy_motion_sensors_calibrating : Void* = Pointer(Void).null
-    # Returns `true` if the joypad's motion sensors are currently being manually calibrated.
-    # See `#start_joy_motion_sensors_calibration` for an example on how to use joypad motion sensors and calibration in your games.
-    # **Note:** This feature is only supported on Windows, Linux, macOS, and iOS.
     def is_joy_motion_sensors_calibrating(device : Int64) : Bool
       if @@mb_is_joy_motion_sensors_calibrating.null?
         @@mb_is_joy_motion_sensors_calibrating = Bridge.get_method_bind("Input", "is_joy_motion_sensors_calibrating", 1116898809_i64)
@@ -13869,10 +12030,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_set_joy_motion_sensors_auto_calibration_enabled : Void* = Pointer(Void).null
-    # Enables or disables automatic calibration of the joypad's gyroscope. Automatic calibration is enabled by default, so most games don't need to call this or perform any calibration.
-    # While enabled, the gyroscope calibration is continuously refined whenever the joypad is detected to be held still, easing corrections in gradually. This removes the need for a dedicated calibration step in most games and keeps up with calibration drift, e.g. from the controller warming up during play.
-    # When automatic calibration is disabled, the last calibrated values remain in effect.
-    # **Note:** This feature is only supported on Windows, Linux, macOS, and iOS.
     def set_joy_motion_sensors_auto_calibration_enabled(device : Int64, enable : Bool) : Void
       if @@mb_set_joy_motion_sensors_auto_calibration_enabled.null?
         @@mb_set_joy_motion_sensors_auto_calibration_enabled = Bridge.get_method_bind("Input", "set_joy_motion_sensors_auto_calibration_enabled", 300928843_i64)
@@ -13885,8 +12042,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_joy_motion_sensors_auto_calibration_enabled, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_is_joy_motion_sensors_auto_calibration_enabled : Void* = Pointer(Void).null
-    # Returns `true` if automatic calibration is enabled on the joypad's motion sensors. Automatic calibration is enabled by default. See also `#set_joy_motion_sensors_auto_calibration_enabled`.
-    # **Note:** This feature is only supported on Windows, Linux, macOS, and iOS.
     def is_joy_motion_sensors_auto_calibration_enabled(device : Int64) : Bool
       if @@mb_is_joy_motion_sensors_auto_calibration_enabled.null?
         @@mb_is_joy_motion_sensors_auto_calibration_enabled = Bridge.get_method_bind("Input", "is_joy_motion_sensors_auto_calibration_enabled", 1116898809_i64)
@@ -13899,9 +12054,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_get_joy_touchpad_finger_position : Void* = Pointer(Void).null
-    # Returns the position of the specified finger on the specified touchpad on the joypad. The X and Y values, if the specified finger is touching the specified touchpad, are in the range from `0.0` to `1.0`, with `(0.0, 0.0)` representing the top-left corner of the touchpad and `(1.0, 1.0)` representing the bottom-right corner.
-    # If the joypad doesn't have the specified touchpad or the specified finger is not currently touching the touchpad, this method returns `Vector2(-1.0, -1.0)`.
-    # **Note:** This feature is only supported on Windows, Linux, macOS, and iOS.
     def get_joy_touchpad_finger_position(device : Int64, finger : Int64, touchpad : Int64) : Vector2
       if @@mb_get_joy_touchpad_finger_position.null?
         @@mb_get_joy_touchpad_finger_position = Bridge.get_method_bind("Input", "get_joy_touchpad_finger_position", 4135671252_i64)
@@ -13918,9 +12070,6 @@ module Godot
       ret
     end
     @@mb_get_joy_touchpad_finger_pressure : Void* = Pointer(Void).null
-    # Returns the pressure of the specified finger on the specified touchpad on the joypad. The return value, if the specified finger is touching the specified touchpad, is in the range from `0.0` to `1.0`.
-    # If the joypad doesn't have the specified touchpad or the specified finger is not currently touching the touchpad, this method returns `-1.0`.
-    # **Note:** This feature is only supported on Windows, Linux, macOS, and iOS.
     def get_joy_touchpad_finger_pressure(device : Int64, finger : Int64, touchpad : Int64) : Float64
       if @@mb_get_joy_touchpad_finger_pressure.null?
         @@mb_get_joy_touchpad_finger_pressure = Bridge.get_method_bind("Input", "get_joy_touchpad_finger_pressure", 4212583121_i64)
@@ -13937,9 +12086,6 @@ module Godot
       ret
     end
     @@mb_get_joy_touchpad_fingers : Void* = Pointer(Void).null
-    # Returns an array of finger IDs that are currently touching the specified touchpad on the joypad. If the joypad doesn't have the specified touchpad or no fingers are currently touching this touchpad, this method returns an empty array.
-    # **Note:** To retrieve the positions of the touchpad fingers, use `#get_joy_touchpad_finger_position`.
-    # **Note:** This feature is only supported on Windows, Linux, macOS, and iOS.
     def get_joy_touchpad_fingers(device : Int64, touchpad : Int64) : Void*
       if @@mb_get_joy_touchpad_fingers.null?
         @@mb_get_joy_touchpad_fingers = Bridge.get_method_bind("Input", "get_joy_touchpad_fingers", 3923454890_i64)
@@ -13954,8 +12100,6 @@ module Godot
       ret_ptr
     end
     @@mb_get_joy_num_touchpads : Void* = Pointer(Void).null
-    # Returns the number of touchpads on the specified joypad, if it has any. Otherwise, the method returns `0`.
-    # **Note:** This feature is only supported on Windows, Linux, macOS, and iOS.
     def get_joy_num_touchpads(device : Int64) : Int64
       if @@mb_get_joy_num_touchpads.null?
         @@mb_get_joy_num_touchpads = Bridge.get_method_bind("Input", "get_joy_num_touchpads", 923996154_i64)
@@ -13968,8 +12112,6 @@ module Godot
       ret
     end
     @@mb_set_gravity : Void* = Pointer(Void).null
-    # Sets the gravity value of the accelerometer sensor. Can be used for debugging on devices without a hardware sensor, for example in an editor on a PC.
-    # **Note:** This value can be immediately overwritten by the hardware sensor value on Android and iOS.
     def set_gravity(value : Vector3) : Void
       if @@mb_set_gravity.null?
         @@mb_set_gravity = Bridge.get_method_bind("Input", "set_gravity", 3460891852_i64)
@@ -13980,8 +12122,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_gravity, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_set_accelerometer : Void* = Pointer(Void).null
-    # Sets the acceleration value of the accelerometer sensor. Can be used for debugging on devices without a hardware sensor, for example in an editor on a PC.
-    # **Note:** This value can be immediately overwritten by the hardware sensor value on Android and iOS.
     def set_accelerometer(value : Vector3) : Void
       if @@mb_set_accelerometer.null?
         @@mb_set_accelerometer = Bridge.get_method_bind("Input", "set_accelerometer", 3460891852_i64)
@@ -13992,8 +12132,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_accelerometer, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_set_magnetometer : Void* = Pointer(Void).null
-    # Sets the value of the magnetic field of the magnetometer sensor. Can be used for debugging on devices without a hardware sensor, for example in an editor on a PC.
-    # **Note:** This value can be immediately overwritten by the hardware sensor value on Android and iOS.
     def set_magnetometer(value : Vector3) : Void
       if @@mb_set_magnetometer.null?
         @@mb_set_magnetometer = Bridge.get_method_bind("Input", "set_magnetometer", 3460891852_i64)
@@ -14004,8 +12142,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_magnetometer, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_set_gyroscope : Void* = Pointer(Void).null
-    # Sets the value of the rotation rate of the gyroscope sensor. Can be used for debugging on devices without a hardware sensor, for example in an editor on a PC.
-    # **Note:** This value can be immediately overwritten by the hardware sensor value on Android and iOS.
     def set_gyroscope(value : Vector3) : Void
       if @@mb_set_gyroscope.null?
         @@mb_set_gyroscope = Bridge.get_method_bind("Input", "set_gyroscope", 3460891852_i64)
@@ -14015,10 +12151,17 @@ module Godot
       args = [arg_0]
       Bridge.ptrcall(@@mb_set_gyroscope, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
+    @@mb_set_device_orientation : Void* = Pointer(Void).null
+    def set_device_orientation(value : Quaternion) : Void
+      if @@mb_set_device_orientation.null?
+        @@mb_set_device_orientation = Bridge.get_method_bind("Input", "set_device_orientation", 1727505552_i64)
+      end
+      val_0 = value
+      arg_0 = pointerof(val_0).as(Void*)
+      args = [arg_0]
+      Bridge.ptrcall(@@mb_set_device_orientation, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    end
     @@mb_set_joy_light : Void* = Pointer(Void).null
-    # Sets the joypad's LED light, if available, to the specified color. See also `#has_joy_light`.
-    # **Note:** There is no way to get the color of the light from a joypad. If you need to know the assigned color, store it separately.
-    # **Note:** This feature is only supported on Windows, Linux, macOS, and iOS.
     def set_joy_light(device : Int64, color : Color) : Void
       if @@mb_set_joy_light.null?
         @@mb_set_joy_light = Bridge.get_method_bind("Input", "set_joy_light", 2878471219_i64)
@@ -14031,8 +12174,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_joy_light, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_has_joy_light : Void* = Pointer(Void).null
-    # Returns `true` if the joypad has an LED light that can change colors and/or brightness. See also `#set_joy_light`.
-    # **Note:** This feature is only supported on Windows, Linux, macOS, and iOS.
     def has_joy_light(device : Int64) : Bool
       if @@mb_has_joy_light.null?
         @@mb_has_joy_light = Bridge.get_method_bind("Input", "has_joy_light", 1116898809_i64)
@@ -14045,7 +12186,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_get_last_mouse_velocity : Void* = Pointer(Void).null
-    # Returns the last mouse velocity. To provide a precise and jitter-free velocity, mouse velocity is only calculated every 0.1s. Therefore, mouse velocity will lag mouse movements.
     def get_last_mouse_velocity() : Vector2
       if @@mb_get_last_mouse_velocity.null?
         @@mb_get_last_mouse_velocity = Bridge.get_method_bind("Input", "get_last_mouse_velocity", 1497962370_i64)
@@ -14055,7 +12195,6 @@ module Godot
       ret
     end
     @@mb_get_last_mouse_screen_velocity : Void* = Pointer(Void).null
-    # Returns the last mouse velocity in screen coordinates. To provide a precise and jitter-free velocity, mouse velocity is only calculated every 0.1s. Therefore, mouse velocity will lag mouse movements.
     def get_last_mouse_screen_velocity() : Vector2
       if @@mb_get_last_mouse_screen_velocity.null?
         @@mb_get_last_mouse_screen_velocity = Bridge.get_method_bind("Input", "get_last_mouse_screen_velocity", 1497962370_i64)
@@ -14065,7 +12204,6 @@ module Godot
       ret
     end
     @@mb_get_mouse_button_mask : Void* = Pointer(Void).null
-    # Returns mouse buttons as a bitmask. If multiple mouse buttons are pressed at the same time, the bits are added together. Equivalent to `#DisplayServer.mouse_get_button_state`.
     def get_mouse_button_mask() : Int64
       if @@mb_get_mouse_button_mask.null?
         @@mb_get_mouse_button_mask = Bridge.get_method_bind("Input", "get_mouse_button_mask", 2512161324_i64)
@@ -14094,9 +12232,6 @@ module Godot
       ret
     end
     @@mb_warp_mouse : Void* = Pointer(Void).null
-    # Sets the mouse position to the specified vector, provided in pixels and relative to an origin at the upper left corner of the currently focused Window Manager game window.
-    # Mouse position is clipped to the limits of the screen resolution, or to the limits of the game window if `MouseMode` is set to `MOUSE_MODE_CONFINED` or `MOUSE_MODE_CONFINED_HIDDEN`.
-    # **Note:** `#warp_mouse` is only supported on Windows, macOS and Linux. It has no effect on Android, iOS and Web.
     def warp_mouse(position : Vector2) : Void
       if @@mb_warp_mouse.null?
         @@mb_warp_mouse = Bridge.get_method_bind("Input", "warp_mouse", 743155724_i64)
@@ -14107,9 +12242,6 @@ module Godot
       Bridge.ptrcall(@@mb_warp_mouse, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_action_press : Void* = Pointer(Void).null
-    # Simulates pressing the specified input action.
-    # The `strength` can be used for non-boolean actions, it's ranged between `0.0` and `1.0` representing the intensity of the given action.
-    # **Note:** This method will not cause any `#Node._input` calls. It is intended to be used with `#is_action_pressed` and `#is_action_just_pressed`. If you want to simulate `_input`, use `#parse_input_event` instead.
     def action_press(action : String, strength : Float64) : Void
       if @@mb_action_press.null?
         @@mb_action_press = Bridge.get_method_bind("Input", "action_press", 1713091165_i64)
@@ -14124,7 +12256,6 @@ module Godot
       Bridge.free_string_name(sn_0)
     end
     @@mb_action_release : Void* = Pointer(Void).null
-    # Releases the specified input action, if the action is currently pressed.
     def action_release(action : String) : Void
       if @@mb_action_release.null?
         @@mb_action_release = Bridge.get_method_bind("Input", "action_release", 3304788590_i64)
@@ -14137,9 +12268,6 @@ module Godot
       Bridge.free_string_name(sn_0)
     end
     @@mb_set_default_cursor_shape : Void* = Pointer(Void).null
-    # Sets the default cursor shape to be used in the viewport instead of `CURSOR_ARROW`.
-    # **Note:** If you want to change the default cursor shape for `Control`'s nodes, use `Control.mouse_default_cursor_shape` instead.
-    # **Note:** This method generates an `InputEventMouseMotion` to update cursor immediately.
     def set_default_cursor_shape(shape : Int64) : Void
       if @@mb_set_default_cursor_shape.null?
         @@mb_set_default_cursor_shape = Bridge.get_method_bind("Input", "set_default_cursor_shape", 2124816902_i64)
@@ -14150,7 +12278,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_default_cursor_shape, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_current_cursor_shape : Void* = Pointer(Void).null
-    # Returns the currently assigned cursor shape.
     def get_current_cursor_shape() : Int64
       if @@mb_get_current_cursor_shape.null?
         @@mb_get_current_cursor_shape = Bridge.get_method_bind("Input", "get_current_cursor_shape", 3455658929_i64)
@@ -14160,12 +12287,6 @@ module Godot
       ret
     end
     @@mb_set_custom_mouse_cursor : Void* = Pointer(Void).null
-    # Sets a custom mouse cursor image, which is only visible inside the game window, for the given mouse `shape`. The hotspot can also be specified. Passing `null` to the image parameter resets to the system cursor.
-    # `image` can be either `Texture2D` or `Image` and its size must be lower than or equal to 256×256. To avoid rendering issues, sizes lower than or equal to 128×128 are recommended.
-    # `hotspot` must be within `image`'s size.
-    # **Note:** `AnimatedTexture`s aren't supported as custom mouse cursors. If using an `AnimatedTexture`, only the first frame will be displayed.
-    # **Note:** The **Lossless**, **Lossy** or **Uncompressed** compression modes are recommended. The **Video RAM** compression mode can be used, but it will be decompressed on the CPU, which means loading times are slowed down and no memory is saved compared to lossless modes.
-    # **Note:** On the web platform, the maximum allowed cursor image size is 128×128. Cursor images larger than 32×32 will also only be displayed if the mouse cursor image is entirely located within the page for [$2]($1).
     def set_custom_mouse_cursor(image : Resource, shape : Int64, hotspot : Vector2) : Void
       if @@mb_set_custom_mouse_cursor.null?
         @@mb_set_custom_mouse_cursor = Bridge.get_method_bind("Input", "set_custom_mouse_cursor", 703945977_i64)
@@ -14180,26 +12301,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_custom_mouse_cursor, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_parse_input_event : Void* = Pointer(Void).null
-    # Feeds an `InputEvent` to the game. Can be used to artificially trigger input events from code. Also generates `#Node._input` calls.
-    #
-    # ```gdscript
-    #
-    # var cancel_event = InputEventAction.new()
-    # cancel_event.action = "ui_cancel"
-    # cancel_event.pressed = true
-    # Input.parse_input_event(cancel_event)
-    #
-    # ```
-    # ```csharp
-    #
-    # var cancelEvent = new InputEventAction();
-    # cancelEvent.Action = "ui_cancel";
-    # cancelEvent.Pressed = true;
-    # Input.ParseInputEvent(cancelEvent);
-    #
-    # ```
-    #
-    # **Note:** Calling this function has no influence on the operating system. So for example sending an `InputEventMouseMotion` will not move the OS mouse cursor to the specified position (use `#warp_mouse` instead) and sending `Alt/Cmd + Tab` as `InputEventKey` won't toggle between active windows.
     def parse_input_event(event : InputEvent) : Void
       if @@mb_parse_input_event.null?
         @@mb_parse_input_event = Bridge.get_method_bind("Input", "parse_input_event", 3754044979_i64)
@@ -14229,8 +12330,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_flush_buffered_events : Void* = Pointer(Void).null
-    # Sends all buffered input events to the game loop. These events may have been buffered as a result of accumulated input (`use_accumulated_input`) or agile input flushing ([member ProjectSettings.input_devices/buffering/agile_event_flushing]).
-    # The engine will already do this itself at key execution points (at least once per frame). However, this can be useful in advanced cases where you want precise control over the timing of event handling.
     def flush_buffered_events() : Void
       if @@mb_flush_buffered_events.null?
         @@mb_flush_buffered_events = Bridge.get_method_bind("Input", "flush_buffered_events", 3218959716_i64)
@@ -14276,9 +12375,6 @@ module Godot
       ret != 0_u8
     end
   end
-  # Abstract base class for input events.
-  #
-  # Abstract base class of all types of input events. See `#Node._input`.
   class InputEvent < Godot::Resource
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -14303,8 +12399,6 @@ module Godot
       ret
     end
     @@mb_is_action : Void* = Pointer(Void).null
-    # Returns `true` if this input event matches a pre-defined action of any type.
-    # If `exact_match` is `false`, it ignores additional input modifiers for `InputEventKey` and `InputEventMouseButton` events, and the direction for `InputEventJoypadMotion` events.
     def is_action(action : String, exact_match : Bool) : Bool
       if @@mb_is_action.null?
         @@mb_is_action = Bridge.get_method_bind("InputEvent", "is_action", 1558498928_i64)
@@ -14321,9 +12415,6 @@ module Godot
       Bridge.free_string_name(sn_0)
     end
     @@mb_is_action_pressed : Void* = Pointer(Void).null
-    # Returns `true` if the given action matches this event and is being pressed (and is not an echo event for `InputEventKey` events, unless `allow_echo` is `true`). Not relevant for events of type `InputEventMouseMotion` or `InputEventScreenDrag`.
-    # If `exact_match` is `false`, it ignores additional input modifiers for `InputEventKey` and `InputEventMouseButton` events, and the direction for `InputEventJoypadMotion` events.
-    # **Note:** Due to keyboard ghosting, `#is_action_pressed` may return `false` even if one of the action's keys is pressed. See [$2]($1) in the documentation for more information.
     def is_action_pressed(action : String, allow_echo : Bool, exact_match : Bool) : Bool
       if @@mb_is_action_pressed.null?
         @@mb_is_action_pressed = Bridge.get_method_bind("InputEvent", "is_action_pressed", 1631499404_i64)
@@ -14342,8 +12433,6 @@ module Godot
       Bridge.free_string_name(sn_0)
     end
     @@mb_is_action_released : Void* = Pointer(Void).null
-    # Returns `true` if the given action matches this event and is released (i.e. not pressed). Not relevant for events of type `InputEventMouseMotion` or `InputEventScreenDrag`.
-    # If `exact_match` is `false`, it ignores additional input modifiers for `InputEventKey` and `InputEventMouseButton` events, and the direction for `InputEventJoypadMotion` events.
     def is_action_released(action : String, exact_match : Bool) : Bool
       if @@mb_is_action_released.null?
         @@mb_is_action_released = Bridge.get_method_bind("InputEvent", "is_action_released", 1558498928_i64)
@@ -14360,8 +12449,6 @@ module Godot
       Bridge.free_string_name(sn_0)
     end
     @@mb_get_action_strength : Void* = Pointer(Void).null
-    # Returns a value between `0.0` and `1.0` depending on the given action's state. Useful for getting the value of events of type `InputEventJoypadMotion`.
-    # If `exact_match` is `false`, it ignores additional input modifiers for `InputEventKey` and `InputEventMouseButton` events, and the direction for `InputEventJoypadMotion` events.
     def get_action_strength(action : String, exact_match : Bool) : Float64
       if @@mb_get_action_strength.null?
         @@mb_get_action_strength = Bridge.get_method_bind("InputEvent", "get_action_strength", 801543509_i64)
@@ -14378,7 +12465,6 @@ module Godot
       Bridge.free_string_name(sn_0)
     end
     @@mb_is_canceled : Void* = Pointer(Void).null
-    # Returns `true` if this input event has been canceled.
     def is_canceled() : Bool
       if @@mb_is_canceled.null?
         @@mb_is_canceled = Bridge.get_method_bind("InputEvent", "is_canceled", 36873697_i64)
@@ -14388,8 +12474,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_is_pressed : Void* = Pointer(Void).null
-    # Returns `true` if this input event is pressed. Not relevant for events of type `InputEventMouseMotion` or `InputEventScreenDrag`.
-    # **Note:** Due to keyboard ghosting, `#is_pressed` may return `false` even if one of the action's keys is pressed. See [$2]($1) in the documentation for more information.
     def is_pressed() : Bool
       if @@mb_is_pressed.null?
         @@mb_is_pressed = Bridge.get_method_bind("InputEvent", "is_pressed", 36873697_i64)
@@ -14399,7 +12483,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_is_released : Void* = Pointer(Void).null
-    # Returns `true` if this input event is released. Not relevant for events of type `InputEventMouseMotion` or `InputEventScreenDrag`.
     def is_released() : Bool
       if @@mb_is_released.null?
         @@mb_is_released = Bridge.get_method_bind("InputEvent", "is_released", 36873697_i64)
@@ -14409,8 +12492,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_is_echo : Void* = Pointer(Void).null
-    # Returns `true` if this input event is an echo event (only for events of type `InputEventKey`). An echo event is a repeated key event sent when the user is holding down the key. Any other event type returns `false`.
-    # **Note:** The rate at which echo events are sent is typically around 20 events per second (after holding down the key for roughly half a second). However, the key repeat delay/speed can be changed by the user or disabled entirely in the operating system settings. To ensure your project works correctly on all configurations, do not assume the user has a specific key repeat configuration in your project's behavior.
     def is_echo() : Bool
       if @@mb_is_echo.null?
         @@mb_is_echo = Bridge.get_method_bind("InputEvent", "is_echo", 36873697_i64)
@@ -14420,7 +12501,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_as_text : Void* = Pointer(Void).null
-    # Returns a `String` representation of the event.
     def as_text() : String
       if @@mb_as_text.null?
         @@mb_as_text = Bridge.get_method_bind("InputEvent", "as_text", 201670096_i64)
@@ -14428,9 +12508,6 @@ module Godot
       ""
     end
     @@mb_is_match : Void* = Pointer(Void).null
-    # Returns `true` if the specified `event` matches this event. Only valid for action events, which include key (`InputEventKey`), button (`InputEventMouseButton` or `InputEventJoypadButton`), axis `InputEventJoypadMotion`, and action (`InputEventAction`) events.
-    # If `exact_match` is `false`, the check ignores additional input modifiers for `InputEventKey` and `InputEventMouseButton` events, and the direction for `InputEventJoypadMotion` events.
-    # **Note:** This method only considers the event configuration (such as the keyboard key or the joypad axis), not state information like `#is_pressed`, `#is_released`, `#is_echo`, or `#is_canceled`.
     def is_match(event : InputEvent, exact_match : Bool) : Bool
       if @@mb_is_match.null?
         @@mb_is_match = Bridge.get_method_bind("InputEvent", "is_match", 1754951977_i64)
@@ -14445,7 +12522,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_is_action_type : Void* = Pointer(Void).null
-    # Returns `true` if this input event's type is one that can be assigned to an input action: `InputEventKey`, `InputEventMouseButton`, `InputEventJoypadButton`, `InputEventJoypadMotion`, `InputEventAction`. Returns `false` for all other input event types.
     def is_action_type() : Bool
       if @@mb_is_action_type.null?
         @@mb_is_action_type = Bridge.get_method_bind("InputEvent", "is_action_type", 36873697_i64)
@@ -14455,8 +12531,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_accumulate : Void* = Pointer(Void).null
-    # Returns `true` if the given input event and this input event can be added together (only for events of type `InputEventMouseMotion`).
-    # The given input event's position, global position and speed will be copied. The resulting `relative` is a sum of both events. Both events' modifiers have to be identical.
     def accumulate(with_event : InputEvent) : Bool
       if @@mb_accumulate.null?
         @@mb_accumulate = Bridge.get_method_bind("InputEvent", "accumulate", 1062211774_i64)
@@ -14469,7 +12543,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_xformed_by : Void* = Pointer(Void).null
-    # Returns a copy of the given input event which has been offset by `local_ofs` and transformed by `xform`. Relevant for events of type `InputEventMouseButton`, `InputEventMouseMotion`, `InputEventScreenTouch`, `InputEventScreenDrag`, `InputEventMagnifyGesture` and `InputEventPanGesture`.
     def xformed_by(xform : Transform2D, local_ofs : Vector2) : InputEvent
       if @@mb_xformed_by.null?
         @@mb_xformed_by = Bridge.get_method_bind("InputEvent", "xformed_by", 1282766827_i64)
@@ -14484,10 +12557,6 @@ module Godot
       InputEvent.new(ret_ptr)
     end
   end
-  # An input event type for actions.
-  #
-  # Contains a generic action which can be targeted from several types of inputs. Actions and their events can be set in the **Input Map** tab in **Project > Project Settings**, or with the `InputMap` class.
-  # **Note:** Unlike the other `InputEvent` subclasses which map to unique physical events, this virtual one is not emitted by the engine. This class is useful to emit actions manually with `#Input.parse_input_event`, which are then received in `#Node._input`. To check if a physical event matches an action from the Input Map, use `#InputEvent.is_action` and `#InputEvent.is_action_pressed`.
   class InputEventAction < Godot::InputEvent
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -14560,9 +12629,6 @@ module Godot
       ret
     end
   end
-  # Abstract base class for `Viewport`-based input events.
-  #
-  # InputEventFromWindow represents events specifically received by windows. This includes mouse events, keyboard events in focused windows or touch screen actions.
   class InputEventFromWindow < Godot::InputEvent
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -14587,10 +12653,6 @@ module Godot
       ret
     end
   end
-  # Abstract base class for input events affected by modifier keys like `Shift` and `Alt`.
-  #
-  # Stores information about mouse, keyboard, and touch gesture input events. This includes information about which modifier keys are pressed, such as `Shift` or `Alt`. See `#Node._input`.
-  # **Note:** Modifier keys are considered modifiers only when used in combination with another key. As a result, their corresponding member variables, such as `ctrl_pressed`, will return `false` if the key is pressed on its own.
   class InputEventWithModifiers < Godot::InputEventFromWindow
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -14615,8 +12677,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_is_command_or_control_pressed : Void* = Pointer(Void).null
-    # On macOS, returns `true` if `Meta` (`Cmd`) is pressed.
-    # On other platforms, returns `true` if `Ctrl` is pressed.
     def is_command_or_control_pressed() : Bool
       if @@mb_is_command_or_control_pressed.null?
         @@mb_is_command_or_control_pressed = Bridge.get_method_bind("InputEventWithModifiers", "is_command_or_control_pressed", 36873697_i64)
@@ -14702,7 +12762,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_get_modifiers_mask : Void* = Pointer(Void).null
-    # Returns the keycode combination of modifier keys.
     def get_modifiers_mask() : Int64
       if @@mb_get_modifiers_mask.null?
         @@mb_get_modifiers_mask = Bridge.get_method_bind("InputEventWithModifiers", "get_modifiers_mask", 1258259499_i64)
@@ -14712,9 +12771,6 @@ module Godot
       ret
     end
   end
-  # Abstract base class for touch gestures.
-  #
-  # InputEventGestures are sent when a user performs a supported gesture on a touch screen. Gestures can't be emulated using mouse, because they typically require multi-touch.
   class InputEventGesture < Godot::InputEventWithModifiers
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -14739,9 +12795,6 @@ module Godot
       ret
     end
   end
-  # Represents a gamepad button being pressed or released.
-  #
-  # Input event type for gamepad buttons. For gamepad analog sticks and joysticks, see `InputEventJoypadMotion`.
   class InputEventJoypadButton < Godot::InputEvent
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -14795,9 +12848,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_pressed, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
   end
-  # Represents axis motions (such as joystick or analog triggers) from a gamepad.
-  #
-  # Stores information about joystick motions. One `InputEventJoypadMotion` represents one axis at a time. For gamepad buttons, see `InputEventJoypadButton`.
   class InputEventJoypadMotion < Godot::InputEvent
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -14841,11 +12891,6 @@ module Godot
       ret
     end
   end
-  # Represents a key on a keyboard being pressed or released.
-  #
-  # An input event for keys on a keyboard. Supports key presses, key releases and `echo` events. It can also be received in `#Node._unhandled_key_input`.
-  # **Note:** Events received from the keyboard usually have all properties set. Event mappings should have only one of the `keycode`, `physical_keycode` or `unicode` set.
-  # When events are compared, properties are checked in the following priority - `keycode`, `physical_keycode` and `unicode`. Events with the first matching value will be considered equal.
   class InputEventKey < Godot::InputEventWithModifiers
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -14966,8 +13011,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_echo, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_keycode_with_modifiers : Void* = Pointer(Void).null
-    # Returns the Latin keycode combined with modifier keys such as `Shift` or `Alt`. See also `InputEventWithModifiers`.
-    # To get a human-readable representation of the `InputEventKey` with modifiers, use `OS.get_keycode_string(event.get_keycode_with_modifiers())` where `event` is the `InputEventKey`.
     def get_keycode_with_modifiers() : Int64
       if @@mb_get_keycode_with_modifiers.null?
         @@mb_get_keycode_with_modifiers = Bridge.get_method_bind("InputEventKey", "get_keycode_with_modifiers", 1585896689_i64)
@@ -14977,8 +13020,6 @@ module Godot
       ret
     end
     @@mb_get_physical_keycode_with_modifiers : Void* = Pointer(Void).null
-    # Returns the physical keycode combined with modifier keys such as `Shift` or `Alt`. See also `InputEventWithModifiers`.
-    # To get a human-readable representation of the `InputEventKey` with modifiers, use `OS.get_keycode_string(event.get_physical_keycode_with_modifiers())` where `event` is the `InputEventKey`.
     def get_physical_keycode_with_modifiers() : Int64
       if @@mb_get_physical_keycode_with_modifiers.null?
         @@mb_get_physical_keycode_with_modifiers = Bridge.get_method_bind("InputEventKey", "get_physical_keycode_with_modifiers", 1585896689_i64)
@@ -14988,8 +13029,6 @@ module Godot
       ret
     end
     @@mb_get_key_label_with_modifiers : Void* = Pointer(Void).null
-    # Returns the localized key label combined with modifier keys such as `Shift` or `Alt`. See also `InputEventWithModifiers`.
-    # To get a human-readable representation of the `InputEventKey` with modifiers, use `OS.get_keycode_string(event.get_key_label_with_modifiers())` where `event` is the `InputEventKey`.
     def get_key_label_with_modifiers() : Int64
       if @@mb_get_key_label_with_modifiers.null?
         @@mb_get_key_label_with_modifiers = Bridge.get_method_bind("InputEventKey", "get_key_label_with_modifiers", 1585896689_i64)
@@ -14999,7 +13038,6 @@ module Godot
       ret
     end
     @@mb_as_text_keycode : Void* = Pointer(Void).null
-    # Returns a `String` representation of the event's `keycode` and modifiers.
     def as_text_keycode() : String
       if @@mb_as_text_keycode.null?
         @@mb_as_text_keycode = Bridge.get_method_bind("InputEventKey", "as_text_keycode", 201670096_i64)
@@ -15007,7 +13045,6 @@ module Godot
       ""
     end
     @@mb_as_text_physical_keycode : Void* = Pointer(Void).null
-    # Returns a `String` representation of the event's `physical_keycode` and modifiers.
     def as_text_physical_keycode() : String
       if @@mb_as_text_physical_keycode.null?
         @@mb_as_text_physical_keycode = Bridge.get_method_bind("InputEventKey", "as_text_physical_keycode", 201670096_i64)
@@ -15015,7 +13052,6 @@ module Godot
       ""
     end
     @@mb_as_text_key_label : Void* = Pointer(Void).null
-    # Returns a `String` representation of the event's `key_label` and modifiers.
     def as_text_key_label() : String
       if @@mb_as_text_key_label.null?
         @@mb_as_text_key_label = Bridge.get_method_bind("InputEventKey", "as_text_key_label", 201670096_i64)
@@ -15023,7 +13059,6 @@ module Godot
       ""
     end
     @@mb_as_text_location : Void* = Pointer(Void).null
-    # Returns a `String` representation of the event's `location`. This will be a blank string if the event is not specific to a location.
     def as_text_location() : String
       if @@mb_as_text_location.null?
         @@mb_as_text_location = Bridge.get_method_bind("InputEventKey", "as_text_location", 201670096_i64)
@@ -15031,67 +13066,6 @@ module Godot
       ""
     end
   end
-  # Represents a MIDI message from a MIDI device, such as a musical keyboard.
-  #
-  # InputEventMIDI stores information about messages from [$2]($1) (Musical Instrument Digital Interface) devices. These may include musical keyboards, synthesizers, and drum machines.
-  # MIDI messages can be received over a 5-pin MIDI connector or over USB. If your device supports both be sure to check the settings in the device to see which output it is using.
-  # By default, Godot does not detect MIDI devices. You need to call `#OS.open_midi_inputs`, first. You can check which devices are detected with `#OS.get_connected_midi_inputs`, and close the connection with `#OS.close_midi_inputs`.
-  #
-  # ```gdscript
-  #
-  # func _ready():
-  # 	OS.open_midi_inputs()
-  # 	print(OS.get_connected_midi_inputs())
-  #
-  # func _input(input_event):
-  # 	if input_event is InputEventMIDI:
-  # 		_print_midi_info(input_event)
-  #
-  # func _print_midi_info(midi_event):
-  # 	print(midi_event)
-  # 	print("Channel ", midi_event.channel)
-  # 	print("Message ", midi_event.message)
-  # 	print("Pitch ", midi_event.pitch)
-  # 	print("Velocity ", midi_event.velocity)
-  # 	print("Instrument ", midi_event.instrument)
-  # 	print("Pressure ", midi_event.pressure)
-  # 	print("Controller number: ", midi_event.controller_number)
-  # 	print("Controller value: ", midi_event.controller_value)
-  #
-  # ```
-  # ```csharp
-  #
-  # public override void _Ready()
-  # {
-  # 	OS.OpenMidiInputs();
-  # 	GD.Print(OS.GetConnectedMidiInputs());
-  # }
-  #
-  # public override void _Input(InputEvent inputEvent)
-  # {
-  # 	if (inputEvent is InputEventMidi midiEvent)
-  # 	{
-  # 		PrintMIDIInfo(midiEvent);
-  # 	}
-  # }
-  #
-  # private void PrintMIDIInfo(InputEventMidi midiEvent)
-  # {
-  # 	GD.Print(midiEvent);
-  # 	GD.Print($"Channel {midiEvent.Channel}");
-  # 	GD.Print($"Message {midiEvent.Message}");
-  # 	GD.Print($"Pitch {midiEvent.Pitch}");
-  # 	GD.Print($"Velocity {midiEvent.Velocity}");
-  # 	GD.Print($"Instrument {midiEvent.Instrument}");
-  # 	GD.Print($"Pressure {midiEvent.Pressure}");
-  # 	GD.Print($"Controller number: {midiEvent.ControllerNumber}");
-  # 	GD.Print($"Controller value: {midiEvent.ControllerValue}");
-  # }
-  #
-  # ```
-  #
-  # **Note:** Godot does not support MIDI output, so there is no way to emit MIDI messages from Godot. Only MIDI input is supported.
-  # **Note:** On the Web platform, using MIDI input requires a browser permission to be granted first. This permission request is performed when calling `#OS.open_midi_inputs`. MIDI input will not work until the user accepts the permission request.
   class InputEventMIDI < Godot::InputEvent
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -15249,10 +13223,6 @@ module Godot
       ret
     end
   end
-  # Represents a magnifying touch gesture.
-  #
-  # Stores the factor of a magnifying touch gesture. This is usually performed when the user pinches the touch screen and used for zooming in/out.
-  # **Note:** On Android, this requires the [member ProjectSettings.input_devices/pointing/android/enable_pan_and_scale_gestures] project setting to be enabled.
   class InputEventMagnifyGesture < Godot::InputEventGesture
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -15277,9 +13247,6 @@ module Godot
       ret
     end
   end
-  # Base input event type for mouse events.
-  #
-  # Stores general information about mouse events.
   class InputEventMouse < Godot::InputEventWithModifiers
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -15342,10 +13309,6 @@ module Godot
       ret
     end
   end
-  # Represents a mouse button being pressed or released.
-  #
-  # Stores information about mouse click events. See `#Node._input`.
-  # **Note:** On Wear OS devices, rotary input is mapped to `MOUSE_BUTTON_WHEEL_UP` and `MOUSE_BUTTON_WHEEL_DOWN`. This can be changed to `MOUSE_BUTTON_WHEEL_LEFT` and `MOUSE_BUTTON_WHEEL_RIGHT` with the [member ProjectSettings.input_devices/pointing/android/rotary_input_scroll_axis] setting.
   class InputEventMouseButton < Godot::InputEventMouse
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -15428,11 +13391,6 @@ module Godot
       ret != 0_u8
     end
   end
-  # Represents a mouse or a pen movement.
-  #
-  # Stores information about a mouse or a pen motion. This includes relative position, absolute position, and velocity. See `#Node._input`.
-  # **Note:** By default, this event is only emitted once per frame rendered at most. If you need more precise input reporting, set `Input.use_accumulated_input` to `false` to make events emitted as often as possible. If you use InputEventMouseMotion to draw lines, consider using `#Geometry2D.bresenham_line` as well to avoid visible gaps in lines if the user is moving the mouse quickly.
-  # **Note:** This event may be emitted even when the mouse hasn't moved, either by the operating system or by Godot itself. If you really need to know if the mouse has moved (e.g. to suppress displaying a tooltip), you should check that `relative.is_zero_approx()` is `false`.
   class InputEventMouseMotion < Godot::InputEventMouse
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -15571,10 +13529,6 @@ module Godot
       ret
     end
   end
-  # Represents a panning touch gesture.
-  #
-  # Stores information about pan gestures. A pan gesture is performed when the user swipes the touch screen with two fingers. It's typically used for panning/scrolling.
-  # **Note:** On Android, this requires the [member ProjectSettings.input_devices/pointing/android/enable_pan_and_scale_gestures] project setting to be enabled.
   class InputEventPanGesture < Godot::InputEventGesture
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -15599,9 +13553,6 @@ module Godot
       ret
     end
   end
-  # Represents a screen drag event.
-  #
-  # Stores information about screen drag events. See `#Node._input`.
   class InputEventScreenDrag < Godot::InputEventFromWindow
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -15778,9 +13729,6 @@ module Godot
       ret
     end
   end
-  # Represents a screen touch event.
-  #
-  # Stores information about multi-touch press/release input events. Supports touch press, touch release and `index` for multi-touch count and order.
   class InputEventScreenTouch < Godot::InputEventFromWindow
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -15863,9 +13811,6 @@ module Godot
       ret != 0_u8
     end
   end
-  # Represents a triggered keyboard `Shortcut`.
-  #
-  # InputEventShortcut is a special event that can be received in `#Node._input`, `#Node._shortcut_input`, and `#Node._unhandled_input`. It is typically sent by the editor's Command Palette to trigger actions, but can also be sent manually using `#Viewport.push_input`.
   class InputEventShortcut < Godot::InputEvent
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -15890,15 +13835,11 @@ module Godot
       Shortcut.new(ret_ptr)
     end
   end
-  # A singleton that manages all `InputEventAction`s.
-  #
-  # Manages all `InputEventAction` which can be created/modified from the project settings menu **Project > Project Settings > Input Map** or in code with `#add_action` and `#action_add_event`. See `#Node._input`.
   class InputMap < Godot::Object
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
     end
     @@mb_has_action : Void* = Pointer(Void).null
-    # Returns `true` if the `InputMap` has a registered action with the given name.
     def has_action(action : String) : Bool
       if @@mb_has_action.null?
         @@mb_has_action = Bridge.get_method_bind("InputMap", "has_action", 2619796661_i64)
@@ -15913,7 +13854,6 @@ module Godot
       Bridge.free_string_name(sn_0)
     end
     @@mb_get_actions : Void* = Pointer(Void).null
-    # Returns an array of all actions in the `InputMap`.
     def get_actions() : Godot::Array
       if @@mb_get_actions.null?
         @@mb_get_actions = Bridge.get_method_bind("InputMap", "get_actions", 2915620761_i64)
@@ -15923,8 +13863,6 @@ module Godot
       Godot::Array.new(ret_ptr)
     end
     @@mb_add_action : Void* = Pointer(Void).null
-    # Adds an empty action to the `InputMap` with a configurable `deadzone`.
-    # An `InputEvent` can then be added to this action with `#action_add_event`.
     def add_action(action : String, deadzone : Float64) : Void
       if @@mb_add_action.null?
         @@mb_add_action = Bridge.get_method_bind("InputMap", "add_action", 1195233573_i64)
@@ -15939,7 +13877,6 @@ module Godot
       Bridge.free_string_name(sn_0)
     end
     @@mb_erase_action : Void* = Pointer(Void).null
-    # Removes an action from the `InputMap`.
     def erase_action(action : String) : Void
       if @@mb_erase_action.null?
         @@mb_erase_action = Bridge.get_method_bind("InputMap", "erase_action", 3304788590_i64)
@@ -15952,7 +13889,6 @@ module Godot
       Bridge.free_string_name(sn_0)
     end
     @@mb_get_action_description : Void* = Pointer(Void).null
-    # Returns the human-readable description of the given action.
     def get_action_description(action : String) : String
       if @@mb_get_action_description.null?
         @@mb_get_action_description = Bridge.get_method_bind("InputMap", "get_action_description", 957595536_i64)
@@ -15965,7 +13901,6 @@ module Godot
       Bridge.free_string_name(sn_0)
     end
     @@mb_action_set_deadzone : Void* = Pointer(Void).null
-    # Sets a deadzone value for the action.
     def action_set_deadzone(action : String, deadzone : Float64) : Void
       if @@mb_action_set_deadzone.null?
         @@mb_action_set_deadzone = Bridge.get_method_bind("InputMap", "action_set_deadzone", 4135858297_i64)
@@ -15980,7 +13915,6 @@ module Godot
       Bridge.free_string_name(sn_0)
     end
     @@mb_action_get_deadzone : Void* = Pointer(Void).null
-    # Returns a deadzone value for the action.
     def action_get_deadzone(action : String) : Float64
       if @@mb_action_get_deadzone.null?
         @@mb_action_get_deadzone = Bridge.get_method_bind("InputMap", "action_get_deadzone", 1391627649_i64)
@@ -15995,7 +13929,6 @@ module Godot
       Bridge.free_string_name(sn_0)
     end
     @@mb_action_add_event : Void* = Pointer(Void).null
-    # Adds an `InputEvent` to an action. This `InputEvent` will trigger the action.
     def action_add_event(action : String, event : InputEvent) : Void
       if @@mb_action_add_event.null?
         @@mb_action_add_event = Bridge.get_method_bind("InputMap", "action_add_event", 518302593_i64)
@@ -16010,7 +13943,6 @@ module Godot
       Bridge.free_string_name(sn_0)
     end
     @@mb_action_has_event : Void* = Pointer(Void).null
-    # Returns `true` if the action has the given `InputEvent` associated with it.
     def action_has_event(action : String, event : InputEvent) : Bool
       if @@mb_action_has_event.null?
         @@mb_action_has_event = Bridge.get_method_bind("InputMap", "action_has_event", 1185871985_i64)
@@ -16027,7 +13959,6 @@ module Godot
       Bridge.free_string_name(sn_0)
     end
     @@mb_action_erase_event : Void* = Pointer(Void).null
-    # Removes an `InputEvent` from an action.
     def action_erase_event(action : String, event : InputEvent) : Void
       if @@mb_action_erase_event.null?
         @@mb_action_erase_event = Bridge.get_method_bind("InputMap", "action_erase_event", 518302593_i64)
@@ -16042,7 +13973,6 @@ module Godot
       Bridge.free_string_name(sn_0)
     end
     @@mb_action_erase_events : Void* = Pointer(Void).null
-    # Removes all events from an action.
     def action_erase_events(action : String) : Void
       if @@mb_action_erase_events.null?
         @@mb_action_erase_events = Bridge.get_method_bind("InputMap", "action_erase_events", 3304788590_i64)
@@ -16055,8 +13985,6 @@ module Godot
       Bridge.free_string_name(sn_0)
     end
     @@mb_action_get_events : Void* = Pointer(Void).null
-    # Returns an array of `InputEvent`s associated with a given action.
-    # **Note:** When used in the editor (e.g. a tool script or `EditorPlugin`), this method will return events for the editor action. If you want to access your project's input binds from the editor, read the `input/*` settings from `ProjectSettings`.
     def action_get_events(action : String) : Godot::Array
       if @@mb_action_get_events.null?
         @@mb_action_get_events = Bridge.get_method_bind("InputMap", "action_get_events", 689397652_i64)
@@ -16071,8 +13999,6 @@ module Godot
       Bridge.free_string_name(sn_0)
     end
     @@mb_event_is_action : Void* = Pointer(Void).null
-    # Returns `true` if the given event is part of an existing action. This method ignores keyboard modifiers if the given `InputEvent` is not pressed (for proper release detection). See `#action_has_event` if you don't want this behavior.
-    # If `exact_match` is `false`, it ignores additional input modifiers for `InputEventKey` and `InputEventMouseButton` events, and the direction for `InputEventJoypadMotion` events.
     def event_is_action(event : InputEvent, action : String, exact_match : Bool) : Bool
       if @@mb_event_is_action.null?
         @@mb_event_is_action = Bridge.get_method_bind("InputMap", "event_is_action", 3193353650_i64)
@@ -16091,7 +14017,6 @@ module Godot
       Bridge.free_string_name(sn_1)
     end
     @@mb_load_from_project_settings : Void* = Pointer(Void).null
-    # Clears all `InputEventAction` in the `InputMap` and load it anew from `ProjectSettings`.
     def load_from_project_settings() : Void
       if @@mb_load_from_project_settings.null?
         @@mb_load_from_project_settings = Bridge.get_method_bind("InputMap", "load_from_project_settings", 3218959716_i64)
@@ -16099,17 +14024,11 @@ module Godot
       Bridge.ptrcall(@@mb_load_from_project_settings, @pointer, Pointer(Pointer(Void)).null, Pointer(Void).null)
     end
   end
-  # Placeholder for the root `Node` of a `PackedScene`.
-  #
-  # Turning on the option **Load As Placeholder** for an instantiated scene in the editor causes it to be replaced by an `InstancePlaceholder` when running the game, this will not replace the node in the editor. This makes it possible to delay actually loading the scene until calling `#create_instance`. This is useful to avoid loading large scenes all at once by loading parts of it selectively.
-  # **Note:** Like `Node`, `InstancePlaceholder` does not have a transform. This causes any child nodes to be positioned relatively to the `Viewport` origin, rather than their parent as displayed in the editor. Replacing the placeholder with a scene with a transform will transform children relatively to their parent again.
   class InstancePlaceholder < Godot::Node
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
     end
     @@mb_get_stored_values : Void* = Pointer(Void).null
-    # Returns the list of properties that will be applied to the node when `#create_instance` is called.
-    # If `with_order` is `true`, a key named `.order` (note the leading period) is added to the dictionary. This `.order` key is an `Array` of `String` property names specifying the order in which properties will be applied (with index 0 being the first).
     def get_stored_values(with_order : Bool) : Void*
       if @@mb_get_stored_values.null?
         @@mb_get_stored_values = Bridge.get_method_bind("InstancePlaceholder", "get_stored_values", 2230153369_i64)
@@ -16122,8 +14041,6 @@ module Godot
       ret_ptr
     end
     @@mb_create_instance : Void* = Pointer(Void).null
-    # Call this method to actually load in the node. The created node will be placed as a sibling *above* the `InstancePlaceholder` in the scene tree. The `Node`'s reference is also returned for convenience.
-    # **Note:** `#create_instance` is not thread-safe. Use `#Object.call_deferred` if calling from a thread.
     def create_instance(replace : Bool, custom_scene : PackedScene) : Node
       if @@mb_create_instance.null?
         @@mb_create_instance = Bridge.get_method_bind("InstancePlaceholder", "create_instance", 3794612210_i64)
@@ -16138,7 +14055,6 @@ module Godot
       Node.new(ret_ptr)
     end
     @@mb_get_instance_path : Void* = Pointer(Void).null
-    # Gets the path to the `PackedScene` resource file that is loaded by default when calling `#create_instance`. Not thread-safe. Use `#Object.call_deferred` if calling from a thread.
     def get_instance_path() : String
       if @@mb_get_instance_path.null?
         @@mb_get_instance_path = Bridge.get_method_bind("InstancePlaceholder", "get_instance_path", 201670096_i64)
@@ -16146,22 +14062,11 @@ module Godot
       ""
     end
   end
-  # Creates an idle interval in a `Tween` animation.
-  #
-  # `IntervalTweener` is used to make delays in a tweening sequence. See `#Tween.tween_interval` for more usage information.
-  # **Note:** `#Tween.tween_interval` is the only correct way to create `IntervalTweener`. Any `IntervalTweener` created manually will not function correctly.
   class IntervalTweener < Godot::Tweener
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
     end
   end
-  # A vertical list of selectable items with one or multiple columns.
-  #
-  # This control provides a vertical list of selectable items that may be in a single or in multiple columns, with each item having options for text and an icon. Tooltips are supported and may be different for every item in the list.
-  # Selectable items in the list may be selected or deselected and multiple selection may be enabled. Selection with right mouse button may also be enabled to allow use of popup context menus. Items may also be "activated" by double-clicking them or by pressing `Enter`.
-  # Item text only supports single-line strings. Newline characters (e.g. `\n`) in the string won't produce a newline. Text wrapping is enabled in `ICON_MODE_TOP` mode, but the column's width is adjusted to fully fit its content by default. You need to set `fixed_column_width` greater than zero to wrap the text.
-  # All `set_*` methods allow negative item indices, i.e. `-1` to access the last item, `-2` to select the second-to-last item, and so on.
-  # **Incremental search:** Like `PopupMenu` and `Tree`, `ItemList` supports searching within the list while the control is focused. Press a key that matches the first letter of an item's name to select the first item starting with the given letter. After that point, there are two ways to perform incremental search: 1) Press the same key again before the timeout duration to select the next item starting with the same letter. 2) Press letter keys that match the rest of the word before the timeout duration to match to select the item in question directly. Both of these actions will be reset to the beginning of the list if the timeout duration has passed since the last keystroke was registered. You can adjust the timeout duration by changing [member ProjectSettings.gui/timers/incremental_search_max_interval_msec].
   class ItemList < Godot::Control
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -16182,9 +14087,6 @@ module Godot
       ScrollHintModeBottom = 3_i64
     end
     @@mb_add_item : Void* = Pointer(Void).null
-    # Adds an item to the item list with specified text. Returns the index of an added item.
-    # Specify an `icon`, or use `null` as the `icon` for a list item with no icon.
-    # If `selectable` is `true`, the list item will be selectable.
     def add_item(text : String, icon : Texture2D, selectable : Bool) : Int64
       if @@mb_add_item.null?
         @@mb_add_item = Bridge.get_method_bind("ItemList", "add_item", 359861678_i64)
@@ -16203,7 +14105,6 @@ module Godot
       Bridge.free_string(str_0)
     end
     @@mb_add_icon_item : Void* = Pointer(Void).null
-    # Adds an item to the item list with no text, only an icon. Returns the index of an added item.
     def add_icon_item(icon : Texture2D, selectable : Bool) : Int64
       if @@mb_add_icon_item.null?
         @@mb_add_icon_item = Bridge.get_method_bind("ItemList", "add_icon_item", 4256579627_i64)
@@ -16218,7 +14119,6 @@ module Godot
       ret
     end
     @@mb_set_item_text : Void* = Pointer(Void).null
-    # Sets text of the item associated with the specified index.
     def set_item_text(idx : Int64, text : String) : Void
       if @@mb_set_item_text.null?
         @@mb_set_item_text = Bridge.get_method_bind("ItemList", "set_item_text", 501894301_i64)
@@ -16233,7 +14133,6 @@ module Godot
       Bridge.free_string(str_1)
     end
     @@mb_get_item_text : Void* = Pointer(Void).null
-    # Returns the text associated with the specified index.
     def get_item_text(idx : Int64) : String
       if @@mb_get_item_text.null?
         @@mb_get_item_text = Bridge.get_method_bind("ItemList", "get_item_text", 844755477_i64)
@@ -16244,7 +14143,6 @@ module Godot
       ""
     end
     @@mb_set_item_icon : Void* = Pointer(Void).null
-    # Sets (or replaces) the icon's `Texture2D` associated with the specified index.
     def set_item_icon(idx : Int64, icon : Texture2D) : Void
       if @@mb_set_item_icon.null?
         @@mb_set_item_icon = Bridge.get_method_bind("ItemList", "set_item_icon", 666127730_i64)
@@ -16257,7 +14155,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_item_icon, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_item_icon : Void* = Pointer(Void).null
-    # Returns the icon associated with the specified index.
     def get_item_icon(idx : Int64) : Texture2D
       if @@mb_get_item_icon.null?
         @@mb_get_item_icon = Bridge.get_method_bind("ItemList", "get_item_icon", 3536238170_i64)
@@ -16270,7 +14167,6 @@ module Godot
       Texture2D.new(ret_ptr)
     end
     @@mb_set_item_text_direction : Void* = Pointer(Void).null
-    # Sets item's text base writing direction.
     def set_item_text_direction(idx : Int64, direction : Int64) : Void
       if @@mb_set_item_text_direction.null?
         @@mb_set_item_text_direction = Bridge.get_method_bind("ItemList", "set_item_text_direction", 1707680378_i64)
@@ -16283,7 +14179,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_item_text_direction, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_item_text_direction : Void* = Pointer(Void).null
-    # Returns item's text base writing direction.
     def get_item_text_direction(idx : Int64) : Int64
       if @@mb_get_item_text_direction.null?
         @@mb_get_item_text_direction = Bridge.get_method_bind("ItemList", "get_item_text_direction", 4235602388_i64)
@@ -16296,7 +14191,6 @@ module Godot
       ret
     end
     @@mb_set_item_language : Void* = Pointer(Void).null
-    # Sets the language code of the text for the item at the given index to `language`. This is used for line-breaking and text shaping algorithms. If `language` is empty, the current locale is used.
     def set_item_language(idx : Int64, language : String) : Void
       if @@mb_set_item_language.null?
         @@mb_set_item_language = Bridge.get_method_bind("ItemList", "set_item_language", 501894301_i64)
@@ -16311,7 +14205,6 @@ module Godot
       Bridge.free_string(str_1)
     end
     @@mb_get_item_language : Void* = Pointer(Void).null
-    # Returns item's text language code.
     def get_item_language(idx : Int64) : String
       if @@mb_get_item_language.null?
         @@mb_get_item_language = Bridge.get_method_bind("ItemList", "get_item_language", 844755477_i64)
@@ -16322,8 +14215,6 @@ module Godot
       ""
     end
     @@mb_set_item_auto_translate_mode : Void* = Pointer(Void).null
-    # Sets the auto translate mode of the item associated with the specified index.
-    # Items use `Node.AUTO_TRANSLATE_MODE_INHERIT` by default, which uses the same auto translate mode as the `ItemList` itself.
     def set_item_auto_translate_mode(idx : Int64, mode : Int64) : Void
       if @@mb_set_item_auto_translate_mode.null?
         @@mb_set_item_auto_translate_mode = Bridge.get_method_bind("ItemList", "set_item_auto_translate_mode", 287402019_i64)
@@ -16336,7 +14227,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_item_auto_translate_mode, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_item_auto_translate_mode : Void* = Pointer(Void).null
-    # Returns item's auto translate mode.
     def get_item_auto_translate_mode(idx : Int64) : Int64
       if @@mb_get_item_auto_translate_mode.null?
         @@mb_get_item_auto_translate_mode = Bridge.get_method_bind("ItemList", "get_item_auto_translate_mode", 906302372_i64)
@@ -16349,7 +14239,6 @@ module Godot
       ret
     end
     @@mb_set_item_icon_transposed : Void* = Pointer(Void).null
-    # Sets whether the item icon will be drawn transposed.
     def set_item_icon_transposed(idx : Int64, transposed : Bool) : Void
       if @@mb_set_item_icon_transposed.null?
         @@mb_set_item_icon_transposed = Bridge.get_method_bind("ItemList", "set_item_icon_transposed", 300928843_i64)
@@ -16362,7 +14251,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_item_icon_transposed, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_is_item_icon_transposed : Void* = Pointer(Void).null
-    # Returns `true` if the item icon will be drawn transposed, i.e. the X and Y axes are swapped.
     def is_item_icon_transposed(idx : Int64) : Bool
       if @@mb_is_item_icon_transposed.null?
         @@mb_is_item_icon_transposed = Bridge.get_method_bind("ItemList", "is_item_icon_transposed", 1116898809_i64)
@@ -16375,7 +14263,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_set_item_icon_region : Void* = Pointer(Void).null
-    # Sets the region of item's icon used. The whole icon will be used if the region has no area.
     def set_item_icon_region(idx : Int64, rect : Rect2) : Void
       if @@mb_set_item_icon_region.null?
         @@mb_set_item_icon_region = Bridge.get_method_bind("ItemList", "set_item_icon_region", 1356297692_i64)
@@ -16388,7 +14275,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_item_icon_region, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_item_icon_region : Void* = Pointer(Void).null
-    # Returns the region of item's icon used. The whole icon will be used if the region has no area.
     def get_item_icon_region(idx : Int64) : Rect2
       if @@mb_get_item_icon_region.null?
         @@mb_get_item_icon_region = Bridge.get_method_bind("ItemList", "get_item_icon_region", 3327874267_i64)
@@ -16401,7 +14287,6 @@ module Godot
       Rect2.new(ret_ptr)
     end
     @@mb_set_item_icon_modulate : Void* = Pointer(Void).null
-    # Sets a modulating `Color` of the item associated with the specified index.
     def set_item_icon_modulate(idx : Int64, modulate : Color) : Void
       if @@mb_set_item_icon_modulate.null?
         @@mb_set_item_icon_modulate = Bridge.get_method_bind("ItemList", "set_item_icon_modulate", 2878471219_i64)
@@ -16414,7 +14299,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_item_icon_modulate, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_item_icon_modulate : Void* = Pointer(Void).null
-    # Returns a `Color` modulating item's icon at the specified index.
     def get_item_icon_modulate(idx : Int64) : Color
       if @@mb_get_item_icon_modulate.null?
         @@mb_get_item_icon_modulate = Bridge.get_method_bind("ItemList", "get_item_icon_modulate", 3457211756_i64)
@@ -16427,7 +14311,6 @@ module Godot
       ret
     end
     @@mb_set_item_selectable : Void* = Pointer(Void).null
-    # Allows or disallows selection of the item associated with the specified index.
     def set_item_selectable(idx : Int64, selectable : Bool) : Void
       if @@mb_set_item_selectable.null?
         @@mb_set_item_selectable = Bridge.get_method_bind("ItemList", "set_item_selectable", 300928843_i64)
@@ -16440,7 +14323,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_item_selectable, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_is_item_selectable : Void* = Pointer(Void).null
-    # Returns `true` if the item at the specified index is selectable.
     def is_item_selectable(idx : Int64) : Bool
       if @@mb_is_item_selectable.null?
         @@mb_is_item_selectable = Bridge.get_method_bind("ItemList", "is_item_selectable", 1116898809_i64)
@@ -16453,8 +14335,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_set_item_disabled : Void* = Pointer(Void).null
-    # Disables (or enables) the item at the specified index.
-    # Disabled items cannot be selected and do not trigger activation signals (when double-clicking or pressing `Enter`).
     def set_item_disabled(idx : Int64, disabled : Bool) : Void
       if @@mb_set_item_disabled.null?
         @@mb_set_item_disabled = Bridge.get_method_bind("ItemList", "set_item_disabled", 300928843_i64)
@@ -16467,7 +14347,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_item_disabled, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_is_item_disabled : Void* = Pointer(Void).null
-    # Returns `true` if the item at the specified index is disabled.
     def is_item_disabled(idx : Int64) : Bool
       if @@mb_is_item_disabled.null?
         @@mb_is_item_disabled = Bridge.get_method_bind("ItemList", "is_item_disabled", 1116898809_i64)
@@ -16480,7 +14359,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_set_item_metadata : Void* = Pointer(Void).null
-    # Sets a value (of any type) to be stored with the item associated with the specified index.
     def set_item_metadata(idx : Int64, metadata : Void*) : Void
       if @@mb_set_item_metadata.null?
         @@mb_set_item_metadata = Bridge.get_method_bind("ItemList", "set_item_metadata", 2152698145_i64)
@@ -16493,7 +14371,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_item_metadata, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_item_metadata : Void* = Pointer(Void).null
-    # Returns the metadata value of the specified index.
     def get_item_metadata(idx : Int64) : Void*
       if @@mb_get_item_metadata.null?
         @@mb_get_item_metadata = Bridge.get_method_bind("ItemList", "get_item_metadata", 4227898402_i64)
@@ -16508,7 +14385,6 @@ module Godot
       ret_ptr
     end
     @@mb_set_item_custom_bg_color : Void* = Pointer(Void).null
-    # Sets the background color of the item specified by `idx` index to the specified `Color`.
     def set_item_custom_bg_color(idx : Int64, custom_bg_color : Color) : Void
       if @@mb_set_item_custom_bg_color.null?
         @@mb_set_item_custom_bg_color = Bridge.get_method_bind("ItemList", "set_item_custom_bg_color", 2878471219_i64)
@@ -16521,7 +14397,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_item_custom_bg_color, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_item_custom_bg_color : Void* = Pointer(Void).null
-    # Returns the custom background color of the item specified by `idx` index.
     def get_item_custom_bg_color(idx : Int64) : Color
       if @@mb_get_item_custom_bg_color.null?
         @@mb_get_item_custom_bg_color = Bridge.get_method_bind("ItemList", "get_item_custom_bg_color", 3457211756_i64)
@@ -16534,7 +14409,6 @@ module Godot
       ret
     end
     @@mb_set_item_custom_fg_color : Void* = Pointer(Void).null
-    # Sets the foreground color of the item specified by `idx` index to the specified `Color`.
     def set_item_custom_fg_color(idx : Int64, custom_fg_color : Color) : Void
       if @@mb_set_item_custom_fg_color.null?
         @@mb_set_item_custom_fg_color = Bridge.get_method_bind("ItemList", "set_item_custom_fg_color", 2878471219_i64)
@@ -16547,7 +14421,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_item_custom_fg_color, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_item_custom_fg_color : Void* = Pointer(Void).null
-    # Returns the custom foreground color of the item specified by `idx` index.
     def get_item_custom_fg_color(idx : Int64) : Color
       if @@mb_get_item_custom_fg_color.null?
         @@mb_get_item_custom_fg_color = Bridge.get_method_bind("ItemList", "get_item_custom_fg_color", 3457211756_i64)
@@ -16560,8 +14433,6 @@ module Godot
       ret
     end
     @@mb_get_item_rect : Void* = Pointer(Void).null
-    # Returns the position and size of the item with the specified index, in the coordinate system of the `ItemList` node. If `expand` is `true` the last column expands to fill the rest of the row.
-    # **Note:** The returned value is unreliable if called right after modifying the `ItemList`, before it redraws in the next frame.
     def get_item_rect(idx : Int64, expand : Bool) : Rect2
       if @@mb_get_item_rect.null?
         @@mb_get_item_rect = Bridge.get_method_bind("ItemList", "get_item_rect", 159227807_i64)
@@ -16576,7 +14447,6 @@ module Godot
       Rect2.new(ret_ptr)
     end
     @@mb_set_item_tooltip_enabled : Void* = Pointer(Void).null
-    # Sets whether the tooltip hint is enabled for specified item index.
     def set_item_tooltip_enabled(idx : Int64, enable : Bool) : Void
       if @@mb_set_item_tooltip_enabled.null?
         @@mb_set_item_tooltip_enabled = Bridge.get_method_bind("ItemList", "set_item_tooltip_enabled", 300928843_i64)
@@ -16589,7 +14459,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_item_tooltip_enabled, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_is_item_tooltip_enabled : Void* = Pointer(Void).null
-    # Returns `true` if the tooltip is enabled for specified item index.
     def is_item_tooltip_enabled(idx : Int64) : Bool
       if @@mb_is_item_tooltip_enabled.null?
         @@mb_is_item_tooltip_enabled = Bridge.get_method_bind("ItemList", "is_item_tooltip_enabled", 1116898809_i64)
@@ -16602,7 +14471,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_set_item_tooltip : Void* = Pointer(Void).null
-    # Sets the tooltip hint for the item associated with the specified index.
     def set_item_tooltip(idx : Int64, tooltip : String) : Void
       if @@mb_set_item_tooltip.null?
         @@mb_set_item_tooltip = Bridge.get_method_bind("ItemList", "set_item_tooltip", 501894301_i64)
@@ -16617,7 +14485,6 @@ module Godot
       Bridge.free_string(str_1)
     end
     @@mb_get_item_tooltip : Void* = Pointer(Void).null
-    # Returns the tooltip hint associated with the specified index.
     def get_item_tooltip(idx : Int64) : String
       if @@mb_get_item_tooltip.null?
         @@mb_get_item_tooltip = Bridge.get_method_bind("ItemList", "get_item_tooltip", 844755477_i64)
@@ -16628,8 +14495,6 @@ module Godot
       ""
     end
     @@mb_select : Void* = Pointer(Void).null
-    # Selects the item at the specified index.
-    # **Note:** This method does not trigger the item selection signal.
     def select_val(idx : Int64, single : Bool) : Void
       if @@mb_select.null?
         @@mb_select = Bridge.get_method_bind("ItemList", "select", 972357352_i64)
@@ -16642,7 +14507,6 @@ module Godot
       Bridge.ptrcall(@@mb_select, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_deselect : Void* = Pointer(Void).null
-    # Ensures the item associated with the specified index is not selected.
     def deselect(idx : Int64) : Void
       if @@mb_deselect.null?
         @@mb_deselect = Bridge.get_method_bind("ItemList", "deselect", 1286410249_i64)
@@ -16653,7 +14517,6 @@ module Godot
       Bridge.ptrcall(@@mb_deselect, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_deselect_all : Void* = Pointer(Void).null
-    # Ensures there are no items selected.
     def deselect_all() : Void
       if @@mb_deselect_all.null?
         @@mb_deselect_all = Bridge.get_method_bind("ItemList", "deselect_all", 3218959716_i64)
@@ -16661,7 +14524,6 @@ module Godot
       Bridge.ptrcall(@@mb_deselect_all, @pointer, Pointer(Pointer(Void)).null, Pointer(Void).null)
     end
     @@mb_is_selected : Void* = Pointer(Void).null
-    # Returns `true` if the item at the specified index is currently selected.
     def is_selected(idx : Int64) : Bool
       if @@mb_is_selected.null?
         @@mb_is_selected = Bridge.get_method_bind("ItemList", "is_selected", 1116898809_i64)
@@ -16674,7 +14536,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_get_selected_items : Void* = Pointer(Void).null
-    # Returns an array with the indexes of the selected items.
     def get_selected_items() : Void*
       if @@mb_get_selected_items.null?
         @@mb_get_selected_items = Bridge.get_method_bind("ItemList", "get_selected_items", 969006518_i64)
@@ -16684,7 +14545,6 @@ module Godot
       ret_ptr
     end
     @@mb_move_item : Void* = Pointer(Void).null
-    # Moves item from index `from_idx` to `to_idx`.
     def move_item(from_idx : Int64, to_idx : Int64) : Void
       if @@mb_move_item.null?
         @@mb_move_item = Bridge.get_method_bind("ItemList", "move_item", 3937882851_i64)
@@ -16716,7 +14576,6 @@ module Godot
       ret
     end
     @@mb_remove_item : Void* = Pointer(Void).null
-    # Removes the item specified by `idx` index from the list.
     def remove_item(idx : Int64) : Void
       if @@mb_remove_item.null?
         @@mb_remove_item = Bridge.get_method_bind("ItemList", "remove_item", 1286410249_i64)
@@ -16727,7 +14586,6 @@ module Godot
       Bridge.ptrcall(@@mb_remove_item, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_clear : Void* = Pointer(Void).null
-    # Removes all items from the list.
     def clear() : Void
       if @@mb_clear.null?
         @@mb_clear = Bridge.get_method_bind("ItemList", "clear", 3218959716_i64)
@@ -16735,7 +14593,6 @@ module Godot
       Bridge.ptrcall(@@mb_clear, @pointer, Pointer(Pointer(Void)).null, Pointer(Void).null)
     end
     @@mb_sort_items_by_text : Void* = Pointer(Void).null
-    # Sorts items in the list by their text.
     def sort_items_by_text() : Void
       if @@mb_sort_items_by_text.null?
         @@mb_sort_items_by_text = Bridge.get_method_bind("ItemList", "sort_items_by_text", 3218959716_i64)
@@ -16990,7 +14847,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_is_anything_selected : Void* = Pointer(Void).null
-    # Returns `true` if one or more items are selected.
     def is_anything_selected() : Bool
       if @@mb_is_anything_selected.null?
         @@mb_is_anything_selected = Bridge.get_method_bind("ItemList", "is_anything_selected", 2240911060_i64)
@@ -17000,9 +14856,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_get_item_at_position : Void* = Pointer(Void).null
-    # Returns the item index at the given `position`.
-    # When there is no item at that point, -1 will be returned if `exact` is `true`, and the closest item index will be returned otherwise.
-    # **Note:** The returned value is unreliable if called right after modifying the `ItemList`, before it redraws in the next frame.
     def get_item_at_position(position : Vector2, exact : Bool) : Int64
       if @@mb_get_item_at_position.null?
         @@mb_get_item_at_position = Bridge.get_method_bind("ItemList", "get_item_at_position", 2300324924_i64)
@@ -17017,7 +14870,6 @@ module Godot
       ret
     end
     @@mb_ensure_current_is_visible : Void* = Pointer(Void).null
-    # Ensures the currently selected item (the first selected item if multiple selection is enabled) is visible, adjusting the scroll position as necessary. See also `#center_on_current`.
     def ensure_current_is_visible() : Void
       if @@mb_ensure_current_is_visible.null?
         @@mb_ensure_current_is_visible = Bridge.get_method_bind("ItemList", "ensure_current_is_visible", 3218959716_i64)
@@ -17025,8 +14877,6 @@ module Godot
       Bridge.ptrcall(@@mb_ensure_current_is_visible, @pointer, Pointer(Pointer(Void)).null, Pointer(Void).null)
     end
     @@mb_center_on_current : Void* = Pointer(Void).null
-    # Ensures the currently selected item (the first selected item if multiple selection is enabled) is visible, adjusting the scroll position as necessary to place the item at the center of the list if possible. See also `#ensure_current_is_visible`.
-    # Fails and prints an error if both arguments are `false`.
     def center_on_current(center_verically : Bool, center_horizontally : Bool) : Void
       if @@mb_center_on_current.null?
         @@mb_center_on_current = Bridge.get_method_bind("ItemList", "center_on_current", 3058350285_i64)
@@ -17039,8 +14889,6 @@ module Godot
       Bridge.ptrcall(@@mb_center_on_current, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_v_scroll_bar : Void* = Pointer(Void).null
-    # Returns the vertical scrollbar.
-    # **Warning:** This is a required internal node, removing and freeing it may cause a crash. If you wish to hide it or any of its children, use their `CanvasItem.visible` property.
     def get_v_scroll_bar() : VScrollBar
       if @@mb_get_v_scroll_bar.null?
         @@mb_get_v_scroll_bar = Bridge.get_method_bind("ItemList", "get_v_scroll_bar", 2630340773_i64)
@@ -17050,8 +14898,6 @@ module Godot
       VScrollBar.new(ret_ptr)
     end
     @@mb_get_h_scroll_bar : Void* = Pointer(Void).null
-    # Returns the horizontal scrollbar.
-    # **Warning:** This is a required internal node, removing and freeing it may cause a crash. If you wish to hide it or any of its children, use their `CanvasItem.visible` property.
     def get_h_scroll_bar() : HScrollBar
       if @@mb_get_h_scroll_bar.null?
         @@mb_get_h_scroll_bar = Bridge.get_method_bind("ItemList", "get_h_scroll_bar", 4004517983_i64)
@@ -17137,7 +14983,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_force_update_list_size : Void* = Pointer(Void).null
-    # Forces an update to the list size based on its items. This happens automatically whenever size of the items, or other relevant settings like `auto_height`, change. The method can be used to trigger the update ahead of next drawing pass.
     def force_update_list_size() : Void
       if @@mb_force_update_list_size.null?
         @@mb_force_update_list_size = Bridge.get_method_bind("ItemList", "force_update_list_size", 3218959716_i64)
@@ -17145,15 +14990,11 @@ module Godot
       Bridge.ptrcall(@@mb_force_update_list_size, @pointer, Pointer(Pointer(Void)).null, Pointer(Void).null)
     end
   end
-  # Singleton that connects the engine with Android plugins to interface with native Android code.
-  #
-  # The JNISingleton is implemented only in the Android export. It's used to call methods and connect signals from an Android plugin written in Java or Kotlin. Methods and signals can be called and connected to the JNISingleton as if it is a Node. See [$2]($1) for more information.
   class JNISingleton < Godot::Object
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
     end
     @@mb_has_java_method : Void* = Pointer(Void).null
-    # Returns `true` if the given `method` name exists in the JNISingleton's Java methods.
     def has_java_method(method : String) : Bool
       if @@mb_has_java_method.null?
         @@mb_has_java_method = Bridge.get_method_bind("JNISingleton", "has_java_method", 2619796661_i64)
@@ -17168,90 +15009,11 @@ module Godot
       Bridge.free_string_name(sn_0)
     end
   end
-  # Helper class for creating and parsing JSON data.
-  #
-  # The `JSON` class enables all data types to be converted to and from a JSON string. This is useful for serializing data, e.g. to save to a file or send over the network.
-  # `#stringify` is used to convert any data type into a JSON string.
-  # `#parse` is used to convert any existing JSON data into a `Variant` that can be used within Godot. If successfully parsed, use `data` to retrieve the `Variant`, and use [method @GlobalScope.typeof] to check if the Variant's type is what you expect. JSON Objects are converted into a `Dictionary`, but JSON data can be used to store `Array`s, numbers, `String`s and even just a boolean.
-  # ```gdscript
-  #
-  # var data_to_send = ["a", "b", "c"]
-  # var json_string = JSON.stringify(data_to_send)
-  # # Save data
-  # # ...
-  # # Retrieve data
-  # var json = JSON.new()
-  # var error = json.parse(json_string)
-  # if error == OK:
-  # 	var data_received = json.data
-  # 	if typeof(data_received) == TYPE_ARRAY:
-  # 		print(data_received) # Prints the array.
-  # 	else:
-  # 		print("Unexpected data")
-  # else:
-  # 	print("JSON Parse Error: ", json.get_error_message(), " in ", json_string, " at line ", json.get_error_line())
-  #
-  # ```
-  # Alternatively, you can parse strings using the static `#parse_string` method, but it doesn't handle errors.
-  # ```gdscript
-  #
-  # var data = JSON.parse_string(json_string) # Returns null if parsing failed.
-  #
-  # ```
-  # **Note:** Both parse methods do not fully comply with the JSON specification:
-  # - Trailing commas in arrays or objects are ignored, instead of causing a parser error.
-  # - New line and tab characters are accepted in string literals, and are treated like their corresponding escape sequences `\n` and `\t`.
-  # - Numbers are parsed using `#String.to_float` which is generally more lax than the JSON specification.
-  # - Certain errors, such as invalid Unicode sequences, do not cause a parser error. Instead, the string is cleaned up and an error is logged to the console.
   class JSON < Godot::Resource
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
     end
     @@mb_stringify : Void* = Pointer(Void).null
-    # Converts a `Variant` var to JSON text and returns the result. Useful for serializing data to store or send over the network.
-    # If `sort_keys` is `true`, the keys of any `Dictionary`s are sorted alphabetically when converting to JSON. If `full_precision` is `true`, when stringifying floats, the unreliable digits are stringified in addition to the reliable digits to guarantee exact decoding.
-    # **Note:** The JSON specification does not define integer or float types, but only a *number* type. Therefore, converting a Variant to JSON text will convert all numerical values to `float` types.
-    # The `indent` parameter controls if and how something is indented; its contents will be used where there should be an indent in the output. Even spaces like `"   "` will work. `\t` and `\n` can also be used for a tab indent, or to make a newline for each indent respectively. If set to an empty string, the JSON will be on a single line with no spacing, which allows for smaller file sizes.
-    # **Warning:** Non-finite numbers are not supported in JSON. Any occurrences of [constant @GDScript.INF] will be replaced with `1e99999`, and negative [constant @GDScript.INF] will be replaced with `-1e99999`, but they will be interpreted correctly as infinity by most JSON parsers. [constant @GDScript.NAN] will be replaced with `null`, and it will not be interpreted as NaN in JSON parsers. If you expect non-finite numbers, consider passing your data through `#from_native` first.
-    # **Example output:**
-    # ```gdscript
-    #
-    # ## JSON.stringify(my_dictionary, "", false)
-    # {"name":"my_dictionary","version":"1.0.0","entities":[{"name":"entity_0","value":"value_0"},{"name":"entity_1","value":"value_1"}]}
-    #
-    # ## JSON.stringify(my_dictionary, "\t", false)
-    # {
-    # 	"name": "my_dictionary",
-    # 	"version": "1.0.0",
-    # 	"entities": [
-    # 		{
-    # 			"name": "entity_0",
-    # 			"value": "value_0"
-    # 		},
-    # 		{
-    # 			"name": "entity_1",
-    # 			"value": "value_1"
-    # 		}
-    # 	]
-    # }
-    #
-    # ## JSON.stringify(my_dictionary, "...", false)
-    # {
-    # ..."name": "my_dictionary",
-    # ..."version": "1.0.0",
-    # ..."entities": [
-    # ......{
-    # ........."name": "entity_0",
-    # ........."value": "value_0"
-    # ......},
-    # ......{
-    # ........."name": "entity_1",
-    # ........."value": "value_1"
-    # ......}
-    # ...]
-    # }
-    #
-    # ```
     def stringify(data : Void*, indent : String, sort_keys : Bool, full_precision : Bool) : String
       if @@mb_stringify.null?
         @@mb_stringify = Bridge.get_method_bind("JSON", "stringify", 462733549_i64)
@@ -17270,7 +15032,6 @@ module Godot
       Bridge.free_string(str_1)
     end
     @@mb_parse_string : Void* = Pointer(Void).null
-    # Attempts to parse the `json_string` provided and returns the parsed data. Returns `null` if parse failed.
     def parse_string(json_string : String) : Void*
       if @@mb_parse_string.null?
         @@mb_parse_string = Bridge.get_method_bind("JSON", "parse_string", 309047738_i64)
@@ -17287,10 +15048,6 @@ module Godot
       Bridge.free_string(str_0)
     end
     @@mb_parse : Void* = Pointer(Void).null
-    # Attempts to parse the `json_text` provided.
-    # Returns an `Error`. If the parse was successful, it returns `OK` and the result can be retrieved using `data`. If unsuccessful, use `#get_error_line` and `#get_error_message` to identify the source of the failure.
-    # Non-static variant of `#parse_string`, if you want custom error handling.
-    # The optional `keep_text` argument instructs the parser to keep a copy of the original text. This text can be obtained later by using the `#get_parsed_text` function and is used when saving the resource (instead of generating new text from `data`).
     def parse(json_text : String, keep_text : Bool) : Int64
       if @@mb_parse.null?
         @@mb_parse = Bridge.get_method_bind("JSON", "parse", 885841341_i64)
@@ -17328,7 +15085,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_data, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_parsed_text : Void* = Pointer(Void).null
-    # Return the text parsed by `#parse` (requires passing `keep_text` to `#parse`).
     def get_parsed_text() : String
       if @@mb_get_parsed_text.null?
         @@mb_get_parsed_text = Bridge.get_method_bind("JSON", "get_parsed_text", 201670096_i64)
@@ -17336,7 +15092,6 @@ module Godot
       ""
     end
     @@mb_get_error_line : Void* = Pointer(Void).null
-    # Returns `0` if the last call to `#parse` was successful, or the line number where the parse failed.
     def get_error_line() : Int64
       if @@mb_get_error_line.null?
         @@mb_get_error_line = Bridge.get_method_bind("JSON", "get_error_line", 3905245786_i64)
@@ -17346,7 +15101,6 @@ module Godot
       ret
     end
     @@mb_get_error_message : Void* = Pointer(Void).null
-    # Returns an empty string if the last call to `#parse` was successful, or the error message if it failed.
     def get_error_message() : String
       if @@mb_get_error_message.null?
         @@mb_get_error_message = Bridge.get_method_bind("JSON", "get_error_message", 201670096_i64)
@@ -17354,15 +15108,6 @@ module Godot
       ""
     end
     @@mb_from_native : Void* = Pointer(Void).null
-    # Converts a native engine type to a JSON-compliant value.
-    # By default, objects are ignored for security reasons, unless `full_objects` is `true`.
-    # You can convert a native value to a JSON string like this:
-    # ```gdscript
-    #
-    # func encode_data(value, full_objects = false):
-    # 	return JSON.stringify(JSON.from_native(value, full_objects))
-    #
-    # ```
     def from_native(variant : Void*, full_objects : Bool) : Void*
       if @@mb_from_native.null?
         @@mb_from_native = Bridge.get_method_bind("JSON", "from_native", 2963479484_i64)
@@ -17379,15 +15124,6 @@ module Godot
       ret_ptr
     end
     @@mb_to_native : Void* = Pointer(Void).null
-    # Converts a JSON-compliant value that was created with `#from_native` back to native engine types.
-    # By default, objects are ignored for security reasons, unless `allow_objects` is `true`.
-    # You can convert a JSON string back to a native value like this:
-    # ```gdscript
-    #
-    # func decode_data(string, allow_objects = false):
-    # 	return JSON.to_native(JSON.parse_string(string), allow_objects)
-    #
-    # ```
     def to_native(json : Void*, allow_objects : Bool) : Void*
       if @@mb_to_native.null?
         @@mb_to_native = Bridge.get_method_bind("JSON", "to_native", 2963479484_i64)
@@ -17404,27 +15140,16 @@ module Godot
       ret_ptr
     end
   end
-  # Jacobian transpose based inverse kinematics solver.
-  #
-  # `JacobianIK3D` calculates rotations for all joints simultaneously, producing natural and smooth movement. It is particularly suited for biological animations.
-  # The resulting twist around the forward vector will always be kept from the previous pose.
-  # **Note:** It converges more slowly than other IK solvers, leading to gentler and less immediate tracking of targets.
   class JacobianIK3D < Godot::IterateIK3D
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
     end
   end
-  # Represents a class from the Java Native Interface.
-  #
-  # Represents a class from the Java Native Interface. It is returned from `#JavaClassWrapper.wrap`.
-  # **Note:** This class only works on Android. On any other platform, this class does nothing.
-  # **Note:** This class is not to be confused with `JavaScriptObject`.
   class JavaClass < Godot::RefCounted
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
     end
     @@mb_get_java_class_name : Void* = Pointer(Void).null
-    # Returns the Java class name.
     def get_java_class_name() : String
       if @@mb_get_java_class_name.null?
         @@mb_get_java_class_name = Bridge.get_method_bind("JavaClass", "get_java_class_name", 201670096_i64)
@@ -17432,7 +15157,6 @@ module Godot
       ""
     end
     @@mb_get_java_method_list : Void* = Pointer(Void).null
-    # Returns the object's Java methods and their signatures as an `Array` of dictionaries, in the same format as `#Object.get_method_list`.
     def get_java_method_list() : Godot::Array
       if @@mb_get_java_method_list.null?
         @@mb_get_java_method_list = Bridge.get_method_bind("JavaClass", "get_java_method_list", 3995934104_i64)
@@ -17442,7 +15166,6 @@ module Godot
       Godot::Array.new(ret_ptr)
     end
     @@mb_get_java_parent_class : Void* = Pointer(Void).null
-    # Returns a `JavaClass` representing the Java parent class of this class.
     def get_java_parent_class() : JavaClass
       if @@mb_get_java_parent_class.null?
         @@mb_get_java_parent_class = Bridge.get_method_bind("JavaClass", "get_java_parent_class", 541536347_i64)
@@ -17452,7 +15175,6 @@ module Godot
       JavaClass.new(ret_ptr)
     end
     @@mb_has_java_method : Void* = Pointer(Void).null
-    # Returns `true` if the given `method` name exists in the object's Java methods.
     def has_java_method(method : String) : Bool
       if @@mb_has_java_method.null?
         @@mb_has_java_method = Bridge.get_method_bind("JavaClass", "has_java_method", 2619796661_i64)
@@ -17467,37 +15189,11 @@ module Godot
       Bridge.free_string_name(sn_0)
     end
   end
-  # Provides access to the Java Native Interface.
-  #
-  # The JavaClassWrapper singleton provides a way for the Godot application to send and receive data through the [$2]($1) (JNI).
-  # **Note:** This singleton is only available in Android builds.
-  # ```gdscript
-  #
-  # var LocalDateTime = JavaClassWrapper.wrap("java.time.LocalDateTime")
-  # var DateTimeFormatter = JavaClassWrapper.wrap("java.time.format.DateTimeFormatter")
-  #
-  # var datetime = LocalDateTime.now()
-  # var formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss")
-  #
-  # print(datetime.format(formatter))
-  #
-  # ```
-  # **Warning:** When calling Java methods, be sure to check `#JavaClassWrapper.get_exception` to check if the method threw an exception.
   class JavaClassWrapper < Godot::Object
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
     end
     @@mb_wrap : Void* = Pointer(Void).null
-    # Wraps a class defined in Java, and returns it as a `JavaClass` `Object` type that Godot can interact with.
-    # When wrapping inner (nested) classes, use `$` instead of `.` to separate them. For example, `JavaClassWrapper.wrap("android.view.WindowManager$LayoutParams")` wraps the **WindowManager.LayoutParams** class.
-    # **Note:** To invoke a constructor, call a method with the same name as the class. For example:
-    # ```gdscript
-    #
-    # var Intent = JavaClassWrapper.wrap("android.content.Intent")
-    # var intent = Intent.Intent()
-    #
-    # ```
-    # **Note:** This method only works on Android. On every other platform, this method does nothing and returns an empty `JavaClass`.
     def wrap(name : String) : JavaClass
       if @@mb_wrap.null?
         @@mb_wrap = Bridge.get_method_bind("JavaClassWrapper", "wrap", 1124367868_i64)
@@ -17512,8 +15208,6 @@ module Godot
       Bridge.free_string(str_0)
     end
     @@mb_get_exception : Void* = Pointer(Void).null
-    # Returns the Java exception from the last call into a Java class. If there was no exception, it will return `null`.
-    # **Note:** This method only works on Android. On every other platform, this method will always return `null`.
     def get_exception() : JavaObject
       if @@mb_get_exception.null?
         @@mb_get_exception = Bridge.get_method_bind("JavaClassWrapper", "get_exception", 3277089691_i64)
@@ -17523,18 +15217,6 @@ module Godot
       JavaObject.new(ret_ptr)
     end
     @@mb_create_sam_callback : Void* = Pointer(Void).null
-    # Creates a `JavaObject` implementing the Java Single Abstract Method (SAM) interface using the Godot `Callable` as the implementation.
-    # The `sam_interface` **must be** a Java SAM interface, meaning it must only have a single abstract method to implement.
-    # The `callable` must be able to handle the same parameter types as the SAM interface method, and must provide the same return type. The `callable` will be invoked as a callback, passing the arguments from the Java SAM interface method.
-    # ```gdscript
-    #
-    # var cb = func (content: String) -> void:
-    # 	print(content)
-    # var callback = JavaClassWrapper.create_sam_callback("android.util.Printer", cb)
-    # callback.println("Hello Godot World!")
-    #
-    # ```
-    # **Note:** This method only works on Android. On every other platform, this method will always return `null`.
     def create_sam_callback(sam_interface : String, callable : Void*) : JavaObject
       if @@mb_create_sam_callback.null?
         @@mb_create_sam_callback = Bridge.get_method_bind("JavaClassWrapper", "create_sam_callback", 2479014754_i64)
@@ -17551,20 +15233,6 @@ module Godot
       Bridge.free_string(str_0)
     end
     @@mb_create_proxy : Void* = Pointer(Void).null
-    # Creates a `JavaObject` implementing the given Java interfaces using the given `Object` as the implementation.
-    # The `object` must contain methods signatures matching the methods signatures from the passed Java `interfaces`. Invoking methods from the Java `interfaces` will route to the matching `object` method.
-    # ```gdscript
-    #
-    # class PrintProxy:
-    # 	func println(content: String) -> void:
-    # 		print(content)
-    #
-    # var print_proxy = PrintProxy.new()
-    # var printer_object = JavaClassWrapper.create_proxy(print_proxy, ["android.util.Printer"])
-    # printer_object.println("Hello Godot World!")
-    #
-    # ```
-    # **Note:** This method only works on Android. On every other platform, this method will always return `null`.
     def create_proxy(object : Godot::Object, interfaces : Void*) : JavaObject
       if @@mb_create_proxy.null?
         @@mb_create_proxy = Bridge.get_method_bind("JavaClassWrapper", "create_proxy", 2694931752_i64)
@@ -17579,17 +15247,11 @@ module Godot
       JavaObject.new(ret_ptr)
     end
   end
-  # Represents an object from the Java Native Interface.
-  #
-  # Represents an object from the Java Native Interface. It can be returned from Java methods called on `JavaClass` or other `JavaObject`s. See `JavaClassWrapper` for an example.
-  # **Note:** This class only works on Android. On any other platform, this class does nothing.
-  # **Note:** This class is not to be confused with `JavaScriptObject`.
   class JavaObject < Godot::RefCounted
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
     end
     @@mb_get_java_class : Void* = Pointer(Void).null
-    # Returns the `JavaClass` that this object is an instance of.
     def get_java_class() : JavaClass
       if @@mb_get_java_class.null?
         @@mb_get_java_class = Bridge.get_method_bind("JavaObject", "get_java_class", 541536347_i64)
@@ -17599,7 +15261,6 @@ module Godot
       JavaClass.new(ret_ptr)
     end
     @@mb_has_java_method : Void* = Pointer(Void).null
-    # Returns `true` if the given `method` name exists in the object's Java methods.
     def has_java_method(method : String) : Bool
       if @@mb_has_java_method.null?
         @@mb_has_java_method = Bridge.get_method_bind("JavaObject", "has_java_method", 2619796661_i64)
@@ -17614,17 +15275,11 @@ module Godot
       Bridge.free_string_name(sn_0)
     end
   end
-  # Singleton that connects the engine with the browser's JavaScript context in Web export.
-  #
-  # The JavaScriptBridge singleton is implemented only in the Web export. It's used to access the browser's JavaScript context. This allows interaction with embedding pages or calling third-party JavaScript APIs.
-  # **Note:** This singleton can be disabled at build-time to improve security. By default, the JavaScriptBridge singleton is enabled. Official export templates also have the JavaScriptBridge singleton enabled. See [$2]($1) in the documentation for more information.
   class JavaScriptBridge < Godot::Object
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
     end
     @@mb_eval : Void* = Pointer(Void).null
-    # Execute the string `code` as JavaScript code within the browser window. This is a call to the actual global JavaScript function [code skip-lint]eval()[/code].
-    # If `use_global_execution_context` is `true`, the code will be evaluated in the global execution context. Otherwise, it is evaluated in the execution context of a function within the engine's runtime environment.
     def eval(code : String, use_global_execution_context : Bool) : Void*
       if @@mb_eval.null?
         @@mb_eval = Bridge.get_method_bind("JavaScriptBridge", "eval", 218087648_i64)
@@ -17643,7 +15298,6 @@ module Godot
       Bridge.free_string(str_0)
     end
     @@mb_get_interface : Void* = Pointer(Void).null
-    # Returns an interface to a JavaScript object that can be used by scripts. The `interface` must be a valid property of the JavaScript `window`. The callback must accept a single `Array` argument, which will contain the JavaScript `arguments`. See `JavaScriptObject` for usage.
     def get_interface(interface : String) : JavaScriptObject
       if @@mb_get_interface.null?
         @@mb_get_interface = Bridge.get_method_bind("JavaScriptBridge", "get_interface", 1355533281_i64)
@@ -17658,8 +15312,6 @@ module Godot
       Bridge.free_string(str_0)
     end
     @@mb_create_callback : Void* = Pointer(Void).null
-    # Creates a reference to a `Callable` that can be used as a callback by JavaScript. The reference must be kept until the callback happens, or it won't be called at all. See `JavaScriptObject` for usage.
-    # **Note:** The callback function must take exactly one `Array` argument, which is going to be the JavaScript [$2]($1) converted to an array.
     def create_callback(callable : Void*) : JavaScriptObject
       if @@mb_create_callback.null?
         @@mb_create_callback = Bridge.get_method_bind("JavaScriptBridge", "create_callback", 422818440_i64)
@@ -17672,7 +15324,6 @@ module Godot
       JavaScriptObject.new(ret_ptr)
     end
     @@mb_is_js_buffer : Void* = Pointer(Void).null
-    # Returns `true` if the given `javascript_object` is of type [$2]($1), [$2]($1), or one of the many [$2]($1).
     def is_js_buffer(javascript_object : JavaScriptObject) : Bool
       if @@mb_is_js_buffer.null?
         @@mb_is_js_buffer = Bridge.get_method_bind("JavaScriptBridge", "is_js_buffer", 821968997_i64)
@@ -17685,7 +15336,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_js_buffer_to_packed_byte_array : Void* = Pointer(Void).null
-    # Returns a copy of `javascript_buffer`'s contents as a `PackedByteArray`. See also `#is_js_buffer`.
     def js_buffer_to_packed_byte_array(javascript_buffer : JavaScriptObject) : Void*
       if @@mb_js_buffer_to_packed_byte_array.null?
         @@mb_js_buffer_to_packed_byte_array = Bridge.get_method_bind("JavaScriptBridge", "js_buffer_to_packed_byte_array", 64409880_i64)
@@ -17698,10 +15348,6 @@ module Godot
       ret_ptr
     end
     @@mb_download_buffer : Void* = Pointer(Void).null
-    # Prompts the user to download a file containing the specified `buffer`. The file will have the given `name` and `mime` type.
-    # **Note:** The browser may override the [$2]($1) provided based on the file `name`'s extension.
-    # **Note:** Browsers might block the download if `#download_buffer` is not being called from a user interaction (e.g. button click).
-    # **Note:** Browsers might ask the user for permission or block the download if multiple download requests are made in a quick succession.
     def download_buffer(buffer : Void*, name : String, mime : String) : Void
       if @@mb_download_buffer.null?
         @@mb_download_buffer = Bridge.get_method_bind("JavaScriptBridge", "download_buffer", 3352272093_i64)
@@ -17719,8 +15365,6 @@ module Godot
       Bridge.free_string(str_2)
     end
     @@mb_pwa_needs_update : Void* = Pointer(Void).null
-    # Returns `true` if a new version of the progressive web app is waiting to be activated.
-    # **Note:** Only relevant when exported as a Progressive Web App.
     def pwa_needs_update() : Bool
       if @@mb_pwa_needs_update.null?
         @@mb_pwa_needs_update = Bridge.get_method_bind("JavaScriptBridge", "pwa_needs_update", 36873697_i64)
@@ -17730,9 +15374,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_pwa_update : Void* = Pointer(Void).null
-    # Performs the live update of the progressive web app. Forcing the new version to be installed and the page to be reloaded.
-    # **Note:** Your application will be **reloaded in all browser tabs**.
-    # **Note:** Only relevant when exported as a Progressive Web App and `#pwa_needs_update` returns `true`.
     def pwa_update() : Int64
       if @@mb_pwa_update.null?
         @@mb_pwa_update = Bridge.get_method_bind("JavaScriptBridge", "pwa_update", 166280745_i64)
@@ -17742,8 +15383,6 @@ module Godot
       ret
     end
     @@mb_force_fs_sync : Void* = Pointer(Void).null
-    # Force synchronization of the persistent file system (when enabled).
-    # **Note:** This is only useful for modules or extensions that can't use `FileAccess` to write files.
     def force_fs_sync() : Void
       if @@mb_force_fs_sync.null?
         @@mb_force_fs_sync = Bridge.get_method_bind("JavaScriptBridge", "force_fs_sync", 3218959716_i64)
@@ -17751,53 +15390,16 @@ module Godot
       Bridge.ptrcall(@@mb_force_fs_sync, @pointer, Pointer(Pointer(Void)).null, Pointer(Void).null)
     end
   end
-  # A wrapper class for web native JavaScript objects.
-  #
-  # JavaScriptObject is used to interact with JavaScript objects retrieved or created via `#JavaScriptBridge.get_interface`, `#JavaScriptBridge.create_object`, or `#JavaScriptBridge.create_callback`.
-  # ```gdscript
-  #
-  # extends Node
-  #
-  # var _my_js_callback = JavaScriptBridge.create_callback(myCallback) # This reference must be kept
-  # var console = JavaScriptBridge.get_interface("console")
-  #
-  # func _init():
-  # 	var buf = JavaScriptBridge.create_object("ArrayBuffer", 10) # new ArrayBuffer(10)
-  # 	print(buf) # Prints [JavaScriptObject:OBJECT_ID]
-  # 	var uint8arr = JavaScriptBridge.create_object("Uint8Array", buf) # new Uint8Array(buf)
-  # 	uint8arr`1` = 255
-  # 	prints(uint8arr`1`, uint8arr.byteLength) # Prints "255 10"
-  #
-  # 	# Prints "Uint8Array(10) [ 0, 255, 0, 0, 0, 0, 0, 0, 0, 0 ]" in the browser's console.
-  # 	console.log(uint8arr)
-  #
-  # 	# Equivalent of JavaScriptBridge: Array.from(uint8arr).forEach(myCallback)
-  # 	JavaScriptBridge.get_interface("Array").from(uint8arr).forEach(_my_js_callback)
-  #
-  # func myCallback(args):
-  # 	# Will be called with the parameters passed to the "forEach" callback
-  # 	# [0, 0, [JavaScriptObject:1173]]
-  # 	# [255, 1, [JavaScriptObject:1173]]
-  # 	# ...
-  # 	# [0, 9, [JavaScriptObject:1180]]
-  # 	print(args)
-  #
-  # ```
-  # **Note:** Only available in the Web platform.
   class JavaScriptObject < Godot::RefCounted
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
     end
   end
-  # A base class of the limitation that interacts with `ChainIK3D`.
-  #
-  # The limitation is attached to each joint and limits the rotation of the bone.
   class JointLimitation3D < Godot::Resource
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
     end
   end
-  # A cone shape limitation that interacts with `ChainIK3D`.
   class JointLimitationCone3D < Godot::JointLimitation3D
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -17822,16 +15424,11 @@ module Godot
       ret
     end
   end
-  # Holds collision data from the movement of a `PhysicsBody2D`.
-  #
-  # Holds collision data from the movement of a `PhysicsBody2D`, usually from `#PhysicsBody2D.move_and_collide`. When a `PhysicsBody2D` is moved, it stops if it detects a collision with another body. If a collision is detected, a `KinematicCollision2D` object is returned.
-  # The collision data includes the colliding object, the remaining motion, and the collision position. This data can be used to determine a custom response to the collision.
   class KinematicCollision2D < Godot::RefCounted
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
     end
     @@mb_get_position : Void* = Pointer(Void).null
-    # Returns the point of collision in global coordinates.
     def get_position() : Vector2
       if @@mb_get_position.null?
         @@mb_get_position = Bridge.get_method_bind("KinematicCollision2D", "get_position", 3341600327_i64)
@@ -17841,7 +15438,6 @@ module Godot
       ret
     end
     @@mb_get_normal : Void* = Pointer(Void).null
-    # Returns the colliding body's shape's normal at the point of collision.
     def get_normal() : Vector2
       if @@mb_get_normal.null?
         @@mb_get_normal = Bridge.get_method_bind("KinematicCollision2D", "get_normal", 3341600327_i64)
@@ -17851,7 +15447,6 @@ module Godot
       ret
     end
     @@mb_get_travel : Void* = Pointer(Void).null
-    # Returns the moving object's travel before collision.
     def get_travel() : Vector2
       if @@mb_get_travel.null?
         @@mb_get_travel = Bridge.get_method_bind("KinematicCollision2D", "get_travel", 3341600327_i64)
@@ -17861,7 +15456,6 @@ module Godot
       ret
     end
     @@mb_get_remainder : Void* = Pointer(Void).null
-    # Returns the moving object's remaining movement vector.
     def get_remainder() : Vector2
       if @@mb_get_remainder.null?
         @@mb_get_remainder = Bridge.get_method_bind("KinematicCollision2D", "get_remainder", 3341600327_i64)
@@ -17871,7 +15465,6 @@ module Godot
       ret
     end
     @@mb_get_angle : Void* = Pointer(Void).null
-    # Returns the collision angle according to `up_direction`, which is `Vector2.UP` by default. This value is always positive.
     def get_angle(up_direction : Vector2) : Float64
       if @@mb_get_angle.null?
         @@mb_get_angle = Bridge.get_method_bind("KinematicCollision2D", "get_angle", 2841063350_i64)
@@ -17884,7 +15477,6 @@ module Godot
       ret
     end
     @@mb_get_depth : Void* = Pointer(Void).null
-    # Returns the colliding body's length of overlap along the collision normal.
     def get_depth() : Float64
       if @@mb_get_depth.null?
         @@mb_get_depth = Bridge.get_method_bind("KinematicCollision2D", "get_depth", 1740695150_i64)
@@ -17894,7 +15486,6 @@ module Godot
       ret
     end
     @@mb_get_local_shape : Void* = Pointer(Void).null
-    # Returns the moving object's colliding shape.
     def get_local_shape() : Godot::Object
       if @@mb_get_local_shape.null?
         @@mb_get_local_shape = Bridge.get_method_bind("KinematicCollision2D", "get_local_shape", 1981248198_i64)
@@ -17904,7 +15495,6 @@ module Godot
       Godot::Object.new(ret_ptr)
     end
     @@mb_get_collider : Void* = Pointer(Void).null
-    # Returns the colliding body's attached `Object`.
     def get_collider() : Godot::Object
       if @@mb_get_collider.null?
         @@mb_get_collider = Bridge.get_method_bind("KinematicCollision2D", "get_collider", 1981248198_i64)
@@ -17914,7 +15504,6 @@ module Godot
       Godot::Object.new(ret_ptr)
     end
     @@mb_get_collider_id : Void* = Pointer(Void).null
-    # Returns the unique instance ID of the colliding body's attached `Object`. See `#Object.get_instance_id`.
     def get_collider_id() : Int64
       if @@mb_get_collider_id.null?
         @@mb_get_collider_id = Bridge.get_method_bind("KinematicCollision2D", "get_collider_id", 3905245786_i64)
@@ -17924,7 +15513,6 @@ module Godot
       ret
     end
     @@mb_get_collider_rid : Void* = Pointer(Void).null
-    # Returns the colliding body's `RID` used by the `PhysicsServer2D`.
     def get_collider_rid() : Int64
       if @@mb_get_collider_rid.null?
         @@mb_get_collider_rid = Bridge.get_method_bind("KinematicCollision2D", "get_collider_rid", 2944877500_i64)
@@ -17934,7 +15522,6 @@ module Godot
       ret
     end
     @@mb_get_collider_shape : Void* = Pointer(Void).null
-    # Returns the colliding body's shape.
     def get_collider_shape() : Godot::Object
       if @@mb_get_collider_shape.null?
         @@mb_get_collider_shape = Bridge.get_method_bind("KinematicCollision2D", "get_collider_shape", 1981248198_i64)
@@ -17944,7 +15531,6 @@ module Godot
       Godot::Object.new(ret_ptr)
     end
     @@mb_get_collider_shape_index : Void* = Pointer(Void).null
-    # Returns the colliding body's shape index. See `CollisionObject2D`.
     def get_collider_shape_index() : Int64
       if @@mb_get_collider_shape_index.null?
         @@mb_get_collider_shape_index = Bridge.get_method_bind("KinematicCollision2D", "get_collider_shape_index", 3905245786_i64)
@@ -17954,7 +15540,6 @@ module Godot
       ret
     end
     @@mb_get_collider_velocity : Void* = Pointer(Void).null
-    # Returns the colliding body's velocity.
     def get_collider_velocity() : Vector2
       if @@mb_get_collider_velocity.null?
         @@mb_get_collider_velocity = Bridge.get_method_bind("KinematicCollision2D", "get_collider_velocity", 3341600327_i64)
@@ -17964,16 +15549,11 @@ module Godot
       ret
     end
   end
-  # Holds collision data from the movement of a `PhysicsBody3D`.
-  #
-  # Holds collision data from the movement of a `PhysicsBody3D`, usually from `#PhysicsBody3D.move_and_collide`. When a `PhysicsBody3D` is moved, it stops if it detects a collision with another body. If a collision is detected, a `KinematicCollision3D` object is returned.
-  # The collision data includes the colliding object, the remaining motion, and the collision position. This data can be used to determine a custom response to the collision.
   class KinematicCollision3D < Godot::RefCounted
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
     end
     @@mb_get_travel : Void* = Pointer(Void).null
-    # Returns the moving object's travel before collision.
     def get_travel() : Vector3
       if @@mb_get_travel.null?
         @@mb_get_travel = Bridge.get_method_bind("KinematicCollision3D", "get_travel", 3360562783_i64)
@@ -17983,7 +15563,6 @@ module Godot
       ret
     end
     @@mb_get_remainder : Void* = Pointer(Void).null
-    # Returns the moving object's remaining movement vector.
     def get_remainder() : Vector3
       if @@mb_get_remainder.null?
         @@mb_get_remainder = Bridge.get_method_bind("KinematicCollision3D", "get_remainder", 3360562783_i64)
@@ -17993,7 +15572,6 @@ module Godot
       ret
     end
     @@mb_get_depth : Void* = Pointer(Void).null
-    # Returns the colliding body's length of overlap along the collision normal.
     def get_depth() : Float64
       if @@mb_get_depth.null?
         @@mb_get_depth = Bridge.get_method_bind("KinematicCollision3D", "get_depth", 1740695150_i64)
@@ -18003,7 +15581,6 @@ module Godot
       ret
     end
     @@mb_get_collision_count : Void* = Pointer(Void).null
-    # Returns the number of detected collisions.
     def get_collision_count() : Int64
       if @@mb_get_collision_count.null?
         @@mb_get_collision_count = Bridge.get_method_bind("KinematicCollision3D", "get_collision_count", 3905245786_i64)
@@ -18013,7 +15590,6 @@ module Godot
       ret
     end
     @@mb_get_position : Void* = Pointer(Void).null
-    # Returns the point of collision in global coordinates given a collision index (the deepest collision by default).
     def get_position(collision_index : Int64) : Vector3
       if @@mb_get_position.null?
         @@mb_get_position = Bridge.get_method_bind("KinematicCollision3D", "get_position", 1914908202_i64)
@@ -18026,7 +15602,6 @@ module Godot
       ret
     end
     @@mb_get_normal : Void* = Pointer(Void).null
-    # Returns the colliding body's shape's normal at the point of collision given a collision index (the deepest collision by default).
     def get_normal(collision_index : Int64) : Vector3
       if @@mb_get_normal.null?
         @@mb_get_normal = Bridge.get_method_bind("KinematicCollision3D", "get_normal", 1914908202_i64)
@@ -18039,7 +15614,6 @@ module Godot
       ret
     end
     @@mb_get_angle : Void* = Pointer(Void).null
-    # Returns the collision angle according to `up_direction`, which is `Vector3.UP` by default. This value is always positive.
     def get_angle(collision_index : Int64, up_direction : Vector3) : Float64
       if @@mb_get_angle.null?
         @@mb_get_angle = Bridge.get_method_bind("KinematicCollision3D", "get_angle", 1242741860_i64)
@@ -18054,7 +15628,6 @@ module Godot
       ret
     end
     @@mb_get_local_shape : Void* = Pointer(Void).null
-    # Returns the moving object's colliding shape given a collision index (the deepest collision by default).
     def get_local_shape(collision_index : Int64) : Godot::Object
       if @@mb_get_local_shape.null?
         @@mb_get_local_shape = Bridge.get_method_bind("KinematicCollision3D", "get_local_shape", 2639523548_i64)
@@ -18067,7 +15640,6 @@ module Godot
       Godot::Object.new(ret_ptr)
     end
     @@mb_get_collider : Void* = Pointer(Void).null
-    # Returns the colliding body's attached `Object` given a collision index (the deepest collision by default).
     def get_collider(collision_index : Int64) : Godot::Object
       if @@mb_get_collider.null?
         @@mb_get_collider = Bridge.get_method_bind("KinematicCollision3D", "get_collider", 2639523548_i64)
@@ -18080,7 +15652,6 @@ module Godot
       Godot::Object.new(ret_ptr)
     end
     @@mb_get_collider_id : Void* = Pointer(Void).null
-    # Returns the unique instance ID of the colliding body's attached `Object` given a collision index (the deepest collision by default). See `#Object.get_instance_id`.
     def get_collider_id(collision_index : Int64) : Int64
       if @@mb_get_collider_id.null?
         @@mb_get_collider_id = Bridge.get_method_bind("KinematicCollision3D", "get_collider_id", 1591665591_i64)
@@ -18093,7 +15664,6 @@ module Godot
       ret
     end
     @@mb_get_collider_rid : Void* = Pointer(Void).null
-    # Returns the colliding body's `RID` used by the `PhysicsServer3D` given a collision index (the deepest collision by default).
     def get_collider_rid(collision_index : Int64) : Int64
       if @@mb_get_collider_rid.null?
         @@mb_get_collider_rid = Bridge.get_method_bind("KinematicCollision3D", "get_collider_rid", 1231817359_i64)
@@ -18106,7 +15676,6 @@ module Godot
       ret
     end
     @@mb_get_collider_shape : Void* = Pointer(Void).null
-    # Returns the colliding body's shape given a collision index (the deepest collision by default).
     def get_collider_shape(collision_index : Int64) : Godot::Object
       if @@mb_get_collider_shape.null?
         @@mb_get_collider_shape = Bridge.get_method_bind("KinematicCollision3D", "get_collider_shape", 2639523548_i64)
@@ -18119,7 +15688,6 @@ module Godot
       Godot::Object.new(ret_ptr)
     end
     @@mb_get_collider_shape_index : Void* = Pointer(Void).null
-    # Returns the colliding body's shape index given a collision index (the deepest collision by default). See `CollisionObject3D`.
     def get_collider_shape_index(collision_index : Int64) : Int64
       if @@mb_get_collider_shape_index.null?
         @@mb_get_collider_shape_index = Bridge.get_method_bind("KinematicCollision3D", "get_collider_shape_index", 1591665591_i64)
@@ -18132,7 +15700,6 @@ module Godot
       ret
     end
     @@mb_get_collider_velocity : Void* = Pointer(Void).null
-    # Returns the colliding body's velocity given a collision index (the deepest collision by default).
     def get_collider_velocity(collision_index : Int64) : Vector3
       if @@mb_get_collider_velocity.null?
         @@mb_get_collider_velocity = Bridge.get_method_bind("KinematicCollision3D", "get_collider_velocity", 1914908202_i64)
@@ -18145,10 +15712,6 @@ module Godot
       ret
     end
   end
-  # A control for displaying plain text.
-  #
-  # A control for displaying plain text. It gives you control over the horizontal and vertical alignment and can wrap the text inside the node's bounding rectangle. It doesn't support bold, italics, or other rich text formatting. For that, use `RichTextLabel` instead.
-  # **Note:** A single Label node is not designed to display huge amounts of text. To display large amounts of text in a single node, consider using `RichTextLabel` instead as it supports features like an integrated scroll bar and threading. `RichTextLabel` generally performs better when displaying large amounts of text (several pages or more).
   class Label < Godot::Control
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -18439,9 +16002,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_get_line_height : Void* = Pointer(Void).null
-    # Returns the height of the line `line`.
-    # If `line` is set to `-1`, returns the biggest line height.
-    # If there are no lines, returns font size in pixels.
     def get_line_height(line : Int64) : Int64
       if @@mb_get_line_height.null?
         @@mb_get_line_height = Bridge.get_method_bind("Label", "get_line_height", 181039630_i64)
@@ -18454,7 +16014,6 @@ module Godot
       ret
     end
     @@mb_get_line_count : Void* = Pointer(Void).null
-    # Returns the number of lines of text the Label has.
     def get_line_count() : Int64
       if @@mb_get_line_count.null?
         @@mb_get_line_count = Bridge.get_method_bind("Label", "get_line_count", 3905245786_i64)
@@ -18464,7 +16023,6 @@ module Godot
       ret
     end
     @@mb_get_visible_line_count : Void* = Pointer(Void).null
-    # Returns the number of lines shown. Useful if the `Label`'s height cannot currently display all lines.
     def get_visible_line_count() : Int64
       if @@mb_get_visible_line_count.null?
         @@mb_get_visible_line_count = Bridge.get_method_bind("Label", "get_visible_line_count", 3905245786_i64)
@@ -18474,7 +16032,6 @@ module Godot
       ret
     end
     @@mb_get_total_character_count : Void* = Pointer(Void).null
-    # Returns the total number of printable characters in the text (excluding spaces and newlines).
     def get_total_character_count() : Int64
       if @@mb_get_total_character_count.null?
         @@mb_get_total_character_count = Bridge.get_method_bind("Label", "get_total_character_count", 3905245786_i64)
@@ -18674,7 +16231,6 @@ module Godot
       ret
     end
     @@mb_get_rendered_font_size : Void* = Pointer(Void).null
-    # Returns the font size that is currently used for rendering. When `resize_font_to_fit` is enabled, this returns the automatically calculated font size. Otherwise, it returns the theme font size.
     def get_rendered_font_size() : Int64
       if @@mb_get_rendered_font_size.null?
         @@mb_get_rendered_font_size = Bridge.get_method_bind("Label", "get_rendered_font_size", 3905245786_i64)
@@ -18684,7 +16240,6 @@ module Godot
       ret
     end
     @@mb_get_character_bounds : Void* = Pointer(Void).null
-    # Returns the bounding rectangle of the character at position `pos` in the label's local coordinate system. If the character is a non-visual character or `pos` is outside the valid range, an empty `Rect2` is returned. If the character is a part of a composite grapheme, the bounding rectangle of the whole grapheme is returned.
     def get_character_bounds(pos : Int64) : Rect2
       if @@mb_get_character_bounds.null?
         @@mb_get_character_bounds = Bridge.get_method_bind("Label", "get_character_bounds", 3327874267_i64)
@@ -18697,9 +16252,6 @@ module Godot
       Rect2.new(ret_ptr)
     end
   end
-  # A node for displaying plain text in 3D space.
-  #
-  # A node for displaying plain text in 3D space. By adjusting various properties of this node, you can configure things such as the text's appearance and whether it always faces the camera.
   class Label3D < Godot::GeometryInstance3D
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -19136,7 +16688,6 @@ module Godot
       ret
     end
     @@mb_set_draw_flag : Void* = Pointer(Void).null
-    # If `true`, the specified `flag` will be enabled.
     def set_draw_flag(flag : Int64, enabled : Bool) : Void
       if @@mb_set_draw_flag.null?
         @@mb_set_draw_flag = Bridge.get_method_bind("Label3D", "set_draw_flag", 1285833066_i64)
@@ -19149,7 +16700,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_draw_flag, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_draw_flag : Void* = Pointer(Void).null
-    # Returns the value of the specified flag.
     def get_draw_flag(flag : Int64) : Bool
       if @@mb_get_draw_flag.null?
         @@mb_get_draw_flag = Bridge.get_method_bind("Label3D", "get_draw_flag", 259226453_i64)
@@ -19295,7 +16845,6 @@ module Godot
       ret
     end
     @@mb_generate_triangle_mesh : Void* = Pointer(Void).null
-    # Returns a `TriangleMesh` with the label's vertices following its current configuration (such as its `pixel_size`).
     def generate_triangle_mesh() : TriangleMesh
       if @@mb_generate_triangle_mesh.null?
         @@mb_generate_triangle_mesh = Bridge.get_method_bind("Label3D", "generate_triangle_mesh", 3476533166_i64)
@@ -19305,9 +16854,6 @@ module Godot
       TriangleMesh.new(ret_ptr)
     end
   end
-  # Provides common settings to customize the text in a `Label`.
-  #
-  # `LabelSettings` is a resource that provides common settings to customize the text in a `Label`. It will take priority over the properties defined in `Control.theme`. The resource can be shared between multiple labels and changed on the fly, so it's convenient and flexible way to setup text style.
   class LabelSettings < Godot::Resource
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -19522,7 +17068,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_stacked_outline_count, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_add_stacked_outline : Void* = Pointer(Void).null
-    # Adds a new stacked outline to the label at the given `index`. If `index` is `-1`, the new stacked outline will be added at the end of the list.
     def add_stacked_outline(index : Int64) : Void
       if @@mb_add_stacked_outline.null?
         @@mb_add_stacked_outline = Bridge.get_method_bind("LabelSettings", "add_stacked_outline", 1025054187_i64)
@@ -19533,7 +17078,6 @@ module Godot
       Bridge.ptrcall(@@mb_add_stacked_outline, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_move_stacked_outline : Void* = Pointer(Void).null
-    # Moves the stacked outline at index `from_index` to the given position `to_position` in the array.
     def move_stacked_outline(from_index : Int64, to_position : Int64) : Void
       if @@mb_move_stacked_outline.null?
         @@mb_move_stacked_outline = Bridge.get_method_bind("LabelSettings", "move_stacked_outline", 3937882851_i64)
@@ -19546,7 +17090,6 @@ module Godot
       Bridge.ptrcall(@@mb_move_stacked_outline, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_remove_stacked_outline : Void* = Pointer(Void).null
-    # Removes the stacked outline at index `index`.
     def remove_stacked_outline(index : Int64) : Void
       if @@mb_remove_stacked_outline.null?
         @@mb_remove_stacked_outline = Bridge.get_method_bind("LabelSettings", "remove_stacked_outline", 1286410249_i64)
@@ -19557,7 +17100,6 @@ module Godot
       Bridge.ptrcall(@@mb_remove_stacked_outline, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_set_stacked_outline_size : Void* = Pointer(Void).null
-    # Sets the size of the stacked outline identified by the given `index` to `size`.
     def set_stacked_outline_size(index : Int64, size : Int64) : Void
       if @@mb_set_stacked_outline_size.null?
         @@mb_set_stacked_outline_size = Bridge.get_method_bind("LabelSettings", "set_stacked_outline_size", 3937882851_i64)
@@ -19570,7 +17112,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_stacked_outline_size, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_stacked_outline_size : Void* = Pointer(Void).null
-    # Returns the size of the stacked outline at `index`.
     def get_stacked_outline_size(index : Int64) : Int64
       if @@mb_get_stacked_outline_size.null?
         @@mb_get_stacked_outline_size = Bridge.get_method_bind("LabelSettings", "get_stacked_outline_size", 923996154_i64)
@@ -19583,7 +17124,6 @@ module Godot
       ret
     end
     @@mb_set_stacked_outline_color : Void* = Pointer(Void).null
-    # Sets the color of the stacked outline identified by the given `index` to `color`.
     def set_stacked_outline_color(index : Int64, color : Color) : Void
       if @@mb_set_stacked_outline_color.null?
         @@mb_set_stacked_outline_color = Bridge.get_method_bind("LabelSettings", "set_stacked_outline_color", 2878471219_i64)
@@ -19596,7 +17136,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_stacked_outline_color, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_stacked_outline_color : Void* = Pointer(Void).null
-    # Returns the color of the stacked outline at `index`.
     def get_stacked_outline_color(index : Int64) : Color
       if @@mb_get_stacked_outline_color.null?
         @@mb_get_stacked_outline_color = Bridge.get_method_bind("LabelSettings", "get_stacked_outline_color", 3457211756_i64)
@@ -19628,7 +17167,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_stacked_shadow_count, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_add_stacked_shadow : Void* = Pointer(Void).null
-    # Adds a new stacked shadow to the label at the given `index`. If `index` is `-1`, the new stacked shadow will be added at the end of the list.
     def add_stacked_shadow(index : Int64) : Void
       if @@mb_add_stacked_shadow.null?
         @@mb_add_stacked_shadow = Bridge.get_method_bind("LabelSettings", "add_stacked_shadow", 1025054187_i64)
@@ -19639,7 +17177,6 @@ module Godot
       Bridge.ptrcall(@@mb_add_stacked_shadow, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_move_stacked_shadow : Void* = Pointer(Void).null
-    # Moves the stacked shadow at index `from_index` to the given position `to_position` in the array.
     def move_stacked_shadow(from_index : Int64, to_position : Int64) : Void
       if @@mb_move_stacked_shadow.null?
         @@mb_move_stacked_shadow = Bridge.get_method_bind("LabelSettings", "move_stacked_shadow", 3937882851_i64)
@@ -19652,7 +17189,6 @@ module Godot
       Bridge.ptrcall(@@mb_move_stacked_shadow, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_remove_stacked_shadow : Void* = Pointer(Void).null
-    # Removes the stacked shadow at index `index`.
     def remove_stacked_shadow(index : Int64) : Void
       if @@mb_remove_stacked_shadow.null?
         @@mb_remove_stacked_shadow = Bridge.get_method_bind("LabelSettings", "remove_stacked_shadow", 1286410249_i64)
@@ -19663,7 +17199,6 @@ module Godot
       Bridge.ptrcall(@@mb_remove_stacked_shadow, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_set_stacked_shadow_offset : Void* = Pointer(Void).null
-    # Sets the offset of the stacked shadow identified by the given `index` to `offset`.
     def set_stacked_shadow_offset(index : Int64, offset : Vector2) : Void
       if @@mb_set_stacked_shadow_offset.null?
         @@mb_set_stacked_shadow_offset = Bridge.get_method_bind("LabelSettings", "set_stacked_shadow_offset", 163021252_i64)
@@ -19676,7 +17211,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_stacked_shadow_offset, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_stacked_shadow_offset : Void* = Pointer(Void).null
-    # Returns the offset of the stacked shadow at `index`.
     def get_stacked_shadow_offset(index : Int64) : Vector2
       if @@mb_get_stacked_shadow_offset.null?
         @@mb_get_stacked_shadow_offset = Bridge.get_method_bind("LabelSettings", "get_stacked_shadow_offset", 2299179447_i64)
@@ -19689,7 +17223,6 @@ module Godot
       ret
     end
     @@mb_set_stacked_shadow_color : Void* = Pointer(Void).null
-    # Sets the color of the stacked shadow identified by the given `index` to `color`.
     def set_stacked_shadow_color(index : Int64, color : Color) : Void
       if @@mb_set_stacked_shadow_color.null?
         @@mb_set_stacked_shadow_color = Bridge.get_method_bind("LabelSettings", "set_stacked_shadow_color", 2878471219_i64)
@@ -19702,7 +17235,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_stacked_shadow_color, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_stacked_shadow_color : Void* = Pointer(Void).null
-    # Returns the color of the stacked shadow at `index`.
     def get_stacked_shadow_color(index : Int64) : Color
       if @@mb_get_stacked_shadow_color.null?
         @@mb_get_stacked_shadow_color = Bridge.get_method_bind("LabelSettings", "get_stacked_shadow_color", 3457211756_i64)
@@ -19715,7 +17247,6 @@ module Godot
       ret
     end
     @@mb_set_stacked_shadow_outline_size : Void* = Pointer(Void).null
-    # Sets the outline size of the stacked shadow identified by the given `index` to `size`.
     def set_stacked_shadow_outline_size(index : Int64, size : Int64) : Void
       if @@mb_set_stacked_shadow_outline_size.null?
         @@mb_set_stacked_shadow_outline_size = Bridge.get_method_bind("LabelSettings", "set_stacked_shadow_outline_size", 3937882851_i64)
@@ -19728,7 +17259,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_stacked_shadow_outline_size, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_stacked_shadow_outline_size : Void* = Pointer(Void).null
-    # Returns the outline size of the stacked shadow at `index`.
     def get_stacked_shadow_outline_size(index : Int64) : Int64
       if @@mb_get_stacked_shadow_outline_size.null?
         @@mb_get_stacked_shadow_outline_size = Bridge.get_method_bind("LabelSettings", "get_stacked_shadow_outline_size", 923996154_i64)
@@ -19741,9 +17271,6 @@ module Godot
       ret
     end
   end
-  # Occludes light cast by a Light2D, casting shadows.
-  #
-  # Occludes light cast by a Light2D, casting shadows. The LightOccluder2D must be provided with an `OccluderPolygon2D` in order for the shadow to be computed.
   class LightOccluder2D < Godot::Node2D
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -19806,15 +17333,6 @@ module Godot
       ret != 0_u8
     end
   end
-  # Computes and stores baked lightmaps for fast global illumination.
-  #
-  # The `LightmapGI` node is used to compute and store baked lightmaps. Lightmaps are used to provide high-quality indirect lighting with very little light leaking. `LightmapGI` can also provide rough reflections using spherical harmonics if `directional` is enabled. Dynamic objects can receive indirect lighting thanks to *light probes*, which can be automatically placed by setting `generate_probes_subdiv` to a value other than `GENERATE_PROBES_DISABLED`. Additional lightmap probes can also be added by creating `LightmapProbe` nodes. The downside is that lightmaps are fully static and cannot be baked in an exported project. Baking a `LightmapGI` node is also slower compared to `VoxelGI`.
-  # **Procedural generation:** Lightmap baking functionality is only available in the editor. This means `LightmapGI` is not suited to procedurally generated or user-built levels. For procedurally generated or user-built levels, use `VoxelGI` or SDFGI instead (see `Environment.sdfgi_enabled`).
-  # **Performance:** `LightmapGI` provides the best possible run-time performance for global illumination. It is suitable for low-end hardware including integrated graphics and mobile devices.
-  # **Note:** Due to how lightmaps work, most properties only have a visible effect once lightmaps are baked again.
-  # **Note:** Lightmap baking on `CSGShape3D`s and `PrimitiveMesh`es is not supported, as these cannot store UV2 data required for baking.
-  # **Note:** If no custom lightmappers are installed, `LightmapGI` can only be baked from devices that support the Forward+ or Mobile renderers.
-  # **Note:** The `LightmapGI` node only bakes light data for child nodes of its parent. Nodes further up the hierarchy of the scene will not be baked.
   class LightmapGI < Godot::VisualInstance3D
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -20290,9 +17808,6 @@ module Godot
       ret
     end
   end
-  # Contains baked lightmap and dynamic object probe data for `LightmapGI`.
-  #
-  # `LightmapGIData` contains baked lightmap and dynamic object probe data for `LightmapGI`. It is replaced every time lightmaps are baked in `LightmapGI`.
   class LightmapGIData < Godot::Resource
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -20341,8 +17856,6 @@ module Godot
       Godot::Array.new(ret_ptr)
     end
     @@mb_set_uses_spherical_harmonics : Void* = Pointer(Void).null
-    # If `uses_spherical_harmonics` is `true`, tells the engine to treat the lightmap data as if it was baked with directional information.
-    # **Note:** Changing this value on already baked lightmaps will not cause them to be baked again. This means the material appearance will look incorrect until lightmaps are baked again, in which case the value set here is discarded as the entire `LightmapGIData` resource is replaced by the lightmapper.
     def set_uses_spherical_harmonics(uses_spherical_harmonics : Bool) : Void
       if @@mb_set_uses_spherical_harmonics.null?
         @@mb_set_uses_spherical_harmonics = Bridge.get_method_bind("LightmapGIData", "set_uses_spherical_harmonics", 2586408642_i64)
@@ -20353,7 +17866,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_uses_spherical_harmonics, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_is_using_spherical_harmonics : Void* = Pointer(Void).null
-    # If `true`, lightmaps were baked with directional information. See also `LightmapGI.directional`.
     def is_using_spherical_harmonics() : Bool
       if @@mb_is_using_spherical_harmonics.null?
         @@mb_is_using_spherical_harmonics = Bridge.get_method_bind("LightmapGIData", "is_using_spherical_harmonics", 36873697_i64)
@@ -20363,7 +17875,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_add_user : Void* = Pointer(Void).null
-    # Adds an object that is considered baked within this `LightmapGIData`.
     def add_user(path : NodePath, uv_scale : Rect2, slice_index : Int64, sub_instance : Int64) : Void
       if @@mb_add_user.null?
         @@mb_add_user = Bridge.get_method_bind("LightmapGIData", "add_user", 4272570515_i64)
@@ -20380,7 +17891,6 @@ module Godot
       Bridge.ptrcall(@@mb_add_user, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_user_count : Void* = Pointer(Void).null
-    # Returns the number of objects that are considered baked within this `LightmapGIData`.
     def get_user_count() : Int64
       if @@mb_get_user_count.null?
         @@mb_get_user_count = Bridge.get_method_bind("LightmapGIData", "get_user_count", 3905245786_i64)
@@ -20390,7 +17900,6 @@ module Godot
       ret
     end
     @@mb_get_user_path : Void* = Pointer(Void).null
-    # Returns the `NodePath` of the baked object at index `user_idx`.
     def get_user_path(user_idx : Int64) : NodePath
       if @@mb_get_user_path.null?
         @@mb_get_user_path = Bridge.get_method_bind("LightmapGIData", "get_user_path", 408788394_i64)
@@ -20403,7 +17912,6 @@ module Godot
       NodePath.new(ret_ptr)
     end
     @@mb_clear_users : Void* = Pointer(Void).null
-    # Clear all objects that are considered baked within this `LightmapGIData`.
     def clear_users() : Void
       if @@mb_clear_users.null?
         @@mb_clear_users = Bridge.get_method_bind("LightmapGIData", "clear_users", 3218959716_i64)
@@ -20430,45 +17938,26 @@ module Godot
       TextureLayered.new(ret_ptr)
     end
   end
-  # Represents a single manually placed probe for dynamic object lighting with `LightmapGI`.
-  #
-  # `LightmapProbe` represents the position of a single manually placed probe for dynamic object lighting with `LightmapGI`. Lightmap probes affect the lighting of `GeometryInstance3D`-derived nodes that have their `GeometryInstance3D.gi_mode` set to `GeometryInstance3D.GI_MODE_DYNAMIC`.
-  # Typically, `LightmapGI` probes are placed automatically by setting `LightmapGI.generate_probes_subdiv` to a value other than `LightmapGI.GENERATE_PROBES_DISABLED`. By creating `LightmapProbe` nodes before baking lightmaps, you can add more probes in specific areas for greater detail, or disable automatic generation and rely only on manually placed probes instead.
-  # **Note:** `LightmapProbe` nodes that are placed after baking lightmaps are ignored by dynamic objects. You must bake lightmaps again after creating or modifying `LightmapProbe`s for the probes to be effective.
   class LightmapProbe < Godot::Node3D
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
     end
   end
-  # Abstract class extended by lightmappers, for use in `LightmapGI`.
-  #
-  # This class should be extended by custom lightmapper classes. Lightmappers can then be used with `LightmapGI` to provide fast baked global illumination in 3D.
-  # Godot contains a built-in GPU-based lightmapper `LightmapperRD` that uses compute shaders, but custom lightmappers can be implemented by C++ modules.
   class Lightmapper < Godot::RefCounted
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
     end
   end
-  # The built-in GPU-based lightmapper for use with `LightmapGI`.
-  #
-  # LightmapperRD ("RD" stands for `RenderingDevice`) is the built-in GPU-based lightmapper for use with `LightmapGI`. On most dedicated GPUs, it can bake lightmaps much faster than most CPU-based lightmappers. LightmapperRD uses compute shaders to bake lightmaps, so it does not require CUDA or OpenCL libraries to be installed to be usable.
-  # **Note:** This lightmapper requires the GPU to support the `RenderingDevice` backend (Forward+ and Mobile renderers). When using the Compatibility renderer, baking will use a temporary `RenderingDevice`. Support for `RenderingDevice` is not required to *render* lightmaps that were already baked beforehand.
   class LightmapperRD < Godot::Lightmapper
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
     end
   end
-  # Limit bone rotation angular velocity.
-  #
-  # This modifier limits bone rotation angular velocity by comparing poses between previous and current frame.
-  # You can add bone chains by specifying their root and end bones, then add the bones between them to a list. Modifier processes either that list or the bones excluding those in the list depending on the option `exclude`.
-  # **Note:** Most methods in this class take an `index` parameter. This parameter specifies which setting list entry to return if the IK has multiple entries (e.g. `settings/<index>/root_bone_name`).
   class LimitAngularVelocityModifier3D < Godot::SkeletonModifier3D
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
     end
     @@mb_set_root_bone_name : Void* = Pointer(Void).null
-    # Sets the root bone name of the bone chain.
     def set_root_bone_name(index : Int64, bone_name : String) : Void
       if @@mb_set_root_bone_name.null?
         @@mb_set_root_bone_name = Bridge.get_method_bind("LimitAngularVelocityModifier3D", "set_root_bone_name", 501894301_i64)
@@ -20483,7 +17972,6 @@ module Godot
       Bridge.free_string(str_1)
     end
     @@mb_get_root_bone_name : Void* = Pointer(Void).null
-    # Returns the root bone name of the bone chain.
     def get_root_bone_name(index : Int64) : String
       if @@mb_get_root_bone_name.null?
         @@mb_get_root_bone_name = Bridge.get_method_bind("LimitAngularVelocityModifier3D", "get_root_bone_name", 844755477_i64)
@@ -20494,7 +17982,6 @@ module Godot
       ""
     end
     @@mb_set_root_bone : Void* = Pointer(Void).null
-    # Sets the root bone index of the bone chain.
     def set_root_bone(index : Int64, bone : Int64) : Void
       if @@mb_set_root_bone.null?
         @@mb_set_root_bone = Bridge.get_method_bind("LimitAngularVelocityModifier3D", "set_root_bone", 3937882851_i64)
@@ -20507,7 +17994,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_root_bone, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_root_bone : Void* = Pointer(Void).null
-    # Returns the root bone index of the bone chain.
     def get_root_bone(index : Int64) : Int64
       if @@mb_get_root_bone.null?
         @@mb_get_root_bone = Bridge.get_method_bind("LimitAngularVelocityModifier3D", "get_root_bone", 923996154_i64)
@@ -20520,8 +18006,6 @@ module Godot
       ret
     end
     @@mb_set_end_bone_name : Void* = Pointer(Void).null
-    # Sets the end bone name of the bone chain.
-    # **Note:** End bone must be the root bone or a child of the root bone.
     def set_end_bone_name(index : Int64, bone_name : String) : Void
       if @@mb_set_end_bone_name.null?
         @@mb_set_end_bone_name = Bridge.get_method_bind("LimitAngularVelocityModifier3D", "set_end_bone_name", 501894301_i64)
@@ -20536,7 +18020,6 @@ module Godot
       Bridge.free_string(str_1)
     end
     @@mb_get_end_bone_name : Void* = Pointer(Void).null
-    # Returns the end bone name of the bone chain.
     def get_end_bone_name(index : Int64) : String
       if @@mb_get_end_bone_name.null?
         @@mb_get_end_bone_name = Bridge.get_method_bind("LimitAngularVelocityModifier3D", "get_end_bone_name", 844755477_i64)
@@ -20547,7 +18030,6 @@ module Godot
       ""
     end
     @@mb_set_end_bone : Void* = Pointer(Void).null
-    # Sets the end bone index of the bone chain.
     def set_end_bone(index : Int64, bone : Int64) : Void
       if @@mb_set_end_bone.null?
         @@mb_set_end_bone = Bridge.get_method_bind("LimitAngularVelocityModifier3D", "set_end_bone", 3937882851_i64)
@@ -20560,7 +18042,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_end_bone, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_end_bone : Void* = Pointer(Void).null
-    # Returns the end bone index of the bone chain.
     def get_end_bone(index : Int64) : Int64
       if @@mb_get_end_bone.null?
         @@mb_get_end_bone = Bridge.get_method_bind("LimitAngularVelocityModifier3D", "get_end_bone", 923996154_i64)
@@ -20592,7 +18073,6 @@ module Godot
       ret
     end
     @@mb_clear_chains : Void* = Pointer(Void).null
-    # Clear all chains.
     def clear_chains() : Void
       if @@mb_clear_chains.null?
         @@mb_clear_chains = Bridge.get_method_bind("LimitAngularVelocityModifier3D", "clear_chains", 3218959716_i64)
@@ -20638,7 +18118,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_reset : Void* = Pointer(Void).null
-    # Sets the reference pose for angle comparison to the current pose with the influence of constraints removed. This function is automatically triggered when joints change or upon activation.
     def reset() : Void
       if @@mb_reset.null?
         @@mb_reset = Bridge.get_method_bind("LimitAngularVelocityModifier3D", "reset", 3218959716_i64)
@@ -20646,11 +18125,6 @@ module Godot
       Bridge.ptrcall(@@mb_reset, @pointer, Pointer(Pointer(Void)).null, Pointer(Void).null)
     end
   end
-  # A 2D polyline that can optionally be textured.
-  #
-  # This node draws a 2D polyline, i.e. a shape consisting of several points connected by segments. `Line2D` is not a mathematical polyline, i.e. the segments are not infinitely thin. It is intended for rendering and it can be colored and optionally textured.
-  # **Warning:** Certain configurations may be impossible to draw nicely, such as very sharp angles. In these situations, the node uses fallback drawing logic to look decent.
-  # **Note:** `Line2D` is drawn using a 2D mesh.
   class Line2D < Godot::Node2D
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -20690,7 +18164,6 @@ module Godot
       ret_ptr
     end
     @@mb_set_point_position : Void* = Pointer(Void).null
-    # Overwrites the position of the point at the given `index` with the supplied `position`.
     def set_point_position(index : Int64, position : Vector2) : Void
       if @@mb_set_point_position.null?
         @@mb_set_point_position = Bridge.get_method_bind("Line2D", "set_point_position", 163021252_i64)
@@ -20703,7 +18176,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_point_position, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_point_position : Void* = Pointer(Void).null
-    # Returns the position of the point at index `index`.
     def get_point_position(index : Int64) : Vector2
       if @@mb_get_point_position.null?
         @@mb_get_point_position = Bridge.get_method_bind("Line2D", "get_point_position", 2299179447_i64)
@@ -20716,7 +18188,6 @@ module Godot
       ret
     end
     @@mb_get_point_count : Void* = Pointer(Void).null
-    # Returns the number of points in the polyline.
     def get_point_count() : Int64
       if @@mb_get_point_count.null?
         @@mb_get_point_count = Bridge.get_method_bind("Line2D", "get_point_count", 3905245786_i64)
@@ -20726,8 +18197,6 @@ module Godot
       ret
     end
     @@mb_add_point : Void* = Pointer(Void).null
-    # Adds a point with the specified `position` relative to the polyline's own position. If no `index` is provided, the new point will be added to the end of the points array.
-    # If `index` is given, the new point is inserted before the existing point identified by index `index`. The indices of the points after the new point get increased by 1. The provided `index` must not exceed the number of existing points in the polyline. See `#get_point_count`.
     def add_point(position : Vector2, index : Int64) : Void
       if @@mb_add_point.null?
         @@mb_add_point = Bridge.get_method_bind("Line2D", "add_point", 2654014372_i64)
@@ -20740,7 +18209,6 @@ module Godot
       Bridge.ptrcall(@@mb_add_point, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_remove_point : Void* = Pointer(Void).null
-    # Removes the point at index `index` from the polyline.
     def remove_point(index : Int64) : Void
       if @@mb_remove_point.null?
         @@mb_remove_point = Bridge.get_method_bind("Line2D", "remove_point", 1286410249_i64)
@@ -20751,7 +18219,6 @@ module Godot
       Bridge.ptrcall(@@mb_remove_point, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_clear_points : Void* = Pointer(Void).null
-    # Removes all points from the polyline, making it empty.
     def clear_points() : Void
       if @@mb_clear_points.null?
         @@mb_clear_points = Bridge.get_method_bind("Line2D", "clear_points", 3218959716_i64)
@@ -21006,8 +18473,6 @@ module Godot
       ret != 0_u8
     end
   end
-  # A node to draw 3D lines in space.
-  # **Note:** This class currently has no functionality and only serves as a base class for `Trail3D`.
   class Line3D < Godot::GeometryInstance3D
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -21029,43 +18494,6 @@ module Godot
       MaterialModeMax = 3_i64
     end
   end
-  # An input field for single-line text.
-  #
-  # `LineEdit` provides an input field for editing a single line of text.
-  # - When the `LineEdit` control is focused using the keyboard arrow keys, it will only gain focus and not enter edit mode.
-  # - To enter edit mode, click on the control with the mouse, see also `keep_editing_on_text_submit`.
-  # - To exit edit mode, press `ui_text_submit` or `ui_cancel` (by default `Escape`) actions.
-  # - Check `#edit`, `#unedit`, `#is_editing`, and `editing_toggled` for more information.
-  # While entering text, it is possible to insert special characters using Unicode, OEM or Windows alt codes:
-  # - To enter Unicode codepoints, hold `Alt` and type the codepoint on the numpad. For example, to enter the character `á` (U+00E1), hold `Alt` and type `+E1` on the numpad (the leading zeroes can be omitted).
-  # - To enter OEM codepoints, hold `Alt` and type the code on the numpad. For example, to enter the character `á` (OEM 160), hold `Alt` and type `160` on the numpad.
-  # - To enter Windows codepoints, hold `Alt` and type the code on the numpad. For example, to enter the character `á` (Windows 0225), hold `Alt` and type `0`, `2`, `2`, `5` on the numpad. The leading zero here must **not** be omitted, as this is how Windows codepoints are distinguished from OEM codepoints.
-  # **Important:**
-  # - Focusing the `LineEdit` with `ui_focus_next` (by default `Tab`) or `ui_focus_prev` (by default `Shift + Tab`) or `#Control.grab_focus` still enters edit mode (for compatibility).
-  # `LineEdit` features many built-in shortcuts that are always available (`Ctrl` here maps to `Cmd` on macOS):
-  # - `Ctrl + C`: Copy
-  # - `Ctrl + X`: Cut
-  # - `Ctrl + V` or `Ctrl + Y`: Paste/"yank"
-  # - `Ctrl + Z`: Undo
-  # - `Ctrl + ~`: Swap input direction.
-  # - `Ctrl + Shift + Z`: Redo
-  # - `Ctrl + U`: Delete text from the caret position to the beginning of the line
-  # - `Ctrl + K`: Delete text from the caret position to the end of the line
-  # - `Ctrl + A`: Select all text
-  # - `Up Arrow`/`Down Arrow`: Move the caret to the beginning/end of the line
-  # On macOS, some extra keyboard shortcuts are available:
-  # - `Cmd + F`: Same as `Right Arrow`, move the caret one character right
-  # - `Cmd + B`: Same as `Left Arrow`, move the caret one character left
-  # - `Cmd + P`: Same as `Up Arrow`, move the caret to the previous line
-  # - `Cmd + N`: Same as `Down Arrow`, move the caret to the next line
-  # - `Cmd + D`: Same as `Delete`, delete the character on the right side of caret
-  # - `Cmd + H`: Same as `Backspace`, delete the character on the left side of the caret
-  # - `Cmd + A`: Same as `Home`, move the caret to the beginning of the line
-  # - `Cmd + E`: Same as `End`, move the caret to the end of the line
-  # - `Cmd + Left Arrow`: Same as `Home`, move the caret to the beginning of the line
-  # - `Cmd + Right Arrow`: Same as `End`, move the caret to the end of the line
-  # **Note:** Caret movement shortcuts listed above are not affected by `shortcut_keys_enabled`.
-  # `note`Column numbers are *zero-based*, like elements of an array. For example, `caret_column` being `0` indicates the caret is on the first column (i.e., before the first character).[/note]
   class LineEdit < Godot::Control
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -21120,7 +18548,6 @@ module Godot
       ExpandModeFitToLineEdit = 2_i64
     end
     @@mb_has_ime_text : Void* = Pointer(Void).null
-    # Returns `true` if the user has text in the [$2]($1) (IME).
     def has_ime_text() : Bool
       if @@mb_has_ime_text.null?
         @@mb_has_ime_text = Bridge.get_method_bind("LineEdit", "has_ime_text", 36873697_i64)
@@ -21130,7 +18557,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_cancel_ime : Void* = Pointer(Void).null
-    # Closes the [$2]($1) (IME) if it is open. Any text in the IME will be lost.
     def cancel_ime() : Void
       if @@mb_cancel_ime.null?
         @@mb_cancel_ime = Bridge.get_method_bind("LineEdit", "cancel_ime", 3218959716_i64)
@@ -21138,7 +18564,6 @@ module Godot
       Bridge.ptrcall(@@mb_cancel_ime, @pointer, Pointer(Pointer(Void)).null, Pointer(Void).null)
     end
     @@mb_apply_ime : Void* = Pointer(Void).null
-    # Applies text from the [$2]($1) (IME) and closes the IME if it is open.
     def apply_ime() : Void
       if @@mb_apply_ime.null?
         @@mb_apply_ime = Bridge.get_method_bind("LineEdit", "apply_ime", 3218959716_i64)
@@ -21165,8 +18590,6 @@ module Godot
       ret
     end
     @@mb_edit : Void* = Pointer(Void).null
-    # Allows entering edit mode whether the `LineEdit` is focused or not. If `hide_focus` is `true`, the focused state will not be shown (see `#Control.grab_focus`).
-    # See also `keep_editing_on_text_submit`.
     def edit(hide_focus : Bool) : Void
       if @@mb_edit.null?
         @@mb_edit = Bridge.get_method_bind("LineEdit", "edit", 107499316_i64)
@@ -21177,7 +18600,6 @@ module Godot
       Bridge.ptrcall(@@mb_edit, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_unedit : Void* = Pointer(Void).null
-    # Allows exiting edit mode while preserving focus.
     def unedit() : Void
       if @@mb_unedit.null?
         @@mb_unedit = Bridge.get_method_bind("LineEdit", "unedit", 3218959716_i64)
@@ -21185,7 +18607,6 @@ module Godot
       Bridge.ptrcall(@@mb_unedit, @pointer, Pointer(Pointer(Void)).null, Pointer(Void).null)
     end
     @@mb_is_editing : Void* = Pointer(Void).null
-    # Returns whether the `LineEdit` is being edited.
     def is_editing() : Bool
       if @@mb_is_editing.null?
         @@mb_is_editing = Bridge.get_method_bind("LineEdit", "is_editing", 36873697_i64)
@@ -21214,7 +18635,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_clear : Void* = Pointer(Void).null
-    # Erases the `LineEdit`'s `text`.
     def clear() : Void
       if @@mb_clear.null?
         @@mb_clear = Bridge.get_method_bind("LineEdit", "clear", 3218959716_i64)
@@ -21222,24 +18642,6 @@ module Godot
       Bridge.ptrcall(@@mb_clear, @pointer, Pointer(Pointer(Void)).null, Pointer(Void).null)
     end
     @@mb_select : Void* = Pointer(Void).null
-    # Selects characters inside `LineEdit` between `from` and `to`. By default, `from` is at the beginning and `to` at the end.
-    #
-    # ```gdscript
-    #
-    # text = "Welcome"
-    # select() # Will select "Welcome".
-    # select(4) # Will select "ome".
-    # select(2, 5) # Will select "lco".
-    #
-    # ```
-    # ```csharp
-    #
-    # Text = "Welcome";
-    # Select(); // Will select "Welcome".
-    # Select(4); // Will select "ome".
-    # Select(2, 5); // Will select "lco".
-    #
-    # ```
     def select_val(from : Int64, to : Int64) : Void
       if @@mb_select.null?
         @@mb_select = Bridge.get_method_bind("LineEdit", "select", 1328111411_i64)
@@ -21252,7 +18654,6 @@ module Godot
       Bridge.ptrcall(@@mb_select, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_select_all : Void* = Pointer(Void).null
-    # Selects the whole `String`.
     def select_all() : Void
       if @@mb_select_all.null?
         @@mb_select_all = Bridge.get_method_bind("LineEdit", "select_all", 3218959716_i64)
@@ -21260,7 +18661,6 @@ module Godot
       Bridge.ptrcall(@@mb_select_all, @pointer, Pointer(Pointer(Void)).null, Pointer(Void).null)
     end
     @@mb_deselect : Void* = Pointer(Void).null
-    # Clears the current selection.
     def deselect() : Void
       if @@mb_deselect.null?
         @@mb_deselect = Bridge.get_method_bind("LineEdit", "deselect", 3218959716_i64)
@@ -21268,7 +18668,6 @@ module Godot
       Bridge.ptrcall(@@mb_deselect, @pointer, Pointer(Pointer(Void)).null, Pointer(Void).null)
     end
     @@mb_has_undo : Void* = Pointer(Void).null
-    # Returns `true` if an "undo" action is available.
     def has_undo() : Bool
       if @@mb_has_undo.null?
         @@mb_has_undo = Bridge.get_method_bind("LineEdit", "has_undo", 36873697_i64)
@@ -21278,7 +18677,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_has_redo : Void* = Pointer(Void).null
-    # Returns `true` if a "redo" action is available.
     def has_redo() : Bool
       if @@mb_has_redo.null?
         @@mb_has_redo = Bridge.get_method_bind("LineEdit", "has_redo", 36873697_i64)
@@ -21288,7 +18686,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_has_selection : Void* = Pointer(Void).null
-    # Returns `true` if the user has selected text.
     def has_selection() : Bool
       if @@mb_has_selection.null?
         @@mb_has_selection = Bridge.get_method_bind("LineEdit", "has_selection", 36873697_i64)
@@ -21298,7 +18695,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_get_selected_text : Void* = Pointer(Void).null
-    # Returns the text inside the selection.
     def get_selected_text() : String
       if @@mb_get_selected_text.null?
         @@mb_get_selected_text = Bridge.get_method_bind("LineEdit", "get_selected_text", 2841200299_i64)
@@ -21306,7 +18702,6 @@ module Godot
       ""
     end
     @@mb_get_selection_from_column : Void* = Pointer(Void).null
-    # Returns the selection begin column.
     def get_selection_from_column() : Int64
       if @@mb_get_selection_from_column.null?
         @@mb_get_selection_from_column = Bridge.get_method_bind("LineEdit", "get_selection_from_column", 3905245786_i64)
@@ -21316,7 +18711,6 @@ module Godot
       ret
     end
     @@mb_get_selection_to_column : Void* = Pointer(Void).null
-    # Returns the selection end column.
     def get_selection_to_column() : Int64
       if @@mb_get_selection_to_column.null?
         @@mb_get_selection_to_column = Bridge.get_method_bind("LineEdit", "get_selection_to_column", 3905245786_i64)
@@ -21478,8 +18872,6 @@ module Godot
       ret
     end
     @@mb_get_next_composite_character_column : Void* = Pointer(Void).null
-    # Returns the correct column at the end of a composite character like ❤️‍🩹 (mending heart; Unicode: `U+2764 U+FE0F U+200D U+1FA79`) which is comprised of more than one Unicode code point, if the caret is at the start of the composite character. Also returns the correct column with the caret at mid grapheme and for non-composite characters.
-    # **Note:** To check at caret location use `get_next_composite_character_column(get_caret_column())`
     def get_next_composite_character_column(column : Int64) : Int64
       if @@mb_get_next_composite_character_column.null?
         @@mb_get_next_composite_character_column = Bridge.get_method_bind("LineEdit", "get_next_composite_character_column", 923996154_i64)
@@ -21492,8 +18884,6 @@ module Godot
       ret
     end
     @@mb_get_previous_composite_character_column : Void* = Pointer(Void).null
-    # Returns the correct column at the start of a composite character like ❤️‍🩹 (mending heart; Unicode: `U+2764 U+FE0F U+200D U+1FA79`) which is comprised of more than one Unicode code point, if the caret is at the end of the composite character. Also returns the correct column with the caret at mid grapheme and for non-composite characters.
-    # **Note:** To check at caret location use `get_previous_composite_character_column(get_caret_column())`
     def get_previous_composite_character_column(column : Int64) : Int64
       if @@mb_get_previous_composite_character_column.null?
         @@mb_get_previous_composite_character_column = Bridge.get_method_bind("LineEdit", "get_previous_composite_character_column", 923996154_i64)
@@ -21506,7 +18896,6 @@ module Godot
       ret
     end
     @@mb_get_scroll_offset : Void* = Pointer(Void).null
-    # Returns the scroll offset due to `caret_column`, as a number of characters.
     def get_scroll_offset() : Float64
       if @@mb_get_scroll_offset.null?
         @@mb_get_scroll_offset = Bridge.get_method_bind("LineEdit", "get_scroll_offset", 1740695150_i64)
@@ -21630,7 +19019,6 @@ module Godot
       ret
     end
     @@mb_insert_text_at_caret : Void* = Pointer(Void).null
-    # Inserts `text` at the caret. If the resulting value is longer than `max_length`, nothing happens.
     def insert_text_at_caret(text : String) : Void
       if @@mb_insert_text_at_caret.null?
         @@mb_insert_text_at_caret = Bridge.get_method_bind("LineEdit", "insert_text_at_caret", 83702148_i64)
@@ -21643,7 +19031,6 @@ module Godot
       Bridge.free_string(str_0)
     end
     @@mb_delete_char_at_caret : Void* = Pointer(Void).null
-    # Deletes one character at the caret's current position (equivalent to pressing `Delete`).
     def delete_char_at_caret() : Void
       if @@mb_delete_char_at_caret.null?
         @@mb_delete_char_at_caret = Bridge.get_method_bind("LineEdit", "delete_char_at_caret", 3218959716_i64)
@@ -21651,7 +19038,6 @@ module Godot
       Bridge.ptrcall(@@mb_delete_char_at_caret, @pointer, Pointer(Pointer(Void)).null, Pointer(Void).null)
     end
     @@mb_delete_text : Void* = Pointer(Void).null
-    # Deletes a section of the `text` going from position `from_column` to `to_column`. Both parameters should be within the text's length.
     def delete_text(from_column : Int64, to_column : Int64) : Void
       if @@mb_delete_text.null?
         @@mb_delete_text = Bridge.get_method_bind("LineEdit", "delete_text", 3937882851_i64)
@@ -21721,7 +19107,6 @@ module Godot
       ""
     end
     @@mb_menu_option : Void* = Pointer(Void).null
-    # Executes a given action as defined in the `MenuItems` enum.
     def menu_option(option : Int64) : Void
       if @@mb_menu_option.null?
         @@mb_menu_option = Bridge.get_method_bind("LineEdit", "menu_option", 1286410249_i64)
@@ -21732,51 +19117,6 @@ module Godot
       Bridge.ptrcall(@@mb_menu_option, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_menu : Void* = Pointer(Void).null
-    # Returns the `PopupMenu` of this `LineEdit`. By default, this menu is displayed when right-clicking on the `LineEdit`.
-    # You can add custom menu items or remove standard ones. Make sure your IDs don't conflict with the standard ones (see `MenuItems`). For example:
-    #
-    # ```gdscript
-    #
-    # func _ready():
-    # 	var menu = get_menu()
-    # 	# Remove all items after "Redo".
-    # 	menu.item_count = menu.get_item_index(MENU_REDO) + 1
-    # 	# Add custom items.
-    # 	menu.add_separator()
-    # 	menu.add_item("Insert Date", MENU_MAX + 1)
-    # 	# Connect callback.
-    # 	menu.id_pressed.connect(_on_item_pressed)
-    #
-    # func _on_item_pressed(id):
-    # 	if id == MENU_MAX + 1:
-    # 		insert_text_at_caret(Time.get_date_string_from_system())
-    #
-    # ```
-    # ```csharp
-    #
-    # public override void _Ready()
-    # {
-    # 	var menu = GetMenu();
-    # 	// Remove all items after "Redo".
-    # 	menu.ItemCount = menu.GetItemIndex(LineEdit.MenuItems.Redo) + 1;
-    # 	// Add custom items.
-    # 	menu.AddSeparator();
-    # 	menu.AddItem("Insert Date", LineEdit.MenuItems.Max + 1);
-    # 	// Add event handler.
-    # 	menu.IdPressed += OnItemPressed;
-    # }
-    #
-    # public void OnItemPressed(int id)
-    # {
-    # 	if (id == LineEdit.MenuItems.Max + 1)
-    # 	{
-    # 		InsertTextAtCaret(Time.GetDateStringFromSystem());
-    # 	}
-    # }
-    #
-    # ```
-    #
-    # **Warning:** This is a required internal node, removing and freeing it may cause a crash. If you wish to hide it or any of its children, use their `Window.visible` property.
     def get_menu() : PopupMenu
       if @@mb_get_menu.null?
         @@mb_get_menu = Bridge.get_method_bind("LineEdit", "get_menu", 229722558_i64)
@@ -21786,7 +19126,6 @@ module Godot
       PopupMenu.new(ret_ptr)
     end
     @@mb_is_menu_visible : Void* = Pointer(Void).null
-    # Returns whether the menu is visible. Use this instead of `get_menu().visible` to improve performance (so the creation of the menu is avoided).
     def is_menu_visible() : Bool
       if @@mb_is_menu_visible.null?
         @@mb_is_menu_visible = Bridge.get_method_bind("LineEdit", "is_menu_visible", 36873697_i64)
@@ -22119,10 +19458,6 @@ module Godot
       ret != 0_u8
     end
   end
-  # A button that represents a link.
-  #
-  # A button that represents a link. This type of button is primarily used for interactions that cause a context change (like linking to a web page).
-  # See also `BaseButton` which contains common properties and methods associated with this node.
   class LinkButton < Godot::BaseButton
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -22304,9 +19639,6 @@ module Godot
       Godot::Array.new(ret_ptr)
     end
   end
-  # Custom logger to receive messages from the internal error/warning stream.
-  #
-  # Custom logger to receive messages from the internal error/warning stream. Loggers are registered via `#OS.add_logger`.
   class Logger < Godot::RefCounted
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -22318,10 +19650,6 @@ module Godot
       ErrorTypeShader = 3_i64
     end
   end
-  # The `LookAtModifier3D` rotates a bone to look at a target.
-  #
-  # This `SkeletonModifier3D` rotates a bone to look at a target. This is helpful for moving a character's head to look at the player, rotating a turret to look at a target, or any other case where you want to make a bone rotate towards something quickly and easily.
-  # When applying multiple `LookAtModifier3D`s, the `LookAtModifier3D` assigned to the parent bone must be put above the `LookAtModifier3D` assigned to the child bone in the list in order for the child bone results to be correct.
   class LookAtModifier3D < Godot::SkeletonModifier3D
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -22921,7 +20249,6 @@ module Godot
       ret
     end
     @@mb_get_interpolation_remaining : Void* = Pointer(Void).null
-    # Returns the remaining seconds of the time-based interpolation.
     def get_interpolation_remaining() : Float64
       if @@mb_get_interpolation_remaining.null?
         @@mb_get_interpolation_remaining = Bridge.get_method_bind("LookAtModifier3D", "get_interpolation_remaining", 1740695150_i64)
@@ -22931,8 +20258,6 @@ module Godot
       ret
     end
     @@mb_is_interpolating : Void* = Pointer(Void).null
-    # Returns `true` if time-based interpolation is running. If `false`, it is equivalent to `#get_interpolation_remaining` returning `0.0`.
-    # This is useful to determine whether a `LookAtModifier3D` can be removed safely.
     def is_interpolating() : Bool
       if @@mb_is_interpolating.null?
         @@mb_is_interpolating = Bridge.get_method_bind("LookAtModifier3D", "is_interpolating", 36873697_i64)
@@ -22942,8 +20267,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_is_target_within_limitation : Void* = Pointer(Void).null
-    # Returns whether the target is within the angle limitations. It is useful for unsetting the `target_node` when the target is outside of the angle limitations.
-    # **Note:** The value is updated after `#SkeletonModifier3D._process_modification`. To retrieve this value correctly, we recommend using the signal `SkeletonModifier3D.modification_processed`.
     def is_target_within_limitation() : Bool
       if @@mb_is_target_within_limitation.null?
         @@mb_is_target_within_limitation = Bridge.get_method_bind("LookAtModifier3D", "is_target_within_limitation", 36873697_i64)
@@ -22953,71 +20276,11 @@ module Godot
       ret != 0_u8
     end
   end
-  # Abstract base class for the game's main loop.
-  #
-  # `MainLoop` is the abstract base class for a Godot project's game loop. It is inherited by `SceneTree`, which is the default game loop implementation used in Godot projects, though it is also possible to write and use one's own `MainLoop` subclass instead of the scene tree.
-  # Upon the application start, a `MainLoop` implementation must be provided to the OS; otherwise, the application will exit. This happens automatically (and a `SceneTree` is created) unless a `MainLoop` `Script` is provided from the command line (with e.g. `godot -s my_loop.gd`) or the [member ProjectSettings.application/run/main_loop_type] project setting is overwritten.
-  # Here is an example script implementing a simple `MainLoop`:
-  #
-  # ```gdscript
-  #
-  # class_name CustomMainLoop
-  # extends MainLoop
-  #
-  # var time_elapsed = 0
-  #
-  # func _initialize():
-  # 	print("Initialized:")
-  # 	print("  Starting time: %s" % str(time_elapsed))
-  #
-  # func _process(delta):
-  # 	time_elapsed += delta
-  # 	# Return true to end the main loop.
-  # 	return Input.get_mouse_button_mask() != 0 || Input.is_key_pressed(KEY_ESCAPE)
-  #
-  # func _finalize():
-  # 	print("Finalized:")
-  # 	print("  End time: %s" % str(time_elapsed))
-  #
-  # ```
-  # ```csharp
-  #
-  # using Godot;
-  #
-  # `GlobalClass`
-  # public partial class CustomMainLoop : MainLoop
-  # {
-  # 	private double _timeElapsed = 0;
-  #
-  # 	public override void _Initialize()
-  # 	{
-  # 		GD.Print("Initialized:");
-  # 		GD.Print($"  Starting Time: {_timeElapsed}");
-  # 	}
-  #
-  # 	public override bool _Process(double delta)
-  # 	{
-  # 		_timeElapsed += delta;
-  # 		// Return true to end the main loop.
-  # 		return Input.GetMouseButtonMask() != 0 || Input.IsKeyPressed(Key.Escape);
-  # 	}
-  #
-  # 	private void _Finalize()
-  # 	{
-  # 		GD.Print("Finalized:");
-  # 		GD.Print($"  End Time: {_timeElapsed}");
-  # 	}
-  # }
-  #
-  # ```
   class MainLoop < Godot::Object
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
     end
   end
-  # Generic 2D position hint for editing.
-  #
-  # Generic 2D position hint for editing. This is like a plain `Node2D`, but it displays as a cross in the 2D editor.
   class Marker2D < Godot::Node2D
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -23042,9 +20305,6 @@ module Godot
       ret
     end
   end
-  # Generic 3D position hint for editing.
-  #
-  # Generic 3D position hint for editing. This is like a plain `Node3D`, but it displays as a cross in the 3D editor.
   class Marker3D < Godot::Node3D
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -23069,16 +20329,11 @@ module Godot
       ret
     end
   end
-  # Data transformation (marshaling) and encoding helpers.
-  #
-  # Provides data transformation and encoding utility functions.
   class Marshalls < Godot::Object
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
     end
     @@mb_variant_to_base64 : Void* = Pointer(Void).null
-    # Returns a Base64-encoded string of the `Variant` `variant`. If `full_objects` is `true`, encoding objects is allowed (and can potentially include code).
-    # Internally, this uses the same encoding mechanism as the [method @GlobalScope.var_to_bytes] method.
     def variant_to_base64(variant : Void*, full_objects : Bool) : String
       if @@mb_variant_to_base64.null?
         @@mb_variant_to_base64 = Bridge.get_method_bind("Marshalls", "variant_to_base64", 3876248563_i64)
@@ -23091,9 +20346,6 @@ module Godot
       ""
     end
     @@mb_base64_to_variant : Void* = Pointer(Void).null
-    # Returns a decoded `Variant` corresponding to the Base64-encoded string `base64_str`. If `allow_objects` is `true`, decoding objects is allowed.
-    # Internally, this uses the same decoding mechanism as the [method @GlobalScope.bytes_to_var] method.
-    # **Warning:** Deserialized objects can contain code which gets executed. Do not use this option if the serialized object comes from untrusted sources to avoid potential security threats such as remote code execution.
     def base64_to_variant(base64_str : String, allow_objects : Bool) : Void*
       if @@mb_base64_to_variant.null?
         @@mb_base64_to_variant = Bridge.get_method_bind("Marshalls", "base64_to_variant", 218087648_i64)
@@ -23112,7 +20364,6 @@ module Godot
       Bridge.free_string(str_0)
     end
     @@mb_raw_to_base64 : Void* = Pointer(Void).null
-    # Returns a Base64-encoded string of a given `PackedByteArray`.
     def raw_to_base64(array : Void*) : String
       if @@mb_raw_to_base64.null?
         @@mb_raw_to_base64 = Bridge.get_method_bind("Marshalls", "raw_to_base64", 3999417757_i64)
@@ -23123,7 +20374,6 @@ module Godot
       ""
     end
     @@mb_base64_to_raw : Void* = Pointer(Void).null
-    # Returns a decoded `PackedByteArray` corresponding to the Base64-encoded string `base64_str`.
     def base64_to_raw(base64_str : String) : Void*
       if @@mb_base64_to_raw.null?
         @@mb_base64_to_raw = Bridge.get_method_bind("Marshalls", "base64_to_raw", 659035735_i64)
@@ -23138,7 +20388,6 @@ module Godot
       Bridge.free_string(str_0)
     end
     @@mb_utf8_to_base64 : Void* = Pointer(Void).null
-    # Returns a Base64-encoded string of the UTF-8 string `utf8_str`.
     def utf8_to_base64(utf8_str : String) : String
       if @@mb_utf8_to_base64.null?
         @@mb_utf8_to_base64 = Bridge.get_method_bind("Marshalls", "utf8_to_base64", 1703090593_i64)
@@ -23151,7 +20400,6 @@ module Godot
       Bridge.free_string(str_0)
     end
     @@mb_base64_to_utf8 : Void* = Pointer(Void).null
-    # Returns a decoded string corresponding to the Base64-encoded string `base64_str`.
     def base64_to_utf8(base64_str : String) : String
       if @@mb_base64_to_utf8.null?
         @@mb_base64_to_utf8 = Bridge.get_method_bind("Marshalls", "base64_to_utf8", 1703090593_i64)
@@ -23164,9 +20412,6 @@ module Godot
       Bridge.free_string(str_0)
     end
   end
-  # A horizontal menu bar that creates a menu for each `PopupMenu` child.
-  #
-  # A horizontal menu bar that creates a menu for each `PopupMenu` child. New items are created by adding `PopupMenu`s to this node. Item title is determined by `Window.title`, or node name if `Window.title` is empty. Item title can be overridden using `#set_menu_title`.
   class MenuBar < Godot::Control
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -23191,7 +20436,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_set_disable_shortcuts : Void* = Pointer(Void).null
-    # If `true`, shortcuts are disabled and cannot be used to trigger the button.
     def set_disable_shortcuts(disabled : Bool) : Void
       if @@mb_set_disable_shortcuts.null?
         @@mb_set_disable_shortcuts = Bridge.get_method_bind("MenuBar", "set_disable_shortcuts", 2586408642_i64)
@@ -23221,7 +20465,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_is_native_menu : Void* = Pointer(Void).null
-    # Returns `true` if the current system's global menu is supported and used by this `MenuBar`.
     def is_native_menu() : Bool
       if @@mb_is_native_menu.null?
         @@mb_is_native_menu = Bridge.get_method_bind("MenuBar", "is_native_menu", 36873697_i64)
@@ -23231,7 +20474,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_get_menu_count : Void* = Pointer(Void).null
-    # Returns number of menu items.
     def get_menu_count() : Int64
       if @@mb_get_menu_count.null?
         @@mb_get_menu_count = Bridge.get_method_bind("MenuBar", "get_menu_count", 3905245786_i64)
@@ -23317,7 +20559,6 @@ module Godot
       ret
     end
     @@mb_set_menu_title : Void* = Pointer(Void).null
-    # Sets menu item title.
     def set_menu_title(menu : Int64, title : String) : Void
       if @@mb_set_menu_title.null?
         @@mb_set_menu_title = Bridge.get_method_bind("MenuBar", "set_menu_title", 501894301_i64)
@@ -23332,7 +20573,6 @@ module Godot
       Bridge.free_string(str_1)
     end
     @@mb_get_menu_title : Void* = Pointer(Void).null
-    # Returns menu item title.
     def get_menu_title(menu : Int64) : String
       if @@mb_get_menu_title.null?
         @@mb_get_menu_title = Bridge.get_method_bind("MenuBar", "get_menu_title", 844755477_i64)
@@ -23343,7 +20583,6 @@ module Godot
       ""
     end
     @@mb_set_menu_tooltip : Void* = Pointer(Void).null
-    # Sets menu item tooltip.
     def set_menu_tooltip(menu : Int64, tooltip : String) : Void
       if @@mb_set_menu_tooltip.null?
         @@mb_set_menu_tooltip = Bridge.get_method_bind("MenuBar", "set_menu_tooltip", 501894301_i64)
@@ -23358,7 +20597,6 @@ module Godot
       Bridge.free_string(str_1)
     end
     @@mb_get_menu_tooltip : Void* = Pointer(Void).null
-    # Returns menu item tooltip.
     def get_menu_tooltip(menu : Int64) : String
       if @@mb_get_menu_tooltip.null?
         @@mb_get_menu_tooltip = Bridge.get_method_bind("MenuBar", "get_menu_tooltip", 844755477_i64)
@@ -23369,7 +20607,6 @@ module Godot
       ""
     end
     @@mb_set_menu_disabled : Void* = Pointer(Void).null
-    # If `true`, menu item is disabled.
     def set_menu_disabled(menu : Int64, disabled : Bool) : Void
       if @@mb_set_menu_disabled.null?
         @@mb_set_menu_disabled = Bridge.get_method_bind("MenuBar", "set_menu_disabled", 300928843_i64)
@@ -23382,7 +20619,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_menu_disabled, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_is_menu_disabled : Void* = Pointer(Void).null
-    # Returns `true` if the menu item is disabled.
     def is_menu_disabled(menu : Int64) : Bool
       if @@mb_is_menu_disabled.null?
         @@mb_is_menu_disabled = Bridge.get_method_bind("MenuBar", "is_menu_disabled", 1116898809_i64)
@@ -23395,7 +20631,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_set_menu_hidden : Void* = Pointer(Void).null
-    # If `true`, menu item is hidden.
     def set_menu_hidden(menu : Int64, hidden : Bool) : Void
       if @@mb_set_menu_hidden.null?
         @@mb_set_menu_hidden = Bridge.get_method_bind("MenuBar", "set_menu_hidden", 300928843_i64)
@@ -23408,7 +20643,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_menu_hidden, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_is_menu_hidden : Void* = Pointer(Void).null
-    # Returns `true` if the menu item is hidden.
     def is_menu_hidden(menu : Int64) : Bool
       if @@mb_is_menu_hidden.null?
         @@mb_is_menu_hidden = Bridge.get_method_bind("MenuBar", "is_menu_hidden", 1116898809_i64)
@@ -23421,7 +20655,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_get_menu_popup : Void* = Pointer(Void).null
-    # Returns `PopupMenu` associated with menu item.
     def get_menu_popup(menu : Int64) : PopupMenu
       if @@mb_get_menu_popup.null?
         @@mb_get_menu_popup = Bridge.get_method_bind("MenuBar", "get_menu_popup", 2100501353_i64)
@@ -23434,17 +20667,11 @@ module Godot
       PopupMenu.new(ret_ptr)
     end
   end
-  # A button that brings up a `PopupMenu` when clicked.
-  #
-  # A button that brings up a `PopupMenu` when clicked. To create new items inside this `PopupMenu`, use `get_popup().add_item("My Item Name")`. You can also create them directly from Godot editor's inspector.
-  # See also `BaseButton` which contains common properties and methods associated with this node.
   class MenuButton < Godot::Button
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
     end
     @@mb_get_popup : Void* = Pointer(Void).null
-    # Returns the `PopupMenu` contained in this button.
-    # **Warning:** This is a required internal node, removing and freeing it may cause a crash. If you wish to hide it or any of its children, use their `Window.visible` property.
     def get_popup() : PopupMenu
       if @@mb_get_popup.null?
         @@mb_get_popup = Bridge.get_method_bind("MenuButton", "get_popup", 229722558_i64)
@@ -23454,7 +20681,6 @@ module Godot
       PopupMenu.new(ret_ptr)
     end
     @@mb_show_popup : Void* = Pointer(Void).null
-    # Adjusts popup position and sizing for the `MenuButton`, then shows the `PopupMenu`. Prefer this over using `get_popup().popup()`.
     def show_popup() : Void
       if @@mb_show_popup.null?
         @@mb_show_popup = Bridge.get_method_bind("MenuButton", "show_popup", 3218959716_i64)
@@ -23481,7 +20707,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_set_disable_shortcuts : Void* = Pointer(Void).null
-    # If `true`, shortcuts are disabled and cannot be used to trigger the button.
     def set_disable_shortcuts(disabled : Bool) : Void
       if @@mb_set_disable_shortcuts.null?
         @@mb_set_disable_shortcuts = Bridge.get_method_bind("MenuButton", "set_disable_shortcuts", 2586408642_i64)
@@ -23511,7 +20736,6 @@ module Godot
       ret
     end
   end
-  # Parameters to be used with a `Mesh` convex decomposition operation.
   class MeshConvexDecompositionSettings < Godot::RefCounted
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -23768,61 +20992,11 @@ module Godot
       ret != 0_u8
     end
   end
-  # Helper tool to access and edit `Mesh` data.
-  #
-  # MeshDataTool provides access to individual vertices in a `Mesh`. It allows users to read and edit vertex data of meshes. It also creates an array of faces and edges.
-  # To use MeshDataTool, load a mesh with `#create_from_surface`. When you are finished editing the data commit the data to a mesh with `#commit_to_surface`.
-  # Below is an example of how MeshDataTool may be used.
-  #
-  # ```gdscript
-  #
-  # var mesh = ArrayMesh.new()
-  # mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, BoxMesh.new().get_mesh_arrays())
-  # var mdt = MeshDataTool.new()
-  # mdt.create_from_surface(mesh, 0)
-  # for i in range(mdt.get_vertex_count()):
-  # 	var vertex = mdt.get_vertex(i)
-  # 	# In this example we extend the mesh by one unit, which results in separated faces as it is flat shaded.
-  # 	vertex += mdt.get_vertex_normal(i)
-  # 	# Save your change.
-  # 	mdt.set_vertex(i, vertex)
-  # mesh.clear_surfaces()
-  # mdt.commit_to_surface(mesh)
-  # var mi = MeshInstance.new()
-  # mi.mesh = mesh
-  # add_child(mi)
-  #
-  # ```
-  # ```csharp
-  #
-  # var mesh = new ArrayMesh();
-  # mesh.AddSurfaceFromArrays(Mesh.PrimitiveType.Triangles, new BoxMesh().GetMeshArrays());
-  # var mdt = new MeshDataTool();
-  # mdt.CreateFromSurface(mesh, 0);
-  # for (var i = 0; i < mdt.GetVertexCount(); i++)
-  # {
-  # 	Vector3 vertex = mdt.GetVertex(i);
-  # 	// In this example we extend the mesh by one unit, which results in separated faces as it is flat shaded.
-  # 	vertex += mdt.GetVertexNormal(i);
-  # 	// Save your change.
-  # 	mdt.SetVertex(i, vertex);
-  # }
-  # mesh.ClearSurfaces();
-  # mdt.CommitToSurface(mesh);
-  # var mi = new MeshInstance();
-  # mi.Mesh = mesh;
-  # AddChild(mi);
-  #
-  # ```
-  #
-  # See also `ArrayMesh`, `ImmediateMesh` and `SurfaceTool` for procedural geometry generation.
-  # **Note:** Godot uses clockwise [$2]($1) for front faces of triangle primitive modes.
   class MeshDataTool < Godot::RefCounted
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
     end
     @@mb_clear : Void* = Pointer(Void).null
-    # Clears all data currently in MeshDataTool.
     def clear() : Void
       if @@mb_clear.null?
         @@mb_clear = Bridge.get_method_bind("MeshDataTool", "clear", 3218959716_i64)
@@ -23830,8 +21004,6 @@ module Godot
       Bridge.ptrcall(@@mb_clear, @pointer, Pointer(Pointer(Void)).null, Pointer(Void).null)
     end
     @@mb_create_from_surface : Void* = Pointer(Void).null
-    # Uses specified surface of given `Mesh` to populate data for MeshDataTool.
-    # Requires `Mesh` with primitive type `Mesh.PRIMITIVE_TRIANGLES`.
     def create_from_surface(mesh : ArrayMesh, surface : Int64) : Int64
       if @@mb_create_from_surface.null?
         @@mb_create_from_surface = Bridge.get_method_bind("MeshDataTool", "create_from_surface", 2727020678_i64)
@@ -23846,7 +21018,6 @@ module Godot
       ret
     end
     @@mb_commit_to_surface : Void* = Pointer(Void).null
-    # Adds a new surface to specified `Mesh` with edited data.
     def commit_to_surface(mesh : ArrayMesh, compression_flags : Int64) : Int64
       if @@mb_commit_to_surface.null?
         @@mb_commit_to_surface = Bridge.get_method_bind("MeshDataTool", "commit_to_surface", 2021686445_i64)
@@ -23861,7 +21032,6 @@ module Godot
       ret
     end
     @@mb_get_format : Void* = Pointer(Void).null
-    # Returns the `Mesh`'s format as a combination of the `Mesh.ArrayFormat` flags. For example, a mesh containing both vertices and normals would return a format of `3` because `Mesh.ARRAY_FORMAT_VERTEX` is `1` and `Mesh.ARRAY_FORMAT_NORMAL` is `2`.
     def get_format() : Int64
       if @@mb_get_format.null?
         @@mb_get_format = Bridge.get_method_bind("MeshDataTool", "get_format", 3905245786_i64)
@@ -23871,7 +21041,6 @@ module Godot
       ret
     end
     @@mb_get_vertex_count : Void* = Pointer(Void).null
-    # Returns the total number of vertices in `Mesh`.
     def get_vertex_count() : Int64
       if @@mb_get_vertex_count.null?
         @@mb_get_vertex_count = Bridge.get_method_bind("MeshDataTool", "get_vertex_count", 3905245786_i64)
@@ -23881,7 +21050,6 @@ module Godot
       ret
     end
     @@mb_get_edge_count : Void* = Pointer(Void).null
-    # Returns the number of edges in this `Mesh`.
     def get_edge_count() : Int64
       if @@mb_get_edge_count.null?
         @@mb_get_edge_count = Bridge.get_method_bind("MeshDataTool", "get_edge_count", 3905245786_i64)
@@ -23891,7 +21059,6 @@ module Godot
       ret
     end
     @@mb_get_face_count : Void* = Pointer(Void).null
-    # Returns the number of faces in this `Mesh`.
     def get_face_count() : Int64
       if @@mb_get_face_count.null?
         @@mb_get_face_count = Bridge.get_method_bind("MeshDataTool", "get_face_count", 3905245786_i64)
@@ -23901,7 +21068,6 @@ module Godot
       ret
     end
     @@mb_set_vertex : Void* = Pointer(Void).null
-    # Sets the position of the given vertex.
     def set_vertex(idx : Int64, vertex : Vector3) : Void
       if @@mb_set_vertex.null?
         @@mb_set_vertex = Bridge.get_method_bind("MeshDataTool", "set_vertex", 1530502735_i64)
@@ -23914,7 +21080,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_vertex, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_vertex : Void* = Pointer(Void).null
-    # Returns the position of the given vertex.
     def get_vertex(idx : Int64) : Vector3
       if @@mb_get_vertex.null?
         @@mb_get_vertex = Bridge.get_method_bind("MeshDataTool", "get_vertex", 711720468_i64)
@@ -23927,7 +21092,6 @@ module Godot
       ret
     end
     @@mb_set_vertex_normal : Void* = Pointer(Void).null
-    # Sets the normal of the given vertex.
     def set_vertex_normal(idx : Int64, normal : Vector3) : Void
       if @@mb_set_vertex_normal.null?
         @@mb_set_vertex_normal = Bridge.get_method_bind("MeshDataTool", "set_vertex_normal", 1530502735_i64)
@@ -23940,7 +21104,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_vertex_normal, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_vertex_normal : Void* = Pointer(Void).null
-    # Returns the normal of the given vertex.
     def get_vertex_normal(idx : Int64) : Vector3
       if @@mb_get_vertex_normal.null?
         @@mb_get_vertex_normal = Bridge.get_method_bind("MeshDataTool", "get_vertex_normal", 711720468_i64)
@@ -23953,8 +21116,6 @@ module Godot
       ret
     end
     @@mb_set_vertex_tangent : Void* = Pointer(Void).null
-    # Sets the tangent of the given vertex.
-    # **Note:** Even though `tangent` is a `Plane`, it does not directly represent the tangent plane. Its `Plane.x`, `Plane.y`, and `Plane.z` represent the tangent vector and `Plane.d` should be either `-1` or `1`. See also `Mesh.ARRAY_TANGENT`.
     def set_vertex_tangent(idx : Int64, tangent : Plane) : Void
       if @@mb_set_vertex_tangent.null?
         @@mb_set_vertex_tangent = Bridge.get_method_bind("MeshDataTool", "set_vertex_tangent", 1104099133_i64)
@@ -23967,7 +21128,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_vertex_tangent, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_vertex_tangent : Void* = Pointer(Void).null
-    # Returns the tangent of the given vertex.
     def get_vertex_tangent(idx : Int64) : Plane
       if @@mb_get_vertex_tangent.null?
         @@mb_get_vertex_tangent = Bridge.get_method_bind("MeshDataTool", "get_vertex_tangent", 1372055458_i64)
@@ -23980,7 +21140,6 @@ module Godot
       Plane.new(ret_ptr)
     end
     @@mb_set_vertex_uv : Void* = Pointer(Void).null
-    # Sets the UV of the given vertex.
     def set_vertex_uv(idx : Int64, uv : Vector2) : Void
       if @@mb_set_vertex_uv.null?
         @@mb_set_vertex_uv = Bridge.get_method_bind("MeshDataTool", "set_vertex_uv", 163021252_i64)
@@ -23993,7 +21152,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_vertex_uv, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_vertex_uv : Void* = Pointer(Void).null
-    # Returns the UV of the given vertex.
     def get_vertex_uv(idx : Int64) : Vector2
       if @@mb_get_vertex_uv.null?
         @@mb_get_vertex_uv = Bridge.get_method_bind("MeshDataTool", "get_vertex_uv", 2299179447_i64)
@@ -24006,7 +21164,6 @@ module Godot
       ret
     end
     @@mb_set_vertex_uv2 : Void* = Pointer(Void).null
-    # Sets the UV2 of the given vertex.
     def set_vertex_uv2(idx : Int64, uv2 : Vector2) : Void
       if @@mb_set_vertex_uv2.null?
         @@mb_set_vertex_uv2 = Bridge.get_method_bind("MeshDataTool", "set_vertex_uv2", 163021252_i64)
@@ -24019,7 +21176,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_vertex_uv2, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_vertex_uv2 : Void* = Pointer(Void).null
-    # Returns the UV2 of the given vertex.
     def get_vertex_uv2(idx : Int64) : Vector2
       if @@mb_get_vertex_uv2.null?
         @@mb_get_vertex_uv2 = Bridge.get_method_bind("MeshDataTool", "get_vertex_uv2", 2299179447_i64)
@@ -24032,7 +21188,6 @@ module Godot
       ret
     end
     @@mb_set_vertex_color : Void* = Pointer(Void).null
-    # Sets the color of the given vertex.
     def set_vertex_color(idx : Int64, color : Color) : Void
       if @@mb_set_vertex_color.null?
         @@mb_set_vertex_color = Bridge.get_method_bind("MeshDataTool", "set_vertex_color", 2878471219_i64)
@@ -24045,7 +21200,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_vertex_color, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_vertex_color : Void* = Pointer(Void).null
-    # Returns the color of the given vertex.
     def get_vertex_color(idx : Int64) : Color
       if @@mb_get_vertex_color.null?
         @@mb_get_vertex_color = Bridge.get_method_bind("MeshDataTool", "get_vertex_color", 3457211756_i64)
@@ -24058,7 +21212,6 @@ module Godot
       ret
     end
     @@mb_set_vertex_bones : Void* = Pointer(Void).null
-    # Sets the bones of the given vertex.
     def set_vertex_bones(idx : Int64, bones : Void*) : Void
       if @@mb_set_vertex_bones.null?
         @@mb_set_vertex_bones = Bridge.get_method_bind("MeshDataTool", "set_vertex_bones", 3500328261_i64)
@@ -24071,7 +21224,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_vertex_bones, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_vertex_bones : Void* = Pointer(Void).null
-    # Returns the bones of the given vertex.
     def get_vertex_bones(idx : Int64) : Void*
       if @@mb_get_vertex_bones.null?
         @@mb_get_vertex_bones = Bridge.get_method_bind("MeshDataTool", "get_vertex_bones", 1706082319_i64)
@@ -24084,7 +21236,6 @@ module Godot
       ret_ptr
     end
     @@mb_set_vertex_weights : Void* = Pointer(Void).null
-    # Sets the bone weights of the given vertex.
     def set_vertex_weights(idx : Int64, weights : Void*) : Void
       if @@mb_set_vertex_weights.null?
         @@mb_set_vertex_weights = Bridge.get_method_bind("MeshDataTool", "set_vertex_weights", 1345852415_i64)
@@ -24097,7 +21248,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_vertex_weights, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_vertex_weights : Void* = Pointer(Void).null
-    # Returns bone weights of the given vertex.
     def get_vertex_weights(idx : Int64) : Void*
       if @@mb_get_vertex_weights.null?
         @@mb_get_vertex_weights = Bridge.get_method_bind("MeshDataTool", "get_vertex_weights", 1542882410_i64)
@@ -24110,7 +21260,6 @@ module Godot
       ret_ptr
     end
     @@mb_set_vertex_meta : Void* = Pointer(Void).null
-    # Sets the metadata associated with the given vertex.
     def set_vertex_meta(idx : Int64, meta : Void*) : Void
       if @@mb_set_vertex_meta.null?
         @@mb_set_vertex_meta = Bridge.get_method_bind("MeshDataTool", "set_vertex_meta", 2152698145_i64)
@@ -24123,7 +21272,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_vertex_meta, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_vertex_meta : Void* = Pointer(Void).null
-    # Returns the metadata associated with the given vertex.
     def get_vertex_meta(idx : Int64) : Void*
       if @@mb_get_vertex_meta.null?
         @@mb_get_vertex_meta = Bridge.get_method_bind("MeshDataTool", "get_vertex_meta", 4227898402_i64)
@@ -24138,7 +21286,6 @@ module Godot
       ret_ptr
     end
     @@mb_get_vertex_edges : Void* = Pointer(Void).null
-    # Returns an array of edges that share the given vertex.
     def get_vertex_edges(idx : Int64) : Void*
       if @@mb_get_vertex_edges.null?
         @@mb_get_vertex_edges = Bridge.get_method_bind("MeshDataTool", "get_vertex_edges", 1706082319_i64)
@@ -24151,7 +21298,6 @@ module Godot
       ret_ptr
     end
     @@mb_get_vertex_faces : Void* = Pointer(Void).null
-    # Returns an array of faces that share the given vertex.
     def get_vertex_faces(idx : Int64) : Void*
       if @@mb_get_vertex_faces.null?
         @@mb_get_vertex_faces = Bridge.get_method_bind("MeshDataTool", "get_vertex_faces", 1706082319_i64)
@@ -24164,8 +21310,6 @@ module Godot
       ret_ptr
     end
     @@mb_get_edge_vertex : Void* = Pointer(Void).null
-    # Returns the index of the specified `vertex` connected to the edge at index `idx`.
-    # `vertex` can only be `0` or `1`, as edges are composed of two vertices.
     def get_edge_vertex(idx : Int64, vertex : Int64) : Int64
       if @@mb_get_edge_vertex.null?
         @@mb_get_edge_vertex = Bridge.get_method_bind("MeshDataTool", "get_edge_vertex", 3175239445_i64)
@@ -24180,7 +21324,6 @@ module Godot
       ret
     end
     @@mb_get_edge_faces : Void* = Pointer(Void).null
-    # Returns array of faces that touch given edge.
     def get_edge_faces(idx : Int64) : Void*
       if @@mb_get_edge_faces.null?
         @@mb_get_edge_faces = Bridge.get_method_bind("MeshDataTool", "get_edge_faces", 1706082319_i64)
@@ -24193,7 +21336,6 @@ module Godot
       ret_ptr
     end
     @@mb_set_edge_meta : Void* = Pointer(Void).null
-    # Sets the metadata of the given edge.
     def set_edge_meta(idx : Int64, meta : Void*) : Void
       if @@mb_set_edge_meta.null?
         @@mb_set_edge_meta = Bridge.get_method_bind("MeshDataTool", "set_edge_meta", 2152698145_i64)
@@ -24206,7 +21348,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_edge_meta, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_edge_meta : Void* = Pointer(Void).null
-    # Returns meta information assigned to given edge.
     def get_edge_meta(idx : Int64) : Void*
       if @@mb_get_edge_meta.null?
         @@mb_get_edge_meta = Bridge.get_method_bind("MeshDataTool", "get_edge_meta", 4227898402_i64)
@@ -24221,23 +21362,6 @@ module Godot
       ret_ptr
     end
     @@mb_get_face_vertex : Void* = Pointer(Void).null
-    # Returns the specified vertex index of the given face.
-    # `vertex` must be either `0`, `1`, or `2` because faces contain three vertices.
-    #
-    # ```gdscript
-    #
-    # var index = mesh_data_tool.get_face_vertex(0, 1) # Gets the index of the second vertex of the first face.
-    # var position = mesh_data_tool.get_vertex(index)
-    # var normal = mesh_data_tool.get_vertex_normal(index)
-    #
-    # ```
-    # ```csharp
-    #
-    # int index = meshDataTool.GetFaceVertex(0, 1); // Gets the index of the second vertex of the first face.
-    # Vector3 position = meshDataTool.GetVertex(index);
-    # Vector3 normal = meshDataTool.GetVertexNormal(index);
-    #
-    # ```
     def get_face_vertex(idx : Int64, vertex : Int64) : Int64
       if @@mb_get_face_vertex.null?
         @@mb_get_face_vertex = Bridge.get_method_bind("MeshDataTool", "get_face_vertex", 3175239445_i64)
@@ -24252,8 +21376,6 @@ module Godot
       ret
     end
     @@mb_get_face_edge : Void* = Pointer(Void).null
-    # Returns the edge associated with the face at index `idx`.
-    # `edge` argument must be either `0`, `1`, or `2` because a face only has three edges.
     def get_face_edge(idx : Int64, edge : Int64) : Int64
       if @@mb_get_face_edge.null?
         @@mb_get_face_edge = Bridge.get_method_bind("MeshDataTool", "get_face_edge", 3175239445_i64)
@@ -24268,7 +21390,6 @@ module Godot
       ret
     end
     @@mb_set_face_meta : Void* = Pointer(Void).null
-    # Sets the metadata of the given face.
     def set_face_meta(idx : Int64, meta : Void*) : Void
       if @@mb_set_face_meta.null?
         @@mb_set_face_meta = Bridge.get_method_bind("MeshDataTool", "set_face_meta", 2152698145_i64)
@@ -24281,7 +21402,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_face_meta, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_face_meta : Void* = Pointer(Void).null
-    # Returns the metadata associated with the given face.
     def get_face_meta(idx : Int64) : Void*
       if @@mb_get_face_meta.null?
         @@mb_get_face_meta = Bridge.get_method_bind("MeshDataTool", "get_face_meta", 4227898402_i64)
@@ -24296,7 +21416,6 @@ module Godot
       ret_ptr
     end
     @@mb_get_face_normal : Void* = Pointer(Void).null
-    # Calculates and returns the face normal of the given face.
     def get_face_normal(idx : Int64) : Vector3
       if @@mb_get_face_normal.null?
         @@mb_get_face_normal = Bridge.get_method_bind("MeshDataTool", "get_face_normal", 711720468_i64)
@@ -24309,7 +21428,6 @@ module Godot
       ret
     end
     @@mb_set_material : Void* = Pointer(Void).null
-    # Sets the material to be used by newly-constructed `Mesh`.
     def set_material(material : Material) : Void
       if @@mb_set_material.null?
         @@mb_set_material = Bridge.get_method_bind("MeshDataTool", "set_material", 2757459619_i64)
@@ -24320,7 +21438,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_material, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_material : Void* = Pointer(Void).null
-    # Returns the material assigned to the `Mesh`.
     def get_material() : Material
       if @@mb_get_material.null?
         @@mb_get_material = Bridge.get_method_bind("MeshDataTool", "get_material", 5934680_i64)
@@ -24330,11 +21447,6 @@ module Godot
       Material.new(ret_ptr)
     end
   end
-  # Node used for displaying a `Mesh` in 2D.
-  #
-  # Node used for displaying a `Mesh` in 2D. This can be faster to render compared to displaying a `Sprite2D` node with large transparent areas, especially if the node takes up a lot of space on screen at high viewport resolutions. This is because using a mesh designed to fit the sprite's opaque areas will reduce GPU fill rate utilization (at the cost of increased vertex processing utilization).
-  # When a `Mesh` has to be instantiated more than thousands of times close to each other, consider using a `MultiMesh` in a `MultiMeshInstance2D` instead.
-  # A `MeshInstance2D` can be created from an existing `Sprite2D` via a tool in the editor toolbar. Select the `Sprite2D` node, then choose **Sprite2D > Convert to MeshInstance2D** at the top of the 2D editor viewport.
   class MeshInstance2D < Godot::Node2D
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -24378,9 +21490,6 @@ module Godot
       Texture2D.new(ret_ptr)
     end
   end
-  # Node that instances meshes into a scenario.
-  #
-  # MeshInstance3D is a node that takes a `Mesh` resource and adds it to the current scenario by creating an instance of it. This is the class most often used to render 3D geometry and can be used to instance a single `Mesh` in many places. This allows reusing geometry, which can save on resources. When a `Mesh` has to be instantiated more than thousands of times at close proximity, consider using a `MultiMesh` in a `MultiMeshInstance3D` instead.
   class MeshInstance3D < Godot::GeometryInstance3D
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -24443,7 +21552,6 @@ module Godot
       Skin.new(ret_ptr)
     end
     @@mb_get_skin_reference : Void* = Pointer(Void).null
-    # Returns the internal `SkinReference` containing the skeleton's `RID` attached to this RID. See also `#Resource.get_rid`, `#SkinReference.get_skeleton`, and `#RenderingServer.instance_attach_skeleton`.
     def get_skin_reference() : SkinReference
       if @@mb_get_skin_reference.null?
         @@mb_get_skin_reference = Bridge.get_method_bind("MeshInstance3D", "get_skin_reference", 2060603409_i64)
@@ -24453,7 +21561,6 @@ module Godot
       SkinReference.new(ret_ptr)
     end
     @@mb_get_surface_override_material_count : Void* = Pointer(Void).null
-    # Returns the number of surface override materials. This is equivalent to `#Mesh.get_surface_count`. See also `#get_surface_override_material`.
     def get_surface_override_material_count() : Int64
       if @@mb_get_surface_override_material_count.null?
         @@mb_get_surface_override_material_count = Bridge.get_method_bind("MeshInstance3D", "get_surface_override_material_count", 3905245786_i64)
@@ -24463,8 +21570,6 @@ module Godot
       ret
     end
     @@mb_set_surface_override_material : Void* = Pointer(Void).null
-    # Sets the override `material` for the specified `surface` of the `Mesh` resource. This material is associated with this `MeshInstance3D` rather than with `mesh`.
-    # **Note:** This assigns the `Material` associated to the `MeshInstance3D`'s Surface Material Override properties, not the material within the `Mesh` resource. To set the material within the `Mesh` resource, use `#Mesh.surface_set_material` instead.
     def set_surface_override_material(surface : Int64, material : Material) : Void
       if @@mb_set_surface_override_material.null?
         @@mb_set_surface_override_material = Bridge.get_method_bind("MeshInstance3D", "set_surface_override_material", 3671737478_i64)
@@ -24477,8 +21582,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_surface_override_material, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_surface_override_material : Void* = Pointer(Void).null
-    # Returns the override `Material` for the specified `surface` of the `Mesh` resource. See also `#get_surface_override_material_count`.
-    # **Note:** This returns the `Material` associated to the `MeshInstance3D`'s Surface Material Override properties, not the material within the `Mesh` resource. To get the material within the `Mesh` resource, use `#Mesh.surface_get_material` instead.
     def get_surface_override_material(surface : Int64) : Material
       if @@mb_get_surface_override_material.null?
         @@mb_get_surface_override_material = Bridge.get_method_bind("MeshInstance3D", "get_surface_override_material", 2897466400_i64)
@@ -24491,8 +21594,6 @@ module Godot
       Material.new(ret_ptr)
     end
     @@mb_get_active_material : Void* = Pointer(Void).null
-    # Returns the `Material` that will be used by the `Mesh` when drawing. This can return the `GeometryInstance3D.material_override`, the surface override `Material` defined in this `MeshInstance3D`, or the surface `Material` defined in the `mesh`. For example, if `GeometryInstance3D.material_override` is used, all surfaces will return the override material.
-    # Returns `null` if no material is active, including when `mesh` is `null`.
     def get_active_material(surface : Int64) : Material
       if @@mb_get_active_material.null?
         @@mb_get_active_material = Bridge.get_method_bind("MeshInstance3D", "get_active_material", 2897466400_i64)
@@ -24505,7 +21606,6 @@ module Godot
       Material.new(ret_ptr)
     end
     @@mb_create_trimesh_collision : Void* = Pointer(Void).null
-    # This helper creates a `StaticBody3D` child node with a `ConcavePolygonShape3D` collision shape calculated from the mesh geometry. It's mainly used for testing.
     def create_trimesh_collision() : Void
       if @@mb_create_trimesh_collision.null?
         @@mb_create_trimesh_collision = Bridge.get_method_bind("MeshInstance3D", "create_trimesh_collision", 3218959716_i64)
@@ -24513,9 +21613,6 @@ module Godot
       Bridge.ptrcall(@@mb_create_trimesh_collision, @pointer, Pointer(Pointer(Void)).null, Pointer(Void).null)
     end
     @@mb_create_convex_collision : Void* = Pointer(Void).null
-    # This helper creates a `StaticBody3D` child node with a `ConvexPolygonShape3D` collision shape calculated from the mesh geometry. It's mainly used for testing.
-    # If `clean` is `true` (default), duplicate and interior vertices are removed automatically. You can set it to `false` to make the process faster if not needed.
-    # If `simplify` is `true`, the geometry can be further simplified to reduce the number of vertices. Disabled by default.
     def create_convex_collision(clean : Bool, simplify : Bool) : Void
       if @@mb_create_convex_collision.null?
         @@mb_create_convex_collision = Bridge.get_method_bind("MeshInstance3D", "create_convex_collision", 2751962654_i64)
@@ -24528,7 +21625,6 @@ module Godot
       Bridge.ptrcall(@@mb_create_convex_collision, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_create_multiple_convex_collisions : Void* = Pointer(Void).null
-    # This helper creates a `StaticBody3D` child node with multiple `ConvexPolygonShape3D` collision shapes calculated from the mesh geometry via convex decomposition. The convex decomposition operation can be controlled with parameters from the optional `settings`.
     def create_multiple_convex_collisions(settings : MeshConvexDecompositionSettings) : Void
       if @@mb_create_multiple_convex_collisions.null?
         @@mb_create_multiple_convex_collisions = Bridge.get_method_bind("MeshInstance3D", "create_multiple_convex_collisions", 628789669_i64)
@@ -24539,7 +21635,6 @@ module Godot
       Bridge.ptrcall(@@mb_create_multiple_convex_collisions, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_blend_shape_count : Void* = Pointer(Void).null
-    # Returns the number of blend shapes available. Produces an error if `mesh` is `null`.
     def get_blend_shape_count() : Int64
       if @@mb_get_blend_shape_count.null?
         @@mb_get_blend_shape_count = Bridge.get_method_bind("MeshInstance3D", "get_blend_shape_count", 3905245786_i64)
@@ -24549,7 +21644,6 @@ module Godot
       ret
     end
     @@mb_find_blend_shape_by_name : Void* = Pointer(Void).null
-    # Returns the index of the blend shape with the given `name`. Returns `-1` if no blend shape with this name exists, including when `mesh` is `null`.
     def find_blend_shape_by_name(name : String) : Int64
       if @@mb_find_blend_shape_by_name.null?
         @@mb_find_blend_shape_by_name = Bridge.get_method_bind("MeshInstance3D", "find_blend_shape_by_name", 4150868206_i64)
@@ -24564,7 +21658,6 @@ module Godot
       Bridge.free_string_name(sn_0)
     end
     @@mb_get_blend_shape_value : Void* = Pointer(Void).null
-    # Returns the value of the blend shape at the given `blend_shape_idx`. Returns `0.0` and produces an error if `mesh` is `null` or doesn't have a blend shape at that index.
     def get_blend_shape_value(blend_shape_idx : Int64) : Float64
       if @@mb_get_blend_shape_value.null?
         @@mb_get_blend_shape_value = Bridge.get_method_bind("MeshInstance3D", "get_blend_shape_value", 2339986948_i64)
@@ -24577,7 +21670,6 @@ module Godot
       ret
     end
     @@mb_set_blend_shape_value : Void* = Pointer(Void).null
-    # Sets the value of the blend shape at `blend_shape_idx` to `value`. Produces an error if `mesh` is `null` or doesn't have a blend shape at that index.
     def set_blend_shape_value(blend_shape_idx : Int64, value : Float64) : Void
       if @@mb_set_blend_shape_value.null?
         @@mb_set_blend_shape_value = Bridge.get_method_bind("MeshInstance3D", "set_blend_shape_value", 1602489585_i64)
@@ -24590,7 +21682,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_blend_shape_value, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_create_debug_tangents : Void* = Pointer(Void).null
-    # This helper creates a `MeshInstance3D` child node with gizmos at every vertex calculated from the mesh geometry. It's mainly used for testing.
     def create_debug_tangents() : Void
       if @@mb_create_debug_tangents.null?
         @@mb_create_debug_tangents = Bridge.get_method_bind("MeshInstance3D", "create_debug_tangents", 3218959716_i64)
@@ -24598,8 +21689,6 @@ module Godot
       Bridge.ptrcall(@@mb_create_debug_tangents, @pointer, Pointer(Pointer(Void)).null, Pointer(Void).null)
     end
     @@mb_bake_mesh_from_current_blend_shape_mix : Void* = Pointer(Void).null
-    # Takes a snapshot from the current `ArrayMesh` with all blend shapes applied according to their current weights and bakes it to the provided `existing` mesh. If no `existing` mesh is provided a new `ArrayMesh` is created, baked and returned. Mesh surface materials are not copied.
-    # **Performance:** `Mesh` data needs to be received from the GPU, stalling the `RenderingServer` in the process.
     def bake_mesh_from_current_blend_shape_mix(existing : ArrayMesh) : ArrayMesh
       if @@mb_bake_mesh_from_current_blend_shape_mix.null?
         @@mb_bake_mesh_from_current_blend_shape_mix = Bridge.get_method_bind("MeshInstance3D", "bake_mesh_from_current_blend_shape_mix", 1457573577_i64)
@@ -24612,8 +21701,6 @@ module Godot
       ArrayMesh.new(ret_ptr)
     end
     @@mb_bake_mesh_from_current_skeleton_pose : Void* = Pointer(Void).null
-    # Takes a snapshot of the current animated skeleton pose of the skinned mesh and bakes it to the provided `existing` mesh. If no `existing` mesh is provided a new `ArrayMesh` is created, baked, and returned. Requires a skeleton with a registered skin to work. Blendshapes are ignored. Mesh surface materials are not copied.
-    # **Performance:** `Mesh` data needs to be retrieved from the GPU, stalling the `RenderingServer` in the process.
     def bake_mesh_from_current_skeleton_pose(existing : ArrayMesh) : ArrayMesh
       if @@mb_bake_mesh_from_current_skeleton_pose.null?
         @@mb_bake_mesh_from_current_skeleton_pose = Bridge.get_method_bind("MeshInstance3D", "bake_mesh_from_current_skeleton_pose", 1457573577_i64)
@@ -24626,16 +21713,11 @@ module Godot
       ArrayMesh.new(ret_ptr)
     end
   end
-  # Library of meshes.
-  #
-  # A library of meshes. Contains a list of `Mesh` resources, each with a name and ID. Each item can also include collision and navigation shapes. This resource is used in `GridMap`.
   class MeshLibrary < Godot::Resource
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
     end
     @@mb_create_item : Void* = Pointer(Void).null
-    # Creates a new item in the library with the given ID.
-    # You can get an unused ID from `#get_last_unused_item_id`.
     def create_item(id : Int64) : Void
       if @@mb_create_item.null?
         @@mb_create_item = Bridge.get_method_bind("MeshLibrary", "create_item", 1286410249_i64)
@@ -24646,8 +21728,6 @@ module Godot
       Bridge.ptrcall(@@mb_create_item, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_set_item_name : Void* = Pointer(Void).null
-    # Sets the item's name.
-    # This name is shown in the editor. It can also be used to look up the item later using `#find_item_by_name`.
     def set_item_name(id : Int64, name : String) : Void
       if @@mb_set_item_name.null?
         @@mb_set_item_name = Bridge.get_method_bind("MeshLibrary", "set_item_name", 501894301_i64)
@@ -24662,7 +21742,6 @@ module Godot
       Bridge.free_string(str_1)
     end
     @@mb_set_item_category : Void* = Pointer(Void).null
-    # Sets the `category` for a specific item `id` for organization in the `GridMap` editor. A category can include `/` as a delimiter to create subcategories.
     def set_item_category(id : Int64, category : String) : Void
       if @@mb_set_item_category.null?
         @@mb_set_item_category = Bridge.get_method_bind("MeshLibrary", "set_item_category", 3780747571_i64)
@@ -24677,7 +21756,6 @@ module Godot
       Bridge.free_string_name(sn_1)
     end
     @@mb_set_item_mesh : Void* = Pointer(Void).null
-    # Sets the item's mesh.
     def set_item_mesh(id : Int64, mesh : Mesh) : Void
       if @@mb_set_item_mesh.null?
         @@mb_set_item_mesh = Bridge.get_method_bind("MeshLibrary", "set_item_mesh", 969122797_i64)
@@ -24690,7 +21768,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_item_mesh, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_set_item_mesh_transform : Void* = Pointer(Void).null
-    # Sets the transform to apply to the item's mesh.
     def set_item_mesh_transform(id : Int64, mesh_transform : Transform3D) : Void
       if @@mb_set_item_mesh_transform.null?
         @@mb_set_item_mesh_transform = Bridge.get_method_bind("MeshLibrary", "set_item_mesh_transform", 3616898986_i64)
@@ -24703,7 +21780,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_item_mesh_transform, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_set_item_mesh_cast_shadow : Void* = Pointer(Void).null
-    # Sets the item's shadow casting mode to `shadow_casting_setting`.
     def set_item_mesh_cast_shadow(id : Int64, shadow_casting_setting : Int64) : Void
       if @@mb_set_item_mesh_cast_shadow.null?
         @@mb_set_item_mesh_cast_shadow = Bridge.get_method_bind("MeshLibrary", "set_item_mesh_cast_shadow", 3923400443_i64)
@@ -24716,7 +21792,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_item_mesh_cast_shadow, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_set_item_navigation_mesh : Void* = Pointer(Void).null
-    # Sets the item's navigation mesh.
     def set_item_navigation_mesh(id : Int64, navigation_mesh : NavigationMesh) : Void
       if @@mb_set_item_navigation_mesh.null?
         @@mb_set_item_navigation_mesh = Bridge.get_method_bind("MeshLibrary", "set_item_navigation_mesh", 3483353960_i64)
@@ -24729,7 +21804,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_item_navigation_mesh, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_set_item_navigation_mesh_transform : Void* = Pointer(Void).null
-    # Sets the transform to apply to the item's navigation mesh.
     def set_item_navigation_mesh_transform(id : Int64, navigation_mesh : Transform3D) : Void
       if @@mb_set_item_navigation_mesh_transform.null?
         @@mb_set_item_navigation_mesh_transform = Bridge.get_method_bind("MeshLibrary", "set_item_navigation_mesh_transform", 3616898986_i64)
@@ -24742,7 +21816,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_item_navigation_mesh_transform, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_set_item_navigation_layers : Void* = Pointer(Void).null
-    # Sets the item's navigation layers bitmask.
     def set_item_navigation_layers(id : Int64, navigation_layers : Int64) : Void
       if @@mb_set_item_navigation_layers.null?
         @@mb_set_item_navigation_layers = Bridge.get_method_bind("MeshLibrary", "set_item_navigation_layers", 3937882851_i64)
@@ -24755,8 +21828,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_item_navigation_layers, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_set_item_shapes : Void* = Pointer(Void).null
-    # Sets an item's collision shapes.
-    # The array should consist of `Shape3D` objects, each followed by a `Transform3D` that will be applied to it. For shapes that should not have a transform, use `Transform3D.IDENTITY`.
     def set_item_shapes(id : Int64, shapes : Godot::Array) : Void
       if @@mb_set_item_shapes.null?
         @@mb_set_item_shapes = Bridge.get_method_bind("MeshLibrary", "set_item_shapes", 537221740_i64)
@@ -24769,7 +21840,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_item_shapes, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_set_item_preview : Void* = Pointer(Void).null
-    # Sets a texture to use as the item's preview icon in the editor.
     def set_item_preview(id : Int64, texture : Texture2D) : Void
       if @@mb_set_item_preview.null?
         @@mb_set_item_preview = Bridge.get_method_bind("MeshLibrary", "set_item_preview", 666127730_i64)
@@ -24782,7 +21852,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_item_preview, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_item_name : Void* = Pointer(Void).null
-    # Returns the item's name.
     def get_item_name(id : Int64) : String
       if @@mb_get_item_name.null?
         @@mb_get_item_name = Bridge.get_method_bind("MeshLibrary", "get_item_name", 844755477_i64)
@@ -24793,7 +21862,6 @@ module Godot
       ""
     end
     @@mb_get_item_category : Void* = Pointer(Void).null
-    # Returns the category for a specific item `id`. See also `#set_item_category`.
     def get_item_category(id : Int64) : String
       if @@mb_get_item_category.null?
         @@mb_get_item_category = Bridge.get_method_bind("MeshLibrary", "get_item_category", 659327637_i64)
@@ -24804,7 +21872,6 @@ module Godot
       ""
     end
     @@mb_get_item_mesh : Void* = Pointer(Void).null
-    # Returns the item's mesh.
     def get_item_mesh(id : Int64) : Mesh
       if @@mb_get_item_mesh.null?
         @@mb_get_item_mesh = Bridge.get_method_bind("MeshLibrary", "get_item_mesh", 1576363275_i64)
@@ -24817,7 +21884,6 @@ module Godot
       Mesh.new(ret_ptr)
     end
     @@mb_get_item_mesh_transform : Void* = Pointer(Void).null
-    # Returns the transform applied to the item's mesh.
     def get_item_mesh_transform(id : Int64) : Transform3D
       if @@mb_get_item_mesh_transform.null?
         @@mb_get_item_mesh_transform = Bridge.get_method_bind("MeshLibrary", "get_item_mesh_transform", 1965739696_i64)
@@ -24830,7 +21896,6 @@ module Godot
       ret
     end
     @@mb_get_item_mesh_cast_shadow : Void* = Pointer(Void).null
-    # Returns the item's shadow casting mode.
     def get_item_mesh_cast_shadow(id : Int64) : Int64
       if @@mb_get_item_mesh_cast_shadow.null?
         @@mb_get_item_mesh_cast_shadow = Bridge.get_method_bind("MeshLibrary", "get_item_mesh_cast_shadow", 1841766007_i64)
@@ -24843,7 +21908,6 @@ module Godot
       ret
     end
     @@mb_get_item_navigation_mesh : Void* = Pointer(Void).null
-    # Returns the item's navigation mesh.
     def get_item_navigation_mesh(id : Int64) : NavigationMesh
       if @@mb_get_item_navigation_mesh.null?
         @@mb_get_item_navigation_mesh = Bridge.get_method_bind("MeshLibrary", "get_item_navigation_mesh", 2729647406_i64)
@@ -24856,7 +21920,6 @@ module Godot
       NavigationMesh.new(ret_ptr)
     end
     @@mb_get_item_navigation_mesh_transform : Void* = Pointer(Void).null
-    # Returns the transform applied to the item's navigation mesh.
     def get_item_navigation_mesh_transform(id : Int64) : Transform3D
       if @@mb_get_item_navigation_mesh_transform.null?
         @@mb_get_item_navigation_mesh_transform = Bridge.get_method_bind("MeshLibrary", "get_item_navigation_mesh_transform", 1965739696_i64)
@@ -24869,7 +21932,6 @@ module Godot
       ret
     end
     @@mb_get_item_navigation_layers : Void* = Pointer(Void).null
-    # Returns the item's navigation layers bitmask.
     def get_item_navigation_layers(id : Int64) : Int64
       if @@mb_get_item_navigation_layers.null?
         @@mb_get_item_navigation_layers = Bridge.get_method_bind("MeshLibrary", "get_item_navigation_layers", 923996154_i64)
@@ -24882,8 +21944,6 @@ module Godot
       ret
     end
     @@mb_get_item_shapes : Void* = Pointer(Void).null
-    # Returns an item's collision shapes.
-    # The array consists of each `Shape3D` followed by its `Transform3D`.
     def get_item_shapes(id : Int64) : Godot::Array
       if @@mb_get_item_shapes.null?
         @@mb_get_item_shapes = Bridge.get_method_bind("MeshLibrary", "get_item_shapes", 663333327_i64)
@@ -24896,7 +21956,6 @@ module Godot
       Godot::Array.new(ret_ptr)
     end
     @@mb_get_item_preview : Void* = Pointer(Void).null
-    # When running in the editor, returns a generated item preview (a 3D rendering in isometric perspective). When used in a running project, returns the manually-defined item preview which can be set using `#set_item_preview`. Returns an empty `Texture2D` if no preview was manually set in a running project.
     def get_item_preview(id : Int64) : Texture2D
       if @@mb_get_item_preview.null?
         @@mb_get_item_preview = Bridge.get_method_bind("MeshLibrary", "get_item_preview", 3536238170_i64)
@@ -24909,7 +21968,6 @@ module Godot
       Texture2D.new(ret_ptr)
     end
     @@mb_remove_item : Void* = Pointer(Void).null
-    # Removes the item.
     def remove_item(id : Int64) : Void
       if @@mb_remove_item.null?
         @@mb_remove_item = Bridge.get_method_bind("MeshLibrary", "remove_item", 1286410249_i64)
@@ -24920,7 +21978,6 @@ module Godot
       Bridge.ptrcall(@@mb_remove_item, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_find_item_by_name : Void* = Pointer(Void).null
-    # Returns the first item with the given name, or `-1` if no item is found.
     def find_item_by_name(name : String) : Int64
       if @@mb_find_item_by_name.null?
         @@mb_find_item_by_name = Bridge.get_method_bind("MeshLibrary", "find_item_by_name", 1321353865_i64)
@@ -24935,7 +21992,6 @@ module Godot
       Bridge.free_string(str_0)
     end
     @@mb_clear : Void* = Pointer(Void).null
-    # Clears the library.
     def clear() : Void
       if @@mb_clear.null?
         @@mb_clear = Bridge.get_method_bind("MeshLibrary", "clear", 3218959716_i64)
@@ -24943,7 +21999,6 @@ module Godot
       Bridge.ptrcall(@@mb_clear, @pointer, Pointer(Pointer(Void)).null, Pointer(Void).null)
     end
     @@mb_get_item_list : Void* = Pointer(Void).null
-    # Returns the list of item IDs in use.
     def get_item_list() : Void*
       if @@mb_get_item_list.null?
         @@mb_get_item_list = Bridge.get_method_bind("MeshLibrary", "get_item_list", 1930428628_i64)
@@ -24953,7 +22008,6 @@ module Godot
       ret_ptr
     end
     @@mb_get_item_count : Void* = Pointer(Void).null
-    # Returns the number of items present in the library.
     def get_item_count() : Int64
       if @@mb_get_item_count.null?
         @@mb_get_item_count = Bridge.get_method_bind("MeshLibrary", "get_item_count", 3905245786_i64)
@@ -24963,7 +22017,6 @@ module Godot
       ret
     end
     @@mb_get_last_unused_item_id : Void* = Pointer(Void).null
-    # Gets an unused ID for a new item.
     def get_last_unused_item_id() : Int64
       if @@mb_get_last_unused_item_id.null?
         @@mb_get_last_unused_item_id = Bridge.get_method_bind("MeshLibrary", "get_last_unused_item_id", 3905245786_i64)
@@ -24973,9 +22026,6 @@ module Godot
       ret
     end
   end
-  # Simple texture that uses a mesh to draw itself.
-  #
-  # Simple texture that uses a mesh to draw itself. It's limited because flags can't be changed and region drawing is not supported.
   class MeshTexture < Godot::Texture2D
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -25038,17 +22088,11 @@ module Godot
       Texture2D.new(ret_ptr)
     end
   end
-  # Interpolates an abstract value and supplies it to a method called over time.
-  #
-  # `MethodTweener` is similar to a combination of `CallbackTweener` and `PropertyTweener`. It calls a method providing an interpolated value as a parameter. See `#Tween.tween_method` for more usage information.
-  # The tweener will finish automatically if the callback's target object is freed.
-  # **Note:** `#Tween.tween_method` is the only correct way to create `MethodTweener`. Any `MethodTweener` created manually will not function correctly.
   class MethodTweener < Godot::Tweener
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
     end
     @@mb_set_delay : Void* = Pointer(Void).null
-    # Sets the time in seconds after which the `MethodTweener` will start interpolating. By default there's no delay.
     def set_delay(delay : Float64) : MethodTweener
       if @@mb_set_delay.null?
         @@mb_set_delay = Bridge.get_method_bind("MethodTweener", "set_delay", 266477812_i64)
@@ -25061,7 +22105,6 @@ module Godot
       MethodTweener.new(ret_ptr)
     end
     @@mb_set_trans : Void* = Pointer(Void).null
-    # Sets the type of used transition from `Tween.TransitionType`. If not set, the default transition is used from the `Tween` that contains this Tweener.
     def set_trans(trans : Int64) : MethodTweener
       if @@mb_set_trans.null?
         @@mb_set_trans = Bridge.get_method_bind("MethodTweener", "set_trans", 3740975367_i64)
@@ -25074,7 +22117,6 @@ module Godot
       MethodTweener.new(ret_ptr)
     end
     @@mb_set_ease : Void* = Pointer(Void).null
-    # Sets the type of used easing from `Tween.EaseType`. If not set, the default easing is used from the `Tween` that contains this Tweener.
     def set_ease(ease : Int64) : MethodTweener
       if @@mb_set_ease.null?
         @@mb_set_ease = Bridge.get_method_bind("MethodTweener", "set_ease", 315540545_i64)
@@ -25087,10 +22129,6 @@ module Godot
       MethodTweener.new(ret_ptr)
     end
   end
-  # An internal editor class intended for keeping the data of unrecognized nodes.
-  #
-  # This is an internal editor class intended for keeping data of nodes of unknown type (most likely this type was supplied by an extension that is no longer loaded). It can't be manually instantiated or placed in a scene.
-  # **Warning:** Ignore missing nodes unless you know what you are doing. Existing properties on a missing node can be freely modified in code, regardless of the type they are intended to be.
   class MissingNode < Godot::Node
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -25172,10 +22210,6 @@ module Godot
       ret != 0_u8
     end
   end
-  # An internal editor class intended for keeping the data of unrecognized resources.
-  #
-  # This is an internal editor class intended for keeping data of resources of unknown type (most likely this type was supplied by an extension that is no longer loaded). It can't be manually instantiated or placed in a scene.
-  # **Warning:** Ignore missing resources unless you know what you are doing. Existing properties on a missing resource can be freely modified in code, regardless of the type they are intended to be.
   class MissingResource < Godot::Resource
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -25219,10 +22253,6 @@ module Godot
       ret != 0_u8
     end
   end
-  # Base class for an XR interface implementation.
-  #
-  # This class needs to be implemented to make an AR or VR platform available to Godot and these should be implemented as C++ modules or GDExtension modules. Part of the interface is exposed to GDScript so you can detect, enable and configure an AR or VR platform.
-  # Interfaces should be written in such a way that simply enabling them will give us a working setup. You can query the available interfaces through `XRServer`.
   class XRInterface < Godot::RefCounted
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -25263,7 +22293,6 @@ module Godot
       XrVrsTextureFormatRasterizationRateMap = 3_i64
     end
     @@mb_get_name : Void* = Pointer(Void).null
-    # Returns the name of this interface (`"OpenXR"`, `"OpenVR"`, `"OpenHMD"`, `"ARKit"`, etc.).
     def get_name() : String
       if @@mb_get_name.null?
         @@mb_get_name = Bridge.get_method_bind("XRInterface", "get_name", 2002593661_i64)
@@ -25271,7 +22300,6 @@ module Godot
       ""
     end
     @@mb_get_capabilities : Void* = Pointer(Void).null
-    # Returns a combination of `Capabilities` flags providing information about the capabilities of this interface.
     def get_capabilities() : Int64
       if @@mb_get_capabilities.null?
         @@mb_get_capabilities = Bridge.get_method_bind("XRInterface", "get_capabilities", 3905245786_i64)
@@ -25300,7 +22328,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_primary, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_is_initialized : Void* = Pointer(Void).null
-    # Returns `true` if this interface has been initialized.
     def is_initialized() : Bool
       if @@mb_is_initialized.null?
         @@mb_is_initialized = Bridge.get_method_bind("XRInterface", "is_initialized", 36873697_i64)
@@ -25310,11 +22337,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_initialize : Void* = Pointer(Void).null
-    # Call this to initialize this interface. The first interface that is initialized is identified as the primary interface and it will be used for rendering output.
-    # After initializing the interface you want to use you then need to enable the AR/VR mode of a viewport and rendering should commence.
-    # **Note:** You must enable the XR mode on the main viewport for any device that uses the main output of Godot, such as for mobile VR.
-    # If you do this for a platform that handles its own output (such as OpenVR) Godot will show just one eye without distortion on screen. Alternatively, you can add a separate viewport node to your scene and enable AR/VR on that viewport. It will be used to output to the HMD, leaving you free to do anything you like in the main window, such as using a separate camera as a spectator camera or rendering something completely different.
-    # While currently not used, you can activate additional interfaces. You may wish to do this if you want to track controllers from other platforms. However, at this point in time only one interface can render to an HMD.
     def godot_initialize() : Bool
       if @@mb_initialize.null?
         @@mb_initialize = Bridge.get_method_bind("XRInterface", "initialize", 2240911060_i64)
@@ -25324,7 +22346,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_uninitialize : Void* = Pointer(Void).null
-    # Turns the interface off.
     def uninitialize() : Void
       if @@mb_uninitialize.null?
         @@mb_uninitialize = Bridge.get_method_bind("XRInterface", "uninitialize", 3218959716_i64)
@@ -25332,8 +22353,6 @@ module Godot
       Bridge.ptrcall(@@mb_uninitialize, @pointer, Pointer(Pointer(Void)).null, Pointer(Void).null)
     end
     @@mb_get_system_info : Void* = Pointer(Void).null
-    # Returns a `Dictionary` with extra system info. Interfaces are expected to return `XRRuntimeName` and `XRRuntimeVersion` providing info about the used XR runtime. Additional entries may be provided specific to an interface.
-    # **Note:**This information may only be available after `#initialize` was successfully called.
     def get_system_info() : Void*
       if @@mb_get_system_info.null?
         @@mb_get_system_info = Bridge.get_method_bind("XRInterface", "get_system_info", 2382534195_i64)
@@ -25343,7 +22362,6 @@ module Godot
       ret_ptr
     end
     @@mb_get_tracking_status : Void* = Pointer(Void).null
-    # If supported, returns the status of our tracking. This will allow you to provide feedback to the user whether there are issues with positional tracking.
     def get_tracking_status() : Int64
       if @@mb_get_tracking_status.null?
         @@mb_get_tracking_status = Bridge.get_method_bind("XRInterface", "get_tracking_status", 167423259_i64)
@@ -25353,7 +22371,6 @@ module Godot
       ret
     end
     @@mb_get_render_target_size : Void* = Pointer(Void).null
-    # Returns the resolution at which we should render our intermediate results before things like lens distortion are applied by the VR platform.
     def get_render_target_size() : Vector2
       if @@mb_get_render_target_size.null?
         @@mb_get_render_target_size = Bridge.get_method_bind("XRInterface", "get_render_target_size", 1497962370_i64)
@@ -25363,7 +22380,6 @@ module Godot
       ret
     end
     @@mb_get_view_count : Void* = Pointer(Void).null
-    # Returns the number of views that need to be rendered for this device. 1 for Monoscopic, 2 for Stereoscopic.
     def get_view_count() : Int64
       if @@mb_get_view_count.null?
         @@mb_get_view_count = Bridge.get_method_bind("XRInterface", "get_view_count", 2455072627_i64)
@@ -25373,13 +22389,6 @@ module Godot
       ret
     end
     @@mb_trigger_haptic_pulse : Void* = Pointer(Void).null
-    # Triggers a haptic pulse on a device associated with this interface.
-    # `action_name` is the name of the action for this pulse.
-    # `tracker_name` is optional and can be used to direct the pulse to a specific device provided that device is bound to this haptic.
-    # `frequency` is the frequency of the pulse, set to `0.0` to have the system use a default frequency.
-    # `amplitude` is the amplitude of the pulse between `0.0` and `1.0`.
-    # `duration_sec` is the duration of the pulse in seconds.
-    # `delay_sec` is a delay in seconds before the pulse is given.
     def trigger_haptic_pulse(action_name : String, tracker_name : String, frequency : Float64, amplitude : Float64, duration_sec : Float64, delay_sec : Float64) : Void
       if @@mb_trigger_haptic_pulse.null?
         @@mb_trigger_haptic_pulse = Bridge.get_method_bind("XRInterface", "trigger_haptic_pulse", 3752640163_i64)
@@ -25403,7 +22412,6 @@ module Godot
       Bridge.free_string_name(sn_1)
     end
     @@mb_supports_play_area_mode : Void* = Pointer(Void).null
-    # Call this to find out if a given play area mode is supported by this interface.
     def supports_play_area_mode(mode : Int64) : Bool
       if @@mb_supports_play_area_mode.null?
         @@mb_supports_play_area_mode = Bridge.get_method_bind("XRInterface", "supports_play_area_mode", 3429955281_i64)
@@ -25425,8 +22433,6 @@ module Godot
       ret
     end
     @@mb_set_play_area_mode : Void* = Pointer(Void).null
-    # Sets the active play area mode, will return `false` if the mode can't be used with this interface.
-    # **Note:** Changing this after the interface has already been initialized can be jarring for the player, so it's recommended to recenter on the HMD with `#XRServer.center_on_hmd` (if switching to `XRInterface.XR_PLAY_AREA_STAGE`) or make the switch during a scene change.
     def set_play_area_mode(mode : Int64) : Bool
       if @@mb_set_play_area_mode.null?
         @@mb_set_play_area_mode = Bridge.get_method_bind("XRInterface", "set_play_area_mode", 3429955281_i64)
@@ -25439,7 +22445,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_get_play_area : Void* = Pointer(Void).null
-    # Returns an array of vectors that represent the physical play area mapped to the virtual space around the `XROrigin3D` point. The points form a convex polygon that can be used to react to or visualize the play area. This returns an empty array if this feature is not supported or if the information is not yet available.
     def get_play_area() : Void*
       if @@mb_get_play_area.null?
         @@mb_get_play_area = Bridge.get_method_bind("XRInterface", "get_play_area", 497664490_i64)
@@ -25468,7 +22473,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_anchor_detection_is_enabled, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_camera_feed_id : Void* = Pointer(Void).null
-    # If this is an AR interface that requires displaying a camera feed as the background, this method returns the feed ID in the `CameraServer` for this interface.
     def get_camera_feed_id() : Int64
       if @@mb_get_camera_feed_id.null?
         @@mb_get_camera_feed_id = Bridge.get_method_bind("XRInterface", "get_camera_feed_id", 2455072627_i64)
@@ -25478,7 +22482,6 @@ module Godot
       ret
     end
     @@mb_is_passthrough_supported : Void* = Pointer(Void).null
-    # Returns `true` if this interface supports passthrough.
     def is_passthrough_supported() : Bool
       if @@mb_is_passthrough_supported.null?
         @@mb_is_passthrough_supported = Bridge.get_method_bind("XRInterface", "is_passthrough_supported", 2240911060_i64)
@@ -25488,7 +22491,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_is_passthrough_enabled : Void* = Pointer(Void).null
-    # Returns `true` if passthrough is enabled.
     def is_passthrough_enabled() : Bool
       if @@mb_is_passthrough_enabled.null?
         @@mb_is_passthrough_enabled = Bridge.get_method_bind("XRInterface", "is_passthrough_enabled", 2240911060_i64)
@@ -25498,8 +22500,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_start_passthrough : Void* = Pointer(Void).null
-    # Starts passthrough, will return `false` if passthrough couldn't be started.
-    # **Note:** The viewport used for XR must have a transparent background, otherwise passthrough may not properly render.
     def start_passthrough() : Bool
       if @@mb_start_passthrough.null?
         @@mb_start_passthrough = Bridge.get_method_bind("XRInterface", "start_passthrough", 2240911060_i64)
@@ -25509,7 +22509,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_stop_passthrough : Void* = Pointer(Void).null
-    # Stops passthrough.
     def stop_passthrough() : Void
       if @@mb_stop_passthrough.null?
         @@mb_stop_passthrough = Bridge.get_method_bind("XRInterface", "stop_passthrough", 3218959716_i64)
@@ -25517,9 +22516,6 @@ module Godot
       Bridge.ptrcall(@@mb_stop_passthrough, @pointer, Pointer(Pointer(Void)).null, Pointer(Void).null)
     end
     @@mb_get_transform_for_view : Void* = Pointer(Void).null
-    # Returns the transform for a view/eye.
-    # `view` is the view/eye index.
-    # `cam_transform` is the transform that maps device coordinates to scene coordinates, typically the `Node3D.global_transform` of the current XROrigin3D.
     def get_transform_for_view(view : Int64, cam_transform : Transform3D) : Transform3D
       if @@mb_get_transform_for_view.null?
         @@mb_get_transform_for_view = Bridge.get_method_bind("XRInterface", "get_transform_for_view", 518934792_i64)
@@ -25534,7 +22530,6 @@ module Godot
       ret
     end
     @@mb_get_projection_for_view : Void* = Pointer(Void).null
-    # Returns the projection matrix for a view/eye.
     def get_projection_for_view(view : Int64, aspect : Float64, near : Float64, far : Float64) : Projection
       if @@mb_get_projection_for_view.null?
         @@mb_get_projection_for_view = Bridge.get_method_bind("XRInterface", "get_projection_for_view", 3766090294_i64)
@@ -25553,7 +22548,6 @@ module Godot
       Projection.new(ret_ptr)
     end
     @@mb_get_supported_environment_blend_modes : Void* = Pointer(Void).null
-    # Returns the an array of supported environment blend modes, see `XRInterface.EnvironmentBlendMode`.
     def get_supported_environment_blend_modes() : Godot::Array
       if @@mb_get_supported_environment_blend_modes.null?
         @@mb_get_supported_environment_blend_modes = Bridge.get_method_bind("XRInterface", "get_supported_environment_blend_modes", 2915620761_i64)
@@ -25563,24 +22557,6 @@ module Godot
       Godot::Array.new(ret_ptr)
     end
     @@mb_set_environment_blend_mode : Void* = Pointer(Void).null
-    # Sets the active environment blend mode.
-    # `mode` is the environment blend mode starting with the next frame.
-    # **Note:** Not all runtimes support all environment blend modes, so it is important to check this at startup. For example:
-    # ```gdscript
-    #
-    # func _ready():
-    # 	var xr_interface = XRServer.find_interface("OpenXR")
-    # 	if xr_interface and xr_interface.is_initialized():
-    # 		var vp = get_viewport()
-    # 		vp.use_xr = true
-    # 		var acceptable_modes = [XRInterface.XR_ENV_BLEND_MODE_OPAQUE, XRInterface.XR_ENV_BLEND_MODE_ADDITIVE]
-    # 		var modes = xr_interface.get_supported_environment_blend_modes()
-    # 		for mode in acceptable_modes:
-    # 			if mode in modes:
-    # 				xr_interface.set_environment_blend_mode(mode)
-    # 				break
-    #
-    # ```
     def set_environment_blend_mode(mode : Int64) : Bool
       if @@mb_set_environment_blend_mode.null?
         @@mb_set_environment_blend_mode = Bridge.get_method_bind("XRInterface", "set_environment_blend_mode", 551152418_i64)
@@ -25602,19 +22578,6 @@ module Godot
       ret
     end
   end
-  # Generic mobile VR implementation.
-  #
-  # This is a generic mobile VR implementation where you need to provide details about the phone and HMD used. It does not rely on any existing framework. This is the most basic interface we have. For the best effect, you need a mobile phone with a gyroscope and accelerometer.
-  # Note that even though there is no positional tracking, the camera will assume the headset is at a height of 1.85 meters. You can change this by setting `eye_height`.
-  # You can initialize this interface as follows:
-  # ```gdscript
-  #
-  # var interface = XRServer.find_interface("Native mobile")
-  # if interface and interface.initialize():
-  # 	get_viewport().use_xr = true
-  #
-  # ```
-  # **Note:** For Android, [member ProjectSettings.input_devices/sensors/enable_accelerometer], [member ProjectSettings.input_devices/sensors/enable_gravity], [member ProjectSettings.input_devices/sensors/enable_gyroscope] and [member ProjectSettings.input_devices/sensors/enable_magnetometer] must be enabled.
   class MobileVRInterface < Godot::XRInterface
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -25810,10 +22773,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_vrs_strength, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
   end
-  # А node that dynamically copies the 3D transform of a bone in its parent `Skeleton3D`.
-  #
-  # This node selects a bone in a `Skeleton3D` and attaches to it. This means that the `ModifierBoneTarget3D` node will dynamically copy the 3D transform of the selected bone.
-  # The functionality is similar to `BoneAttachment3D`, but this node adopts the `SkeletonModifier3D` cycle and is intended to be used as another `SkeletonModifier3D`'s target.
   class ModifierBoneTarget3D < Godot::SkeletonModifier3D
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -25857,25 +22816,11 @@ module Godot
       ret
     end
   end
-  # Abstract class for non-real-time video recording encoders.
-  #
-  # Godot can record videos with non-real-time simulation. Like the `--fixed-fps` [$2]($1), this forces the reported `delta` in `#Node._process` functions to be identical across frames, regardless of how long it actually took to render the frame. This can be used to record high-quality videos with perfect frame pacing regardless of your hardware's capabilities.
-  # Godot has 3 built-in `MovieWriter`s:
-  # - OGV container with Theora for video and Vorbis for audio (`.ogv` file extension). Lossy compression, medium file sizes, fast encoding. The lossy compression quality can be adjusted by changing [member ProjectSettings.editor/movie_writer/video_quality] and [member ProjectSettings.editor/movie_writer/ogv/audio_quality]. The resulting file can be viewed in Godot with `VideoStreamPlayer` and most video players, but not web browsers as they don't support Theora.
-  # - AVI container with MJPEG for video and uncompressed audio (`.avi` file extension). Lossy compression, medium file sizes, fast encoding. The lossy compression quality can be adjusted by changing [member ProjectSettings.editor/movie_writer/video_quality]. The resulting file can be viewed in most video players, but it must be converted to another format for viewing on the web or by Godot with `VideoStreamPlayer`. MJPEG does not support transparency. AVI output is currently limited to a file of 4 GB in size at most.
-  # - PNG image sequence for video and WAV for audio (`.png` file extension). Lossless compression, large file sizes, slow encoding. Designed to be encoded to a video file with another tool such as [$2]($1) after recording. Transparency is currently not supported, even if the root viewport is set to be transparent.
-  # If you need to encode to a different format or pipe a stream through third-party software, you can extend the `MovieWriter` class to create your own movie writers. This should typically be done using GDExtension for performance reasons.
-  # **Editor usage:** A default movie file path can be specified in [member ProjectSettings.editor/movie_writer/movie_file]. Alternatively, for running single scenes, a `movie_file` metadata can be added to the root node, specifying the path to a movie file that will be used when recording that scene. Once a path is set, click the video reel icon in the top-right corner of the editor to enable Movie Maker mode, then run any scene as usual. The engine will start recording as soon as the splash screen is finished, and it will only stop recording when the engine quits. Click the video reel icon again to disable Movie Maker mode. Note that toggling Movie Maker mode does not affect project instances that are already running.
-  # **Note:** MovieWriter is available for use in both the editor and exported projects, but it is *not* designed for use by end users to record videos while playing. Players wishing to record gameplay videos should install tools such as [$2]($1) or [$2]($1) instead.
-  # **Note:** MJPEG support (`.avi` file extension) depends on the `jpg` module being enabled at compile time (default behavior).
-  # **Note:** OGV support (`.ogv` file extension) depends on the `theora` module being enabled at compile time (default behavior). Theora compression is only available in editor binaries.
   class MovieWriter < Godot::Object
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
     end
     @@mb_add_writer : Void* = Pointer(Void).null
-    # Adds a writer to be usable by the engine. The supported file extensions can be set by overriding `#_handles_file`.
-    # **Note:** `#add_writer` must be called early enough in the engine initialization to work, as movie writing is designed to start at the same time as the rest of the engine.
     def add_writer(writer : MovieWriter) : Void
       if @@mb_add_writer.null?
         @@mb_add_writer = Bridge.get_method_bind("MovieWriter", "add_writer", 4023702871_i64)
@@ -25886,14 +22831,6 @@ module Godot
       Bridge.ptrcall(@@mb_add_writer, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
   end
-  # Provides high-performance drawing of a mesh multiple times using GPU instancing.
-  #
-  # MultiMesh provides low-level mesh instancing. Drawing thousands of `MeshInstance3D` nodes can be slow, since each object is submitted to the GPU then drawn individually.
-  # MultiMesh is much faster as it can draw thousands of instances with a single draw call, resulting in less API overhead.
-  # As a drawback, if the instances are too far away from each other, performance may be reduced as every single instance will always render (they are spatially indexed as one, for the whole object).
-  # Since instances may have any behavior, the AABB used for visibility must be provided by the user.
-  # **Note:** A MultiMesh is a single object, therefore the same maximum lights per object restriction applies. This means, that once the maximum lights are consumed by one or more instances, the rest of the MultiMesh instances will **not** receive any lighting.
-  # **Note:** Blend Shapes will be ignored if used in a MultiMesh.
   class MultiMesh < Godot::Resource
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -26040,7 +22977,6 @@ module Godot
       ret
     end
     @@mb_set_instance_transform : Void* = Pointer(Void).null
-    # Sets the `Transform3D` for a specific instance.
     def set_instance_transform(instance : Int64, transform : Transform3D) : Void
       if @@mb_set_instance_transform.null?
         @@mb_set_instance_transform = Bridge.get_method_bind("MultiMesh", "set_instance_transform", 3616898986_i64)
@@ -26053,7 +22989,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_instance_transform, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_set_instance_transform_2d : Void* = Pointer(Void).null
-    # Sets the `Transform2D` for a specific instance.
     def set_instance_transform_2d(instance : Int64, transform : Transform2D) : Void
       if @@mb_set_instance_transform_2d.null?
         @@mb_set_instance_transform_2d = Bridge.get_method_bind("MultiMesh", "set_instance_transform_2d", 30160968_i64)
@@ -26066,7 +23001,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_instance_transform_2d, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_instance_transform : Void* = Pointer(Void).null
-    # Returns the `Transform3D` of a specific instance.
     def get_instance_transform(instance : Int64) : Transform3D
       if @@mb_get_instance_transform.null?
         @@mb_get_instance_transform = Bridge.get_method_bind("MultiMesh", "get_instance_transform", 1965739696_i64)
@@ -26079,7 +23013,6 @@ module Godot
       ret
     end
     @@mb_get_instance_transform_2d : Void* = Pointer(Void).null
-    # Returns the `Transform2D` of a specific instance.
     def get_instance_transform_2d(instance : Int64) : Transform2D
       if @@mb_get_instance_transform_2d.null?
         @@mb_get_instance_transform_2d = Bridge.get_method_bind("MultiMesh", "get_instance_transform_2d", 3836996910_i64)
@@ -26092,9 +23025,6 @@ module Godot
       Transform2D.new(ret_ptr)
     end
     @@mb_set_instance_color : Void* = Pointer(Void).null
-    # Sets the color of a specific instance by *multiplying* the mesh's existing vertex colors. This allows for different color tinting per instance.
-    # **Note:** Each component is stored in 32 bits in the Forward+ and Mobile rendering methods, but is packed into 16 bits in the Compatibility rendering method.
-    # For the color to take effect, ensure that `use_colors` is `true` on the `MultiMesh` and `BaseMaterial3D.vertex_color_use_as_albedo` is `true` on the material. If you intend to set an absolute color instead of tinting, make sure the material's albedo color is set to pure white (`Color(1, 1, 1)`).
     def set_instance_color(instance : Int64, color : Color) : Void
       if @@mb_set_instance_color.null?
         @@mb_set_instance_color = Bridge.get_method_bind("MultiMesh", "set_instance_color", 2878471219_i64)
@@ -26107,7 +23037,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_instance_color, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_instance_color : Void* = Pointer(Void).null
-    # Gets a specific instance's color multiplier.
     def get_instance_color(instance : Int64) : Color
       if @@mb_get_instance_color.null?
         @@mb_get_instance_color = Bridge.get_method_bind("MultiMesh", "get_instance_color", 3457211756_i64)
@@ -26120,10 +23049,6 @@ module Godot
       ret
     end
     @@mb_set_instance_custom_data : Void* = Pointer(Void).null
-    # Sets custom data for a specific instance. `custom_data` is a `Color` type only to contain 4 floating-point numbers.
-    # **Note:** Each number is stored in 32 bits in the Forward+ and Mobile rendering methods, but is packed into 16 bits in the Compatibility rendering method.
-    # For the custom data to be used, ensure that `use_custom_data` is `true`.
-    # This custom instance data has to be manually accessed in your custom shader using `INSTANCE_CUSTOM`.
     def set_instance_custom_data(instance : Int64, custom_data : Color) : Void
       if @@mb_set_instance_custom_data.null?
         @@mb_set_instance_custom_data = Bridge.get_method_bind("MultiMesh", "set_instance_custom_data", 2878471219_i64)
@@ -26136,7 +23061,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_instance_custom_data, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_instance_custom_data : Void* = Pointer(Void).null
-    # Returns the custom data that has been set for a specific instance.
     def get_instance_custom_data(instance : Int64) : Color
       if @@mb_get_instance_custom_data.null?
         @@mb_get_instance_custom_data = Bridge.get_method_bind("MultiMesh", "get_instance_custom_data", 3457211756_i64)
@@ -26149,8 +23073,6 @@ module Godot
       ret
     end
     @@mb_reset_instance_physics_interpolation : Void* = Pointer(Void).null
-    # When using *physics interpolation*, this function allows you to prevent interpolation on an instance in the current physics tick.
-    # This allows you to move instances instantaneously, and should usually be used when initially placing an instance such as a bullet to prevent graphical glitches.
     def reset_instance_physics_interpolation(instance : Int64) : Void
       if @@mb_reset_instance_physics_interpolation.null?
         @@mb_reset_instance_physics_interpolation = Bridge.get_method_bind("MultiMesh", "reset_instance_physics_interpolation", 1286410249_i64)
@@ -26161,8 +23083,6 @@ module Godot
       Bridge.ptrcall(@@mb_reset_instance_physics_interpolation, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_reset_instances_physics_interpolation : Void* = Pointer(Void).null
-    # When using *physics interpolation*, this function allows you to prevent interpolation for all instances in the current physics tick.
-    # This allows you to move all instances instantaneously, and should usually be used when initially placing instances to prevent graphical glitches.
     def reset_instances_physics_interpolation() : Void
       if @@mb_reset_instances_physics_interpolation.null?
         @@mb_reset_instances_physics_interpolation = Bridge.get_method_bind("MultiMesh", "reset_instances_physics_interpolation", 3218959716_i64)
@@ -26189,7 +23109,6 @@ module Godot
       AABB.new(ret_ptr)
     end
     @@mb_get_aabb : Void* = Pointer(Void).null
-    # Returns the visibility axis-aligned bounding box in local space.
     def get_aabb() : AABB
       if @@mb_get_aabb.null?
         @@mb_get_aabb = Bridge.get_method_bind("MultiMesh", "get_aabb", 1068685055_i64)
@@ -26218,9 +23137,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_buffer, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_set_buffer_interpolated : Void* = Pointer(Void).null
-    # An alternative to setting the `buffer` property, which can be used with *physics interpolation*. This method takes two arrays, and can set the data for the current and previous tick in one go. The renderer will automatically interpolate the data at each frame.
-    # This is useful for situations where the order of instances may change from physics tick to tick, such as particle systems.
-    # When the order of instances is coherent, the simpler alternative of setting `buffer` can still be used with interpolation.
     def set_buffer_interpolated(buffer_curr : Void*, buffer_prev : Void*) : Void
       if @@mb_set_buffer_interpolated.null?
         @@mb_set_buffer_interpolated = Bridge.get_method_bind("MultiMesh", "set_buffer_interpolated", 3514430332_i64)
@@ -26233,10 +23149,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_buffer_interpolated, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
   end
-  # Node that instances a `MultiMesh` in 2D.
-  #
-  # `MultiMeshInstance2D` is a specialized node to instance a `MultiMesh` resource in 2D. This can be faster to render compared to displaying many `Sprite2D` nodes with large transparent areas, especially if the nodes take up a lot of space on screen at high viewport resolutions. This is because using a mesh designed to fit the sprites' opaque areas will reduce GPU fill rate utilization (at the cost of increased vertex processing utilization).
-  # Usage is the same as `MultiMeshInstance3D`.
   class MultiMeshInstance2D < Godot::Node2D
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -26280,10 +23192,6 @@ module Godot
       Texture2D.new(ret_ptr)
     end
   end
-  # Node that instances a `MultiMesh`.
-  #
-  # `MultiMeshInstance3D` is a specialized node to instance `GeometryInstance3D`s based on a `MultiMesh` resource.
-  # This is useful to optimize the rendering of a high number of instances of a given mesh (for example trees in a forest or grass strands).
   class MultiMeshInstance3D < Godot::GeometryInstance3D
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -26308,12 +23216,6 @@ module Godot
       MultiMesh.new(ret_ptr)
     end
   end
-  # High-level multiplayer API interface.
-  #
-  # Base class for high-level multiplayer API implementations. See also `MultiplayerPeer`.
-  # By default, `SceneTree` has a reference to an implementation of this class and uses it to provide multiplayer capabilities (i.e. RPCs) across the whole scene.
-  # It is possible to override the MultiplayerAPI instance used by specific tree branches by calling the `#SceneTree.set_multiplayer` method, effectively allowing to run both client and server in the same scene.
-  # It is also possible to extend or replace the default implementation via scripting or native extensions. See `MultiplayerAPIExtension` for details about extensions, `SceneMultiplayer` for the details about the default implementation.
   class MultiplayerAPI < Godot::RefCounted
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -26324,7 +23226,6 @@ module Godot
       RpcModeAuthority = 2_i64
     end
     @@mb_has_multiplayer_peer : Void* = Pointer(Void).null
-    # Returns `true` if there is a `multiplayer_peer` set.
     def has_multiplayer_peer() : Bool
       if @@mb_has_multiplayer_peer.null?
         @@mb_has_multiplayer_peer = Bridge.get_method_bind("MultiplayerAPI", "has_multiplayer_peer", 2240911060_i64)
@@ -26353,7 +23254,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_multiplayer_peer, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_unique_id : Void* = Pointer(Void).null
-    # Returns the unique peer ID of this MultiplayerAPI's `multiplayer_peer`.
     def get_unique_id() : Int64
       if @@mb_get_unique_id.null?
         @@mb_get_unique_id = Bridge.get_method_bind("MultiplayerAPI", "get_unique_id", 2455072627_i64)
@@ -26363,7 +23263,6 @@ module Godot
       ret
     end
     @@mb_is_server : Void* = Pointer(Void).null
-    # Returns `true` if this MultiplayerAPI's `multiplayer_peer` is valid and in server mode (listening for connections).
     def is_server() : Bool
       if @@mb_is_server.null?
         @@mb_is_server = Bridge.get_method_bind("MultiplayerAPI", "is_server", 2240911060_i64)
@@ -26373,8 +23272,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_get_remote_sender_id : Void* = Pointer(Void).null
-    # Returns the sender's peer ID for the RPC currently being executed.
-    # **Note:** This method returns `0` when called outside of an RPC. As such, the original peer ID may be lost when code execution is delayed (such as with GDScript's `await` keyword).
     def get_remote_sender_id() : Int64
       if @@mb_get_remote_sender_id.null?
         @@mb_get_remote_sender_id = Bridge.get_method_bind("MultiplayerAPI", "get_remote_sender_id", 2455072627_i64)
@@ -26384,8 +23281,6 @@ module Godot
       ret
     end
     @@mb_poll : Void* = Pointer(Void).null
-    # Method used for polling the MultiplayerAPI. You only need to worry about this if you set `SceneTree.multiplayer_poll` to `false`. By default, `SceneTree` will poll its MultiplayerAPI(s) for you.
-    # **Note:** This method results in RPCs being called, so they will be executed in the same context of this function (e.g. `_process`, `physics`, `Thread`).
     def poll() : Int64
       if @@mb_poll.null?
         @@mb_poll = Bridge.get_method_bind("MultiplayerAPI", "poll", 166280745_i64)
@@ -26395,8 +23290,6 @@ module Godot
       ret
     end
     @@mb_rpc : Void* = Pointer(Void).null
-    # Sends an RPC to the target `peer`. The given `method` will be called on the remote `object` with the provided `arguments`. The RPC may also be called locally depending on the implementation and RPC configuration. See `#Node.rpc` and `#Node.rpc_config`.
-    # **Note:** Prefer using `#Node.rpc`, `#Node.rpc_id`, or `my_method.rpc(peer, arg1, arg2, ...)` (in GDScript), since they are faster. This method is mostly useful in conjunction with `MultiplayerAPIExtension` when extending or replacing the multiplayer capabilities.
     def rpc(peer : Int64, object : Godot::Object, method : String, arguments : Godot::Array) : Int64
       if @@mb_rpc.null?
         @@mb_rpc = Bridge.get_method_bind("MultiplayerAPI", "rpc", 2077486355_i64)
@@ -26417,8 +23310,6 @@ module Godot
       Bridge.free_string_name(sn_2)
     end
     @@mb_object_configuration_add : Void* = Pointer(Void).null
-    # Notifies the MultiplayerAPI of a new `configuration` for the given `object`. This method is used internally by `SceneTree` to configure the root path for this MultiplayerAPI (passing `null` and a valid `NodePath` as `configuration`). This method can be further used by MultiplayerAPI implementations to provide additional features, refer to specific implementation (e.g. `SceneMultiplayer`) for details on how they use it.
-    # **Note:** This method is mostly relevant when extending or overriding the MultiplayerAPI behavior via `MultiplayerAPIExtension`.
     def object_configuration_add(object : Godot::Object, configuration : Void*) : Int64
       if @@mb_object_configuration_add.null?
         @@mb_object_configuration_add = Bridge.get_method_bind("MultiplayerAPI", "object_configuration_add", 1171879464_i64)
@@ -26433,8 +23324,6 @@ module Godot
       ret
     end
     @@mb_object_configuration_remove : Void* = Pointer(Void).null
-    # Notifies the MultiplayerAPI to remove a `configuration` for the given `object`. This method is used internally by `SceneTree` to configure the root path for this MultiplayerAPI (passing `null` and an empty `NodePath` as `configuration`). This method can be further used by MultiplayerAPI implementations to provide additional features, refer to specific implementation (e.g. `SceneMultiplayer`) for details on how they use it.
-    # **Note:** This method is mostly relevant when extending or overriding the MultiplayerAPI behavior via `MultiplayerAPIExtension`.
     def object_configuration_remove(object : Godot::Object, configuration : Void*) : Int64
       if @@mb_object_configuration_remove.null?
         @@mb_object_configuration_remove = Bridge.get_method_bind("MultiplayerAPI", "object_configuration_remove", 1171879464_i64)
@@ -26449,7 +23338,6 @@ module Godot
       ret
     end
     @@mb_get_peers : Void* = Pointer(Void).null
-    # Returns the peer IDs of all connected peers of this MultiplayerAPI's `multiplayer_peer`.
     def get_peers() : Void*
       if @@mb_get_peers.null?
         @@mb_get_peers = Bridge.get_method_bind("MultiplayerAPI", "get_peers", 969006518_i64)
@@ -26459,7 +23347,6 @@ module Godot
       ret_ptr
     end
     @@mb_set_default_interface : Void* = Pointer(Void).null
-    # Sets the default MultiplayerAPI implementation class. This method can be used by modules and extensions to configure which implementation will be used by `SceneTree` when the engine starts.
     def set_default_interface(interface_name : String) : Void
       if @@mb_set_default_interface.null?
         @@mb_set_default_interface = Bridge.get_method_bind("MultiplayerAPI", "set_default_interface", 3304788590_i64)
@@ -26472,7 +23359,6 @@ module Godot
       Bridge.free_string_name(sn_0)
     end
     @@mb_get_default_interface : Void* = Pointer(Void).null
-    # Returns the default MultiplayerAPI implementation class name. This is usually `"SceneMultiplayer"` when `SceneMultiplayer` is available. See `#set_default_interface`.
     def get_default_interface() : String
       if @@mb_get_default_interface.null?
         @@mb_get_default_interface = Bridge.get_method_bind("MultiplayerAPI", "get_default_interface", 2737447660_i64)
@@ -26480,7 +23366,6 @@ module Godot
       ""
     end
     @@mb_create_default_interface : Void* = Pointer(Void).null
-    # Returns a new instance of the default MultiplayerAPI.
     def create_default_interface() : MultiplayerAPI
       if @@mb_create_default_interface.null?
         @@mb_create_default_interface = Bridge.get_method_bind("MultiplayerAPI", "create_default_interface", 3294156723_i64)
@@ -26490,110 +23375,21 @@ module Godot
       MultiplayerAPI.new(ret_ptr)
     end
   end
-  # Base class used for extending the `MultiplayerAPI`.
-  #
-  # This class can be used to extend or replace the default `MultiplayerAPI` implementation via script or extensions.
-  # The following example extend the default implementation (`SceneMultiplayer`) by logging every RPC being made, and every object being configured for replication.
-  #
-  # ```gdscript
-  #
-  # extends MultiplayerAPIExtension
-  # class_name LogMultiplayer
-  #
-  # # We want to extend the default SceneMultiplayer.
-  # var base_multiplayer = SceneMultiplayer.new()
-  #
-  # func _init():
-  # 	# Just passthrough base signals (copied to var to avoid cyclic reference)
-  # 	var cts = connected_to_server
-  # 	var cf = connection_failed
-  # 	var sd = server_disconnected
-  # 	var pc = peer_connected
-  # 	var pd = peer_disconnected
-  # 	base_multiplayer.connected_to_server.connect(func(): cts.emit())
-  # 	base_multiplayer.connection_failed.connect(func(): cf.emit())
-  # 	base_multiplayer.server_disconnected.connect(func(): sd.emit())
-  # 	base_multiplayer.peer_connected.connect(func(id): pc.emit(id))
-  # 	base_multiplayer.peer_disconnected.connect(func(id): pd.emit(id))
-  #
-  # func _poll():
-  # 	return base_multiplayer.poll()
-  #
-  # # Log RPC being made and forward it to the default multiplayer.
-  # func _rpc(peer: int, object: Object, method: StringName, args: Array) -> Error:
-  # 	print("Got RPC for %d: %s::%s(%s)" % [peer, object, method, args])
-  # 	return base_multiplayer.rpc(peer, object, method, args)
-  #
-  # # Log configuration add. E.g. root path (nullptr, NodePath), replication (Node, Spawner|Synchronizer), custom.
-  # func _object_configuration_add(object, config: Variant) -> Error:
-  # 	if config is MultiplayerSynchronizer:
-  # 		print("Adding synchronization configuration for %s. Synchronizer: %s" % [object, config])
-  # 	elif config is MultiplayerSpawner:
-  # 		print("Adding node %s to the spawn list. Spawner: %s" % [object, config])
-  # 	return base_multiplayer.object_configuration_add(object, config)
-  #
-  # # Log configuration remove. E.g. root path (nullptr, NodePath), replication (Node, Spawner|Synchronizer), custom.
-  # func _object_configuration_remove(object, config: Variant) -> Error:
-  # 	if config is MultiplayerSynchronizer:
-  # 		print("Removing synchronization configuration for %s. Synchronizer: %s" % [object, config])
-  # 	elif config is MultiplayerSpawner:
-  # 		print("Removing node %s from the spawn list. Spawner: %s" % [object, config])
-  # 	return base_multiplayer.object_configuration_remove(object, config)
-  #
-  # # These can be optional, but in our case we want to extend SceneMultiplayer, so forward everything.
-  # func _set_multiplayer_peer(p_peer: MultiplayerPeer):
-  # 	base_multiplayer.multiplayer_peer = p_peer
-  #
-  # func _get_multiplayer_peer() -> MultiplayerPeer:
-  # 	return base_multiplayer.multiplayer_peer
-  #
-  # func _get_unique_id() -> int:
-  # 	return base_multiplayer.get_unique_id()
-  #
-  # func _get_remote_sender_id() -> int:
-  # 	return base_multiplayer.get_remote_sender_id()
-  #
-  # func _get_peer_ids() -> PackedInt32Array:
-  # 	return base_multiplayer.get_peers()
-  #
-  # ```
-  #
-  # Then in your main scene or in an autoload call `#SceneTree.set_multiplayer` to start using your custom `MultiplayerAPI`:
-  #
-  # ```gdscript
-  #
-  # # autoload.gd
-  # func _enter_tree():
-  # 	# Sets our custom multiplayer as the main one in SceneTree.
-  # 	get_tree().set_multiplayer(LogMultiplayer.new())
-  #
-  # ```
-  #
-  # Native extensions can alternatively use the `#MultiplayerAPI.set_default_interface` method during initialization to configure themselves as the default implementation.
   class MultiplayerAPIExtension < Godot::MultiplayerAPI
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
     end
   end
-  # Class that can be inherited to implement custom multiplayer API networking layers via GDExtension.
-  #
-  # This class is designed to be inherited from a GDExtension plugin to implement custom networking layers for the multiplayer API (such as WebRTC). All the methods below **must** be implemented to have a working custom multiplayer implementation. See also `MultiplayerAPI`.
   class MultiplayerPeerExtension < Godot::MultiplayerPeer
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
     end
   end
-  # Automatically replicates spawnable nodes from the authority to other multiplayer peers.
-  #
-  # Spawnable scenes can be configured in the editor or through code (see `#add_spawnable_scene`).
-  # Also supports custom node spawns through `#spawn`, calling `spawn_function` on all peers.
-  # Internally, `MultiplayerSpawner` uses `#MultiplayerAPI.object_configuration_add` to notify spawns passing the spawned node as the `object` and itself as the `configuration`, and `#MultiplayerAPI.object_configuration_remove` to notify despawns in a similar way.
   class MultiplayerSpawner < Godot::Node
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
     end
     @@mb_add_spawnable_scene : Void* = Pointer(Void).null
-    # Adds a scene path to spawnable scenes, making it automatically replicated from the multiplayer authority to other peers when added as children of the node pointed by `spawn_path`.
     def add_spawnable_scene(path : String) : Void
       if @@mb_add_spawnable_scene.null?
         @@mb_add_spawnable_scene = Bridge.get_method_bind("MultiplayerSpawner", "add_spawnable_scene", 83702148_i64)
@@ -26606,7 +23402,6 @@ module Godot
       Bridge.free_string(str_0)
     end
     @@mb_get_spawnable_scene_count : Void* = Pointer(Void).null
-    # Returns the count of spawnable scene paths.
     def get_spawnable_scene_count() : Int64
       if @@mb_get_spawnable_scene_count.null?
         @@mb_get_spawnable_scene_count = Bridge.get_method_bind("MultiplayerSpawner", "get_spawnable_scene_count", 3905245786_i64)
@@ -26616,7 +23411,6 @@ module Godot
       ret
     end
     @@mb_get_spawnable_scene : Void* = Pointer(Void).null
-    # Returns the spawnable scene path by index.
     def get_spawnable_scene(index : Int64) : String
       if @@mb_get_spawnable_scene.null?
         @@mb_get_spawnable_scene = Bridge.get_method_bind("MultiplayerSpawner", "get_spawnable_scene", 844755477_i64)
@@ -26627,7 +23421,6 @@ module Godot
       ""
     end
     @@mb_clear_spawnable_scenes : Void* = Pointer(Void).null
-    # Clears all spawnable scenes. Does not despawn existing instances on remote peers.
     def clear_spawnable_scenes() : Void
       if @@mb_clear_spawnable_scenes.null?
         @@mb_clear_spawnable_scenes = Bridge.get_method_bind("MultiplayerSpawner", "clear_spawnable_scenes", 3218959716_i64)
@@ -26635,8 +23428,6 @@ module Godot
       Bridge.ptrcall(@@mb_clear_spawnable_scenes, @pointer, Pointer(Pointer(Void)).null, Pointer(Void).null)
     end
     @@mb_spawn : Void* = Pointer(Void).null
-    # Requests a custom spawn, with `data` passed to `spawn_function` on all peers. Returns the locally spawned node instance already inside the scene tree, and added as a child of the node pointed by `spawn_path`.
-    # **Note:** Spawnable scenes are spawned automatically. `#spawn` is only needed for custom spawns.
     def spawn(data : Void*) : Node
       if @@mb_spawn.null?
         @@mb_spawn = Bridge.get_method_bind("MultiplayerSpawner", "spawn", 1991184589_i64)
@@ -26706,13 +23497,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_spawn_function, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
   end
-  # Synchronizes properties from the multiplayer authority to the remote peers.
-  #
-  # By default, `MultiplayerSynchronizer` synchronizes configured properties to all peers.
-  # Visibility can be handled directly with `#set_visibility_for` or as-needed with `#add_visibility_filter` and `#update_visibility`.
-  # `MultiplayerSpawner`s will handle nodes according to visibility of synchronizers as long as the node at `root_path` was spawned by one.
-  # Internally, `MultiplayerSynchronizer` uses `#MultiplayerAPI.object_configuration_add` to notify synchronization start passing the `Node` at `root_path` as the `object` and itself as the `configuration`, and uses `#MultiplayerAPI.object_configuration_remove` to notify synchronization end in a similar way.
-  # **Note:** Synchronization is not supported for `Object` type properties, like `Resource`. Properties that are unique to each peer, like the instance IDs of `Object`s (see `#Object.get_instance_id`) or `RID`s, will also not work in synchronization.
   class MultiplayerSynchronizer < Godot::Node
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -26818,7 +23602,6 @@ module Godot
       ret
     end
     @@mb_update_visibility : Void* = Pointer(Void).null
-    # Updates the visibility of `for_peer` according to visibility filters. If `for_peer` is `0` (the default), all peers' visibilties are updated.
     def update_visibility(for_peer : Int64) : Void
       if @@mb_update_visibility.null?
         @@mb_update_visibility = Bridge.get_method_bind("MultiplayerSynchronizer", "update_visibility", 1995695955_i64)
@@ -26848,8 +23631,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_add_visibility_filter : Void* = Pointer(Void).null
-    # Adds a peer visibility filter for this synchronizer.
-    # `filter` should take a peer ID `int` and return a `bool`.
     def add_visibility_filter(filter : Void*) : Void
       if @@mb_add_visibility_filter.null?
         @@mb_add_visibility_filter = Bridge.get_method_bind("MultiplayerSynchronizer", "add_visibility_filter", 1611583062_i64)
@@ -26860,7 +23641,6 @@ module Godot
       Bridge.ptrcall(@@mb_add_visibility_filter, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_remove_visibility_filter : Void* = Pointer(Void).null
-    # Removes a peer visibility filter from this synchronizer.
     def remove_visibility_filter(filter : Void*) : Void
       if @@mb_remove_visibility_filter.null?
         @@mb_remove_visibility_filter = Bridge.get_method_bind("MultiplayerSynchronizer", "remove_visibility_filter", 1611583062_i64)
@@ -26871,7 +23651,6 @@ module Godot
       Bridge.ptrcall(@@mb_remove_visibility_filter, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_set_visibility_for : Void* = Pointer(Void).null
-    # Sets the visibility of `peer` to `visible`. If `peer` is `0`, the value of `public_visibility` will be updated instead.
     def set_visibility_for(peer : Int64, visible : Bool) : Void
       if @@mb_set_visibility_for.null?
         @@mb_set_visibility_for = Bridge.get_method_bind("MultiplayerSynchronizer", "set_visibility_for", 300928843_i64)
@@ -26884,7 +23663,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_visibility_for, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_visibility_for : Void* = Pointer(Void).null
-    # Queries the current visibility for peer `peer`.
     def get_visibility_for(peer : Int64) : Bool
       if @@mb_get_visibility_for.null?
         @@mb_get_visibility_for = Bridge.get_method_bind("MultiplayerSynchronizer", "get_visibility_for", 1116898809_i64)
@@ -26897,20 +23675,11 @@ module Godot
       ret != 0_u8
     end
   end
-  # A binary `Semaphore` for synchronization of multiple `Thread`s.
-  #
-  # A synchronization mutex (mutual exclusion). This is used to synchronize multiple `Thread`s, and is equivalent to a binary `Semaphore`. It guarantees that only one thread can access a critical section at a time.
-  # This is a reentrant mutex, meaning that it can be locked multiple times by one thread, provided it also unlocks it as many times.
-  # **Warning:** To ensure proper cleanup without crashes or deadlocks, the following conditions must be met:
-  # - When a `Mutex`'s reference count reaches zero and it is therefore destroyed, no threads (including the one on which the destruction will happen) must have it locked.
-  # - When a `Thread`'s reference count reaches zero and it is therefore destroyed, it must not have any mutex locked.
   class Mutex < Godot::RefCounted
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
     end
     @@mb_lock : Void* = Pointer(Void).null
-    # Locks this `Mutex`, blocks until it is unlocked by the current owner.
-    # **Note:** This function returns without blocking if the thread already has ownership of the mutex.
     def lock() : Void
       if @@mb_lock.null?
         @@mb_lock = Bridge.get_method_bind("Mutex", "lock", 3218959716_i64)
@@ -26918,8 +23687,6 @@ module Godot
       Bridge.ptrcall(@@mb_lock, @pointer, Pointer(Pointer(Void)).null, Pointer(Void).null)
     end
     @@mb_try_lock : Void* = Pointer(Void).null
-    # Tries locking this `Mutex`, but does not block. Returns `true` on success, `false` otherwise.
-    # **Note:** This function returns `true` if the thread already has ownership of the mutex.
     def try_lock() : Bool
       if @@mb_try_lock.null?
         @@mb_try_lock = Bridge.get_method_bind("Mutex", "try_lock", 2240911060_i64)
@@ -26929,9 +23696,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_unlock : Void* = Pointer(Void).null
-    # Unlocks this `Mutex`, leaving it to other threads.
-    # **Note:** If a thread called `#lock` or `#try_lock` multiple times while already having ownership of the mutex, it must also call `#unlock` the same number of times in order to unlock it correctly.
-    # **Warning:** Calling `#unlock` more times than `#lock` on a given thread, thus ending up trying to unlock a non-locked mutex, is wrong and may causes crashes or deadlocks.
     def unlock() : Void
       if @@mb_unlock.null?
         @@mb_unlock = Bridge.get_method_bind("Mutex", "unlock", 3218959716_i64)
@@ -26939,40 +23703,6 @@ module Godot
       Bridge.ptrcall(@@mb_unlock, @pointer, Pointer(Pointer(Void)).null, Pointer(Void).null)
     end
   end
-  # A server interface for OS native menus.
-  #
-  # `NativeMenu` handles low-level access to the OS native global menu bar and popup menus.
-  # **Note:** This is low-level API, consider using `MenuBar` with `MenuBar.prefer_global_menu` set to `true`, and `PopupMenu` with `PopupMenu.prefer_native_menu` set to `true`.
-  # To create a menu, use `#create_menu`, add menu items using `add_*_item` methods. To remove a menu, use `#free_menu`.
-  # ```gdscript
-  #
-  # var menu
-  #
-  # func _menu_callback(item_id):
-  # 	if item_id == "ITEM_CUT":
-  # 		cut()
-  # 	elif item_id == "ITEM_COPY":
-  # 		copy()
-  # 	elif item_id == "ITEM_PASTE":
-  # 		paste()
-  #
-  # func _enter_tree():
-  # 	# Create new menu and add items:
-  # 	menu = NativeMenu.create_menu()
-  # 	NativeMenu.add_item(menu, "Cut", _menu_callback, Callable(), "ITEM_CUT")
-  # 	NativeMenu.add_item(menu, "Copy", _menu_callback, Callable(), "ITEM_COPY")
-  # 	NativeMenu.add_separator(menu)
-  # 	NativeMenu.add_item(menu, "Paste", _menu_callback, Callable(), "ITEM_PASTE")
-  #
-  # func _on_button_pressed():
-  # 	# Show popup menu at mouse position:
-  # 	NativeMenu.popup(menu, DisplayServer.mouse_get_position())
-  #
-  # func _exit_tree():
-  # 	# Remove menu when it's no longer needed:
-  # 	NativeMenu.free_menu(menu)
-  #
-  # ```
   class NativeMenu < Godot::Object
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -26993,8 +23723,6 @@ module Godot
       DockMenuId = 5_i64
     end
     @@mb_has_feature : Void* = Pointer(Void).null
-    # Returns `true` if the specified `feature` is supported by the current `NativeMenu`, `false` otherwise.
-    # **Note:** This method is implemented on macOS and Windows.
     def has_feature(feature : Int64) : Bool
       if @@mb_has_feature.null?
         @@mb_has_feature = Bridge.get_method_bind("NativeMenu", "has_feature", 1708975490_i64)
@@ -27007,8 +23735,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_has_system_menu : Void* = Pointer(Void).null
-    # Returns `true` if a special system menu is supported.
-    # **Note:** This method is implemented only on macOS.
     def has_system_menu(menu_id : Int64) : Bool
       if @@mb_has_system_menu.null?
         @@mb_has_system_menu = Bridge.get_method_bind("NativeMenu", "has_system_menu", 718213027_i64)
@@ -27021,8 +23747,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_get_system_menu : Void* = Pointer(Void).null
-    # Returns RID of a special system menu.
-    # **Note:** This method is implemented only on macOS.
     def get_system_menu(menu_id : Int64) : Int64
       if @@mb_get_system_menu.null?
         @@mb_get_system_menu = Bridge.get_method_bind("NativeMenu", "get_system_menu", 469707506_i64)
@@ -27035,8 +23759,6 @@ module Godot
       ret
     end
     @@mb_get_system_menu_name : Void* = Pointer(Void).null
-    # Returns readable name of a special system menu.
-    # **Note:** This method is implemented only on macOS.
     def get_system_menu_name(menu_id : Int64) : String
       if @@mb_get_system_menu_name.null?
         @@mb_get_system_menu_name = Bridge.get_method_bind("NativeMenu", "get_system_menu_name", 1281499290_i64)
@@ -27047,8 +23769,6 @@ module Godot
       ""
     end
     @@mb_get_system_menu_text : Void* = Pointer(Void).null
-    # Returns the text of the system menu item.
-    # **Note:** This method is implemented on macOS.
     def get_system_menu_text(menu_id : Int64) : String
       if @@mb_get_system_menu_text.null?
         @@mb_get_system_menu_text = Bridge.get_method_bind("NativeMenu", "get_system_menu_text", 1281499290_i64)
@@ -27059,8 +23779,6 @@ module Godot
       ""
     end
     @@mb_set_system_menu_text : Void* = Pointer(Void).null
-    # Sets the text of the system menu item.
-    # **Note:** This method is implemented on macOS.
     def set_system_menu_text(menu_id : Int64, name : String) : Void
       if @@mb_set_system_menu_text.null?
         @@mb_set_system_menu_text = Bridge.get_method_bind("NativeMenu", "set_system_menu_text", 3925225603_i64)
@@ -27075,8 +23793,6 @@ module Godot
       Bridge.free_string(str_1)
     end
     @@mb_create_menu : Void* = Pointer(Void).null
-    # Creates a new global menu object.
-    # **Note:** This method is implemented on macOS and Windows.
     def create_menu() : Int64
       if @@mb_create_menu.null?
         @@mb_create_menu = Bridge.get_method_bind("NativeMenu", "create_menu", 529393457_i64)
@@ -27086,8 +23802,6 @@ module Godot
       ret
     end
     @@mb_has_menu : Void* = Pointer(Void).null
-    # Returns `true` if `rid` is valid global menu.
-    # **Note:** This method is implemented on macOS and Windows.
     def has_menu(rid : Int64) : Bool
       if @@mb_has_menu.null?
         @@mb_has_menu = Bridge.get_method_bind("NativeMenu", "has_menu", 4155700596_i64)
@@ -27100,8 +23814,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_free_menu : Void* = Pointer(Void).null
-    # Frees a global menu object created by this `NativeMenu`.
-    # **Note:** This method is implemented on macOS and Windows.
     def free_menu(rid : Int64) : Void
       if @@mb_free_menu.null?
         @@mb_free_menu = Bridge.get_method_bind("NativeMenu", "free_menu", 2722037293_i64)
@@ -27112,8 +23824,6 @@ module Godot
       Bridge.ptrcall(@@mb_free_menu, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_size : Void* = Pointer(Void).null
-    # Returns global menu size.
-    # **Note:** This method is implemented on macOS and Windows.
     def get_size(rid : Int64) : Vector2
       if @@mb_get_size.null?
         @@mb_get_size = Bridge.get_method_bind("NativeMenu", "get_size", 2440833711_i64)
@@ -27126,8 +23836,6 @@ module Godot
       ret
     end
     @@mb_popup : Void* = Pointer(Void).null
-    # Shows the global menu at `position` in the screen coordinates.
-    # **Note:** This method is implemented on macOS and Windows.
     def popup(rid : Int64, position : Vector2i) : Void
       if @@mb_popup.null?
         @@mb_popup = Bridge.get_method_bind("NativeMenu", "popup", 2450610377_i64)
@@ -27140,8 +23848,6 @@ module Godot
       Bridge.ptrcall(@@mb_popup, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_set_interface_direction : Void* = Pointer(Void).null
-    # Sets the menu text layout direction from right-to-left if `is_rtl` is `true`.
-    # **Note:** This method is implemented on macOS and Windows.
     def set_interface_direction(rid : Int64, is_rtl : Bool) : Void
       if @@mb_set_interface_direction.null?
         @@mb_set_interface_direction = Bridge.get_method_bind("NativeMenu", "set_interface_direction", 1265174801_i64)
@@ -27154,8 +23860,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_interface_direction, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_set_popup_open_callback : Void* = Pointer(Void).null
-    # Registers callable to emit after the menu is closed.
-    # **Note:** This method is implemented only on macOS.
     def set_popup_open_callback(rid : Int64, callback : Void*) : Void
       if @@mb_set_popup_open_callback.null?
         @@mb_set_popup_open_callback = Bridge.get_method_bind("NativeMenu", "set_popup_open_callback", 3379118538_i64)
@@ -27168,8 +23872,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_popup_open_callback, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_popup_open_callback : Void* = Pointer(Void).null
-    # Returns global menu open callback.
-    # **Note:** This method is implemented only on macOS.
     def get_popup_open_callback(rid : Int64) : Void*
       if @@mb_get_popup_open_callback.null?
         @@mb_get_popup_open_callback = Bridge.get_method_bind("NativeMenu", "get_popup_open_callback", 3170603026_i64)
@@ -27182,9 +23884,6 @@ module Godot
       ret_ptr
     end
     @@mb_set_popup_close_callback : Void* = Pointer(Void).null
-    # Registers callable to emit when the menu is about to show.
-    # **Note:** The OS can simulate menu opening to track menu item changes and global shortcuts, in which case the corresponding close callback is not triggered. Use `#is_opened` to check if the menu is currently opened.
-    # **Note:** This method is implemented on macOS and Windows.
     def set_popup_close_callback(rid : Int64, callback : Void*) : Void
       if @@mb_set_popup_close_callback.null?
         @@mb_set_popup_close_callback = Bridge.get_method_bind("NativeMenu", "set_popup_close_callback", 3379118538_i64)
@@ -27197,8 +23896,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_popup_close_callback, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_popup_close_callback : Void* = Pointer(Void).null
-    # Returns global menu close callback.
-    # **Note:** This method is implemented on macOS and Windows.
     def get_popup_close_callback(rid : Int64) : Void*
       if @@mb_get_popup_close_callback.null?
         @@mb_get_popup_close_callback = Bridge.get_method_bind("NativeMenu", "get_popup_close_callback", 3170603026_i64)
@@ -27211,8 +23908,6 @@ module Godot
       ret_ptr
     end
     @@mb_set_minimum_width : Void* = Pointer(Void).null
-    # Sets the minimum width of the global menu.
-    # **Note:** This method is implemented only on macOS.
     def set_minimum_width(rid : Int64, width : Float64) : Void
       if @@mb_set_minimum_width.null?
         @@mb_set_minimum_width = Bridge.get_method_bind("NativeMenu", "set_minimum_width", 1794382983_i64)
@@ -27225,8 +23920,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_minimum_width, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_minimum_width : Void* = Pointer(Void).null
-    # Returns global menu minimum width.
-    # **Note:** This method is implemented only on macOS.
     def get_minimum_width(rid : Int64) : Float64
       if @@mb_get_minimum_width.null?
         @@mb_get_minimum_width = Bridge.get_method_bind("NativeMenu", "get_minimum_width", 866169185_i64)
@@ -27239,8 +23932,6 @@ module Godot
       ret
     end
     @@mb_is_opened : Void* = Pointer(Void).null
-    # Returns `true` if the menu is currently opened.
-    # **Note:** This method is implemented only on macOS.
     def is_opened(rid : Int64) : Bool
       if @@mb_is_opened.null?
         @@mb_is_opened = Bridge.get_method_bind("NativeMenu", "is_opened", 4155700596_i64)
@@ -27253,9 +23944,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_add_submenu_item : Void* = Pointer(Void).null
-    # Adds an item that will act as a submenu of the global menu `rid`. The `submenu_rid` argument is the RID of the global menu that will be shown when the item is clicked.
-    # Returns index of the inserted item, it's not guaranteed to be the same as `index` value.
-    # **Note:** This method is implemented on macOS and Windows.
     def add_submenu_item(rid : Int64, label : String, submenu_rid : Int64, tag : Void*, index : Int64) : Int64
       if @@mb_add_submenu_item.null?
         @@mb_add_submenu_item = Bridge.get_method_bind("NativeMenu", "add_submenu_item", 1002030223_i64)
@@ -27278,12 +23966,6 @@ module Godot
       Bridge.free_string(str_1)
     end
     @@mb_add_item : Void* = Pointer(Void).null
-    # Adds a new item with text `label` to the global menu `rid`.
-    # Returns index of the inserted item, it's not guaranteed to be the same as `index` value.
-    # An `accelerator` can optionally be defined, which is a keyboard shortcut that can be pressed to trigger the menu button even if it's not currently open. The `accelerator` is generally a combination of `KeyModifierMask`s and `Key`s using bitwise OR such as `KEY_MASK_CTRL | KEY_A` (`Ctrl + A`).
-    # **Note:** The `callback` and `key_callback` Callables need to accept exactly one Variant parameter, the parameter passed to the Callables will be the value passed to `tag`.
-    # **Note:** This method is implemented on macOS and Windows.
-    # **Note:** On Windows, `accelerator` and `key_callback` are ignored.
     def add_item(rid : Int64, label : String, callback : Void*, key_callback : Void*, tag : Void*, accelerator : Int64, index : Int64) : Int64
       if @@mb_add_item.null?
         @@mb_add_item = Bridge.get_method_bind("NativeMenu", "add_item", 980552939_i64)
@@ -27310,12 +23992,6 @@ module Godot
       Bridge.free_string(str_1)
     end
     @@mb_add_check_item : Void* = Pointer(Void).null
-    # Adds a new checkable item with text `label` to the global menu `rid`.
-    # Returns index of the inserted item, it's not guaranteed to be the same as `index` value.
-    # An `accelerator` can optionally be defined, which is a keyboard shortcut that can be pressed to trigger the menu button even if it's not currently open. The `accelerator` is generally a combination of `KeyModifierMask`s and `Key`s using bitwise OR such as `KEY_MASK_CTRL | KEY_A` (`Ctrl + A`).
-    # **Note:** The `callback` and `key_callback` Callables need to accept exactly one Variant parameter, the parameter passed to the Callables will be the value passed to `tag`.
-    # **Note:** This method is implemented on macOS and Windows.
-    # **Note:** On Windows, `accelerator` and `key_callback` are ignored.
     def add_check_item(rid : Int64, label : String, callback : Void*, key_callback : Void*, tag : Void*, accelerator : Int64, index : Int64) : Int64
       if @@mb_add_check_item.null?
         @@mb_add_check_item = Bridge.get_method_bind("NativeMenu", "add_check_item", 980552939_i64)
@@ -27342,12 +24018,6 @@ module Godot
       Bridge.free_string(str_1)
     end
     @@mb_add_icon_item : Void* = Pointer(Void).null
-    # Adds a new item with text `label` and icon `icon` to the global menu `rid`.
-    # Returns index of the inserted item, it's not guaranteed to be the same as `index` value.
-    # An `accelerator` can optionally be defined, which is a keyboard shortcut that can be pressed to trigger the menu button even if it's not currently open. The `accelerator` is generally a combination of `KeyModifierMask`s and `Key`s using bitwise OR such as `KEY_MASK_CTRL | KEY_A` (`Ctrl + A`).
-    # **Note:** The `callback` and `key_callback` Callables need to accept exactly one Variant parameter, the parameter passed to the Callables will be the value passed to `tag`.
-    # **Note:** This method is implemented on macOS and Windows.
-    # **Note:** On Windows, `accelerator` and `key_callback` are ignored.
     def add_icon_item(rid : Int64, icon : Texture2D, label : String, callback : Void*, key_callback : Void*, tag : Void*, accelerator : Int64, index : Int64) : Int64
       if @@mb_add_icon_item.null?
         @@mb_add_icon_item = Bridge.get_method_bind("NativeMenu", "add_icon_item", 1372188274_i64)
@@ -27376,12 +24046,6 @@ module Godot
       Bridge.free_string(str_2)
     end
     @@mb_add_icon_check_item : Void* = Pointer(Void).null
-    # Adds a new checkable item with text `label` and icon `icon` to the global menu `rid`.
-    # Returns index of the inserted item, it's not guaranteed to be the same as `index` value.
-    # An `accelerator` can optionally be defined, which is a keyboard shortcut that can be pressed to trigger the menu button even if it's not currently open. The `accelerator` is generally a combination of `KeyModifierMask`s and `Key`s using bitwise OR such as `KEY_MASK_CTRL | KEY_A` (`Ctrl + A`).
-    # **Note:** The `callback` and `key_callback` Callables need to accept exactly one Variant parameter, the parameter passed to the Callables will be the value passed to `tag`.
-    # **Note:** This method is implemented on macOS and Windows.
-    # **Note:** On Windows, `accelerator` and `key_callback` are ignored.
     def add_icon_check_item(rid : Int64, icon : Texture2D, label : String, callback : Void*, key_callback : Void*, tag : Void*, accelerator : Int64, index : Int64) : Int64
       if @@mb_add_icon_check_item.null?
         @@mb_add_icon_check_item = Bridge.get_method_bind("NativeMenu", "add_icon_check_item", 1372188274_i64)
@@ -27410,13 +24074,6 @@ module Godot
       Bridge.free_string(str_2)
     end
     @@mb_add_radio_check_item : Void* = Pointer(Void).null
-    # Adds a new radio-checkable item with text `label` to the global menu `rid`.
-    # Returns index of the inserted item, it's not guaranteed to be the same as `index` value.
-    # An `accelerator` can optionally be defined, which is a keyboard shortcut that can be pressed to trigger the menu button even if it's not currently open. The `accelerator` is generally a combination of `KeyModifierMask`s and `Key`s using bitwise OR such as `KEY_MASK_CTRL | KEY_A` (`Ctrl + A`).
-    # **Note:** Radio-checkable items just display a checkmark, but don't have any built-in checking behavior and must be checked/unchecked manually. See `#set_item_checked` for more info on how to control it.
-    # **Note:** The `callback` and `key_callback` Callables need to accept exactly one Variant parameter, the parameter passed to the Callables will be the value passed to `tag`.
-    # **Note:** This method is implemented on macOS and Windows.
-    # **Note:** On Windows, `accelerator` and `key_callback` are ignored.
     def add_radio_check_item(rid : Int64, label : String, callback : Void*, key_callback : Void*, tag : Void*, accelerator : Int64, index : Int64) : Int64
       if @@mb_add_radio_check_item.null?
         @@mb_add_radio_check_item = Bridge.get_method_bind("NativeMenu", "add_radio_check_item", 980552939_i64)
@@ -27443,13 +24100,6 @@ module Godot
       Bridge.free_string(str_1)
     end
     @@mb_add_icon_radio_check_item : Void* = Pointer(Void).null
-    # Adds a new radio-checkable item with text `label` and icon `icon` to the global menu `rid`.
-    # Returns index of the inserted item, it's not guaranteed to be the same as `index` value.
-    # An `accelerator` can optionally be defined, which is a keyboard shortcut that can be pressed to trigger the menu button even if it's not currently open. The `accelerator` is generally a combination of `KeyModifierMask`s and `Key`s using bitwise OR such as `KEY_MASK_CTRL | KEY_A` (`Ctrl + A`).
-    # **Note:** Radio-checkable items just display a checkmark, but don't have any built-in checking behavior and must be checked/unchecked manually. See `#set_item_checked` for more info on how to control it.
-    # **Note:** The `callback` and `key_callback` Callables need to accept exactly one Variant parameter, the parameter passed to the Callables will be the value passed to `tag`.
-    # **Note:** This method is implemented on macOS and Windows.
-    # **Note:** On Windows, `accelerator` and `key_callback` are ignored.
     def add_icon_radio_check_item(rid : Int64, icon : Texture2D, label : String, callback : Void*, key_callback : Void*, tag : Void*, accelerator : Int64, index : Int64) : Int64
       if @@mb_add_icon_radio_check_item.null?
         @@mb_add_icon_radio_check_item = Bridge.get_method_bind("NativeMenu", "add_icon_radio_check_item", 1372188274_i64)
@@ -27478,14 +24128,6 @@ module Godot
       Bridge.free_string(str_2)
     end
     @@mb_add_multistate_item : Void* = Pointer(Void).null
-    # Adds a new item with text `label` to the global menu `rid`.
-    # Contrarily to normal binary items, multistate items can have more than two states, as defined by `max_states`. Each press or activate of the item will increase the state by one. The default value is defined by `default_state`.
-    # Returns index of the inserted item, it's not guaranteed to be the same as `index` value.
-    # An `accelerator` can optionally be defined, which is a keyboard shortcut that can be pressed to trigger the menu button even if it's not currently open. The `accelerator` is generally a combination of `KeyModifierMask`s and `Key`s using bitwise OR such as `KEY_MASK_CTRL | KEY_A` (`Ctrl + A`).
-    # **Note:** By default, there's no indication of the current item state, it should be changed manually.
-    # **Note:** The `callback` and `key_callback` Callables need to accept exactly one Variant parameter, the parameter passed to the Callables will be the value passed to `tag`.
-    # **Note:** This method is implemented on macOS and Windows.
-    # **Note:** On Windows, `accelerator` and `key_callback` are ignored.
     def add_multistate_item(rid : Int64, label : String, max_states : Int64, default_state : Int64, callback : Void*, key_callback : Void*, tag : Void*, accelerator : Int64, index : Int64) : Int64
       if @@mb_add_multistate_item.null?
         @@mb_add_multistate_item = Bridge.get_method_bind("NativeMenu", "add_multistate_item", 2674635658_i64)
@@ -27516,9 +24158,6 @@ module Godot
       Bridge.free_string(str_1)
     end
     @@mb_add_separator : Void* = Pointer(Void).null
-    # Adds a separator between items to the global menu `rid`. Separators also occupy an index.
-    # Returns index of the inserted item, it's not guaranteed to be the same as `index` value.
-    # **Note:** This method is implemented on macOS and Windows.
     def add_separator(rid : Int64, index : Int64) : Int64
       if @@mb_add_separator.null?
         @@mb_add_separator = Bridge.get_method_bind("NativeMenu", "add_separator", 448810126_i64)
@@ -27533,8 +24172,6 @@ module Godot
       ret
     end
     @@mb_find_item_index_with_text : Void* = Pointer(Void).null
-    # Returns the index of the item with the specified `text`. Indices are automatically assigned to each item by the engine.
-    # **Note:** This method is implemented on macOS and Windows.
     def find_item_index_with_text(rid : Int64, text : String) : Int64
       if @@mb_find_item_index_with_text.null?
         @@mb_find_item_index_with_text = Bridge.get_method_bind("NativeMenu", "find_item_index_with_text", 1362438794_i64)
@@ -27551,8 +24188,6 @@ module Godot
       Bridge.free_string(str_1)
     end
     @@mb_find_item_index_with_tag : Void* = Pointer(Void).null
-    # Returns the index of the item with the specified `tag`. Indices are automatically assigned to each item by the engine.
-    # **Note:** This method is implemented on macOS and Windows.
     def find_item_index_with_tag(rid : Int64, tag : Void*) : Int64
       if @@mb_find_item_index_with_tag.null?
         @@mb_find_item_index_with_tag = Bridge.get_method_bind("NativeMenu", "find_item_index_with_tag", 1260085030_i64)
@@ -27567,8 +24202,6 @@ module Godot
       ret
     end
     @@mb_find_item_index_with_submenu : Void* = Pointer(Void).null
-    # Returns the index of the item with the submenu specified by `submenu_rid`. Indices are automatically assigned to each item by the engine.
-    # **Note:** This method is implemented on macOS and Windows.
     def find_item_index_with_submenu(rid : Int64, submenu_rid : Int64) : Int64
       if @@mb_find_item_index_with_submenu.null?
         @@mb_find_item_index_with_submenu = Bridge.get_method_bind("NativeMenu", "find_item_index_with_submenu", 893635918_i64)
@@ -27583,8 +24216,6 @@ module Godot
       ret
     end
     @@mb_is_item_checked : Void* = Pointer(Void).null
-    # Returns `true` if the item at index `idx` is checked.
-    # **Note:** This method is implemented on macOS and Windows.
     def is_item_checked(rid : Int64, idx : Int64) : Bool
       if @@mb_is_item_checked.null?
         @@mb_is_item_checked = Bridge.get_method_bind("NativeMenu", "is_item_checked", 3120086654_i64)
@@ -27599,9 +24230,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_is_item_indeterminate : Void* = Pointer(Void).null
-    # Returns `true` if the item at index `idx` is indeterminate.
-    # See `#set_item_indeterminate` for more info on how to set an item.
-    # **Note:** This method is implemented only on macOS.
     def is_item_indeterminate(rid : Int64, idx : Int64) : Bool
       if @@mb_is_item_indeterminate.null?
         @@mb_is_item_indeterminate = Bridge.get_method_bind("NativeMenu", "is_item_indeterminate", 3120086654_i64)
@@ -27616,8 +24244,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_is_item_checkable : Void* = Pointer(Void).null
-    # Returns `true` if the item at index `idx` is checkable in some way, i.e. if it has a checkbox or radio button.
-    # **Note:** This method is implemented on macOS and Windows.
     def is_item_checkable(rid : Int64, idx : Int64) : Bool
       if @@mb_is_item_checkable.null?
         @@mb_is_item_checkable = Bridge.get_method_bind("NativeMenu", "is_item_checkable", 3120086654_i64)
@@ -27632,9 +24258,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_is_item_radio_checkable : Void* = Pointer(Void).null
-    # Returns `true` if the item at index `idx` has radio button-style checkability.
-    # **Note:** This is purely cosmetic; you must add the logic for checking/unchecking items in radio groups.
-    # **Note:** This method is implemented on macOS and Windows.
     def is_item_radio_checkable(rid : Int64, idx : Int64) : Bool
       if @@mb_is_item_radio_checkable.null?
         @@mb_is_item_radio_checkable = Bridge.get_method_bind("NativeMenu", "is_item_radio_checkable", 3120086654_i64)
@@ -27649,8 +24272,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_get_item_callback : Void* = Pointer(Void).null
-    # Returns the callback of the item at index `idx`.
-    # **Note:** This method is implemented on macOS and Windows.
     def get_item_callback(rid : Int64, idx : Int64) : Void*
       if @@mb_get_item_callback.null?
         @@mb_get_item_callback = Bridge.get_method_bind("NativeMenu", "get_item_callback", 1639989698_i64)
@@ -27665,8 +24286,6 @@ module Godot
       ret_ptr
     end
     @@mb_get_item_key_callback : Void* = Pointer(Void).null
-    # Returns the callback of the item accelerator at index `idx`.
-    # **Note:** This method is implemented only on macOS.
     def get_item_key_callback(rid : Int64, idx : Int64) : Void*
       if @@mb_get_item_key_callback.null?
         @@mb_get_item_key_callback = Bridge.get_method_bind("NativeMenu", "get_item_key_callback", 1639989698_i64)
@@ -27681,8 +24300,6 @@ module Godot
       ret_ptr
     end
     @@mb_get_item_tag : Void* = Pointer(Void).null
-    # Returns the metadata of the specified item, which might be of any type. You can set it with `#set_item_tag`, which provides a simple way of assigning context data to items.
-    # **Note:** This method is implemented on macOS and Windows.
     def get_item_tag(rid : Int64, idx : Int64) : Void*
       if @@mb_get_item_tag.null?
         @@mb_get_item_tag = Bridge.get_method_bind("NativeMenu", "get_item_tag", 4069510997_i64)
@@ -27699,8 +24316,6 @@ module Godot
       ret_ptr
     end
     @@mb_get_item_text : Void* = Pointer(Void).null
-    # Returns the text of the item at index `idx`.
-    # **Note:** This method is implemented on macOS and Windows.
     def get_item_text(rid : Int64, idx : Int64) : String
       if @@mb_get_item_text.null?
         @@mb_get_item_text = Bridge.get_method_bind("NativeMenu", "get_item_text", 1464764419_i64)
@@ -27713,8 +24328,6 @@ module Godot
       ""
     end
     @@mb_get_item_submenu : Void* = Pointer(Void).null
-    # Returns the submenu ID of the item at index `idx`. See `#add_submenu_item` for more info on how to add a submenu.
-    # **Note:** This method is implemented on macOS and Windows.
     def get_item_submenu(rid : Int64, idx : Int64) : Int64
       if @@mb_get_item_submenu.null?
         @@mb_get_item_submenu = Bridge.get_method_bind("NativeMenu", "get_item_submenu", 1066463050_i64)
@@ -27729,8 +24342,6 @@ module Godot
       ret
     end
     @@mb_get_item_accelerator : Void* = Pointer(Void).null
-    # Returns the accelerator of the item at index `idx`. Accelerators are special combinations of keys that activate the item, no matter which control is focused.
-    # **Note:** This method is implemented only on macOS.
     def get_item_accelerator(rid : Int64, idx : Int64) : Int64
       if @@mb_get_item_accelerator.null?
         @@mb_get_item_accelerator = Bridge.get_method_bind("NativeMenu", "get_item_accelerator", 316800700_i64)
@@ -27745,9 +24356,6 @@ module Godot
       ret
     end
     @@mb_is_item_disabled : Void* = Pointer(Void).null
-    # Returns `true` if the item at index `idx` is disabled. When it is disabled it can't be selected, or its action invoked.
-    # See `#set_item_disabled` for more info on how to disable an item.
-    # **Note:** This method is implemented on macOS and Windows.
     def is_item_disabled(rid : Int64, idx : Int64) : Bool
       if @@mb_is_item_disabled.null?
         @@mb_is_item_disabled = Bridge.get_method_bind("NativeMenu", "is_item_disabled", 3120086654_i64)
@@ -27762,9 +24370,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_is_item_hidden : Void* = Pointer(Void).null
-    # Returns `true` if the item at index `idx` is hidden.
-    # See `#set_item_hidden` for more info on how to hide an item.
-    # **Note:** This method is implemented only on macOS.
     def is_item_hidden(rid : Int64, idx : Int64) : Bool
       if @@mb_is_item_hidden.null?
         @@mb_is_item_hidden = Bridge.get_method_bind("NativeMenu", "is_item_hidden", 3120086654_i64)
@@ -27779,8 +24384,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_get_item_tooltip : Void* = Pointer(Void).null
-    # Returns the tooltip associated with the specified index `idx`.
-    # **Note:** This method is implemented only on macOS.
     def get_item_tooltip(rid : Int64, idx : Int64) : String
       if @@mb_get_item_tooltip.null?
         @@mb_get_item_tooltip = Bridge.get_method_bind("NativeMenu", "get_item_tooltip", 1464764419_i64)
@@ -27793,8 +24396,6 @@ module Godot
       ""
     end
     @@mb_get_item_state : Void* = Pointer(Void).null
-    # Returns the state of a multistate item. See `#add_multistate_item` for details.
-    # **Note:** This method is implemented on macOS and Windows.
     def get_item_state(rid : Int64, idx : Int64) : Int64
       if @@mb_get_item_state.null?
         @@mb_get_item_state = Bridge.get_method_bind("NativeMenu", "get_item_state", 1120910005_i64)
@@ -27809,8 +24410,6 @@ module Godot
       ret
     end
     @@mb_get_item_max_states : Void* = Pointer(Void).null
-    # Returns number of states of a multistate item. See `#add_multistate_item` for details.
-    # **Note:** This method is implemented on macOS and Windows.
     def get_item_max_states(rid : Int64, idx : Int64) : Int64
       if @@mb_get_item_max_states.null?
         @@mb_get_item_max_states = Bridge.get_method_bind("NativeMenu", "get_item_max_states", 1120910005_i64)
@@ -27825,8 +24424,6 @@ module Godot
       ret
     end
     @@mb_get_item_icon : Void* = Pointer(Void).null
-    # Returns the icon of the item at index `idx`.
-    # **Note:** This method is implemented on macOS and Windows.
     def get_item_icon(rid : Int64, idx : Int64) : Texture2D
       if @@mb_get_item_icon.null?
         @@mb_get_item_icon = Bridge.get_method_bind("NativeMenu", "get_item_icon", 3391850701_i64)
@@ -27841,8 +24438,6 @@ module Godot
       Texture2D.new(ret_ptr)
     end
     @@mb_get_item_indentation_level : Void* = Pointer(Void).null
-    # Returns the horizontal offset of the item at the given `idx`.
-    # **Note:** This method is implemented only on macOS.
     def get_item_indentation_level(rid : Int64, idx : Int64) : Int64
       if @@mb_get_item_indentation_level.null?
         @@mb_get_item_indentation_level = Bridge.get_method_bind("NativeMenu", "get_item_indentation_level", 1120910005_i64)
@@ -27857,8 +24452,6 @@ module Godot
       ret
     end
     @@mb_set_item_checked : Void* = Pointer(Void).null
-    # Sets the checkstate status of the item at index `idx`.
-    # **Note:** This method is implemented on macOS and Windows.
     def set_item_checked(rid : Int64, idx : Int64, checked : Bool) : Void
       if @@mb_set_item_checked.null?
         @@mb_set_item_checked = Bridge.get_method_bind("NativeMenu", "set_item_checked", 2658558584_i64)
@@ -27873,8 +24466,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_item_checked, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_set_item_indeterminate : Void* = Pointer(Void).null
-    # Sets the indeterminate status of the item at index `idx`.
-    # **Note:** This method is implemented only on macOS.
     def set_item_indeterminate(rid : Int64, idx : Int64, indeterminate : Bool) : Void
       if @@mb_set_item_indeterminate.null?
         @@mb_set_item_indeterminate = Bridge.get_method_bind("NativeMenu", "set_item_indeterminate", 2658558584_i64)
@@ -27889,8 +24480,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_item_indeterminate, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_set_item_checkable : Void* = Pointer(Void).null
-    # Sets whether the item at index `idx` has a checkbox. If `false`, sets the type of the item to plain text.
-    # **Note:** This method is implemented on macOS and Windows.
     def set_item_checkable(rid : Int64, idx : Int64, checkable : Bool) : Void
       if @@mb_set_item_checkable.null?
         @@mb_set_item_checkable = Bridge.get_method_bind("NativeMenu", "set_item_checkable", 2658558584_i64)
@@ -27905,9 +24494,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_item_checkable, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_set_item_radio_checkable : Void* = Pointer(Void).null
-    # Sets the type of the item at the specified index `idx` to radio button. If `false`, sets the type of the item to plain text.
-    # **Note:** This is purely cosmetic; you must add the logic for checking/unchecking items in radio groups.
-    # **Note:** This method is implemented on macOS and Windows.
     def set_item_radio_checkable(rid : Int64, idx : Int64, checkable : Bool) : Void
       if @@mb_set_item_radio_checkable.null?
         @@mb_set_item_radio_checkable = Bridge.get_method_bind("NativeMenu", "set_item_radio_checkable", 2658558584_i64)
@@ -27922,9 +24508,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_item_radio_checkable, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_set_item_callback : Void* = Pointer(Void).null
-    # Sets the callback of the item at index `idx`. Callback is emitted when an item is pressed.
-    # **Note:** The `callback` Callable needs to accept exactly one Variant parameter, the parameter passed to the Callable will be the value passed to the `tag` parameter when the menu item was created.
-    # **Note:** This method is implemented on macOS and Windows.
     def set_item_callback(rid : Int64, idx : Int64, callback : Void*) : Void
       if @@mb_set_item_callback.null?
         @@mb_set_item_callback = Bridge.get_method_bind("NativeMenu", "set_item_callback", 2779810226_i64)
@@ -27939,9 +24522,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_item_callback, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_set_item_hover_callbacks : Void* = Pointer(Void).null
-    # Sets the callback of the item at index `idx`. The callback is emitted when an item is hovered.
-    # **Note:** The `callback` Callable needs to accept exactly one Variant parameter, the parameter passed to the Callable will be the value passed to the `tag` parameter when the menu item was created.
-    # **Note:** This method is implemented only on macOS.
     def set_item_hover_callbacks(rid : Int64, idx : Int64, callback : Void*) : Void
       if @@mb_set_item_hover_callbacks.null?
         @@mb_set_item_hover_callbacks = Bridge.get_method_bind("NativeMenu", "set_item_hover_callbacks", 2779810226_i64)
@@ -27956,9 +24536,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_item_hover_callbacks, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_set_item_key_callback : Void* = Pointer(Void).null
-    # Sets the callback of the item at index `idx`. Callback is emitted when its accelerator is activated.
-    # **Note:** The `key_callback` Callable needs to accept exactly one Variant parameter, the parameter passed to the Callable will be the value passed to the `tag` parameter when the menu item was created.
-    # **Note:** This method is implemented only on macOS.
     def set_item_key_callback(rid : Int64, idx : Int64, key_callback : Void*) : Void
       if @@mb_set_item_key_callback.null?
         @@mb_set_item_key_callback = Bridge.get_method_bind("NativeMenu", "set_item_key_callback", 2779810226_i64)
@@ -27973,8 +24550,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_item_key_callback, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_set_item_tag : Void* = Pointer(Void).null
-    # Sets the metadata of an item, which may be of any type. You can later get it with `#get_item_tag`, which provides a simple way of assigning context data to items.
-    # **Note:** This method is implemented on macOS and Windows.
     def set_item_tag(rid : Int64, idx : Int64, tag : Void*) : Void
       if @@mb_set_item_tag.null?
         @@mb_set_item_tag = Bridge.get_method_bind("NativeMenu", "set_item_tag", 2706844827_i64)
@@ -27989,8 +24564,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_item_tag, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_set_item_text : Void* = Pointer(Void).null
-    # Sets the text of the item at index `idx`.
-    # **Note:** This method is implemented on macOS and Windows.
     def set_item_text(rid : Int64, idx : Int64, text : String) : Void
       if @@mb_set_item_text.null?
         @@mb_set_item_text = Bridge.get_method_bind("NativeMenu", "set_item_text", 4153150897_i64)
@@ -28007,8 +24580,6 @@ module Godot
       Bridge.free_string(str_2)
     end
     @@mb_set_item_submenu : Void* = Pointer(Void).null
-    # Sets the submenu RID of the item at index `idx`. The submenu is a global menu that would be shown when the item is clicked.
-    # **Note:** This method is implemented on macOS and Windows.
     def set_item_submenu(rid : Int64, idx : Int64, submenu_rid : Int64) : Void
       if @@mb_set_item_submenu.null?
         @@mb_set_item_submenu = Bridge.get_method_bind("NativeMenu", "set_item_submenu", 2310537182_i64)
@@ -28023,8 +24594,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_item_submenu, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_set_item_accelerator : Void* = Pointer(Void).null
-    # Sets the accelerator of the item at index `idx`. `keycode` can be a single `Key`, or a combination of `KeyModifierMask`s and `Key`s using bitwise OR such as `KEY_MASK_CTRL | KEY_A` (`Ctrl + A`).
-    # **Note:** This method is implemented only on macOS.
     def set_item_accelerator(rid : Int64, idx : Int64, keycode : Int64) : Void
       if @@mb_set_item_accelerator.null?
         @@mb_set_item_accelerator = Bridge.get_method_bind("NativeMenu", "set_item_accelerator", 786300043_i64)
@@ -28039,8 +24608,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_item_accelerator, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_set_item_disabled : Void* = Pointer(Void).null
-    # Enables/disables the item at index `idx`. When it is disabled, it can't be selected and its action can't be invoked.
-    # **Note:** This method is implemented on macOS and Windows.
     def set_item_disabled(rid : Int64, idx : Int64, disabled : Bool) : Void
       if @@mb_set_item_disabled.null?
         @@mb_set_item_disabled = Bridge.get_method_bind("NativeMenu", "set_item_disabled", 2658558584_i64)
@@ -28055,8 +24622,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_item_disabled, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_set_item_hidden : Void* = Pointer(Void).null
-    # Hides/shows the item at index `idx`. When it is hidden, an item does not appear in a menu and its action cannot be invoked.
-    # **Note:** This method is implemented only on macOS.
     def set_item_hidden(rid : Int64, idx : Int64, hidden : Bool) : Void
       if @@mb_set_item_hidden.null?
         @@mb_set_item_hidden = Bridge.get_method_bind("NativeMenu", "set_item_hidden", 2658558584_i64)
@@ -28071,8 +24636,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_item_hidden, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_set_item_tooltip : Void* = Pointer(Void).null
-    # Sets the `String` tooltip of the item at the specified index `idx`.
-    # **Note:** This method is implemented only on macOS.
     def set_item_tooltip(rid : Int64, idx : Int64, tooltip : String) : Void
       if @@mb_set_item_tooltip.null?
         @@mb_set_item_tooltip = Bridge.get_method_bind("NativeMenu", "set_item_tooltip", 4153150897_i64)
@@ -28089,8 +24652,6 @@ module Godot
       Bridge.free_string(str_2)
     end
     @@mb_set_item_state : Void* = Pointer(Void).null
-    # Sets the state of a multistate item. See `#add_multistate_item` for details.
-    # **Note:** This method is implemented on macOS and Windows.
     def set_item_state(rid : Int64, idx : Int64, state : Int64) : Void
       if @@mb_set_item_state.null?
         @@mb_set_item_state = Bridge.get_method_bind("NativeMenu", "set_item_state", 4288446313_i64)
@@ -28105,8 +24666,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_item_state, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_set_item_max_states : Void* = Pointer(Void).null
-    # Sets number of state of a multistate item. See `#add_multistate_item` for details.
-    # **Note:** This method is implemented on macOS and Windows.
     def set_item_max_states(rid : Int64, idx : Int64, max_states : Int64) : Void
       if @@mb_set_item_max_states.null?
         @@mb_set_item_max_states = Bridge.get_method_bind("NativeMenu", "set_item_max_states", 4288446313_i64)
@@ -28121,9 +24680,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_item_max_states, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_set_item_icon : Void* = Pointer(Void).null
-    # Replaces the `Texture2D` icon of the specified `idx`.
-    # **Note:** This method is implemented on macOS and Windows.
-    # **Note:** This method is not supported by macOS Dock menu items.
     def set_item_icon(rid : Int64, idx : Int64, icon : Texture2D) : Void
       if @@mb_set_item_icon.null?
         @@mb_set_item_icon = Bridge.get_method_bind("NativeMenu", "set_item_icon", 1388763257_i64)
@@ -28138,8 +24694,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_item_icon, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_set_item_indentation_level : Void* = Pointer(Void).null
-    # Sets the horizontal offset of the item at the given `idx`.
-    # **Note:** This method is implemented only on macOS.
     def set_item_indentation_level(rid : Int64, idx : Int64, level : Int64) : Void
       if @@mb_set_item_indentation_level.null?
         @@mb_set_item_indentation_level = Bridge.get_method_bind("NativeMenu", "set_item_indentation_level", 4288446313_i64)
@@ -28154,10 +24708,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_item_indentation_level, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_set_item_index : Void* = Pointer(Void).null
-    # Changes the index of the item at index `idx` to be at index `target_idx`. This can be used to move an item above other items.
-    # Returns the new index of the moved item, it's not guaranteed to be the same as `target_idx`.
-    # **Note:** The indices of any items between index `idx` and index `target_idx` will be shifted by one.
-    # **Note:** This method is implemented on macOS and Windows.
     def set_item_index(rid : Int64, idx : Int64, target_idx : Int64) : Int64
       if @@mb_set_item_index.null?
         @@mb_set_item_index = Bridge.get_method_bind("NativeMenu", "set_item_index", 23951185_i64)
@@ -28174,8 +24724,6 @@ module Godot
       ret
     end
     @@mb_get_item_count : Void* = Pointer(Void).null
-    # Returns number of items in the global menu `rid`.
-    # **Note:** This method is implemented on macOS and Windows.
     def get_item_count(rid : Int64) : Int64
       if @@mb_get_item_count.null?
         @@mb_get_item_count = Bridge.get_method_bind("NativeMenu", "get_item_count", 2198884583_i64)
@@ -28188,8 +24736,6 @@ module Godot
       ret
     end
     @@mb_is_system_menu : Void* = Pointer(Void).null
-    # Return `true` is global menu is a special system menu.
-    # **Note:** This method is implemented only on macOS.
     def is_system_menu(rid : Int64) : Bool
       if @@mb_is_system_menu.null?
         @@mb_is_system_menu = Bridge.get_method_bind("NativeMenu", "is_system_menu", 4155700596_i64)
@@ -28202,9 +24748,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_remove_item : Void* = Pointer(Void).null
-    # Removes the item at index `idx` from the global menu `rid`.
-    # **Note:** The indices of items after the removed item will be shifted by one.
-    # **Note:** This method is implemented on macOS and Windows.
     def remove_item(rid : Int64, idx : Int64) : Void
       if @@mb_remove_item.null?
         @@mb_remove_item = Bridge.get_method_bind("NativeMenu", "remove_item", 3411492887_i64)
@@ -28217,8 +24760,6 @@ module Godot
       Bridge.ptrcall(@@mb_remove_item, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_clear : Void* = Pointer(Void).null
-    # Removes all items from the global menu `rid`.
-    # **Note:** This method is implemented on macOS and Windows.
     def clear(rid : Int64) : Void
       if @@mb_clear.null?
         @@mb_clear = Bridge.get_method_bind("NativeMenu", "clear", 2722037293_i64)
@@ -28229,18 +24770,11 @@ module Godot
       Bridge.ptrcall(@@mb_clear, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
   end
-  # A 2D agent used to pathfind to a position while avoiding obstacles.
-  #
-  # A 2D agent used to pathfind to a position while avoiding static and dynamic obstacles. The calculation can be used by the parent node to dynamically move it along the path. Requires navigation data to work correctly.
-  # Dynamic obstacles are avoided using RVO collision avoidance. Avoidance is computed before physics, so the pathfinding information can be used safely in the physics step.
-  # **Note:** After setting the `target_position` property, the `#get_next_path_position` method must be used once every physics frame to update the internal path logic of the navigation agent. The vector position it returns should be used as the next movement position for the agent's parent node.
-  # **Note:** Several methods of this class, such as `#get_next_path_position`, can trigger a new path calculation. Calling these in your callback to an agent's signal, such as `waypoint_reached`, can cause infinite recursion. It is recommended to call these methods in the physics step or, alternatively, delay their call until the end of the frame (see `#Object.call_deferred` or `Object.CONNECT_DEFERRED`).
   class NavigationAgent2D < Godot::Node
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
     end
     @@mb_get_rid : Void* = Pointer(Void).null
-    # Returns the `RID` of this agent on the `NavigationServer2D`.
     def get_rid() : Int64
       if @@mb_get_rid.null?
         @@mb_get_rid = Bridge.get_method_bind("NavigationAgent2D", "get_rid", 2944877500_i64)
@@ -28459,7 +24993,6 @@ module Godot
       ret
     end
     @@mb_set_navigation_layer_value : Void* = Pointer(Void).null
-    # Based on `value`, enables or disables the specified layer in the `navigation_layers` bitmask, given a `layer_number` between 1 and 32.
     def set_navigation_layer_value(layer_number : Int64, value : Bool) : Void
       if @@mb_set_navigation_layer_value.null?
         @@mb_set_navigation_layer_value = Bridge.get_method_bind("NavigationAgent2D", "set_navigation_layer_value", 300928843_i64)
@@ -28472,7 +25005,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_navigation_layer_value, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_navigation_layer_value : Void* = Pointer(Void).null
-    # Returns whether or not the specified layer of the `navigation_layers` bitmask is enabled, given a `layer_number` between 1 and 32.
     def get_navigation_layer_value(layer_number : Int64) : Bool
       if @@mb_get_navigation_layer_value.null?
         @@mb_get_navigation_layer_value = Bridge.get_method_bind("NavigationAgent2D", "get_navigation_layer_value", 1116898809_i64)
@@ -28542,7 +25074,6 @@ module Godot
       ret
     end
     @@mb_set_navigation_map : Void* = Pointer(Void).null
-    # Sets the `RID` of the navigation map this NavigationAgent node should use and also updates the `agent` on the NavigationServer.
     def set_navigation_map(navigation_map : Int64) : Void
       if @@mb_set_navigation_map.null?
         @@mb_set_navigation_map = Bridge.get_method_bind("NavigationAgent2D", "set_navigation_map", 2722037293_i64)
@@ -28553,7 +25084,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_navigation_map, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_navigation_map : Void* = Pointer(Void).null
-    # Returns the `RID` of the navigation map for this NavigationAgent node. This function returns always the map set on the NavigationAgent node and not the map of the abstract agent on the NavigationServer. If the agent map is changed directly with the NavigationServer API the NavigationAgent node will not be aware of the map change. Use `#set_navigation_map` to change the navigation map for the NavigationAgent and also update the agent on the NavigationServer.
     def get_navigation_map() : Int64
       if @@mb_get_navigation_map.null?
         @@mb_get_navigation_map = Bridge.get_method_bind("NavigationAgent2D", "get_navigation_map", 2944877500_i64)
@@ -28696,7 +25226,6 @@ module Godot
       ret
     end
     @@mb_get_path_length : Void* = Pointer(Void).null
-    # Returns the length of the currently calculated path. The returned value is `0.0`, if the path is still calculating or no calculation has been requested yet.
     def get_path_length() : Float64
       if @@mb_get_path_length.null?
         @@mb_get_path_length = Bridge.get_method_bind("NavigationAgent2D", "get_path_length", 1740695150_i64)
@@ -28706,7 +25235,6 @@ module Godot
       ret
     end
     @@mb_get_next_path_position : Void* = Pointer(Void).null
-    # Returns the next position in global coordinates that can be moved to, making sure that there are no static objects in the way. If the agent does not have a navigation path, it will return the position of the agent's parent. The use of this function once every physics frame is required to update the internal path logic of the NavigationAgent.
     def get_next_path_position() : Vector2
       if @@mb_get_next_path_position.null?
         @@mb_get_next_path_position = Bridge.get_method_bind("NavigationAgent2D", "get_next_path_position", 1497962370_i64)
@@ -28716,7 +25244,6 @@ module Godot
       ret
     end
     @@mb_set_velocity_forced : Void* = Pointer(Void).null
-    # Replaces the internal velocity in the collision avoidance simulation with `velocity`. When an agent is teleported to a new position this function should be used in the same frame. If called frequently this function can get agents stuck.
     def set_velocity_forced(velocity : Vector2) : Void
       if @@mb_set_velocity_forced.null?
         @@mb_set_velocity_forced = Bridge.get_method_bind("NavigationAgent2D", "set_velocity_forced", 743155724_i64)
@@ -28746,7 +25273,6 @@ module Godot
       ret
     end
     @@mb_distance_to_target : Void* = Pointer(Void).null
-    # Returns the distance to the target position, using the agent's global position. The user must set `target_position` in order for this to be accurate.
     def distance_to_target() : Float64
       if @@mb_distance_to_target.null?
         @@mb_distance_to_target = Bridge.get_method_bind("NavigationAgent2D", "distance_to_target", 1740695150_i64)
@@ -28756,7 +25282,6 @@ module Godot
       ret
     end
     @@mb_get_current_navigation_result : Void* = Pointer(Void).null
-    # Returns the path query result for the path the agent is currently following.
     def get_current_navigation_result() : NavigationPathQueryResult2D
       if @@mb_get_current_navigation_result.null?
         @@mb_get_current_navigation_result = Bridge.get_method_bind("NavigationAgent2D", "get_current_navigation_result", 166799483_i64)
@@ -28766,7 +25291,6 @@ module Godot
       NavigationPathQueryResult2D.new(ret_ptr)
     end
     @@mb_get_current_navigation_path : Void* = Pointer(Void).null
-    # Returns this agent's current path from start to finish in global coordinates. The path only updates when the target position is changed or the agent requires a repath. The path array is not intended to be used in direct path movement as the agent has its own internal path logic that would get corrupted by changing the path array manually. Use the intended `#get_next_path_position` once every physics frame to receive the next path point for the agent's movement as this function also updates the internal path logic.
     def get_current_navigation_path() : Void*
       if @@mb_get_current_navigation_path.null?
         @@mb_get_current_navigation_path = Bridge.get_method_bind("NavigationAgent2D", "get_current_navigation_path", 2961356807_i64)
@@ -28776,7 +25300,6 @@ module Godot
       ret_ptr
     end
     @@mb_get_current_navigation_path_index : Void* = Pointer(Void).null
-    # Returns which index the agent is currently on in the navigation path's `PackedVector2Array`.
     def get_current_navigation_path_index() : Int64
       if @@mb_get_current_navigation_path_index.null?
         @@mb_get_current_navigation_path_index = Bridge.get_method_bind("NavigationAgent2D", "get_current_navigation_path_index", 3905245786_i64)
@@ -28786,7 +25309,6 @@ module Godot
       ret
     end
     @@mb_is_target_reached : Void* = Pointer(Void).null
-    # Returns `true` if the agent reached the target, i.e. the agent moved within `target_desired_distance` of the `target_position`. It may not always be possible to reach the target but it should always be possible to reach the final position. See `#get_final_position`.
     def is_target_reached() : Bool
       if @@mb_is_target_reached.null?
         @@mb_is_target_reached = Bridge.get_method_bind("NavigationAgent2D", "is_target_reached", 36873697_i64)
@@ -28796,7 +25318,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_is_target_reachable : Void* = Pointer(Void).null
-    # Returns `true` if `#get_final_position` is within `target_desired_distance` of the `target_position`.
     def is_target_reachable() : Bool
       if @@mb_is_target_reachable.null?
         @@mb_is_target_reachable = Bridge.get_method_bind("NavigationAgent2D", "is_target_reachable", 2240911060_i64)
@@ -28806,8 +25327,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_is_navigation_finished : Void* = Pointer(Void).null
-    # Returns `true` if the agent's navigation has finished. If the target is reachable, navigation ends when the target is reached. If the target is unreachable, navigation ends when the last waypoint of the path is reached.
-    # **Note:** While `true` prefer to stop calling update functions like `#get_next_path_position`. This avoids jittering the standing agent due to calling repeated path updates.
     def is_navigation_finished() : Bool
       if @@mb_is_navigation_finished.null?
         @@mb_is_navigation_finished = Bridge.get_method_bind("NavigationAgent2D", "is_navigation_finished", 2240911060_i64)
@@ -28817,7 +25336,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_get_final_position : Void* = Pointer(Void).null
-    # Returns the reachable final position of the current navigation path in global coordinates. This position can change if the agent needs to update the navigation path which makes the agent emit the `path_changed` signal.
     def get_final_position() : Vector2
       if @@mb_get_final_position.null?
         @@mb_get_final_position = Bridge.get_method_bind("NavigationAgent2D", "get_final_position", 1497962370_i64)
@@ -28865,7 +25383,6 @@ module Godot
       ret
     end
     @@mb_set_avoidance_layer_value : Void* = Pointer(Void).null
-    # Based on `value`, enables or disables the specified layer in the `avoidance_layers` bitmask, given a `layer_number` between 1 and 32.
     def set_avoidance_layer_value(layer_number : Int64, value : Bool) : Void
       if @@mb_set_avoidance_layer_value.null?
         @@mb_set_avoidance_layer_value = Bridge.get_method_bind("NavigationAgent2D", "set_avoidance_layer_value", 300928843_i64)
@@ -28878,7 +25395,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_avoidance_layer_value, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_avoidance_layer_value : Void* = Pointer(Void).null
-    # Returns whether or not the specified layer of the `avoidance_layers` bitmask is enabled, given a `layer_number` between 1 and 32.
     def get_avoidance_layer_value(layer_number : Int64) : Bool
       if @@mb_get_avoidance_layer_value.null?
         @@mb_get_avoidance_layer_value = Bridge.get_method_bind("NavigationAgent2D", "get_avoidance_layer_value", 1116898809_i64)
@@ -28891,7 +25407,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_set_avoidance_mask_value : Void* = Pointer(Void).null
-    # Based on `value`, enables or disables the specified mask in the `avoidance_mask` bitmask, given a `mask_number` between 1 and 32.
     def set_avoidance_mask_value(mask_number : Int64, value : Bool) : Void
       if @@mb_set_avoidance_mask_value.null?
         @@mb_set_avoidance_mask_value = Bridge.get_method_bind("NavigationAgent2D", "set_avoidance_mask_value", 300928843_i64)
@@ -28904,7 +25419,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_avoidance_mask_value, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_avoidance_mask_value : Void* = Pointer(Void).null
-    # Returns whether or not the specified mask of the `avoidance_mask` bitmask is enabled, given a `mask_number` between 1 and 32.
     def get_avoidance_mask_value(mask_number : Int64) : Bool
       if @@mb_get_avoidance_mask_value.null?
         @@mb_get_avoidance_mask_value = Bridge.get_method_bind("NavigationAgent2D", "get_avoidance_mask_value", 1116898809_i64)
@@ -29031,18 +25545,11 @@ module Godot
       ret
     end
   end
-  # A 3D agent used to pathfind to a position while avoiding obstacles.
-  #
-  # A 3D agent used to pathfind to a position while avoiding static and dynamic obstacles. The calculation can be used by the parent node to dynamically move it along the path. Requires navigation data to work correctly.
-  # Dynamic obstacles are avoided using RVO collision avoidance. Avoidance is computed before physics, so the pathfinding information can be used safely in the physics step.
-  # **Note:** After setting the `target_position` property, the `#get_next_path_position` method must be used once every physics frame to update the internal path logic of the navigation agent. The vector position it returns should be used as the next movement position for the agent's parent node.
-  # **Note:** Several methods of this class, such as `#get_next_path_position`, can trigger a new path calculation. Calling these in your callback to an agent's signal, such as `waypoint_reached`, can cause infinite recursion. It is recommended to call these methods in the physics step or, alternatively, delay their call until the end of the frame (see `#Object.call_deferred` or `Object.CONNECT_DEFERRED`).
   class NavigationAgent3D < Godot::Node
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
     end
     @@mb_get_rid : Void* = Pointer(Void).null
-    # Returns the `RID` of this agent on the `NavigationServer3D`.
     def get_rid() : Int64
       if @@mb_get_rid.null?
         @@mb_get_rid = Bridge.get_method_bind("NavigationAgent3D", "get_rid", 2944877500_i64)
@@ -29337,7 +25844,6 @@ module Godot
       ret
     end
     @@mb_set_navigation_layer_value : Void* = Pointer(Void).null
-    # Based on `value`, enables or disables the specified layer in the `navigation_layers` bitmask, given a `layer_number` between 1 and 32.
     def set_navigation_layer_value(layer_number : Int64, value : Bool) : Void
       if @@mb_set_navigation_layer_value.null?
         @@mb_set_navigation_layer_value = Bridge.get_method_bind("NavigationAgent3D", "set_navigation_layer_value", 300928843_i64)
@@ -29350,7 +25856,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_navigation_layer_value, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_navigation_layer_value : Void* = Pointer(Void).null
-    # Returns whether or not the specified layer of the `navigation_layers` bitmask is enabled, given a `layer_number` between 1 and 32.
     def get_navigation_layer_value(layer_number : Int64) : Bool
       if @@mb_get_navigation_layer_value.null?
         @@mb_get_navigation_layer_value = Bridge.get_method_bind("NavigationAgent3D", "get_navigation_layer_value", 1116898809_i64)
@@ -29420,7 +25925,6 @@ module Godot
       ret
     end
     @@mb_set_navigation_map : Void* = Pointer(Void).null
-    # Sets the `RID` of the navigation map this NavigationAgent node should use and also updates the `agent` on the NavigationServer.
     def set_navigation_map(navigation_map : Int64) : Void
       if @@mb_set_navigation_map.null?
         @@mb_set_navigation_map = Bridge.get_method_bind("NavigationAgent3D", "set_navigation_map", 2722037293_i64)
@@ -29431,7 +25935,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_navigation_map, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_navigation_map : Void* = Pointer(Void).null
-    # Returns the `RID` of the navigation map for this NavigationAgent node. This function returns always the map set on the NavigationAgent node and not the map of the abstract agent on the NavigationServer. If the agent map is changed directly with the NavigationServer API the NavigationAgent node will not be aware of the map change. Use `#set_navigation_map` to change the navigation map for the NavigationAgent and also update the agent on the NavigationServer.
     def get_navigation_map() : Int64
       if @@mb_get_navigation_map.null?
         @@mb_get_navigation_map = Bridge.get_method_bind("NavigationAgent3D", "get_navigation_map", 2944877500_i64)
@@ -29574,7 +26077,6 @@ module Godot
       ret
     end
     @@mb_get_path_length : Void* = Pointer(Void).null
-    # Returns the length of the currently calculated path. The returned value is `0.0`, if the path is still calculating or no calculation has been requested yet.
     def get_path_length() : Float64
       if @@mb_get_path_length.null?
         @@mb_get_path_length = Bridge.get_method_bind("NavigationAgent3D", "get_path_length", 1740695150_i64)
@@ -29584,7 +26086,6 @@ module Godot
       ret
     end
     @@mb_get_next_path_position : Void* = Pointer(Void).null
-    # Returns the next position in global coordinates that can be moved to, making sure that there are no static objects in the way. If the agent does not have a navigation path, it will return the position of the agent's parent. The use of this function once every physics frame is required to update the internal path logic of the NavigationAgent.
     def get_next_path_position() : Vector3
       if @@mb_get_next_path_position.null?
         @@mb_get_next_path_position = Bridge.get_method_bind("NavigationAgent3D", "get_next_path_position", 3783033775_i64)
@@ -29594,7 +26095,6 @@ module Godot
       ret
     end
     @@mb_set_velocity_forced : Void* = Pointer(Void).null
-    # Replaces the internal velocity in the collision avoidance simulation with `velocity`. When an agent is teleported to a new position this function should be used in the same frame. If called frequently this function can get agents stuck.
     def set_velocity_forced(velocity : Vector3) : Void
       if @@mb_set_velocity_forced.null?
         @@mb_set_velocity_forced = Bridge.get_method_bind("NavigationAgent3D", "set_velocity_forced", 3460891852_i64)
@@ -29624,7 +26124,6 @@ module Godot
       ret
     end
     @@mb_distance_to_target : Void* = Pointer(Void).null
-    # Returns the distance to the target position, using the agent's global position. The user must set `target_position` in order for this to be accurate.
     def distance_to_target() : Float64
       if @@mb_distance_to_target.null?
         @@mb_distance_to_target = Bridge.get_method_bind("NavigationAgent3D", "distance_to_target", 1740695150_i64)
@@ -29634,7 +26133,6 @@ module Godot
       ret
     end
     @@mb_get_current_navigation_result : Void* = Pointer(Void).null
-    # Returns the path query result for the path the agent is currently following.
     def get_current_navigation_result() : NavigationPathQueryResult3D
       if @@mb_get_current_navigation_result.null?
         @@mb_get_current_navigation_result = Bridge.get_method_bind("NavigationAgent3D", "get_current_navigation_result", 728825684_i64)
@@ -29644,7 +26142,6 @@ module Godot
       NavigationPathQueryResult3D.new(ret_ptr)
     end
     @@mb_get_current_navigation_path : Void* = Pointer(Void).null
-    # Returns this agent's current path from start to finish in global coordinates. The path only updates when the target position is changed or the agent requires a repath. The path array is not intended to be used in direct path movement as the agent has its own internal path logic that would get corrupted by changing the path array manually. Use the intended `#get_next_path_position` once every physics frame to receive the next path point for the agent's movement as this function also updates the internal path logic.
     def get_current_navigation_path() : Void*
       if @@mb_get_current_navigation_path.null?
         @@mb_get_current_navigation_path = Bridge.get_method_bind("NavigationAgent3D", "get_current_navigation_path", 497664490_i64)
@@ -29654,7 +26151,6 @@ module Godot
       ret_ptr
     end
     @@mb_get_current_navigation_path_index : Void* = Pointer(Void).null
-    # Returns which index the agent is currently on in the navigation path's `PackedVector3Array`.
     def get_current_navigation_path_index() : Int64
       if @@mb_get_current_navigation_path_index.null?
         @@mb_get_current_navigation_path_index = Bridge.get_method_bind("NavigationAgent3D", "get_current_navigation_path_index", 3905245786_i64)
@@ -29664,7 +26160,6 @@ module Godot
       ret
     end
     @@mb_is_target_reached : Void* = Pointer(Void).null
-    # Returns `true` if the agent reached the target, i.e. the agent moved within `target_desired_distance` of the `target_position`. It may not always be possible to reach the target but it should always be possible to reach the final position. See `#get_final_position`.
     def is_target_reached() : Bool
       if @@mb_is_target_reached.null?
         @@mb_is_target_reached = Bridge.get_method_bind("NavigationAgent3D", "is_target_reached", 36873697_i64)
@@ -29674,7 +26169,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_is_target_reachable : Void* = Pointer(Void).null
-    # Returns `true` if `#get_final_position` is within `target_desired_distance` of the `target_position`.
     def is_target_reachable() : Bool
       if @@mb_is_target_reachable.null?
         @@mb_is_target_reachable = Bridge.get_method_bind("NavigationAgent3D", "is_target_reachable", 2240911060_i64)
@@ -29684,8 +26178,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_is_navigation_finished : Void* = Pointer(Void).null
-    # Returns `true` if the agent's navigation has finished. If the target is reachable, navigation ends when the target is reached. If the target is unreachable, navigation ends when the last waypoint of the path is reached.
-    # **Note:** While `true` prefer to stop calling update functions like `#get_next_path_position`. This avoids jittering the standing agent due to calling repeated path updates.
     def is_navigation_finished() : Bool
       if @@mb_is_navigation_finished.null?
         @@mb_is_navigation_finished = Bridge.get_method_bind("NavigationAgent3D", "is_navigation_finished", 2240911060_i64)
@@ -29695,7 +26187,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_get_final_position : Void* = Pointer(Void).null
-    # Returns the reachable final position of the current navigation path in global coordinates. This position can change if the agent needs to update the navigation path which makes the agent emit the `path_changed` signal.
     def get_final_position() : Vector3
       if @@mb_get_final_position.null?
         @@mb_get_final_position = Bridge.get_method_bind("NavigationAgent3D", "get_final_position", 3783033775_i64)
@@ -29743,7 +26234,6 @@ module Godot
       ret
     end
     @@mb_set_avoidance_layer_value : Void* = Pointer(Void).null
-    # Based on `value`, enables or disables the specified layer in the `avoidance_layers` bitmask, given a `layer_number` between 1 and 32.
     def set_avoidance_layer_value(layer_number : Int64, value : Bool) : Void
       if @@mb_set_avoidance_layer_value.null?
         @@mb_set_avoidance_layer_value = Bridge.get_method_bind("NavigationAgent3D", "set_avoidance_layer_value", 300928843_i64)
@@ -29756,7 +26246,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_avoidance_layer_value, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_avoidance_layer_value : Void* = Pointer(Void).null
-    # Returns whether or not the specified layer of the `avoidance_layers` bitmask is enabled, given a `layer_number` between 1 and 32.
     def get_avoidance_layer_value(layer_number : Int64) : Bool
       if @@mb_get_avoidance_layer_value.null?
         @@mb_get_avoidance_layer_value = Bridge.get_method_bind("NavigationAgent3D", "get_avoidance_layer_value", 1116898809_i64)
@@ -29769,7 +26258,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_set_avoidance_mask_value : Void* = Pointer(Void).null
-    # Based on `value`, enables or disables the specified mask in the `avoidance_mask` bitmask, given a `mask_number` between 1 and 32.
     def set_avoidance_mask_value(mask_number : Int64, value : Bool) : Void
       if @@mb_set_avoidance_mask_value.null?
         @@mb_set_avoidance_mask_value = Bridge.get_method_bind("NavigationAgent3D", "set_avoidance_mask_value", 300928843_i64)
@@ -29782,7 +26270,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_avoidance_mask_value, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_avoidance_mask_value : Void* = Pointer(Void).null
-    # Returns whether or not the specified mask of the `avoidance_mask` bitmask is enabled, given a `mask_number` between 1 and 32.
     def get_avoidance_mask_value(mask_number : Int64) : Bool
       if @@mb_get_avoidance_mask_value.null?
         @@mb_get_avoidance_mask_value = Bridge.get_method_bind("NavigationAgent3D", "get_avoidance_mask_value", 1116898809_i64)
@@ -29890,15 +26377,11 @@ module Godot
       ret
     end
   end
-  # A link between two positions on `NavigationRegion2D`s that agents can be routed through.
-  #
-  # A link between two positions on `NavigationRegion2D`s that agents can be routed through. These positions can be on the same `NavigationRegion2D` or on two different ones. Links are useful to express navigation methods other than traveling along the surface of the navigation polygon, such as ziplines, teleporters, or gaps that can be jumped across.
   class NavigationLink2D < Godot::Node2D
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
     end
     @@mb_get_rid : Void* = Pointer(Void).null
-    # Returns the `RID` of this link on the `NavigationServer2D`.
     def get_rid() : Int64
       if @@mb_get_rid.null?
         @@mb_get_rid = Bridge.get_method_bind("NavigationLink2D", "get_rid", 2944877500_i64)
@@ -29927,7 +26410,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_set_navigation_map : Void* = Pointer(Void).null
-    # Sets the `RID` of the navigation map this link should use. By default the link will automatically join the `World2D` default navigation map so this function is only required to override the default map.
     def set_navigation_map(navigation_map : Int64) : Void
       if @@mb_set_navigation_map.null?
         @@mb_set_navigation_map = Bridge.get_method_bind("NavigationLink2D", "set_navigation_map", 2722037293_i64)
@@ -29938,7 +26420,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_navigation_map, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_navigation_map : Void* = Pointer(Void).null
-    # Returns the current navigation map `RID` used by this link.
     def get_navigation_map() : Int64
       if @@mb_get_navigation_map.null?
         @@mb_get_navigation_map = Bridge.get_method_bind("NavigationLink2D", "get_navigation_map", 2944877500_i64)
@@ -29986,7 +26467,6 @@ module Godot
       ret
     end
     @@mb_set_navigation_layer_value : Void* = Pointer(Void).null
-    # Based on `value`, enables or disables the specified layer in the `navigation_layers` bitmask, given a `layer_number` between 1 and 32.
     def set_navigation_layer_value(layer_number : Int64, value : Bool) : Void
       if @@mb_set_navigation_layer_value.null?
         @@mb_set_navigation_layer_value = Bridge.get_method_bind("NavigationLink2D", "set_navigation_layer_value", 300928843_i64)
@@ -29999,7 +26479,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_navigation_layer_value, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_navigation_layer_value : Void* = Pointer(Void).null
-    # Returns whether or not the specified layer of the `navigation_layers` bitmask is enabled, given a `layer_number` between 1 and 32.
     def get_navigation_layer_value(layer_number : Int64) : Bool
       if @@mb_get_navigation_layer_value.null?
         @@mb_get_navigation_layer_value = Bridge.get_method_bind("NavigationLink2D", "get_navigation_layer_value", 1116898809_i64)
@@ -30050,7 +26529,6 @@ module Godot
       ret
     end
     @@mb_set_global_start_position : Void* = Pointer(Void).null
-    # Sets the `start_position` that is relative to the link from a global `position`.
     def set_global_start_position(position : Vector2) : Void
       if @@mb_set_global_start_position.null?
         @@mb_set_global_start_position = Bridge.get_method_bind("NavigationLink2D", "set_global_start_position", 743155724_i64)
@@ -30061,7 +26539,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_global_start_position, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_global_start_position : Void* = Pointer(Void).null
-    # Returns the `start_position` that is relative to the link as a global position.
     def get_global_start_position() : Vector2
       if @@mb_get_global_start_position.null?
         @@mb_get_global_start_position = Bridge.get_method_bind("NavigationLink2D", "get_global_start_position", 3341600327_i64)
@@ -30071,7 +26548,6 @@ module Godot
       ret
     end
     @@mb_set_global_end_position : Void* = Pointer(Void).null
-    # Sets the `end_position` that is relative to the link from a global `position`.
     def set_global_end_position(position : Vector2) : Void
       if @@mb_set_global_end_position.null?
         @@mb_set_global_end_position = Bridge.get_method_bind("NavigationLink2D", "set_global_end_position", 743155724_i64)
@@ -30082,7 +26558,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_global_end_position, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_global_end_position : Void* = Pointer(Void).null
-    # Returns the `end_position` that is relative to the link as a global position.
     def get_global_end_position() : Vector2
       if @@mb_get_global_end_position.null?
         @@mb_get_global_end_position = Bridge.get_method_bind("NavigationLink2D", "get_global_end_position", 3341600327_i64)
@@ -30130,15 +26605,11 @@ module Godot
       ret
     end
   end
-  # A link between two positions on `NavigationRegion3D`s that agents can be routed through.
-  #
-  # A link between two positions on `NavigationRegion3D`s that agents can be routed through. These positions can be on the same `NavigationRegion3D` or on two different ones. Links are useful to express navigation methods other than traveling along the surface of the navigation mesh, such as ziplines, teleporters, or gaps that can be jumped across.
   class NavigationLink3D < Godot::Node3D
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
     end
     @@mb_get_rid : Void* = Pointer(Void).null
-    # Returns the `RID` of this link on the `NavigationServer3D`.
     def get_rid() : Int64
       if @@mb_get_rid.null?
         @@mb_get_rid = Bridge.get_method_bind("NavigationLink3D", "get_rid", 2944877500_i64)
@@ -30167,7 +26638,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_set_navigation_map : Void* = Pointer(Void).null
-    # Sets the `RID` of the navigation map this link should use. By default the link will automatically join the `World3D` default navigation map so this function is only required to override the default map.
     def set_navigation_map(navigation_map : Int64) : Void
       if @@mb_set_navigation_map.null?
         @@mb_set_navigation_map = Bridge.get_method_bind("NavigationLink3D", "set_navigation_map", 2722037293_i64)
@@ -30178,7 +26648,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_navigation_map, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_navigation_map : Void* = Pointer(Void).null
-    # Returns the current navigation map `RID` used by this link.
     def get_navigation_map() : Int64
       if @@mb_get_navigation_map.null?
         @@mb_get_navigation_map = Bridge.get_method_bind("NavigationLink3D", "get_navigation_map", 2944877500_i64)
@@ -30226,7 +26695,6 @@ module Godot
       ret
     end
     @@mb_set_navigation_layer_value : Void* = Pointer(Void).null
-    # Based on `value`, enables or disables the specified layer in the `navigation_layers` bitmask, given a `layer_number` between 1 and 32.
     def set_navigation_layer_value(layer_number : Int64, value : Bool) : Void
       if @@mb_set_navigation_layer_value.null?
         @@mb_set_navigation_layer_value = Bridge.get_method_bind("NavigationLink3D", "set_navigation_layer_value", 300928843_i64)
@@ -30239,7 +26707,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_navigation_layer_value, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_navigation_layer_value : Void* = Pointer(Void).null
-    # Returns whether or not the specified layer of the `navigation_layers` bitmask is enabled, given a `layer_number` between 1 and 32.
     def get_navigation_layer_value(layer_number : Int64) : Bool
       if @@mb_get_navigation_layer_value.null?
         @@mb_get_navigation_layer_value = Bridge.get_method_bind("NavigationLink3D", "get_navigation_layer_value", 1116898809_i64)
@@ -30290,7 +26757,6 @@ module Godot
       ret
     end
     @@mb_set_global_start_position : Void* = Pointer(Void).null
-    # Sets the `start_position` that is relative to the link from a global `position`.
     def set_global_start_position(position : Vector3) : Void
       if @@mb_set_global_start_position.null?
         @@mb_set_global_start_position = Bridge.get_method_bind("NavigationLink3D", "set_global_start_position", 3460891852_i64)
@@ -30301,7 +26767,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_global_start_position, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_global_start_position : Void* = Pointer(Void).null
-    # Returns the `start_position` that is relative to the link as a global position.
     def get_global_start_position() : Vector3
       if @@mb_get_global_start_position.null?
         @@mb_get_global_start_position = Bridge.get_method_bind("NavigationLink3D", "get_global_start_position", 3360562783_i64)
@@ -30311,7 +26776,6 @@ module Godot
       ret
     end
     @@mb_set_global_end_position : Void* = Pointer(Void).null
-    # Sets the `end_position` that is relative to the link from a global `position`.
     def set_global_end_position(position : Vector3) : Void
       if @@mb_set_global_end_position.null?
         @@mb_set_global_end_position = Bridge.get_method_bind("NavigationLink3D", "set_global_end_position", 3460891852_i64)
@@ -30322,7 +26786,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_global_end_position, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_global_end_position : Void* = Pointer(Void).null
-    # Returns the `end_position` that is relative to the link as a global position.
     def get_global_end_position() : Vector3
       if @@mb_get_global_end_position.null?
         @@mb_get_global_end_position = Bridge.get_method_bind("NavigationLink3D", "get_global_end_position", 3360562783_i64)
@@ -30370,9 +26833,6 @@ module Godot
       ret
     end
   end
-  # A navigation mesh that defines traversable areas and obstacles.
-  #
-  # A navigation mesh is a collection of polygons that define which areas of an environment are traversable to aid agents in pathfinding through complicated spaces.
   class NavigationMesh < Godot::Resource
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -30453,7 +26913,6 @@ module Godot
       ret
     end
     @@mb_set_collision_mask_value : Void* = Pointer(Void).null
-    # Based on `value`, enables or disables the specified layer in the `geometry_collision_mask`, given a `layer_number` between 1 and 32.
     def set_collision_mask_value(layer_number : Int64, value : Bool) : Void
       if @@mb_set_collision_mask_value.null?
         @@mb_set_collision_mask_value = Bridge.get_method_bind("NavigationMesh", "set_collision_mask_value", 300928843_i64)
@@ -30466,7 +26925,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_collision_mask_value, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_collision_mask_value : Void* = Pointer(Void).null
-    # Returns whether or not the specified layer of the `geometry_collision_mask` is enabled, given a `layer_number` between 1 and 32.
     def get_collision_mask_value(layer_number : Int64) : Bool
       if @@mb_get_collision_mask_value.null?
         @@mb_get_collision_mask_value = Bridge.get_method_bind("NavigationMesh", "get_collision_mask_value", 1116898809_i64)
@@ -30878,7 +27336,6 @@ module Godot
       ret
     end
     @@mb_set_vertices : Void* = Pointer(Void).null
-    # Sets the vertices that can be then indexed to create polygons with the `#add_polygon` method.
     def set_vertices(vertices : Void*) : Void
       if @@mb_set_vertices.null?
         @@mb_set_vertices = Bridge.get_method_bind("NavigationMesh", "set_vertices", 334873810_i64)
@@ -30889,7 +27346,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_vertices, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_vertices : Void* = Pointer(Void).null
-    # Returns a `PackedVector3Array` containing all the vertices being used to create the polygons.
     def get_vertices() : Void*
       if @@mb_get_vertices.null?
         @@mb_get_vertices = Bridge.get_method_bind("NavigationMesh", "get_vertices", 497664490_i64)
@@ -30899,7 +27355,6 @@ module Godot
       ret_ptr
     end
     @@mb_add_polygon : Void* = Pointer(Void).null
-    # Adds a polygon using the indices of the vertices you get when calling `#get_vertices`.
     def add_polygon(polygon : Void*) : Void
       if @@mb_add_polygon.null?
         @@mb_add_polygon = Bridge.get_method_bind("NavigationMesh", "add_polygon", 3614634198_i64)
@@ -30910,7 +27365,6 @@ module Godot
       Bridge.ptrcall(@@mb_add_polygon, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_polygon_count : Void* = Pointer(Void).null
-    # Returns the number of polygons in the navigation mesh.
     def get_polygon_count() : Int64
       if @@mb_get_polygon_count.null?
         @@mb_get_polygon_count = Bridge.get_method_bind("NavigationMesh", "get_polygon_count", 3905245786_i64)
@@ -30920,7 +27374,6 @@ module Godot
       ret
     end
     @@mb_get_polygon : Void* = Pointer(Void).null
-    # Returns a `PackedInt32Array` containing the indices of the vertices of a created polygon.
     def get_polygon(idx : Int64) : Void*
       if @@mb_get_polygon.null?
         @@mb_get_polygon = Bridge.get_method_bind("NavigationMesh", "get_polygon", 3668444399_i64)
@@ -30933,7 +27386,6 @@ module Godot
       ret_ptr
     end
     @@mb_clear_polygons : Void* = Pointer(Void).null
-    # Clears the array of polygons, but it doesn't clear the array of vertices.
     def clear_polygons() : Void
       if @@mb_clear_polygons.null?
         @@mb_clear_polygons = Bridge.get_method_bind("NavigationMesh", "clear_polygons", 3218959716_i64)
@@ -30941,8 +27393,6 @@ module Godot
       Bridge.ptrcall(@@mb_clear_polygons, @pointer, Pointer(Pointer(Void)).null, Pointer(Void).null)
     end
     @@mb_create_from_mesh : Void* = Pointer(Void).null
-    # Initializes the navigation mesh by setting the vertices and indices according to a `Mesh`.
-    # **Note:** The given `mesh` must be of type `Mesh.PRIMITIVE_TRIANGLES` and have an index array.
     def create_from_mesh(mesh : Mesh) : Void
       if @@mb_create_from_mesh.null?
         @@mb_create_from_mesh = Bridge.get_method_bind("NavigationMesh", "create_from_mesh", 194775623_i64)
@@ -30953,7 +27403,6 @@ module Godot
       Bridge.ptrcall(@@mb_create_from_mesh, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_clear : Void* = Pointer(Void).null
-    # Clears the internal arrays for vertices and polygon indices.
     def clear() : Void
       if @@mb_clear.null?
         @@mb_clear = Bridge.get_method_bind("NavigationMesh", "clear", 3218959716_i64)
@@ -30961,19 +27410,11 @@ module Godot
       Bridge.ptrcall(@@mb_clear, @pointer, Pointer(Pointer(Void)).null, Pointer(Void).null)
     end
   end
-  # Helper class for creating and clearing navigation meshes.
-  #
-  # This class is responsible for creating and clearing 3D navigation meshes used as `NavigationMesh` resources inside `NavigationRegion3D`. The `NavigationMeshGenerator` has very limited to no use for 2D as the navigation mesh baking process expects 3D node types and 3D source geometry to parse.
-  # The entire navigation mesh baking is best done in a separate thread as the voxelization, collision tests and mesh optimization steps involved are very slow and performance-intensive operations.
-  # Navigation mesh baking happens in multiple steps and the result depends on 3D source geometry and properties of the `NavigationMesh` resource. In the first step, starting from a root node and depending on `NavigationMesh` properties all valid 3D source geometry nodes are collected from the `SceneTree`. Second, all collected nodes are parsed for their relevant 3D geometry data and a combined 3D mesh is build. Due to the many different types of parsable objects, from normal `MeshInstance3D`s to `CSGShape3D`s or various `CollisionObject3D`s, some operations to collect geometry data can trigger `RenderingServer` and `PhysicsServer3D` synchronizations. Server synchronization can have a negative effect on baking time or framerate as it often involves `Mutex` locking for thread security. Many parsable objects and the continuous synchronization with other threaded Servers can increase the baking time significantly. On the other hand only a few but very large and complex objects will take some time to prepare for the Servers which can noticeably stall the next frame render. As a general rule the total number of parsable objects and their individual size and complexity should be balanced to avoid framerate issues or very long baking times. The combined mesh is then passed to the Recast Navigation Object to test the source geometry for walkable terrain suitable to `NavigationMesh` agent properties by creating a voxel world around the meshes bounding area.
-  # The finalized navigation mesh is then returned and stored inside the `NavigationMesh` for use as a resource inside `NavigationRegion3D` nodes.
-  # **Note:** Using meshes to not only define walkable surfaces but also obstruct navigation baking does not always work. The navigation baking has no concept of what is a geometry "inside" when dealing with mesh source geometry and this is intentional. Depending on current baking parameters, as soon as the obstructing mesh is large enough to fit a navigation mesh area inside, the baking will generate navigation mesh areas that are inside the obstructing source geometry mesh.
   class NavigationMeshGenerator < Godot::Object
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
     end
     @@mb_bake : Void* = Pointer(Void).null
-    # Bakes the `navigation_mesh` with source geometry collected starting from the `root_node`.
     def bake(navigation_mesh : NavigationMesh, root_node : Node) : Void
       if @@mb_bake.null?
         @@mb_bake = Bridge.get_method_bind("NavigationMeshGenerator", "bake", 1401173477_i64)
@@ -30986,7 +27427,6 @@ module Godot
       Bridge.ptrcall(@@mb_bake, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_clear : Void* = Pointer(Void).null
-    # Removes all polygons and vertices from the provided `navigation_mesh` resource.
     def clear(navigation_mesh : NavigationMesh) : Void
       if @@mb_clear.null?
         @@mb_clear = Bridge.get_method_bind("NavigationMeshGenerator", "clear", 2923361153_i64)
@@ -30997,9 +27437,6 @@ module Godot
       Bridge.ptrcall(@@mb_clear, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_parse_source_geometry_data : Void* = Pointer(Void).null
-    # Parses the `SceneTree` for source geometry according to the properties of `navigation_mesh`. Updates the provided `source_geometry_data` resource with the resulting data. The resource can then be used to bake a navigation mesh with `#bake_from_source_geometry_data`. After the process is finished the optional `callback` will be called.
-    # **Note:** This function needs to run on the main thread or with a deferred call as the SceneTree is not thread-safe.
-    # **Performance:** While convenient, reading data arrays from `Mesh` resources can affect the frame rate negatively. The data needs to be received from the GPU, stalling the `RenderingServer` in the process. For performance prefer the use of e.g. collision shapes or creating the data arrays entirely in code.
     def parse_source_geometry_data(navigation_mesh : NavigationMesh, source_geometry_data : NavigationMeshSourceGeometryData3D, root_node : Node, callback : Void*) : Void
       if @@mb_parse_source_geometry_data.null?
         @@mb_parse_source_geometry_data = Bridge.get_method_bind("NavigationMeshGenerator", "parse_source_geometry_data", 3172802542_i64)
@@ -31016,7 +27453,6 @@ module Godot
       Bridge.ptrcall(@@mb_parse_source_geometry_data, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_bake_from_source_geometry_data : Void* = Pointer(Void).null
-    # Bakes the provided `navigation_mesh` with the data from the provided `source_geometry_data`. After the process is finished the optional `callback` will be called.
     def bake_from_source_geometry_data(navigation_mesh : NavigationMesh, source_geometry_data : NavigationMeshSourceGeometryData3D, callback : Void*) : Void
       if @@mb_bake_from_source_geometry_data.null?
         @@mb_bake_from_source_geometry_data = Bridge.get_method_bind("NavigationMeshGenerator", "bake_from_source_geometry_data", 1286748856_i64)
@@ -31031,13 +27467,11 @@ module Godot
       Bridge.ptrcall(@@mb_bake_from_source_geometry_data, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
   end
-  # Container for parsed source geometry data used in navigation mesh baking.
   class NavigationMeshSourceGeometryData2D < Godot::Resource
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
     end
     @@mb_clear : Void* = Pointer(Void).null
-    # Clears the internal data.
     def clear() : Void
       if @@mb_clear.null?
         @@mb_clear = Bridge.get_method_bind("NavigationMeshSourceGeometryData2D", "clear", 3218959716_i64)
@@ -31045,7 +27479,6 @@ module Godot
       Bridge.ptrcall(@@mb_clear, @pointer, Pointer(Pointer(Void)).null, Pointer(Void).null)
     end
     @@mb_has_data : Void* = Pointer(Void).null
-    # Returns `true` when parsed source geometry data exists.
     def has_data() : Bool
       if @@mb_has_data.null?
         @@mb_has_data = Bridge.get_method_bind("NavigationMeshSourceGeometryData2D", "has_data", 2240911060_i64)
@@ -31055,7 +27488,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_set_traversable_outlines : Void* = Pointer(Void).null
-    # Sets all the traversable area outlines arrays.
     def set_traversable_outlines(traversable_outlines : Godot::Array) : Void
       if @@mb_set_traversable_outlines.null?
         @@mb_set_traversable_outlines = Bridge.get_method_bind("NavigationMeshSourceGeometryData2D", "set_traversable_outlines", 381264803_i64)
@@ -31066,7 +27498,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_traversable_outlines, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_traversable_outlines : Void* = Pointer(Void).null
-    # Returns all the traversable area outlines arrays.
     def get_traversable_outlines() : Godot::Array
       if @@mb_get_traversable_outlines.null?
         @@mb_get_traversable_outlines = Bridge.get_method_bind("NavigationMeshSourceGeometryData2D", "get_traversable_outlines", 3995934104_i64)
@@ -31076,7 +27507,6 @@ module Godot
       Godot::Array.new(ret_ptr)
     end
     @@mb_set_obstruction_outlines : Void* = Pointer(Void).null
-    # Sets all the obstructed area outlines arrays.
     def set_obstruction_outlines(obstruction_outlines : Godot::Array) : Void
       if @@mb_set_obstruction_outlines.null?
         @@mb_set_obstruction_outlines = Bridge.get_method_bind("NavigationMeshSourceGeometryData2D", "set_obstruction_outlines", 381264803_i64)
@@ -31087,7 +27517,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_obstruction_outlines, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_obstruction_outlines : Void* = Pointer(Void).null
-    # Returns all the obstructed area outlines arrays.
     def get_obstruction_outlines() : Godot::Array
       if @@mb_get_obstruction_outlines.null?
         @@mb_get_obstruction_outlines = Bridge.get_method_bind("NavigationMeshSourceGeometryData2D", "get_obstruction_outlines", 3995934104_i64)
@@ -31097,7 +27526,6 @@ module Godot
       Godot::Array.new(ret_ptr)
     end
     @@mb_append_traversable_outlines : Void* = Pointer(Void).null
-    # Appends another array of `traversable_outlines` at the end of the existing traversable outlines array.
     def append_traversable_outlines(traversable_outlines : Godot::Array) : Void
       if @@mb_append_traversable_outlines.null?
         @@mb_append_traversable_outlines = Bridge.get_method_bind("NavigationMeshSourceGeometryData2D", "append_traversable_outlines", 381264803_i64)
@@ -31108,7 +27536,6 @@ module Godot
       Bridge.ptrcall(@@mb_append_traversable_outlines, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_append_obstruction_outlines : Void* = Pointer(Void).null
-    # Appends another array of `obstruction_outlines` at the end of the existing obstruction outlines array.
     def append_obstruction_outlines(obstruction_outlines : Godot::Array) : Void
       if @@mb_append_obstruction_outlines.null?
         @@mb_append_obstruction_outlines = Bridge.get_method_bind("NavigationMeshSourceGeometryData2D", "append_obstruction_outlines", 381264803_i64)
@@ -31119,7 +27546,6 @@ module Godot
       Bridge.ptrcall(@@mb_append_obstruction_outlines, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_add_traversable_outline : Void* = Pointer(Void).null
-    # Adds the outline points of a shape as traversable area.
     def add_traversable_outline(shape_outline : Void*) : Void
       if @@mb_add_traversable_outline.null?
         @@mb_add_traversable_outline = Bridge.get_method_bind("NavigationMeshSourceGeometryData2D", "add_traversable_outline", 1509147220_i64)
@@ -31130,7 +27556,6 @@ module Godot
       Bridge.ptrcall(@@mb_add_traversable_outline, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_add_obstruction_outline : Void* = Pointer(Void).null
-    # Adds the outline points of a shape as obstructed area.
     def add_obstruction_outline(shape_outline : Void*) : Void
       if @@mb_add_obstruction_outline.null?
         @@mb_add_obstruction_outline = Bridge.get_method_bind("NavigationMeshSourceGeometryData2D", "add_obstruction_outline", 1509147220_i64)
@@ -31141,7 +27566,6 @@ module Godot
       Bridge.ptrcall(@@mb_add_obstruction_outline, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_merge : Void* = Pointer(Void).null
-    # Adds the geometry data of another `NavigationMeshSourceGeometryData2D` to the navigation mesh baking data.
     def merge(other_geometry : NavigationMeshSourceGeometryData2D) : Void
       if @@mb_merge.null?
         @@mb_merge = Bridge.get_method_bind("NavigationMeshSourceGeometryData2D", "merge", 742424872_i64)
@@ -31152,7 +27576,6 @@ module Godot
       Bridge.ptrcall(@@mb_merge, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_add_projected_obstruction : Void* = Pointer(Void).null
-    # Adds a projected obstruction shape to the source geometry. If `carve` is `true` the carved shape will not be affected by additional offsets (e.g. agent radius) of the navigation mesh baking process.
     def add_projected_obstruction(vertices : Void*, carve : Bool) : Void
       if @@mb_add_projected_obstruction.null?
         @@mb_add_projected_obstruction = Bridge.get_method_bind("NavigationMeshSourceGeometryData2D", "add_projected_obstruction", 3882407395_i64)
@@ -31165,7 +27588,6 @@ module Godot
       Bridge.ptrcall(@@mb_add_projected_obstruction, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_clear_projected_obstructions : Void* = Pointer(Void).null
-    # Clears all projected obstructions.
     def clear_projected_obstructions() : Void
       if @@mb_clear_projected_obstructions.null?
         @@mb_clear_projected_obstructions = Bridge.get_method_bind("NavigationMeshSourceGeometryData2D", "clear_projected_obstructions", 3218959716_i64)
@@ -31173,14 +27595,6 @@ module Godot
       Bridge.ptrcall(@@mb_clear_projected_obstructions, @pointer, Pointer(Pointer(Void)).null, Pointer(Void).null)
     end
     @@mb_set_projected_obstructions : Void* = Pointer(Void).null
-    # Sets the projected obstructions with an Array of Dictionaries with the following key value pairs:
-    #
-    # ```gdscript
-    #
-    # "vertices" : PackedFloat32Array
-    # "carve" : bool
-    #
-    # ```
     def set_projected_obstructions(projected_obstructions : Godot::Array) : Void
       if @@mb_set_projected_obstructions.null?
         @@mb_set_projected_obstructions = Bridge.get_method_bind("NavigationMeshSourceGeometryData2D", "set_projected_obstructions", 381264803_i64)
@@ -31191,9 +27605,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_projected_obstructions, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_projected_obstructions : Void* = Pointer(Void).null
-    # Returns the projected obstructions as an `Array` of dictionaries. Each `Dictionary` contains the following entries:
-    # - `vertices` - A `PackedFloat32Array` that defines the outline points of the projected shape.
-    # - `carve` - A `bool` that defines how the projected shape affects the navigation mesh baking. If `true` the projected shape will not be affected by addition offsets, e.g. agent radius.
     def get_projected_obstructions() : Godot::Array
       if @@mb_get_projected_obstructions.null?
         @@mb_get_projected_obstructions = Bridge.get_method_bind("NavigationMeshSourceGeometryData2D", "get_projected_obstructions", 3995934104_i64)
@@ -31203,7 +27614,6 @@ module Godot
       Godot::Array.new(ret_ptr)
     end
     @@mb_get_bounds : Void* = Pointer(Void).null
-    # Returns an axis-aligned bounding box that covers all the stored geometry data. The bounds are calculated when calling this function with the result cached until further geometry changes are made.
     def get_bounds() : Rect2
       if @@mb_get_bounds.null?
         @@mb_get_bounds = Bridge.get_method_bind("NavigationMeshSourceGeometryData2D", "get_bounds", 3248174_i64)
@@ -31213,14 +27623,11 @@ module Godot
       Rect2.new(ret_ptr)
     end
   end
-  # Container for parsed source geometry data used in navigation mesh baking.
   class NavigationMeshSourceGeometryData3D < Godot::Resource
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
     end
     @@mb_set_vertices : Void* = Pointer(Void).null
-    # Sets the parsed source geometry data vertices. The vertices need to be matched with appropriated indices.
-    # **Warning:** Inappropriate data can crash the baking process of the involved third-party libraries.
     def set_vertices(vertices : Void*) : Void
       if @@mb_set_vertices.null?
         @@mb_set_vertices = Bridge.get_method_bind("NavigationMeshSourceGeometryData3D", "set_vertices", 2899603908_i64)
@@ -31231,7 +27638,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_vertices, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_vertices : Void* = Pointer(Void).null
-    # Returns the parsed source geometry data vertices array.
     def get_vertices() : Void*
       if @@mb_get_vertices.null?
         @@mb_get_vertices = Bridge.get_method_bind("NavigationMeshSourceGeometryData3D", "get_vertices", 675695659_i64)
@@ -31241,8 +27647,6 @@ module Godot
       ret_ptr
     end
     @@mb_set_indices : Void* = Pointer(Void).null
-    # Sets the parsed source geometry data indices. The indices need to be matched with appropriated vertices.
-    # **Warning:** Inappropriate data can crash the baking process of the involved third-party libraries.
     def set_indices(indices : Void*) : Void
       if @@mb_set_indices.null?
         @@mb_set_indices = Bridge.get_method_bind("NavigationMeshSourceGeometryData3D", "set_indices", 3614634198_i64)
@@ -31253,7 +27657,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_indices, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_indices : Void* = Pointer(Void).null
-    # Returns the parsed source geometry data indices array.
     def get_indices() : Void*
       if @@mb_get_indices.null?
         @@mb_get_indices = Bridge.get_method_bind("NavigationMeshSourceGeometryData3D", "get_indices", 1930428628_i64)
@@ -31263,7 +27666,6 @@ module Godot
       ret_ptr
     end
     @@mb_append_arrays : Void* = Pointer(Void).null
-    # Appends arrays of `vertices` and `indices` at the end of the existing arrays. Adds the existing index as an offset to the appended indices.
     def append_arrays(vertices : Void*, indices : Void*) : Void
       if @@mb_append_arrays.null?
         @@mb_append_arrays = Bridge.get_method_bind("NavigationMeshSourceGeometryData3D", "append_arrays", 3117535015_i64)
@@ -31276,7 +27678,6 @@ module Godot
       Bridge.ptrcall(@@mb_append_arrays, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_clear : Void* = Pointer(Void).null
-    # Clears the internal data.
     def clear() : Void
       if @@mb_clear.null?
         @@mb_clear = Bridge.get_method_bind("NavigationMeshSourceGeometryData3D", "clear", 3218959716_i64)
@@ -31284,7 +27685,6 @@ module Godot
       Bridge.ptrcall(@@mb_clear, @pointer, Pointer(Pointer(Void)).null, Pointer(Void).null)
     end
     @@mb_has_data : Void* = Pointer(Void).null
-    # Returns `true` when parsed source geometry data exists.
     def has_data() : Bool
       if @@mb_has_data.null?
         @@mb_has_data = Bridge.get_method_bind("NavigationMeshSourceGeometryData3D", "has_data", 2240911060_i64)
@@ -31294,7 +27694,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_add_mesh : Void* = Pointer(Void).null
-    # Adds the geometry data of a `Mesh` resource to the navigation mesh baking data. The mesh must have valid triangulated mesh data to be considered. Since `NavigationMesh` resources have no transform, all vertex positions need to be offset by the node's transform using `xform`.
     def add_mesh(mesh : Mesh, xform : Transform3D) : Void
       if @@mb_add_mesh.null?
         @@mb_add_mesh = Bridge.get_method_bind("NavigationMeshSourceGeometryData3D", "add_mesh", 975462459_i64)
@@ -31307,7 +27706,6 @@ module Godot
       Bridge.ptrcall(@@mb_add_mesh, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_add_mesh_array : Void* = Pointer(Void).null
-    # Adds an `Array` the size of `Mesh.ARRAY_MAX` and with vertices at index `Mesh.ARRAY_VERTEX` and indices at index `Mesh.ARRAY_INDEX` to the navigation mesh baking data. The array must have valid triangulated mesh data to be considered. Since `NavigationMesh` resources have no transform, all vertex positions need to be offset by the node's transform using `xform`.
     def add_mesh_array(mesh_array : Godot::Array, xform : Transform3D) : Void
       if @@mb_add_mesh_array.null?
         @@mb_add_mesh_array = Bridge.get_method_bind("NavigationMeshSourceGeometryData3D", "add_mesh_array", 4235710913_i64)
@@ -31320,7 +27718,6 @@ module Godot
       Bridge.ptrcall(@@mb_add_mesh_array, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_add_faces : Void* = Pointer(Void).null
-    # Adds an array of vertex positions to the geometry data for navigation mesh baking to form triangulated faces. For each face the array must have three vertex positions in clockwise winding order. Since `NavigationMesh` resources have no transform, all vertex positions need to be offset by the node's transform using `xform`.
     def add_faces(faces : Void*, xform : Transform3D) : Void
       if @@mb_add_faces.null?
         @@mb_add_faces = Bridge.get_method_bind("NavigationMeshSourceGeometryData3D", "add_faces", 1440358797_i64)
@@ -31333,7 +27730,6 @@ module Godot
       Bridge.ptrcall(@@mb_add_faces, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_merge : Void* = Pointer(Void).null
-    # Adds the geometry data of another `NavigationMeshSourceGeometryData3D` to the navigation mesh baking data.
     def merge(other_geometry : NavigationMeshSourceGeometryData3D) : Void
       if @@mb_merge.null?
         @@mb_merge = Bridge.get_method_bind("NavigationMeshSourceGeometryData3D", "merge", 655828145_i64)
@@ -31344,7 +27740,6 @@ module Godot
       Bridge.ptrcall(@@mb_merge, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_add_projected_obstruction : Void* = Pointer(Void).null
-    # Adds a projected obstruction shape to the source geometry. The `vertices` are considered projected on an xz-axes plane, placed at the global y-axis `elevation` and extruded by `height`. If `carve` is `true` the carved shape will not be affected by additional offsets (e.g. agent radius) of the navigation mesh baking process.
     def add_projected_obstruction(vertices : Void*, elevation : Float64, height : Float64, carve : Bool) : Void
       if @@mb_add_projected_obstruction.null?
         @@mb_add_projected_obstruction = Bridge.get_method_bind("NavigationMeshSourceGeometryData3D", "add_projected_obstruction", 3351846707_i64)
@@ -31361,7 +27756,6 @@ module Godot
       Bridge.ptrcall(@@mb_add_projected_obstruction, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_clear_projected_obstructions : Void* = Pointer(Void).null
-    # Clears all projected obstructions.
     def clear_projected_obstructions() : Void
       if @@mb_clear_projected_obstructions.null?
         @@mb_clear_projected_obstructions = Bridge.get_method_bind("NavigationMeshSourceGeometryData3D", "clear_projected_obstructions", 3218959716_i64)
@@ -31369,16 +27763,6 @@ module Godot
       Bridge.ptrcall(@@mb_clear_projected_obstructions, @pointer, Pointer(Pointer(Void)).null, Pointer(Void).null)
     end
     @@mb_set_projected_obstructions : Void* = Pointer(Void).null
-    # Sets the projected obstructions with an Array of Dictionaries with the following key value pairs:
-    #
-    # ```gdscript
-    #
-    # "vertices" : PackedFloat32Array
-    # "elevation" : float
-    # "height" : float
-    # "carve" : bool
-    #
-    # ```
     def set_projected_obstructions(projected_obstructions : Godot::Array) : Void
       if @@mb_set_projected_obstructions.null?
         @@mb_set_projected_obstructions = Bridge.get_method_bind("NavigationMeshSourceGeometryData3D", "set_projected_obstructions", 381264803_i64)
@@ -31389,11 +27773,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_projected_obstructions, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_projected_obstructions : Void* = Pointer(Void).null
-    # Returns the projected obstructions as an `Array` of dictionaries. Each `Dictionary` contains the following entries:
-    # - `vertices` - A `PackedFloat32Array` that defines the outline points of the projected shape.
-    # - `elevation` - A `float` that defines the projected shape placement on the y-axis.
-    # - `height` - A `float` that defines how much the projected shape is extruded along the y-axis.
-    # - `carve` - A `bool` that defines how the obstacle affects the navigation mesh baking. If `true` the projected shape will not be affected by addition offsets, e.g. agent radius.
     def get_projected_obstructions() : Godot::Array
       if @@mb_get_projected_obstructions.null?
         @@mb_get_projected_obstructions = Bridge.get_method_bind("NavigationMeshSourceGeometryData3D", "get_projected_obstructions", 3995934104_i64)
@@ -31403,7 +27782,6 @@ module Godot
       Godot::Array.new(ret_ptr)
     end
     @@mb_get_bounds : Void* = Pointer(Void).null
-    # Returns an axis-aligned bounding box that covers all the stored geometry data. The bounds are calculated when calling this function with the result cached until further geometry changes are made.
     def get_bounds() : AABB
       if @@mb_get_bounds.null?
         @@mb_get_bounds = Bridge.get_method_bind("NavigationMeshSourceGeometryData3D", "get_bounds", 1021181044_i64)
@@ -31413,17 +27791,11 @@ module Godot
       AABB.new(ret_ptr)
     end
   end
-  # 2D obstacle used to affect navigation mesh baking or constrain velocities of avoidance controlled agents.
-  #
-  # An obstacle needs a navigation map and outline `vertices` defined to work correctly. The outlines can not cross or overlap.
-  # Obstacles can be included in the navigation mesh baking process when `affect_navigation_mesh` is enabled. They do not add walkable geometry, instead their role is to discard other source geometry inside the shape. This can be used to prevent navigation mesh from appearing in unwanted places. If `carve_navigation_mesh` is enabled the baked shape will not be affected by offsets of the navigation mesh baking, e.g. the agent radius.
-  # With `avoidance_enabled` the obstacle can constrain the avoidance velocities of avoidance using agents. If the obstacle's vertices are wound in clockwise order, avoidance agents will be pushed in by the obstacle, otherwise, avoidance agents will be pushed out. Obstacles using vertices and avoidance can warp to a new position but should not be moved every single frame as each change requires a rebuild of the avoidance map.
   class NavigationObstacle2D < Godot::Node2D
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
     end
     @@mb_get_rid : Void* = Pointer(Void).null
-    # Returns the `RID` of this obstacle on the `NavigationServer2D`.
     def get_rid() : Int64
       if @@mb_get_rid.null?
         @@mb_get_rid = Bridge.get_method_bind("NavigationObstacle2D", "get_rid", 2944877500_i64)
@@ -31452,7 +27824,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_set_navigation_map : Void* = Pointer(Void).null
-    # Sets the `RID` of the navigation map this NavigationObstacle node should use and also updates the `obstacle` on the NavigationServer.
     def set_navigation_map(navigation_map : Int64) : Void
       if @@mb_set_navigation_map.null?
         @@mb_set_navigation_map = Bridge.get_method_bind("NavigationObstacle2D", "set_navigation_map", 2722037293_i64)
@@ -31463,7 +27834,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_navigation_map, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_navigation_map : Void* = Pointer(Void).null
-    # Returns the `RID` of the navigation map for this NavigationObstacle node. This function returns always the map set on the NavigationObstacle node and not the map of the abstract obstacle on the NavigationServer. If the obstacle map is changed directly with the NavigationServer API the NavigationObstacle node will not be aware of the map change. Use `#set_navigation_map` to change the navigation map for the NavigationObstacle and also update the obstacle on the NavigationServer.
     def get_navigation_map() : Int64
       if @@mb_get_navigation_map.null?
         @@mb_get_navigation_map = Bridge.get_method_bind("NavigationObstacle2D", "get_navigation_map", 2944877500_i64)
@@ -31549,7 +27919,6 @@ module Godot
       ret
     end
     @@mb_set_avoidance_layer_value : Void* = Pointer(Void).null
-    # Based on `value`, enables or disables the specified layer in the `avoidance_layers` bitmask, given a `layer_number` between 1 and 32.
     def set_avoidance_layer_value(layer_number : Int64, value : Bool) : Void
       if @@mb_set_avoidance_layer_value.null?
         @@mb_set_avoidance_layer_value = Bridge.get_method_bind("NavigationObstacle2D", "set_avoidance_layer_value", 300928843_i64)
@@ -31562,7 +27931,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_avoidance_layer_value, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_avoidance_layer_value : Void* = Pointer(Void).null
-    # Returns whether or not the specified layer of the `avoidance_layers` bitmask is enabled, given a `layer_number` between 1 and 32.
     def get_avoidance_layer_value(layer_number : Int64) : Bool
       if @@mb_get_avoidance_layer_value.null?
         @@mb_get_avoidance_layer_value = Bridge.get_method_bind("NavigationObstacle2D", "get_avoidance_layer_value", 1116898809_i64)
@@ -31613,17 +27981,11 @@ module Godot
       ret != 0_u8
     end
   end
-  # 3D obstacle used to affect navigation mesh baking or constrain velocities of avoidance controlled agents.
-  #
-  # An obstacle needs a navigation map and outline `vertices` defined to work correctly. The outlines can not cross or overlap and are restricted to a plane projection. This means the y-axis of the vertices is ignored, instead the obstacle's global y-axis position is used for placement. The projected shape is extruded by the obstacles height along the y-axis.
-  # Obstacles can be included in the navigation mesh baking process when `affect_navigation_mesh` is enabled. They do not add walkable geometry, instead their role is to discard other source geometry inside the shape. This can be used to prevent navigation mesh from appearing in unwanted places, e.g. inside "solid" geometry or on top of it. If `carve_navigation_mesh` is enabled the baked shape will not be affected by offsets of the navigation mesh baking, e.g. the agent radius.
-  # With `avoidance_enabled` the obstacle can constrain the avoidance velocities of avoidance using agents. If the obstacle's vertices are wound in clockwise order, avoidance agents will be pushed in by the obstacle, otherwise, avoidance agents will be pushed out. Obstacles using vertices and avoidance can warp to a new position but should not be moved every single frame as each change requires a rebuild of the avoidance map.
   class NavigationObstacle3D < Godot::Node3D
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
     end
     @@mb_get_rid : Void* = Pointer(Void).null
-    # Returns the `RID` of this obstacle on the `NavigationServer3D`.
     def get_rid() : Int64
       if @@mb_get_rid.null?
         @@mb_get_rid = Bridge.get_method_bind("NavigationObstacle3D", "get_rid", 2944877500_i64)
@@ -31652,7 +28014,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_set_navigation_map : Void* = Pointer(Void).null
-    # Sets the `RID` of the navigation map this NavigationObstacle node should use and also updates the `obstacle` on the NavigationServer.
     def set_navigation_map(navigation_map : Int64) : Void
       if @@mb_set_navigation_map.null?
         @@mb_set_navigation_map = Bridge.get_method_bind("NavigationObstacle3D", "set_navigation_map", 2722037293_i64)
@@ -31663,7 +28024,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_navigation_map, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_navigation_map : Void* = Pointer(Void).null
-    # Returns the `RID` of the navigation map for this NavigationObstacle node. This function returns always the map set on the NavigationObstacle node and not the map of the abstract obstacle on the NavigationServer. If the obstacle map is changed directly with the NavigationServer API the NavigationObstacle node will not be aware of the map change. Use `#set_navigation_map` to change the navigation map for the NavigationObstacle and also update the obstacle on the NavigationServer.
     def get_navigation_map() : Int64
       if @@mb_get_navigation_map.null?
         @@mb_get_navigation_map = Bridge.get_method_bind("NavigationObstacle3D", "get_navigation_map", 2944877500_i64)
@@ -31768,7 +28128,6 @@ module Godot
       ret
     end
     @@mb_set_avoidance_layer_value : Void* = Pointer(Void).null
-    # Based on `value`, enables or disables the specified layer in the `avoidance_layers` bitmask, given a `layer_number` between 1 and 32.
     def set_avoidance_layer_value(layer_number : Int64, value : Bool) : Void
       if @@mb_set_avoidance_layer_value.null?
         @@mb_set_avoidance_layer_value = Bridge.get_method_bind("NavigationObstacle3D", "set_avoidance_layer_value", 300928843_i64)
@@ -31781,7 +28140,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_avoidance_layer_value, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_avoidance_layer_value : Void* = Pointer(Void).null
-    # Returns whether or not the specified layer of the `avoidance_layers` bitmask is enabled, given a `layer_number` between 1 and 32.
     def get_avoidance_layer_value(layer_number : Int64) : Bool
       if @@mb_get_avoidance_layer_value.null?
         @@mb_get_avoidance_layer_value = Bridge.get_method_bind("NavigationObstacle3D", "get_avoidance_layer_value", 1116898809_i64)
@@ -31851,9 +28209,6 @@ module Godot
       ret != 0_u8
     end
   end
-  # Provides parameters for 2D navigation path queries.
-  #
-  # By changing various properties of this object, such as the start and target position, you can configure path queries to the `NavigationServer2D`.
   class NavigationPathQueryParameters2D < Godot::RefCounted
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -32159,9 +28514,6 @@ module Godot
       ret
     end
   end
-  # Provides parameters for 3D navigation path queries.
-  #
-  # By changing various properties of this object, such as the start and target position, you can configure path queries to the `NavigationServer3D`.
   class NavigationPathQueryParameters3D < Godot::RefCounted
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -32467,9 +28819,6 @@ module Godot
       ret
     end
   end
-  # Represents the result of a 2D pathfinding query.
-  #
-  # This class stores the result of a 2D navigation path query from the `NavigationServer2D`.
   class NavigationPathQueryResult2D < Godot::RefCounted
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -32574,7 +28923,6 @@ module Godot
       ret
     end
     @@mb_reset : Void* = Pointer(Void).null
-    # Reset the result object to its initial state. This is useful to reuse the object across multiple queries.
     def reset() : Void
       if @@mb_reset.null?
         @@mb_reset = Bridge.get_method_bind("NavigationPathQueryResult2D", "reset", 3218959716_i64)
@@ -32582,9 +28930,6 @@ module Godot
       Bridge.ptrcall(@@mb_reset, @pointer, Pointer(Pointer(Void)).null, Pointer(Void).null)
     end
   end
-  # Represents the result of a 3D pathfinding query.
-  #
-  # This class stores the result of a 3D navigation path query from the `NavigationServer3D`.
   class NavigationPathQueryResult3D < Godot::RefCounted
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -32689,7 +29034,6 @@ module Godot
       ret
     end
     @@mb_reset : Void* = Pointer(Void).null
-    # Reset the result object to its initial state. This is useful to reuse the object across multiple queries.
     def reset() : Void
       if @@mb_reset.null?
         @@mb_reset = Bridge.get_method_bind("NavigationPathQueryResult3D", "reset", 3218959716_i64)
@@ -32697,52 +29041,6 @@ module Godot
       Bridge.ptrcall(@@mb_reset, @pointer, Pointer(Pointer(Void)).null, Pointer(Void).null)
     end
   end
-  # A 2D navigation mesh that describes a traversable surface for pathfinding.
-  #
-  # A navigation mesh can be created either by baking it with the help of the `NavigationServer2D`, or by adding vertices and convex polygon indices arrays manually.
-  # To bake a navigation mesh at least one outline needs to be added that defines the outer bounds of the baked area.
-  #
-  # ```gdscript
-  #
-  # var new_navigation_mesh = NavigationPolygon.new()
-  # var bounding_outline = PackedVector2Array([Vector2(0, 0), Vector2(0, 50), Vector2(50, 50), Vector2(50, 0)])
-  # new_navigation_mesh.add_outline(bounding_outline)
-  # NavigationServer2D.bake_from_source_geometry_data(new_navigation_mesh, NavigationMeshSourceGeometryData2D.new());
-  # $NavigationRegion2D.navigation_polygon = new_navigation_mesh
-  #
-  # ```
-  # ```csharp
-  #
-  # var newNavigationMesh = new NavigationPolygon();
-  # Vector2[] boundingOutline = [new Vector2(0, 0), new Vector2(0, 50), new Vector2(50, 50), new Vector2(50, 0)];
-  # newNavigationMesh.AddOutline(boundingOutline);
-  # NavigationServer2D.BakeFromSourceGeometryData(newNavigationMesh, new NavigationMeshSourceGeometryData2D());
-  # GetNode<NavigationRegion2D>("NavigationRegion2D").NavigationPolygon = newNavigationMesh;
-  #
-  # ```
-  #
-  # Adding vertices and polygon indices manually.
-  #
-  # ```gdscript
-  #
-  # var new_navigation_mesh = NavigationPolygon.new()
-  # var new_vertices = PackedVector2Array([Vector2(0, 0), Vector2(0, 50), Vector2(50, 50), Vector2(50, 0)])
-  # new_navigation_mesh.vertices = new_vertices
-  # var new_polygon_indices = PackedInt32Array([0, 1, 2, 3])
-  # new_navigation_mesh.add_polygon(new_polygon_indices)
-  # $NavigationRegion2D.navigation_polygon = new_navigation_mesh
-  #
-  # ```
-  # ```csharp
-  #
-  # var newNavigationMesh = new NavigationPolygon();
-  # Vector2[] newVertices = [new Vector2(0, 0), new Vector2(0, 50), new Vector2(50, 50), new Vector2(50, 0)];
-  # newNavigationMesh.Vertices = newVertices;
-  # int[] newPolygonIndices = [0, 1, 2, 3];
-  # newNavigationMesh.AddPolygon(newPolygonIndices);
-  # GetNode<NavigationRegion2D>("NavigationRegion2D").NavigationPolygon = newNavigationMesh;
-  #
-  # ```
   class NavigationPolygon < Godot::Resource
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -32765,7 +29063,6 @@ module Godot
       SourceGeometryMax = 3_i64
     end
     @@mb_set_vertices : Void* = Pointer(Void).null
-    # Sets the vertices that can be then indexed to create polygons with the `#add_polygon` method.
     def set_vertices(vertices : Void*) : Void
       if @@mb_set_vertices.null?
         @@mb_set_vertices = Bridge.get_method_bind("NavigationPolygon", "set_vertices", 1509147220_i64)
@@ -32776,7 +29073,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_vertices, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_vertices : Void* = Pointer(Void).null
-    # Returns a `PackedVector2Array` containing all the vertices being used to create the polygons.
     def get_vertices() : Void*
       if @@mb_get_vertices.null?
         @@mb_get_vertices = Bridge.get_method_bind("NavigationPolygon", "get_vertices", 2961356807_i64)
@@ -32786,7 +29082,6 @@ module Godot
       ret_ptr
     end
     @@mb_add_polygon : Void* = Pointer(Void).null
-    # Adds a polygon using the indices of the vertices you get when calling `#get_vertices`.
     def add_polygon(polygon : Void*) : Void
       if @@mb_add_polygon.null?
         @@mb_add_polygon = Bridge.get_method_bind("NavigationPolygon", "add_polygon", 3614634198_i64)
@@ -32797,7 +29092,6 @@ module Godot
       Bridge.ptrcall(@@mb_add_polygon, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_polygon_count : Void* = Pointer(Void).null
-    # Returns the count of all polygons.
     def get_polygon_count() : Int64
       if @@mb_get_polygon_count.null?
         @@mb_get_polygon_count = Bridge.get_method_bind("NavigationPolygon", "get_polygon_count", 3905245786_i64)
@@ -32807,7 +29101,6 @@ module Godot
       ret
     end
     @@mb_get_polygon : Void* = Pointer(Void).null
-    # Returns a `PackedInt32Array` containing the indices of the vertices of a created polygon.
     def get_polygon(idx : Int64) : Void*
       if @@mb_get_polygon.null?
         @@mb_get_polygon = Bridge.get_method_bind("NavigationPolygon", "get_polygon", 3668444399_i64)
@@ -32820,7 +29113,6 @@ module Godot
       ret_ptr
     end
     @@mb_clear_polygons : Void* = Pointer(Void).null
-    # Clears the array of polygons, but it doesn't clear the array of outlines and vertices.
     def clear_polygons() : Void
       if @@mb_clear_polygons.null?
         @@mb_clear_polygons = Bridge.get_method_bind("NavigationPolygon", "clear_polygons", 3218959716_i64)
@@ -32828,7 +29120,6 @@ module Godot
       Bridge.ptrcall(@@mb_clear_polygons, @pointer, Pointer(Pointer(Void)).null, Pointer(Void).null)
     end
     @@mb_get_navigation_mesh : Void* = Pointer(Void).null
-    # Returns the `NavigationMesh` resulting from this navigation polygon. This navigation mesh can be used to update the navigation mesh of a region with the `#NavigationServer3D.region_set_navigation_mesh` API directly.
     def get_navigation_mesh() : NavigationMesh
       if @@mb_get_navigation_mesh.null?
         @@mb_get_navigation_mesh = Bridge.get_method_bind("NavigationPolygon", "get_navigation_mesh", 330232164_i64)
@@ -32838,7 +29129,6 @@ module Godot
       NavigationMesh.new(ret_ptr)
     end
     @@mb_add_outline : Void* = Pointer(Void).null
-    # Appends a `PackedVector2Array` that contains the vertices of an outline to the internal array that contains all the outlines.
     def add_outline(outline : Void*) : Void
       if @@mb_add_outline.null?
         @@mb_add_outline = Bridge.get_method_bind("NavigationPolygon", "add_outline", 1509147220_i64)
@@ -32849,7 +29139,6 @@ module Godot
       Bridge.ptrcall(@@mb_add_outline, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_add_outline_at_index : Void* = Pointer(Void).null
-    # Adds a `PackedVector2Array` that contains the vertices of an outline to the internal array that contains all the outlines at a fixed position.
     def add_outline_at_index(outline : Void*, index : Int64) : Void
       if @@mb_add_outline_at_index.null?
         @@mb_add_outline_at_index = Bridge.get_method_bind("NavigationPolygon", "add_outline_at_index", 1569738947_i64)
@@ -32862,7 +29151,6 @@ module Godot
       Bridge.ptrcall(@@mb_add_outline_at_index, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_outline_count : Void* = Pointer(Void).null
-    # Returns the number of outlines that were created in the editor or by script.
     def get_outline_count() : Int64
       if @@mb_get_outline_count.null?
         @@mb_get_outline_count = Bridge.get_method_bind("NavigationPolygon", "get_outline_count", 3905245786_i64)
@@ -32872,7 +29160,6 @@ module Godot
       ret
     end
     @@mb_set_outline : Void* = Pointer(Void).null
-    # Changes an outline created in the editor or by script. You have to call `#make_polygons_from_outlines` for the polygons to update.
     def set_outline(idx : Int64, outline : Void*) : Void
       if @@mb_set_outline.null?
         @@mb_set_outline = Bridge.get_method_bind("NavigationPolygon", "set_outline", 1201971903_i64)
@@ -32885,7 +29172,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_outline, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_outline : Void* = Pointer(Void).null
-    # Returns a `PackedVector2Array` containing the vertices of an outline that was created in the editor or by script.
     def get_outline(idx : Int64) : Void*
       if @@mb_get_outline.null?
         @@mb_get_outline = Bridge.get_method_bind("NavigationPolygon", "get_outline", 3946907486_i64)
@@ -32898,7 +29184,6 @@ module Godot
       ret_ptr
     end
     @@mb_remove_outline : Void* = Pointer(Void).null
-    # Removes an outline created in the editor or by script. You have to call `#make_polygons_from_outlines` for the polygons to update.
     def remove_outline(idx : Int64) : Void
       if @@mb_remove_outline.null?
         @@mb_remove_outline = Bridge.get_method_bind("NavigationPolygon", "remove_outline", 1286410249_i64)
@@ -32909,7 +29194,6 @@ module Godot
       Bridge.ptrcall(@@mb_remove_outline, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_clear_outlines : Void* = Pointer(Void).null
-    # Clears the array of the outlines, but it doesn't clear the vertices and the polygons that were created by them.
     def clear_outlines() : Void
       if @@mb_clear_outlines.null?
         @@mb_clear_outlines = Bridge.get_method_bind("NavigationPolygon", "clear_outlines", 3218959716_i64)
@@ -32917,7 +29201,6 @@ module Godot
       Bridge.ptrcall(@@mb_clear_outlines, @pointer, Pointer(Pointer(Void)).null, Pointer(Void).null)
     end
     @@mb_make_polygons_from_outlines : Void* = Pointer(Void).null
-    # Creates polygons from the outlines added in the editor or by script.
     def make_polygons_from_outlines() : Void
       if @@mb_make_polygons_from_outlines.null?
         @@mb_make_polygons_from_outlines = Bridge.get_method_bind("NavigationPolygon", "make_polygons_from_outlines", 3218959716_i64)
@@ -33020,7 +29303,6 @@ module Godot
       ret
     end
     @@mb_set_parsed_collision_mask_value : Void* = Pointer(Void).null
-    # Based on `value`, enables or disables the specified layer in the `parsed_collision_mask`, given a `layer_number` between 1 and 32.
     def set_parsed_collision_mask_value(layer_number : Int64, value : Bool) : Void
       if @@mb_set_parsed_collision_mask_value.null?
         @@mb_set_parsed_collision_mask_value = Bridge.get_method_bind("NavigationPolygon", "set_parsed_collision_mask_value", 300928843_i64)
@@ -33033,7 +29315,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_parsed_collision_mask_value, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_parsed_collision_mask_value : Void* = Pointer(Void).null
-    # Returns whether or not the specified layer of the `parsed_collision_mask` is enabled, given a `layer_number` between 1 and 32.
     def get_parsed_collision_mask_value(layer_number : Int64) : Bool
       if @@mb_get_parsed_collision_mask_value.null?
         @@mb_get_parsed_collision_mask_value = Bridge.get_method_bind("NavigationPolygon", "get_parsed_collision_mask_value", 1116898809_i64)
@@ -33141,7 +29422,6 @@ module Godot
       ret
     end
     @@mb_clear : Void* = Pointer(Void).null
-    # Clears the internal arrays for vertices and polygon indices.
     def clear() : Void
       if @@mb_clear.null?
         @@mb_clear = Bridge.get_method_bind("NavigationPolygon", "clear", 3218959716_i64)
@@ -33149,21 +29429,11 @@ module Godot
       Bridge.ptrcall(@@mb_clear, @pointer, Pointer(Pointer(Void)).null, Pointer(Void).null)
     end
   end
-  # A traversable 2D region that `NavigationAgent2D`s can use for pathfinding.
-  #
-  # A traversable 2D region based on a `NavigationPolygon` that `NavigationAgent2D`s can use for pathfinding.
-  # Two regions can be connected to each other if they share a similar edge. You can set the minimum distance between two vertices required to connect two edges by using `#NavigationServer2D.map_set_edge_connection_margin`.
-  # **Note:** Overlapping two regions' navigation polygons is not enough for connecting two regions. They must share a similar edge.
-  # The pathfinding cost of entering a region from another region can be controlled with the `enter_cost` value.
-  # **Note:** This value is not added to the path cost when the start position is already inside this region.
-  # The pathfinding cost of traveling distances inside this region can be controlled with the `travel_cost` multiplier.
-  # **Note:** This node caches changes to its properties, so if you make changes to the underlying region `RID` in `NavigationServer2D`, they will not be reflected in this node's properties.
   class NavigationRegion2D < Godot::Node2D
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
     end
     @@mb_get_rid : Void* = Pointer(Void).null
-    # Returns the `RID` of this region on the `NavigationServer2D`. Combined with `#NavigationServer2D.map_get_closest_point_owner` can be used to identify the `NavigationRegion2D` closest to a point on the merged navigation map.
     def get_rid() : Int64
       if @@mb_get_rid.null?
         @@mb_get_rid = Bridge.get_method_bind("NavigationRegion2D", "get_rid", 2944877500_i64)
@@ -33211,7 +29481,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_set_navigation_map : Void* = Pointer(Void).null
-    # Sets the `RID` of the navigation map this region should use. By default the region will automatically join the `World2D` default navigation map so this function is only required to override the default map.
     def set_navigation_map(navigation_map : Int64) : Void
       if @@mb_set_navigation_map.null?
         @@mb_set_navigation_map = Bridge.get_method_bind("NavigationRegion2D", "set_navigation_map", 2722037293_i64)
@@ -33222,7 +29491,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_navigation_map, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_navigation_map : Void* = Pointer(Void).null
-    # Returns the current navigation map `RID` used by this region.
     def get_navigation_map() : Int64
       if @@mb_get_navigation_map.null?
         @@mb_get_navigation_map = Bridge.get_method_bind("NavigationRegion2D", "get_navigation_map", 2944877500_i64)
@@ -33270,7 +29538,6 @@ module Godot
       ret
     end
     @@mb_set_navigation_layer_value : Void* = Pointer(Void).null
-    # Based on `value`, enables or disables the specified layer in the `navigation_layers` bitmask, given a `layer_number` between 1 and 32.
     def set_navigation_layer_value(layer_number : Int64, value : Bool) : Void
       if @@mb_set_navigation_layer_value.null?
         @@mb_set_navigation_layer_value = Bridge.get_method_bind("NavigationRegion2D", "set_navigation_layer_value", 300928843_i64)
@@ -33283,7 +29550,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_navigation_layer_value, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_navigation_layer_value : Void* = Pointer(Void).null
-    # Returns whether or not the specified layer of the `navigation_layers` bitmask is enabled, given a `layer_number` between 1 and 32.
     def get_navigation_layer_value(layer_number : Int64) : Bool
       if @@mb_get_navigation_layer_value.null?
         @@mb_get_navigation_layer_value = Bridge.get_method_bind("NavigationRegion2D", "get_navigation_layer_value", 1116898809_i64)
@@ -33296,7 +29562,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_get_region_rid : Void* = Pointer(Void).null
-    # Returns the `RID` of this region on the `NavigationServer2D`.
     def get_region_rid() : Int64
       if @@mb_get_region_rid.null?
         @@mb_get_region_rid = Bridge.get_method_bind("NavigationRegion2D", "get_region_rid", 2944877500_i64)
@@ -33344,7 +29609,6 @@ module Godot
       ret
     end
     @@mb_bake_navigation_polygon : Void* = Pointer(Void).null
-    # Bakes the `NavigationPolygon`. If `on_thread` is set to `true` (default), the baking is done on a separate thread.
     def bake_navigation_polygon(on_thread : Bool) : Void
       if @@mb_bake_navigation_polygon.null?
         @@mb_bake_navigation_polygon = Bridge.get_method_bind("NavigationRegion2D", "bake_navigation_polygon", 3216645846_i64)
@@ -33355,7 +29619,6 @@ module Godot
       Bridge.ptrcall(@@mb_bake_navigation_polygon, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_is_baking : Void* = Pointer(Void).null
-    # Returns `true` when the `NavigationPolygon` is being baked on a background thread.
     def is_baking() : Bool
       if @@mb_is_baking.null?
         @@mb_is_baking = Bridge.get_method_bind("NavigationRegion2D", "is_baking", 36873697_i64)
@@ -33365,7 +29628,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_get_bounds : Void* = Pointer(Void).null
-    # Returns the axis-aligned rectangle for the region's transformed navigation mesh.
     def get_bounds() : Rect2
       if @@mb_get_bounds.null?
         @@mb_get_bounds = Bridge.get_method_bind("NavigationRegion2D", "get_bounds", 1639390495_i64)
@@ -33375,21 +29637,11 @@ module Godot
       Rect2.new(ret_ptr)
     end
   end
-  # A traversable 3D region that `NavigationAgent3D`s can use for pathfinding.
-  #
-  # A traversable 3D region based on a `NavigationMesh` that `NavigationAgent3D`s can use for pathfinding.
-  # Two regions can be connected to each other if they share a similar edge. You can set the minimum distance between two vertices required to connect two edges by using `#NavigationServer3D.map_set_edge_connection_margin`.
-  # **Note:** Overlapping two regions' navigation meshes is not enough for connecting two regions. They must share a similar edge.
-  # The cost of entering this region from another region can be controlled with the `enter_cost` value.
-  # **Note:** This value is not added to the path cost when the start position is already inside this region.
-  # The cost of traveling distances inside this region can be controlled with the `travel_cost` multiplier.
-  # **Note:** This node caches changes to its properties, so if you make changes to the underlying region `RID` in `NavigationServer3D`, they will not be reflected in this node's properties.
   class NavigationRegion3D < Godot::Node3D
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
     end
     @@mb_get_rid : Void* = Pointer(Void).null
-    # Returns the `RID` of this region on the `NavigationServer3D`. Combined with `#NavigationServer3D.map_get_closest_point_owner` can be used to identify the `NavigationRegion3D` closest to a point on the merged navigation map.
     def get_rid() : Int64
       if @@mb_get_rid.null?
         @@mb_get_rid = Bridge.get_method_bind("NavigationRegion3D", "get_rid", 2944877500_i64)
@@ -33437,7 +29689,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_set_navigation_map : Void* = Pointer(Void).null
-    # Sets the `RID` of the navigation map this region should use. By default the region will automatically join the `World3D` default navigation map so this function is only required to override the default map.
     def set_navigation_map(navigation_map : Int64) : Void
       if @@mb_set_navigation_map.null?
         @@mb_set_navigation_map = Bridge.get_method_bind("NavigationRegion3D", "set_navigation_map", 2722037293_i64)
@@ -33448,7 +29699,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_navigation_map, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_navigation_map : Void* = Pointer(Void).null
-    # Returns the current navigation map `RID` used by this region.
     def get_navigation_map() : Int64
       if @@mb_get_navigation_map.null?
         @@mb_get_navigation_map = Bridge.get_method_bind("NavigationRegion3D", "get_navigation_map", 2944877500_i64)
@@ -33496,7 +29746,6 @@ module Godot
       ret
     end
     @@mb_set_navigation_layer_value : Void* = Pointer(Void).null
-    # Based on `value`, enables or disables the specified layer in the `navigation_layers` bitmask, given a `layer_number` between 1 and 32.
     def set_navigation_layer_value(layer_number : Int64, value : Bool) : Void
       if @@mb_set_navigation_layer_value.null?
         @@mb_set_navigation_layer_value = Bridge.get_method_bind("NavigationRegion3D", "set_navigation_layer_value", 300928843_i64)
@@ -33509,7 +29758,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_navigation_layer_value, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_navigation_layer_value : Void* = Pointer(Void).null
-    # Returns whether or not the specified layer of the `navigation_layers` bitmask is enabled, given a `layer_number` between 1 and 32.
     def get_navigation_layer_value(layer_number : Int64) : Bool
       if @@mb_get_navigation_layer_value.null?
         @@mb_get_navigation_layer_value = Bridge.get_method_bind("NavigationRegion3D", "get_navigation_layer_value", 1116898809_i64)
@@ -33522,7 +29770,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_get_region_rid : Void* = Pointer(Void).null
-    # Returns the `RID` of this region on the `NavigationServer3D`.
     def get_region_rid() : Int64
       if @@mb_get_region_rid.null?
         @@mb_get_region_rid = Bridge.get_method_bind("NavigationRegion3D", "get_region_rid", 2944877500_i64)
@@ -33570,7 +29817,6 @@ module Godot
       ret
     end
     @@mb_bake_navigation_mesh : Void* = Pointer(Void).null
-    # Bakes the `NavigationMesh`. If `on_thread` is set to `true` (default), the baking is done on a separate thread. Baking on separate thread is useful because navigation baking is not a cheap operation. When it is completed, it automatically sets the new `NavigationMesh`. Please note that baking on separate thread may be very slow if geometry is parsed from meshes as async access to each mesh involves heavy synchronization. Also, please note that baking on a separate thread is automatically disabled on operating systems that cannot use threads (such as Web with threads disabled).
     def bake_navigation_mesh(on_thread : Bool) : Void
       if @@mb_bake_navigation_mesh.null?
         @@mb_bake_navigation_mesh = Bridge.get_method_bind("NavigationRegion3D", "bake_navigation_mesh", 3216645846_i64)
@@ -33581,7 +29827,6 @@ module Godot
       Bridge.ptrcall(@@mb_bake_navigation_mesh, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_is_baking : Void* = Pointer(Void).null
-    # Returns `true` when the `NavigationMesh` is being baked on a background thread.
     def is_baking() : Bool
       if @@mb_is_baking.null?
         @@mb_is_baking = Bridge.get_method_bind("NavigationRegion3D", "is_baking", 36873697_i64)
@@ -33591,7 +29836,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_get_bounds : Void* = Pointer(Void).null
-    # Returns the axis-aligned bounding box for the region's transformed navigation mesh.
     def get_bounds() : AABB
       if @@mb_get_bounds.null?
         @@mb_get_bounds = Bridge.get_method_bind("NavigationRegion3D", "get_bounds", 1068685055_i64)
@@ -33601,16 +29845,6 @@ module Godot
       AABB.new(ret_ptr)
     end
   end
-  # A server interface for low-level 2D navigation access.
-  #
-  # NavigationServer2D is the server that handles navigation maps, regions, and agents. It does not handle A* navigation from `AStar2D` or `AStarGrid2D`.
-  # Maps are divided into regions, which are composed of navigation polygons. Together, they define the traversable areas in the 2D world.
-  # **Note:** Most `NavigationServer2D` changes take effect after the next physics frame and not immediately. This includes all changes made to maps, regions, or agents by navigation-related nodes in the scene tree or made through scripts.
-  # For two regions to be connected to each other, they must share a similar edge. An edge is considered connected to another if both of its two vertices are at a distance less than `edge_connection_margin` to the respective other edge's vertex.
-  # You may assign navigation layers to regions with `#NavigationServer2D.region_set_navigation_layers`, which then can be checked upon when requesting a path with `#NavigationServer2D.map_get_path`. This can be used to allow or deny certain areas for some objects.
-  # To use the collision avoidance system, you may use agents. You can set an agent's target velocity, then the servers will emit a callback with a modified velocity.
-  # **Note:** The collision avoidance system ignores regions. Using the modified velocity directly may move an agent outside of the traversable area. This is a limitation of the collision avoidance system, any more complex situation may require the use of the physics engine.
-  # This server keeps tracks of any call and executes them during the sync phase. This means that you can request any change to the map, using any thread, without worrying.
   class NavigationServer2D < Godot::Object
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -33628,7 +29862,6 @@ module Godot
       InfoObstacleCount = 9_i64
     end
     @@mb_get_maps : Void* = Pointer(Void).null
-    # Returns all created navigation map `RID`s on the NavigationServer. This returns both 2D and 3D created navigation maps as there is technically no distinction between them.
     def get_maps() : Godot::Array
       if @@mb_get_maps.null?
         @@mb_get_maps = Bridge.get_method_bind("NavigationServer2D", "get_maps", 3995934104_i64)
@@ -33638,7 +29871,6 @@ module Godot
       Godot::Array.new(ret_ptr)
     end
     @@mb_map_create : Void* = Pointer(Void).null
-    # Create a new map.
     def map_create() : Int64
       if @@mb_map_create.null?
         @@mb_map_create = Bridge.get_method_bind("NavigationServer2D", "map_create", 529393457_i64)
@@ -33648,7 +29880,6 @@ module Godot
       ret
     end
     @@mb_map_set_active : Void* = Pointer(Void).null
-    # Sets the map active.
     def map_set_active(map : Int64, active : Bool) : Void
       if @@mb_map_set_active.null?
         @@mb_map_set_active = Bridge.get_method_bind("NavigationServer2D", "map_set_active", 1265174801_i64)
@@ -33661,7 +29892,6 @@ module Godot
       Bridge.ptrcall(@@mb_map_set_active, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_map_is_active : Void* = Pointer(Void).null
-    # Returns `true` if the map is active.
     def map_is_active(map : Int64) : Bool
       if @@mb_map_is_active.null?
         @@mb_map_is_active = Bridge.get_method_bind("NavigationServer2D", "map_is_active", 4155700596_i64)
@@ -33674,7 +29904,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_map_set_cell_size : Void* = Pointer(Void).null
-    # Sets the map cell size used to rasterize the navigation mesh vertices. Must match with the cell size of the used navigation meshes.
     def map_set_cell_size(map : Int64, cell_size : Float64) : Void
       if @@mb_map_set_cell_size.null?
         @@mb_map_set_cell_size = Bridge.get_method_bind("NavigationServer2D", "map_set_cell_size", 1794382983_i64)
@@ -33687,7 +29916,6 @@ module Godot
       Bridge.ptrcall(@@mb_map_set_cell_size, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_map_get_cell_size : Void* = Pointer(Void).null
-    # Returns the map cell size used to rasterize the navigation mesh vertices.
     def map_get_cell_size(map : Int64) : Float64
       if @@mb_map_get_cell_size.null?
         @@mb_map_get_cell_size = Bridge.get_method_bind("NavigationServer2D", "map_get_cell_size", 866169185_i64)
@@ -33700,7 +29928,6 @@ module Godot
       ret
     end
     @@mb_map_set_merge_rasterizer_cell_scale : Void* = Pointer(Void).null
-    # Set the map's internal merge rasterizer cell scale used to control merging sensitivity.
     def map_set_merge_rasterizer_cell_scale(map : Int64, scale : Float64) : Void
       if @@mb_map_set_merge_rasterizer_cell_scale.null?
         @@mb_map_set_merge_rasterizer_cell_scale = Bridge.get_method_bind("NavigationServer2D", "map_set_merge_rasterizer_cell_scale", 1794382983_i64)
@@ -33713,7 +29940,6 @@ module Godot
       Bridge.ptrcall(@@mb_map_set_merge_rasterizer_cell_scale, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_map_get_merge_rasterizer_cell_scale : Void* = Pointer(Void).null
-    # Returns the map's internal merge rasterizer cell scale.
     def map_get_merge_rasterizer_cell_scale(map : Int64) : Float64
       if @@mb_map_get_merge_rasterizer_cell_scale.null?
         @@mb_map_get_merge_rasterizer_cell_scale = Bridge.get_method_bind("NavigationServer2D", "map_get_merge_rasterizer_cell_scale", 866169185_i64)
@@ -33726,7 +29952,6 @@ module Godot
       ret
     end
     @@mb_map_set_use_edge_connections : Void* = Pointer(Void).null
-    # Set the navigation `map` edge connection use. If `enabled` is `true`, the navigation map allows navigation regions to use edge connections to connect with other navigation regions within proximity of the navigation map edge connection margin.
     def map_set_use_edge_connections(map : Int64, enabled : Bool) : Void
       if @@mb_map_set_use_edge_connections.null?
         @@mb_map_set_use_edge_connections = Bridge.get_method_bind("NavigationServer2D", "map_set_use_edge_connections", 1265174801_i64)
@@ -33739,7 +29964,6 @@ module Godot
       Bridge.ptrcall(@@mb_map_set_use_edge_connections, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_map_get_use_edge_connections : Void* = Pointer(Void).null
-    # Returns whether the navigation `map` allows navigation regions to use edge connections to connect with other navigation regions within proximity of the navigation map edge connection margin.
     def map_get_use_edge_connections(map : Int64) : Bool
       if @@mb_map_get_use_edge_connections.null?
         @@mb_map_get_use_edge_connections = Bridge.get_method_bind("NavigationServer2D", "map_get_use_edge_connections", 4155700596_i64)
@@ -33752,7 +29976,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_map_set_edge_connection_margin : Void* = Pointer(Void).null
-    # Set the map edge connection margin used to weld the compatible region edges.
     def map_set_edge_connection_margin(map : Int64, margin : Float64) : Void
       if @@mb_map_set_edge_connection_margin.null?
         @@mb_map_set_edge_connection_margin = Bridge.get_method_bind("NavigationServer2D", "map_set_edge_connection_margin", 1794382983_i64)
@@ -33765,7 +29988,6 @@ module Godot
       Bridge.ptrcall(@@mb_map_set_edge_connection_margin, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_map_get_edge_connection_margin : Void* = Pointer(Void).null
-    # Returns the edge connection margin of the map. The edge connection margin is a distance used to connect two regions.
     def map_get_edge_connection_margin(map : Int64) : Float64
       if @@mb_map_get_edge_connection_margin.null?
         @@mb_map_get_edge_connection_margin = Bridge.get_method_bind("NavigationServer2D", "map_get_edge_connection_margin", 866169185_i64)
@@ -33778,7 +30000,6 @@ module Godot
       ret
     end
     @@mb_map_set_link_connection_radius : Void* = Pointer(Void).null
-    # Set the map's link connection radius used to connect links to navigation polygons.
     def map_set_link_connection_radius(map : Int64, radius : Float64) : Void
       if @@mb_map_set_link_connection_radius.null?
         @@mb_map_set_link_connection_radius = Bridge.get_method_bind("NavigationServer2D", "map_set_link_connection_radius", 1794382983_i64)
@@ -33791,7 +30012,6 @@ module Godot
       Bridge.ptrcall(@@mb_map_set_link_connection_radius, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_map_get_link_connection_radius : Void* = Pointer(Void).null
-    # Returns the link connection radius of the map. This distance is the maximum range any link will search for navigation mesh polygons to connect to.
     def map_get_link_connection_radius(map : Int64) : Float64
       if @@mb_map_get_link_connection_radius.null?
         @@mb_map_get_link_connection_radius = Bridge.get_method_bind("NavigationServer2D", "map_get_link_connection_radius", 866169185_i64)
@@ -33804,7 +30024,6 @@ module Godot
       ret
     end
     @@mb_map_get_path : Void* = Pointer(Void).null
-    # Returns the navigation path to reach the destination from the origin. `navigation_layers` is a bitmask of all region navigation layers that are allowed to be in the path.
     def map_get_path(map : Int64, origin : Vector2, destination : Vector2, optimize : Bool, navigation_layers : Int64) : Void*
       if @@mb_map_get_path.null?
         @@mb_map_get_path = Bridge.get_method_bind("NavigationServer2D", "map_get_path", 1279824844_i64)
@@ -33825,7 +30044,6 @@ module Godot
       ret_ptr
     end
     @@mb_map_get_closest_point : Void* = Pointer(Void).null
-    # Returns the navigation mesh surface point closest to the provided `to_point` on the navigation `map`.
     def map_get_closest_point(map : Int64, to_point : Vector2) : Vector2
       if @@mb_map_get_closest_point.null?
         @@mb_map_get_closest_point = Bridge.get_method_bind("NavigationServer2D", "map_get_closest_point", 1358334418_i64)
@@ -33840,7 +30058,6 @@ module Godot
       ret
     end
     @@mb_map_get_closest_point_owner : Void* = Pointer(Void).null
-    # Returns the owner region RID for the navigation mesh surface point closest to the provided `to_point` on the navigation `map`.
     def map_get_closest_point_owner(map : Int64, to_point : Vector2) : Int64
       if @@mb_map_get_closest_point_owner.null?
         @@mb_map_get_closest_point_owner = Bridge.get_method_bind("NavigationServer2D", "map_get_closest_point_owner", 1353467510_i64)
@@ -33855,7 +30072,6 @@ module Godot
       ret
     end
     @@mb_map_get_links : Void* = Pointer(Void).null
-    # Returns all navigation link `RID`s that are currently assigned to the requested navigation `map`.
     def map_get_links(map : Int64) : Godot::Array
       if @@mb_map_get_links.null?
         @@mb_map_get_links = Bridge.get_method_bind("NavigationServer2D", "map_get_links", 2684255073_i64)
@@ -33868,7 +30084,6 @@ module Godot
       Godot::Array.new(ret_ptr)
     end
     @@mb_map_get_regions : Void* = Pointer(Void).null
-    # Returns all navigation region `RID`s that are currently assigned to the requested navigation `map`.
     def map_get_regions(map : Int64) : Godot::Array
       if @@mb_map_get_regions.null?
         @@mb_map_get_regions = Bridge.get_method_bind("NavigationServer2D", "map_get_regions", 2684255073_i64)
@@ -33881,7 +30096,6 @@ module Godot
       Godot::Array.new(ret_ptr)
     end
     @@mb_map_get_agents : Void* = Pointer(Void).null
-    # Returns all navigation agent `RID`s that are currently assigned to the requested navigation `map`.
     def map_get_agents(map : Int64) : Godot::Array
       if @@mb_map_get_agents.null?
         @@mb_map_get_agents = Bridge.get_method_bind("NavigationServer2D", "map_get_agents", 2684255073_i64)
@@ -33894,7 +30108,6 @@ module Godot
       Godot::Array.new(ret_ptr)
     end
     @@mb_map_get_obstacles : Void* = Pointer(Void).null
-    # Returns all navigation obstacle `RID`s that are currently assigned to the requested navigation `map`.
     def map_get_obstacles(map : Int64) : Godot::Array
       if @@mb_map_get_obstacles.null?
         @@mb_map_get_obstacles = Bridge.get_method_bind("NavigationServer2D", "map_get_obstacles", 2684255073_i64)
@@ -33907,10 +30120,6 @@ module Godot
       Godot::Array.new(ret_ptr)
     end
     @@mb_map_force_update : Void* = Pointer(Void).null
-    # This function immediately forces synchronization of the specified navigation `map` `RID`. By default navigation maps are only synchronized at the end of each physics frame. This function can be used to immediately (re)calculate all the navigation meshes and region connections of the navigation map. This makes it possible to query a navigation path for a changed map immediately and in the same frame (multiple times if needed).
-    # Due to technical restrictions the current NavigationServer command queue will be flushed. This means all already queued update commands for this physics frame will be executed, even those intended for other maps, regions, and agents not part of the specified map. The expensive computation of the navigation meshes and region connections of a map will only be done for the specified map. Other maps will receive the normal synchronization at the end of the physics frame. Should the specified map receive changes after the forced update it will update again as well when the other maps receive their update.
-    # Avoidance processing and dispatch of the `safe_velocity` signals is unaffected by this function and continues to happen for all maps and agents at the end of the physics frame.
-    # **Note:** With great power comes great responsibility. This function should only be used by users that really know what they are doing and have a good reason for it. Forcing an immediate update of a navigation map requires locking the NavigationServer and flushing the entire NavigationServer command queue. Not only can this severely impact the performance of a game but it can also introduce bugs if used inappropriately without much foresight.
     def map_force_update(map : Int64) : Void
       if @@mb_map_force_update.null?
         @@mb_map_force_update = Bridge.get_method_bind("NavigationServer2D", "map_force_update", 2722037293_i64)
@@ -33921,8 +30130,6 @@ module Godot
       Bridge.ptrcall(@@mb_map_force_update, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_map_get_iteration_id : Void* = Pointer(Void).null
-    # Returns the current iteration id of the navigation map. Every time the navigation map changes and synchronizes the iteration id increases. An iteration id of 0 means the navigation map has never synchronized.
-    # **Note:** The iteration id will wrap back to 1 after reaching its range limit.
     def map_get_iteration_id(map : Int64) : Int64
       if @@mb_map_get_iteration_id.null?
         @@mb_map_get_iteration_id = Bridge.get_method_bind("NavigationServer2D", "map_get_iteration_id", 2198884583_i64)
@@ -33935,7 +30142,6 @@ module Godot
       ret
     end
     @@mb_map_set_use_async_iterations : Void* = Pointer(Void).null
-    # If `enabled` is `true` the `map` synchronization uses an async process that runs on a background thread.
     def map_set_use_async_iterations(map : Int64, enabled : Bool) : Void
       if @@mb_map_set_use_async_iterations.null?
         @@mb_map_set_use_async_iterations = Bridge.get_method_bind("NavigationServer2D", "map_set_use_async_iterations", 1265174801_i64)
@@ -33948,7 +30154,6 @@ module Godot
       Bridge.ptrcall(@@mb_map_set_use_async_iterations, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_map_get_use_async_iterations : Void* = Pointer(Void).null
-    # Returns `true` if the `map` synchronization uses an async process that runs on a background thread.
     def map_get_use_async_iterations(map : Int64) : Bool
       if @@mb_map_get_use_async_iterations.null?
         @@mb_map_get_use_async_iterations = Bridge.get_method_bind("NavigationServer2D", "map_get_use_async_iterations", 4155700596_i64)
@@ -33961,9 +30166,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_map_get_random_point : Void* = Pointer(Void).null
-    # Returns a random position picked from all map region polygons with matching `navigation_layers`.
-    # If `uniformly` is `true`, all map regions, polygons, and faces are weighted by their surface area (slower).
-    # If `uniformly` is `false`, just a random region and a random polygon are picked (faster).
     def map_get_random_point(map : Int64, navigation_layers : Int64, uniformly : Bool) : Vector2
       if @@mb_map_get_random_point.null?
         @@mb_map_get_random_point = Bridge.get_method_bind("NavigationServer2D", "map_get_random_point", 3271000763_i64)
@@ -33980,7 +30182,6 @@ module Godot
       ret
     end
     @@mb_query_path : Void* = Pointer(Void).null
-    # Queries a path in a given navigation map. Start and target position and other parameters are defined through `NavigationPathQueryParameters2D`. Updates the provided `NavigationPathQueryResult2D` result object with the path among other results requested by the query. After the process is finished the optional `callback` will be called.
     def query_path(parameters : NavigationPathQueryParameters2D, result : NavigationPathQueryResult2D, callback : Void*) : Void
       if @@mb_query_path.null?
         @@mb_query_path = Bridge.get_method_bind("NavigationServer2D", "query_path", 1254915886_i64)
@@ -33995,7 +30196,6 @@ module Godot
       Bridge.ptrcall(@@mb_query_path, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_region_create : Void* = Pointer(Void).null
-    # Creates a new region.
     def region_create() : Int64
       if @@mb_region_create.null?
         @@mb_region_create = Bridge.get_method_bind("NavigationServer2D", "region_create", 529393457_i64)
@@ -34005,8 +30205,6 @@ module Godot
       ret
     end
     @@mb_region_get_iteration_id : Void* = Pointer(Void).null
-    # Returns the current iteration ID of the navigation region. Every time the navigation region changes and synchronizes, the iteration ID increases. An iteration ID of `0` means the navigation region has never synchronized.
-    # **Note:** The iteration ID will wrap around to `1` after reaching its range limit.
     def region_get_iteration_id(region : Int64) : Int64
       if @@mb_region_get_iteration_id.null?
         @@mb_region_get_iteration_id = Bridge.get_method_bind("NavigationServer2D", "region_get_iteration_id", 2198884583_i64)
@@ -34019,7 +30217,6 @@ module Godot
       ret
     end
     @@mb_region_set_use_async_iterations : Void* = Pointer(Void).null
-    # If `enabled` is `true` the `region` uses an async synchronization process that runs on a background thread.
     def region_set_use_async_iterations(region : Int64, enabled : Bool) : Void
       if @@mb_region_set_use_async_iterations.null?
         @@mb_region_set_use_async_iterations = Bridge.get_method_bind("NavigationServer2D", "region_set_use_async_iterations", 1265174801_i64)
@@ -34032,7 +30229,6 @@ module Godot
       Bridge.ptrcall(@@mb_region_set_use_async_iterations, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_region_get_use_async_iterations : Void* = Pointer(Void).null
-    # Returns `true` if the `region` uses an async synchronization process that runs on a background thread.
     def region_get_use_async_iterations(region : Int64) : Bool
       if @@mb_region_get_use_async_iterations.null?
         @@mb_region_get_use_async_iterations = Bridge.get_method_bind("NavigationServer2D", "region_get_use_async_iterations", 4155700596_i64)
@@ -34045,7 +30241,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_region_set_enabled : Void* = Pointer(Void).null
-    # If `enabled` is `true` the specified `region` will contribute to its current navigation map.
     def region_set_enabled(region : Int64, enabled : Bool) : Void
       if @@mb_region_set_enabled.null?
         @@mb_region_set_enabled = Bridge.get_method_bind("NavigationServer2D", "region_set_enabled", 1265174801_i64)
@@ -34058,7 +30253,6 @@ module Godot
       Bridge.ptrcall(@@mb_region_set_enabled, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_region_get_enabled : Void* = Pointer(Void).null
-    # Returns `true` if the specified `region` is enabled.
     def region_get_enabled(region : Int64) : Bool
       if @@mb_region_get_enabled.null?
         @@mb_region_get_enabled = Bridge.get_method_bind("NavigationServer2D", "region_get_enabled", 4155700596_i64)
@@ -34071,7 +30265,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_region_set_use_edge_connections : Void* = Pointer(Void).null
-    # If `enabled` is `true`, the navigation `region` will use edge connections to connect with other navigation regions within proximity of the navigation map edge connection margin.
     def region_set_use_edge_connections(region : Int64, enabled : Bool) : Void
       if @@mb_region_set_use_edge_connections.null?
         @@mb_region_set_use_edge_connections = Bridge.get_method_bind("NavigationServer2D", "region_set_use_edge_connections", 1265174801_i64)
@@ -34084,7 +30277,6 @@ module Godot
       Bridge.ptrcall(@@mb_region_set_use_edge_connections, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_region_get_use_edge_connections : Void* = Pointer(Void).null
-    # Returns whether the navigation `region` is set to use edge connections to connect with other navigation regions within proximity of the navigation map edge connection margin.
     def region_get_use_edge_connections(region : Int64) : Bool
       if @@mb_region_get_use_edge_connections.null?
         @@mb_region_get_use_edge_connections = Bridge.get_method_bind("NavigationServer2D", "region_get_use_edge_connections", 4155700596_i64)
@@ -34097,7 +30289,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_region_set_enter_cost : Void* = Pointer(Void).null
-    # Sets the `enter_cost` for this `region`.
     def region_set_enter_cost(region : Int64, enter_cost : Float64) : Void
       if @@mb_region_set_enter_cost.null?
         @@mb_region_set_enter_cost = Bridge.get_method_bind("NavigationServer2D", "region_set_enter_cost", 1794382983_i64)
@@ -34110,7 +30301,6 @@ module Godot
       Bridge.ptrcall(@@mb_region_set_enter_cost, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_region_get_enter_cost : Void* = Pointer(Void).null
-    # Returns the enter cost of this `region`.
     def region_get_enter_cost(region : Int64) : Float64
       if @@mb_region_get_enter_cost.null?
         @@mb_region_get_enter_cost = Bridge.get_method_bind("NavigationServer2D", "region_get_enter_cost", 866169185_i64)
@@ -34123,7 +30313,6 @@ module Godot
       ret
     end
     @@mb_region_set_travel_cost : Void* = Pointer(Void).null
-    # Sets the `travel_cost` for this `region`.
     def region_set_travel_cost(region : Int64, travel_cost : Float64) : Void
       if @@mb_region_set_travel_cost.null?
         @@mb_region_set_travel_cost = Bridge.get_method_bind("NavigationServer2D", "region_set_travel_cost", 1794382983_i64)
@@ -34136,7 +30325,6 @@ module Godot
       Bridge.ptrcall(@@mb_region_set_travel_cost, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_region_get_travel_cost : Void* = Pointer(Void).null
-    # Returns the travel cost of this `region`.
     def region_get_travel_cost(region : Int64) : Float64
       if @@mb_region_get_travel_cost.null?
         @@mb_region_get_travel_cost = Bridge.get_method_bind("NavigationServer2D", "region_get_travel_cost", 866169185_i64)
@@ -34149,7 +30337,6 @@ module Godot
       ret
     end
     @@mb_region_set_owner_id : Void* = Pointer(Void).null
-    # Set the `ObjectID` of the object which manages this region.
     def region_set_owner_id(region : Int64, owner_id : Int64) : Void
       if @@mb_region_set_owner_id.null?
         @@mb_region_set_owner_id = Bridge.get_method_bind("NavigationServer2D", "region_set_owner_id", 3411492887_i64)
@@ -34162,7 +30349,6 @@ module Godot
       Bridge.ptrcall(@@mb_region_set_owner_id, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_region_get_owner_id : Void* = Pointer(Void).null
-    # Returns the `ObjectID` of the object which manages this region.
     def region_get_owner_id(region : Int64) : Int64
       if @@mb_region_get_owner_id.null?
         @@mb_region_get_owner_id = Bridge.get_method_bind("NavigationServer2D", "region_get_owner_id", 2198884583_i64)
@@ -34175,9 +30361,6 @@ module Godot
       ret
     end
     @@mb_region_owns_point : Void* = Pointer(Void).null
-    # Returns `true` if the provided `point` in world space is currently owned by the provided navigation `region`. Owned in this context means that one of the region's navigation mesh polygon faces has a possible position at the closest distance to this point compared to all other navigation meshes from other navigation regions that are also registered on the navigation map of the provided region.
-    # If multiple navigation meshes have positions at equal distance the navigation region whose polygons are processed first wins the ownership. Polygons are processed in the same order that navigation regions were registered on the NavigationServer.
-    # **Note:** If navigation meshes from different navigation regions overlap (which should be avoided in general) the result might not be what is expected.
     def region_owns_point(region : Int64, point : Vector2) : Bool
       if @@mb_region_owns_point.null?
         @@mb_region_owns_point = Bridge.get_method_bind("NavigationServer2D", "region_owns_point", 219849798_i64)
@@ -34192,7 +30375,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_region_set_map : Void* = Pointer(Void).null
-    # Sets the map for the region.
     def region_set_map(region : Int64, map : Int64) : Void
       if @@mb_region_set_map.null?
         @@mb_region_set_map = Bridge.get_method_bind("NavigationServer2D", "region_set_map", 395945892_i64)
@@ -34205,7 +30387,6 @@ module Godot
       Bridge.ptrcall(@@mb_region_set_map, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_region_get_map : Void* = Pointer(Void).null
-    # Returns the navigation map `RID` the requested `region` is currently assigned to.
     def region_get_map(region : Int64) : Int64
       if @@mb_region_get_map.null?
         @@mb_region_get_map = Bridge.get_method_bind("NavigationServer2D", "region_get_map", 3814569979_i64)
@@ -34218,7 +30399,6 @@ module Godot
       ret
     end
     @@mb_region_set_navigation_layers : Void* = Pointer(Void).null
-    # Set the region's navigation layers. This allows selecting regions from a path request (when using `#NavigationServer2D.map_get_path`).
     def region_set_navigation_layers(region : Int64, navigation_layers : Int64) : Void
       if @@mb_region_set_navigation_layers.null?
         @@mb_region_set_navigation_layers = Bridge.get_method_bind("NavigationServer2D", "region_set_navigation_layers", 3411492887_i64)
@@ -34231,7 +30411,6 @@ module Godot
       Bridge.ptrcall(@@mb_region_set_navigation_layers, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_region_get_navigation_layers : Void* = Pointer(Void).null
-    # Returns the region's navigation layers.
     def region_get_navigation_layers(region : Int64) : Int64
       if @@mb_region_get_navigation_layers.null?
         @@mb_region_get_navigation_layers = Bridge.get_method_bind("NavigationServer2D", "region_get_navigation_layers", 2198884583_i64)
@@ -34244,7 +30423,6 @@ module Godot
       ret
     end
     @@mb_region_set_transform : Void* = Pointer(Void).null
-    # Sets the global transformation for the region.
     def region_set_transform(region : Int64, transform : Transform2D) : Void
       if @@mb_region_set_transform.null?
         @@mb_region_set_transform = Bridge.get_method_bind("NavigationServer2D", "region_set_transform", 1246044741_i64)
@@ -34257,7 +30435,6 @@ module Godot
       Bridge.ptrcall(@@mb_region_set_transform, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_region_get_transform : Void* = Pointer(Void).null
-    # Returns the global transformation of this `region`.
     def region_get_transform(region : Int64) : Transform2D
       if @@mb_region_get_transform.null?
         @@mb_region_get_transform = Bridge.get_method_bind("NavigationServer2D", "region_get_transform", 213527486_i64)
@@ -34270,7 +30447,6 @@ module Godot
       Transform2D.new(ret_ptr)
     end
     @@mb_region_set_navigation_polygon : Void* = Pointer(Void).null
-    # Sets the `navigation_polygon` for the region.
     def region_set_navigation_polygon(region : Int64, navigation_polygon : NavigationPolygon) : Void
       if @@mb_region_set_navigation_polygon.null?
         @@mb_region_set_navigation_polygon = Bridge.get_method_bind("NavigationServer2D", "region_set_navigation_polygon", 3633623451_i64)
@@ -34283,7 +30459,6 @@ module Godot
       Bridge.ptrcall(@@mb_region_set_navigation_polygon, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_region_get_connections_count : Void* = Pointer(Void).null
-    # Returns how many connections this `region` has with other regions in the map.
     def region_get_connections_count(region : Int64) : Int64
       if @@mb_region_get_connections_count.null?
         @@mb_region_get_connections_count = Bridge.get_method_bind("NavigationServer2D", "region_get_connections_count", 2198884583_i64)
@@ -34296,7 +30471,6 @@ module Godot
       ret
     end
     @@mb_region_get_connection_pathway_start : Void* = Pointer(Void).null
-    # Returns the starting point of a connection door. `connection` is an index between 0 and the return value of `#region_get_connections_count`.
     def region_get_connection_pathway_start(region : Int64, connection : Int64) : Vector2
       if @@mb_region_get_connection_pathway_start.null?
         @@mb_region_get_connection_pathway_start = Bridge.get_method_bind("NavigationServer2D", "region_get_connection_pathway_start", 2546185844_i64)
@@ -34311,7 +30485,6 @@ module Godot
       ret
     end
     @@mb_region_get_connection_pathway_end : Void* = Pointer(Void).null
-    # Returns the ending point of a connection door. `connection` is an index between 0 and the return value of `#region_get_connections_count`.
     def region_get_connection_pathway_end(region : Int64, connection : Int64) : Vector2
       if @@mb_region_get_connection_pathway_end.null?
         @@mb_region_get_connection_pathway_end = Bridge.get_method_bind("NavigationServer2D", "region_get_connection_pathway_end", 2546185844_i64)
@@ -34326,7 +30499,6 @@ module Godot
       ret
     end
     @@mb_region_get_closest_point : Void* = Pointer(Void).null
-    # Returns the navigation mesh surface point closest to the provided `to_point` on the navigation `region`.
     def region_get_closest_point(region : Int64, to_point : Vector2) : Vector2
       if @@mb_region_get_closest_point.null?
         @@mb_region_get_closest_point = Bridge.get_method_bind("NavigationServer2D", "region_get_closest_point", 1358334418_i64)
@@ -34341,9 +30513,6 @@ module Godot
       ret
     end
     @@mb_region_get_random_point : Void* = Pointer(Void).null
-    # Returns a random position picked from all region polygons with matching `navigation_layers`.
-    # If `uniformly` is `true`, all region polygons and faces are weighted by their surface area (slower).
-    # If `uniformly` is `false`, just a random polygon and face is picked (faster).
     def region_get_random_point(region : Int64, navigation_layers : Int64, uniformly : Bool) : Vector2
       if @@mb_region_get_random_point.null?
         @@mb_region_get_random_point = Bridge.get_method_bind("NavigationServer2D", "region_get_random_point", 3271000763_i64)
@@ -34360,7 +30529,6 @@ module Godot
       ret
     end
     @@mb_region_get_bounds : Void* = Pointer(Void).null
-    # Returns the axis-aligned rectangle for the `region`'s transformed navigation mesh.
     def region_get_bounds(region : Int64) : Rect2
       if @@mb_region_get_bounds.null?
         @@mb_region_get_bounds = Bridge.get_method_bind("NavigationServer2D", "region_get_bounds", 1097232729_i64)
@@ -34373,7 +30541,6 @@ module Godot
       Rect2.new(ret_ptr)
     end
     @@mb_link_create : Void* = Pointer(Void).null
-    # Create a new link between two positions on a map.
     def link_create() : Int64
       if @@mb_link_create.null?
         @@mb_link_create = Bridge.get_method_bind("NavigationServer2D", "link_create", 529393457_i64)
@@ -34383,8 +30550,6 @@ module Godot
       ret
     end
     @@mb_link_get_iteration_id : Void* = Pointer(Void).null
-    # Returns the current iteration ID of the navigation link. Every time the navigation link changes and synchronizes, the iteration ID increases. An iteration ID of `0` means the navigation link has never synchronized.
-    # **Note:** The iteration ID will wrap around to `1` after reaching its range limit.
     def link_get_iteration_id(link : Int64) : Int64
       if @@mb_link_get_iteration_id.null?
         @@mb_link_get_iteration_id = Bridge.get_method_bind("NavigationServer2D", "link_get_iteration_id", 2198884583_i64)
@@ -34397,7 +30562,6 @@ module Godot
       ret
     end
     @@mb_link_set_map : Void* = Pointer(Void).null
-    # Sets the navigation map `RID` for the link.
     def link_set_map(link : Int64, map : Int64) : Void
       if @@mb_link_set_map.null?
         @@mb_link_set_map = Bridge.get_method_bind("NavigationServer2D", "link_set_map", 395945892_i64)
@@ -34410,7 +30574,6 @@ module Godot
       Bridge.ptrcall(@@mb_link_set_map, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_link_get_map : Void* = Pointer(Void).null
-    # Returns the navigation map `RID` the requested `link` is currently assigned to.
     def link_get_map(link : Int64) : Int64
       if @@mb_link_get_map.null?
         @@mb_link_get_map = Bridge.get_method_bind("NavigationServer2D", "link_get_map", 3814569979_i64)
@@ -34423,7 +30586,6 @@ module Godot
       ret
     end
     @@mb_link_set_enabled : Void* = Pointer(Void).null
-    # If `enabled` is `true`, the specified `link` will contribute to its current navigation map.
     def link_set_enabled(link : Int64, enabled : Bool) : Void
       if @@mb_link_set_enabled.null?
         @@mb_link_set_enabled = Bridge.get_method_bind("NavigationServer2D", "link_set_enabled", 1265174801_i64)
@@ -34436,7 +30598,6 @@ module Godot
       Bridge.ptrcall(@@mb_link_set_enabled, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_link_get_enabled : Void* = Pointer(Void).null
-    # Returns `true` if the specified `link` is enabled.
     def link_get_enabled(link : Int64) : Bool
       if @@mb_link_get_enabled.null?
         @@mb_link_get_enabled = Bridge.get_method_bind("NavigationServer2D", "link_get_enabled", 4155700596_i64)
@@ -34449,7 +30610,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_link_set_bidirectional : Void* = Pointer(Void).null
-    # Sets whether this `link` can be travelled in both directions.
     def link_set_bidirectional(link : Int64, bidirectional : Bool) : Void
       if @@mb_link_set_bidirectional.null?
         @@mb_link_set_bidirectional = Bridge.get_method_bind("NavigationServer2D", "link_set_bidirectional", 1265174801_i64)
@@ -34462,7 +30622,6 @@ module Godot
       Bridge.ptrcall(@@mb_link_set_bidirectional, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_link_is_bidirectional : Void* = Pointer(Void).null
-    # Returns whether this `link` can be travelled in both directions.
     def link_is_bidirectional(link : Int64) : Bool
       if @@mb_link_is_bidirectional.null?
         @@mb_link_is_bidirectional = Bridge.get_method_bind("NavigationServer2D", "link_is_bidirectional", 4155700596_i64)
@@ -34475,7 +30634,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_link_set_navigation_layers : Void* = Pointer(Void).null
-    # Sets the given `link`'s navigation layers to `navigation_layers`. This allows selecting links from a path request (when using `#NavigationServer2D.map_get_path`).
     def link_set_navigation_layers(link : Int64, navigation_layers : Int64) : Void
       if @@mb_link_set_navigation_layers.null?
         @@mb_link_set_navigation_layers = Bridge.get_method_bind("NavigationServer2D", "link_set_navigation_layers", 3411492887_i64)
@@ -34488,7 +30646,6 @@ module Godot
       Bridge.ptrcall(@@mb_link_set_navigation_layers, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_link_get_navigation_layers : Void* = Pointer(Void).null
-    # Returns the navigation layers for this `link`.
     def link_get_navigation_layers(link : Int64) : Int64
       if @@mb_link_get_navigation_layers.null?
         @@mb_link_get_navigation_layers = Bridge.get_method_bind("NavigationServer2D", "link_get_navigation_layers", 2198884583_i64)
@@ -34501,7 +30658,6 @@ module Godot
       ret
     end
     @@mb_link_set_start_position : Void* = Pointer(Void).null
-    # Sets the entry position for this `link`.
     def link_set_start_position(link : Int64, position : Vector2) : Void
       if @@mb_link_set_start_position.null?
         @@mb_link_set_start_position = Bridge.get_method_bind("NavigationServer2D", "link_set_start_position", 3201125042_i64)
@@ -34514,7 +30670,6 @@ module Godot
       Bridge.ptrcall(@@mb_link_set_start_position, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_link_get_start_position : Void* = Pointer(Void).null
-    # Returns the starting position of this `link`.
     def link_get_start_position(link : Int64) : Vector2
       if @@mb_link_get_start_position.null?
         @@mb_link_get_start_position = Bridge.get_method_bind("NavigationServer2D", "link_get_start_position", 2440833711_i64)
@@ -34527,7 +30682,6 @@ module Godot
       ret
     end
     @@mb_link_set_end_position : Void* = Pointer(Void).null
-    # Sets the exit position for the `link`.
     def link_set_end_position(link : Int64, position : Vector2) : Void
       if @@mb_link_set_end_position.null?
         @@mb_link_set_end_position = Bridge.get_method_bind("NavigationServer2D", "link_set_end_position", 3201125042_i64)
@@ -34540,7 +30694,6 @@ module Godot
       Bridge.ptrcall(@@mb_link_set_end_position, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_link_get_end_position : Void* = Pointer(Void).null
-    # Returns the ending position of this `link`.
     def link_get_end_position(link : Int64) : Vector2
       if @@mb_link_get_end_position.null?
         @@mb_link_get_end_position = Bridge.get_method_bind("NavigationServer2D", "link_get_end_position", 2440833711_i64)
@@ -34553,7 +30706,6 @@ module Godot
       ret
     end
     @@mb_link_set_enter_cost : Void* = Pointer(Void).null
-    # Sets the `enter_cost` for this `link`.
     def link_set_enter_cost(link : Int64, enter_cost : Float64) : Void
       if @@mb_link_set_enter_cost.null?
         @@mb_link_set_enter_cost = Bridge.get_method_bind("NavigationServer2D", "link_set_enter_cost", 1794382983_i64)
@@ -34566,7 +30718,6 @@ module Godot
       Bridge.ptrcall(@@mb_link_set_enter_cost, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_link_get_enter_cost : Void* = Pointer(Void).null
-    # Returns the enter cost of this `link`.
     def link_get_enter_cost(link : Int64) : Float64
       if @@mb_link_get_enter_cost.null?
         @@mb_link_get_enter_cost = Bridge.get_method_bind("NavigationServer2D", "link_get_enter_cost", 866169185_i64)
@@ -34579,7 +30730,6 @@ module Godot
       ret
     end
     @@mb_link_set_travel_cost : Void* = Pointer(Void).null
-    # Sets the `travel_cost` for this `link`.
     def link_set_travel_cost(link : Int64, travel_cost : Float64) : Void
       if @@mb_link_set_travel_cost.null?
         @@mb_link_set_travel_cost = Bridge.get_method_bind("NavigationServer2D", "link_set_travel_cost", 1794382983_i64)
@@ -34592,7 +30742,6 @@ module Godot
       Bridge.ptrcall(@@mb_link_set_travel_cost, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_link_get_travel_cost : Void* = Pointer(Void).null
-    # Returns the travel cost of this `link`.
     def link_get_travel_cost(link : Int64) : Float64
       if @@mb_link_get_travel_cost.null?
         @@mb_link_get_travel_cost = Bridge.get_method_bind("NavigationServer2D", "link_get_travel_cost", 866169185_i64)
@@ -34605,7 +30754,6 @@ module Godot
       ret
     end
     @@mb_link_set_owner_id : Void* = Pointer(Void).null
-    # Set the `ObjectID` of the object which manages this link.
     def link_set_owner_id(link : Int64, owner_id : Int64) : Void
       if @@mb_link_set_owner_id.null?
         @@mb_link_set_owner_id = Bridge.get_method_bind("NavigationServer2D", "link_set_owner_id", 3411492887_i64)
@@ -34618,7 +30766,6 @@ module Godot
       Bridge.ptrcall(@@mb_link_set_owner_id, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_link_get_owner_id : Void* = Pointer(Void).null
-    # Returns the `ObjectID` of the object which manages this link.
     def link_get_owner_id(link : Int64) : Int64
       if @@mb_link_get_owner_id.null?
         @@mb_link_get_owner_id = Bridge.get_method_bind("NavigationServer2D", "link_get_owner_id", 2198884583_i64)
@@ -34631,7 +30778,6 @@ module Godot
       ret
     end
     @@mb_agent_create : Void* = Pointer(Void).null
-    # Creates the agent.
     def agent_create() : Int64
       if @@mb_agent_create.null?
         @@mb_agent_create = Bridge.get_method_bind("NavigationServer2D", "agent_create", 529393457_i64)
@@ -34641,7 +30787,6 @@ module Godot
       ret
     end
     @@mb_agent_set_avoidance_enabled : Void* = Pointer(Void).null
-    # If `enabled` is `true`, the specified `agent` uses avoidance.
     def agent_set_avoidance_enabled(agent : Int64, enabled : Bool) : Void
       if @@mb_agent_set_avoidance_enabled.null?
         @@mb_agent_set_avoidance_enabled = Bridge.get_method_bind("NavigationServer2D", "agent_set_avoidance_enabled", 1265174801_i64)
@@ -34654,7 +30799,6 @@ module Godot
       Bridge.ptrcall(@@mb_agent_set_avoidance_enabled, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_agent_get_avoidance_enabled : Void* = Pointer(Void).null
-    # Return `true` if the specified `agent` uses avoidance.
     def agent_get_avoidance_enabled(agent : Int64) : Bool
       if @@mb_agent_get_avoidance_enabled.null?
         @@mb_agent_get_avoidance_enabled = Bridge.get_method_bind("NavigationServer2D", "agent_get_avoidance_enabled", 4155700596_i64)
@@ -34667,7 +30811,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_agent_set_map : Void* = Pointer(Void).null
-    # Puts the agent in the map.
     def agent_set_map(agent : Int64, map : Int64) : Void
       if @@mb_agent_set_map.null?
         @@mb_agent_set_map = Bridge.get_method_bind("NavigationServer2D", "agent_set_map", 395945892_i64)
@@ -34680,7 +30823,6 @@ module Godot
       Bridge.ptrcall(@@mb_agent_set_map, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_agent_get_map : Void* = Pointer(Void).null
-    # Returns the navigation map `RID` the requested `agent` is currently assigned to.
     def agent_get_map(agent : Int64) : Int64
       if @@mb_agent_get_map.null?
         @@mb_agent_get_map = Bridge.get_method_bind("NavigationServer2D", "agent_get_map", 3814569979_i64)
@@ -34693,7 +30835,6 @@ module Godot
       ret
     end
     @@mb_agent_set_paused : Void* = Pointer(Void).null
-    # If `paused` is `true` the specified `agent` will not be processed. For example, it will not calculate avoidance velocities or receive avoidance callbacks.
     def agent_set_paused(agent : Int64, paused : Bool) : Void
       if @@mb_agent_set_paused.null?
         @@mb_agent_set_paused = Bridge.get_method_bind("NavigationServer2D", "agent_set_paused", 1265174801_i64)
@@ -34706,7 +30847,6 @@ module Godot
       Bridge.ptrcall(@@mb_agent_set_paused, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_agent_get_paused : Void* = Pointer(Void).null
-    # Returns `true` if the specified `agent` is paused.
     def agent_get_paused(agent : Int64) : Bool
       if @@mb_agent_get_paused.null?
         @@mb_agent_get_paused = Bridge.get_method_bind("NavigationServer2D", "agent_get_paused", 4155700596_i64)
@@ -34719,7 +30859,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_agent_set_neighbor_distance : Void* = Pointer(Void).null
-    # Sets the maximum distance to other agents this agent takes into account in the navigation. The larger this number, the longer the running time of the simulation. If the number is too low, the simulation will not be safe.
     def agent_set_neighbor_distance(agent : Int64, distance : Float64) : Void
       if @@mb_agent_set_neighbor_distance.null?
         @@mb_agent_set_neighbor_distance = Bridge.get_method_bind("NavigationServer2D", "agent_set_neighbor_distance", 1794382983_i64)
@@ -34732,7 +30871,6 @@ module Godot
       Bridge.ptrcall(@@mb_agent_set_neighbor_distance, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_agent_get_neighbor_distance : Void* = Pointer(Void).null
-    # Returns the maximum distance to other agents the specified `agent` takes into account in the navigation.
     def agent_get_neighbor_distance(agent : Int64) : Float64
       if @@mb_agent_get_neighbor_distance.null?
         @@mb_agent_get_neighbor_distance = Bridge.get_method_bind("NavigationServer2D", "agent_get_neighbor_distance", 866169185_i64)
@@ -34745,7 +30883,6 @@ module Godot
       ret
     end
     @@mb_agent_set_max_neighbors : Void* = Pointer(Void).null
-    # Sets the maximum number of other agents the agent takes into account in the navigation. The larger this number, the longer the running time of the simulation. If the number is too low, the simulation will not be safe.
     def agent_set_max_neighbors(agent : Int64, count : Int64) : Void
       if @@mb_agent_set_max_neighbors.null?
         @@mb_agent_set_max_neighbors = Bridge.get_method_bind("NavigationServer2D", "agent_set_max_neighbors", 3411492887_i64)
@@ -34758,7 +30895,6 @@ module Godot
       Bridge.ptrcall(@@mb_agent_set_max_neighbors, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_agent_get_max_neighbors : Void* = Pointer(Void).null
-    # Returns the maximum number of other agents the specified `agent` takes into account in the navigation.
     def agent_get_max_neighbors(agent : Int64) : Int64
       if @@mb_agent_get_max_neighbors.null?
         @@mb_agent_get_max_neighbors = Bridge.get_method_bind("NavigationServer2D", "agent_get_max_neighbors", 2198884583_i64)
@@ -34771,7 +30907,6 @@ module Godot
       ret
     end
     @@mb_agent_set_time_horizon_agents : Void* = Pointer(Void).null
-    # The minimal amount of time for which the agent's velocities that are computed by the simulation are safe with respect to other agents. The larger this number, the sooner this agent will respond to the presence of other agents, but the less freedom this agent has in choosing its velocities. A too high value will slow down agent movement considerably. Must be positive.
     def agent_set_time_horizon_agents(agent : Int64, time_horizon : Float64) : Void
       if @@mb_agent_set_time_horizon_agents.null?
         @@mb_agent_set_time_horizon_agents = Bridge.get_method_bind("NavigationServer2D", "agent_set_time_horizon_agents", 1794382983_i64)
@@ -34784,7 +30919,6 @@ module Godot
       Bridge.ptrcall(@@mb_agent_set_time_horizon_agents, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_agent_get_time_horizon_agents : Void* = Pointer(Void).null
-    # Returns the minimal amount of time for which the specified `agent`'s velocities that are computed by the simulation are safe with respect to other agents.
     def agent_get_time_horizon_agents(agent : Int64) : Float64
       if @@mb_agent_get_time_horizon_agents.null?
         @@mb_agent_get_time_horizon_agents = Bridge.get_method_bind("NavigationServer2D", "agent_get_time_horizon_agents", 866169185_i64)
@@ -34797,7 +30931,6 @@ module Godot
       ret
     end
     @@mb_agent_set_time_horizon_obstacles : Void* = Pointer(Void).null
-    # The minimal amount of time for which the agent's velocities that are computed by the simulation are safe with respect to static avoidance obstacles. The larger this number, the sooner this agent will respond to the presence of static avoidance obstacles, but the less freedom this agent has in choosing its velocities. A too high value will slow down agent movement considerably. Must be positive.
     def agent_set_time_horizon_obstacles(agent : Int64, time_horizon : Float64) : Void
       if @@mb_agent_set_time_horizon_obstacles.null?
         @@mb_agent_set_time_horizon_obstacles = Bridge.get_method_bind("NavigationServer2D", "agent_set_time_horizon_obstacles", 1794382983_i64)
@@ -34810,7 +30943,6 @@ module Godot
       Bridge.ptrcall(@@mb_agent_set_time_horizon_obstacles, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_agent_get_time_horizon_obstacles : Void* = Pointer(Void).null
-    # Returns the minimal amount of time for which the specified `agent`'s velocities that are computed by the simulation are safe with respect to static avoidance obstacles.
     def agent_get_time_horizon_obstacles(agent : Int64) : Float64
       if @@mb_agent_get_time_horizon_obstacles.null?
         @@mb_agent_get_time_horizon_obstacles = Bridge.get_method_bind("NavigationServer2D", "agent_get_time_horizon_obstacles", 866169185_i64)
@@ -34823,7 +30955,6 @@ module Godot
       ret
     end
     @@mb_agent_set_radius : Void* = Pointer(Void).null
-    # Sets the radius of the agent.
     def agent_set_radius(agent : Int64, radius : Float64) : Void
       if @@mb_agent_set_radius.null?
         @@mb_agent_set_radius = Bridge.get_method_bind("NavigationServer2D", "agent_set_radius", 1794382983_i64)
@@ -34836,7 +30967,6 @@ module Godot
       Bridge.ptrcall(@@mb_agent_set_radius, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_agent_get_radius : Void* = Pointer(Void).null
-    # Returns the radius of the specified `agent`.
     def agent_get_radius(agent : Int64) : Float64
       if @@mb_agent_get_radius.null?
         @@mb_agent_get_radius = Bridge.get_method_bind("NavigationServer2D", "agent_get_radius", 866169185_i64)
@@ -34849,7 +30979,6 @@ module Godot
       ret
     end
     @@mb_agent_set_max_speed : Void* = Pointer(Void).null
-    # Sets the maximum speed of the agent. Must be positive.
     def agent_set_max_speed(agent : Int64, max_speed : Float64) : Void
       if @@mb_agent_set_max_speed.null?
         @@mb_agent_set_max_speed = Bridge.get_method_bind("NavigationServer2D", "agent_set_max_speed", 1794382983_i64)
@@ -34862,7 +30991,6 @@ module Godot
       Bridge.ptrcall(@@mb_agent_set_max_speed, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_agent_get_max_speed : Void* = Pointer(Void).null
-    # Returns the maximum speed of the specified `agent`.
     def agent_get_max_speed(agent : Int64) : Float64
       if @@mb_agent_get_max_speed.null?
         @@mb_agent_get_max_speed = Bridge.get_method_bind("NavigationServer2D", "agent_get_max_speed", 866169185_i64)
@@ -34875,7 +31003,6 @@ module Godot
       ret
     end
     @@mb_agent_set_velocity_forced : Void* = Pointer(Void).null
-    # Replaces the internal velocity in the collision avoidance simulation with `velocity` for the specified `agent`. When an agent is teleported to a new position far away this function should be used in the same frame. If called frequently this function can get agents stuck.
     def agent_set_velocity_forced(agent : Int64, velocity : Vector2) : Void
       if @@mb_agent_set_velocity_forced.null?
         @@mb_agent_set_velocity_forced = Bridge.get_method_bind("NavigationServer2D", "agent_set_velocity_forced", 3201125042_i64)
@@ -34888,7 +31015,6 @@ module Godot
       Bridge.ptrcall(@@mb_agent_set_velocity_forced, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_agent_set_velocity : Void* = Pointer(Void).null
-    # Sets `velocity` as the new wanted velocity for the specified `agent`. The avoidance simulation will try to achieve this velocity if possible, but will adjust it to avoid colliding with other agents and obstacles. When an agent is teleported to a new position far away, use `#agent_set_velocity_forced` instead to reset the internal velocity state.
     def agent_set_velocity(agent : Int64, velocity : Vector2) : Void
       if @@mb_agent_set_velocity.null?
         @@mb_agent_set_velocity = Bridge.get_method_bind("NavigationServer2D", "agent_set_velocity", 3201125042_i64)
@@ -34901,7 +31027,6 @@ module Godot
       Bridge.ptrcall(@@mb_agent_set_velocity, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_agent_get_velocity : Void* = Pointer(Void).null
-    # Returns the velocity of the specified `agent`.
     def agent_get_velocity(agent : Int64) : Vector2
       if @@mb_agent_get_velocity.null?
         @@mb_agent_get_velocity = Bridge.get_method_bind("NavigationServer2D", "agent_get_velocity", 2440833711_i64)
@@ -34914,7 +31039,6 @@ module Godot
       ret
     end
     @@mb_agent_set_position : Void* = Pointer(Void).null
-    # Sets the position of the agent in world space.
     def agent_set_position(agent : Int64, position : Vector2) : Void
       if @@mb_agent_set_position.null?
         @@mb_agent_set_position = Bridge.get_method_bind("NavigationServer2D", "agent_set_position", 3201125042_i64)
@@ -34927,7 +31051,6 @@ module Godot
       Bridge.ptrcall(@@mb_agent_set_position, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_agent_get_position : Void* = Pointer(Void).null
-    # Returns the position of the specified `agent` in world space.
     def agent_get_position(agent : Int64) : Vector2
       if @@mb_agent_get_position.null?
         @@mb_agent_get_position = Bridge.get_method_bind("NavigationServer2D", "agent_get_position", 2440833711_i64)
@@ -34940,7 +31063,6 @@ module Godot
       ret
     end
     @@mb_agent_is_map_changed : Void* = Pointer(Void).null
-    # Returns `true` if the map got changed the previous frame.
     def agent_is_map_changed(agent : Int64) : Bool
       if @@mb_agent_is_map_changed.null?
         @@mb_agent_is_map_changed = Bridge.get_method_bind("NavigationServer2D", "agent_is_map_changed", 4155700596_i64)
@@ -34953,8 +31075,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_agent_set_avoidance_callback : Void* = Pointer(Void).null
-    # Sets the callback `Callable` that gets called after each avoidance processing step for the `agent`. The calculated `safe_velocity` will be dispatched with a signal to the object just before the physics calculations.
-    # **Note:** Created callbacks are always processed independently of the SceneTree state as long as the agent is on a navigation map and not freed. To disable the dispatch of a callback from an agent use `#agent_set_avoidance_callback` again with an empty `Callable`.
     def agent_set_avoidance_callback(agent : Int64, callback : Void*) : Void
       if @@mb_agent_set_avoidance_callback.null?
         @@mb_agent_set_avoidance_callback = Bridge.get_method_bind("NavigationServer2D", "agent_set_avoidance_callback", 3379118538_i64)
@@ -34967,7 +31087,6 @@ module Godot
       Bridge.ptrcall(@@mb_agent_set_avoidance_callback, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_agent_has_avoidance_callback : Void* = Pointer(Void).null
-    # Return `true` if the specified `agent` has an avoidance callback.
     def agent_has_avoidance_callback(agent : Int64) : Bool
       if @@mb_agent_has_avoidance_callback.null?
         @@mb_agent_has_avoidance_callback = Bridge.get_method_bind("NavigationServer2D", "agent_has_avoidance_callback", 4155700596_i64)
@@ -34980,7 +31099,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_agent_set_avoidance_layers : Void* = Pointer(Void).null
-    # Set the agent's `avoidance_layers` bitmask.
     def agent_set_avoidance_layers(agent : Int64, layers : Int64) : Void
       if @@mb_agent_set_avoidance_layers.null?
         @@mb_agent_set_avoidance_layers = Bridge.get_method_bind("NavigationServer2D", "agent_set_avoidance_layers", 3411492887_i64)
@@ -34993,7 +31111,6 @@ module Godot
       Bridge.ptrcall(@@mb_agent_set_avoidance_layers, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_agent_get_avoidance_layers : Void* = Pointer(Void).null
-    # Returns the `avoidance_layers` bitmask of the specified `agent`.
     def agent_get_avoidance_layers(agent : Int64) : Int64
       if @@mb_agent_get_avoidance_layers.null?
         @@mb_agent_get_avoidance_layers = Bridge.get_method_bind("NavigationServer2D", "agent_get_avoidance_layers", 2198884583_i64)
@@ -35006,7 +31123,6 @@ module Godot
       ret
     end
     @@mb_agent_set_avoidance_mask : Void* = Pointer(Void).null
-    # Set the agent's `avoidance_mask` bitmask.
     def agent_set_avoidance_mask(agent : Int64, mask : Int64) : Void
       if @@mb_agent_set_avoidance_mask.null?
         @@mb_agent_set_avoidance_mask = Bridge.get_method_bind("NavigationServer2D", "agent_set_avoidance_mask", 3411492887_i64)
@@ -35019,7 +31135,6 @@ module Godot
       Bridge.ptrcall(@@mb_agent_set_avoidance_mask, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_agent_get_avoidance_mask : Void* = Pointer(Void).null
-    # Returns the `avoidance_mask` bitmask of the specified `agent`.
     def agent_get_avoidance_mask(agent : Int64) : Int64
       if @@mb_agent_get_avoidance_mask.null?
         @@mb_agent_get_avoidance_mask = Bridge.get_method_bind("NavigationServer2D", "agent_get_avoidance_mask", 2198884583_i64)
@@ -35032,8 +31147,6 @@ module Godot
       ret
     end
     @@mb_agent_set_avoidance_priority : Void* = Pointer(Void).null
-    # Set the agent's `avoidance_priority` with a `priority` between 0.0 (lowest priority) to 1.0 (highest priority).
-    # The specified `agent` does not adjust the velocity for other agents that would match the `avoidance_mask` but have a lower `avoidance_priority`. This in turn makes the other agents with lower priority adjust their velocities even more to avoid collision with this agent.
     def agent_set_avoidance_priority(agent : Int64, priority : Float64) : Void
       if @@mb_agent_set_avoidance_priority.null?
         @@mb_agent_set_avoidance_priority = Bridge.get_method_bind("NavigationServer2D", "agent_set_avoidance_priority", 1794382983_i64)
@@ -35046,7 +31159,6 @@ module Godot
       Bridge.ptrcall(@@mb_agent_set_avoidance_priority, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_agent_get_avoidance_priority : Void* = Pointer(Void).null
-    # Returns the `avoidance_priority` of the specified `agent`.
     def agent_get_avoidance_priority(agent : Int64) : Float64
       if @@mb_agent_get_avoidance_priority.null?
         @@mb_agent_get_avoidance_priority = Bridge.get_method_bind("NavigationServer2D", "agent_get_avoidance_priority", 866169185_i64)
@@ -35059,7 +31171,6 @@ module Godot
       ret
     end
     @@mb_obstacle_create : Void* = Pointer(Void).null
-    # Creates a new navigation obstacle.
     def obstacle_create() : Int64
       if @@mb_obstacle_create.null?
         @@mb_obstacle_create = Bridge.get_method_bind("NavigationServer2D", "obstacle_create", 529393457_i64)
@@ -35069,7 +31180,6 @@ module Godot
       ret
     end
     @@mb_obstacle_set_avoidance_enabled : Void* = Pointer(Void).null
-    # If `enabled` is `true`, the provided `obstacle` affects avoidance using agents.
     def obstacle_set_avoidance_enabled(obstacle : Int64, enabled : Bool) : Void
       if @@mb_obstacle_set_avoidance_enabled.null?
         @@mb_obstacle_set_avoidance_enabled = Bridge.get_method_bind("NavigationServer2D", "obstacle_set_avoidance_enabled", 1265174801_i64)
@@ -35082,7 +31192,6 @@ module Godot
       Bridge.ptrcall(@@mb_obstacle_set_avoidance_enabled, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_obstacle_get_avoidance_enabled : Void* = Pointer(Void).null
-    # Returns `true` if the provided `obstacle` has avoidance enabled.
     def obstacle_get_avoidance_enabled(obstacle : Int64) : Bool
       if @@mb_obstacle_get_avoidance_enabled.null?
         @@mb_obstacle_get_avoidance_enabled = Bridge.get_method_bind("NavigationServer2D", "obstacle_get_avoidance_enabled", 4155700596_i64)
@@ -35095,7 +31204,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_obstacle_set_map : Void* = Pointer(Void).null
-    # Sets the navigation map `RID` for the obstacle.
     def obstacle_set_map(obstacle : Int64, map : Int64) : Void
       if @@mb_obstacle_set_map.null?
         @@mb_obstacle_set_map = Bridge.get_method_bind("NavigationServer2D", "obstacle_set_map", 395945892_i64)
@@ -35108,7 +31216,6 @@ module Godot
       Bridge.ptrcall(@@mb_obstacle_set_map, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_obstacle_get_map : Void* = Pointer(Void).null
-    # Returns the navigation map `RID` the requested `obstacle` is currently assigned to.
     def obstacle_get_map(obstacle : Int64) : Int64
       if @@mb_obstacle_get_map.null?
         @@mb_obstacle_get_map = Bridge.get_method_bind("NavigationServer2D", "obstacle_get_map", 3814569979_i64)
@@ -35121,7 +31228,6 @@ module Godot
       ret
     end
     @@mb_obstacle_set_paused : Void* = Pointer(Void).null
-    # If `paused` is `true` the specified `obstacle` will not be processed. For example, it will no longer affect avoidance velocities.
     def obstacle_set_paused(obstacle : Int64, paused : Bool) : Void
       if @@mb_obstacle_set_paused.null?
         @@mb_obstacle_set_paused = Bridge.get_method_bind("NavigationServer2D", "obstacle_set_paused", 1265174801_i64)
@@ -35134,7 +31240,6 @@ module Godot
       Bridge.ptrcall(@@mb_obstacle_set_paused, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_obstacle_get_paused : Void* = Pointer(Void).null
-    # Returns `true` if the specified `obstacle` is paused.
     def obstacle_get_paused(obstacle : Int64) : Bool
       if @@mb_obstacle_get_paused.null?
         @@mb_obstacle_get_paused = Bridge.get_method_bind("NavigationServer2D", "obstacle_get_paused", 4155700596_i64)
@@ -35147,7 +31252,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_obstacle_set_radius : Void* = Pointer(Void).null
-    # Sets the radius of the dynamic obstacle.
     def obstacle_set_radius(obstacle : Int64, radius : Float64) : Void
       if @@mb_obstacle_set_radius.null?
         @@mb_obstacle_set_radius = Bridge.get_method_bind("NavigationServer2D", "obstacle_set_radius", 1794382983_i64)
@@ -35160,7 +31264,6 @@ module Godot
       Bridge.ptrcall(@@mb_obstacle_set_radius, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_obstacle_get_radius : Void* = Pointer(Void).null
-    # Returns the radius of the specified dynamic `obstacle`.
     def obstacle_get_radius(obstacle : Int64) : Float64
       if @@mb_obstacle_get_radius.null?
         @@mb_obstacle_get_radius = Bridge.get_method_bind("NavigationServer2D", "obstacle_get_radius", 866169185_i64)
@@ -35173,7 +31276,6 @@ module Godot
       ret
     end
     @@mb_obstacle_set_velocity : Void* = Pointer(Void).null
-    # Sets `velocity` of the dynamic `obstacle`. Allows other agents to better predict the movement of the dynamic obstacle. Only works in combination with the radius of the obstacle.
     def obstacle_set_velocity(obstacle : Int64, velocity : Vector2) : Void
       if @@mb_obstacle_set_velocity.null?
         @@mb_obstacle_set_velocity = Bridge.get_method_bind("NavigationServer2D", "obstacle_set_velocity", 3201125042_i64)
@@ -35186,7 +31288,6 @@ module Godot
       Bridge.ptrcall(@@mb_obstacle_set_velocity, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_obstacle_get_velocity : Void* = Pointer(Void).null
-    # Returns the velocity of the specified dynamic `obstacle`.
     def obstacle_get_velocity(obstacle : Int64) : Vector2
       if @@mb_obstacle_get_velocity.null?
         @@mb_obstacle_get_velocity = Bridge.get_method_bind("NavigationServer2D", "obstacle_get_velocity", 2440833711_i64)
@@ -35199,7 +31300,6 @@ module Godot
       ret
     end
     @@mb_obstacle_set_position : Void* = Pointer(Void).null
-    # Sets the position of the obstacle in world space.
     def obstacle_set_position(obstacle : Int64, position : Vector2) : Void
       if @@mb_obstacle_set_position.null?
         @@mb_obstacle_set_position = Bridge.get_method_bind("NavigationServer2D", "obstacle_set_position", 3201125042_i64)
@@ -35212,7 +31312,6 @@ module Godot
       Bridge.ptrcall(@@mb_obstacle_set_position, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_obstacle_get_position : Void* = Pointer(Void).null
-    # Returns the position of the specified `obstacle` in world space.
     def obstacle_get_position(obstacle : Int64) : Vector2
       if @@mb_obstacle_get_position.null?
         @@mb_obstacle_get_position = Bridge.get_method_bind("NavigationServer2D", "obstacle_get_position", 2440833711_i64)
@@ -35225,7 +31324,6 @@ module Godot
       ret
     end
     @@mb_obstacle_set_vertices : Void* = Pointer(Void).null
-    # Sets the outline vertices for the obstacle. If the vertices are winded in clockwise order agents will be pushed in by the obstacle, else they will be pushed out.
     def obstacle_set_vertices(obstacle : Int64, vertices : Void*) : Void
       if @@mb_obstacle_set_vertices.null?
         @@mb_obstacle_set_vertices = Bridge.get_method_bind("NavigationServer2D", "obstacle_set_vertices", 29476483_i64)
@@ -35238,7 +31336,6 @@ module Godot
       Bridge.ptrcall(@@mb_obstacle_set_vertices, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_obstacle_get_vertices : Void* = Pointer(Void).null
-    # Returns the outline vertices for the specified `obstacle`.
     def obstacle_get_vertices(obstacle : Int64) : Void*
       if @@mb_obstacle_get_vertices.null?
         @@mb_obstacle_get_vertices = Bridge.get_method_bind("NavigationServer2D", "obstacle_get_vertices", 2222557395_i64)
@@ -35251,7 +31348,6 @@ module Godot
       ret_ptr
     end
     @@mb_obstacle_set_avoidance_layers : Void* = Pointer(Void).null
-    # Sets the given `obstacle`'s avoidance layers to `layers`.
     def obstacle_set_avoidance_layers(obstacle : Int64, layers : Int64) : Void
       if @@mb_obstacle_set_avoidance_layers.null?
         @@mb_obstacle_set_avoidance_layers = Bridge.get_method_bind("NavigationServer2D", "obstacle_set_avoidance_layers", 3411492887_i64)
@@ -35264,7 +31360,6 @@ module Godot
       Bridge.ptrcall(@@mb_obstacle_set_avoidance_layers, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_obstacle_get_avoidance_layers : Void* = Pointer(Void).null
-    # Returns the `avoidance_layers` bitmask of the specified `obstacle`.
     def obstacle_get_avoidance_layers(obstacle : Int64) : Int64
       if @@mb_obstacle_get_avoidance_layers.null?
         @@mb_obstacle_get_avoidance_layers = Bridge.get_method_bind("NavigationServer2D", "obstacle_get_avoidance_layers", 2198884583_i64)
@@ -35277,9 +31372,6 @@ module Godot
       ret
     end
     @@mb_parse_source_geometry_data : Void* = Pointer(Void).null
-    # Parses the `SceneTree` for source geometry according to the properties of `navigation_polygon`. Updates the provided `source_geometry_data` resource with the resulting data. The resource can then be used to bake a navigation mesh with `#bake_from_source_geometry_data`. After the process is finished the optional `callback` will be called.
-    # **Note:** This function needs to run on the main thread or with a deferred call as the SceneTree is not thread-safe.
-    # **Performance:** While convenient, reading data arrays from `Mesh` resources can affect the frame rate negatively. The data needs to be received from the GPU, stalling the `RenderingServer` in the process. For performance prefer the use of e.g. collision shapes or creating the data arrays entirely in code.
     def parse_source_geometry_data(navigation_polygon : NavigationPolygon, source_geometry_data : NavigationMeshSourceGeometryData2D, root_node : Node, callback : Void*) : Void
       if @@mb_parse_source_geometry_data.null?
         @@mb_parse_source_geometry_data = Bridge.get_method_bind("NavigationServer2D", "parse_source_geometry_data", 1766905497_i64)
@@ -35296,7 +31388,6 @@ module Godot
       Bridge.ptrcall(@@mb_parse_source_geometry_data, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_bake_from_source_geometry_data : Void* = Pointer(Void).null
-    # Bakes the provided `navigation_polygon` with the data from the provided `source_geometry_data`. After the process is finished the optional `callback` will be called.
     def bake_from_source_geometry_data(navigation_polygon : NavigationPolygon, source_geometry_data : NavigationMeshSourceGeometryData2D, callback : Void*) : Void
       if @@mb_bake_from_source_geometry_data.null?
         @@mb_bake_from_source_geometry_data = Bridge.get_method_bind("NavigationServer2D", "bake_from_source_geometry_data", 2179660022_i64)
@@ -35311,7 +31402,6 @@ module Godot
       Bridge.ptrcall(@@mb_bake_from_source_geometry_data, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_bake_from_source_geometry_data_async : Void* = Pointer(Void).null
-    # Bakes the provided `navigation_polygon` with the data from the provided `source_geometry_data` as an async task running on a background thread. After the process is finished the optional `callback` will be called.
     def bake_from_source_geometry_data_async(navigation_polygon : NavigationPolygon, source_geometry_data : NavigationMeshSourceGeometryData2D, callback : Void*) : Void
       if @@mb_bake_from_source_geometry_data_async.null?
         @@mb_bake_from_source_geometry_data_async = Bridge.get_method_bind("NavigationServer2D", "bake_from_source_geometry_data_async", 2179660022_i64)
@@ -35326,7 +31416,6 @@ module Godot
       Bridge.ptrcall(@@mb_bake_from_source_geometry_data_async, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_is_baking_navigation_polygon : Void* = Pointer(Void).null
-    # Returns `true` when the provided navigation polygon is being baked on a background thread.
     def is_baking_navigation_polygon(navigation_polygon : NavigationPolygon) : Bool
       if @@mb_is_baking_navigation_polygon.null?
         @@mb_is_baking_navigation_polygon = Bridge.get_method_bind("NavigationServer2D", "is_baking_navigation_polygon", 3729405808_i64)
@@ -35339,7 +31428,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_source_geometry_parser_create : Void* = Pointer(Void).null
-    # Creates a new source geometry parser. If a `Callable` is set for the parser with `#source_geometry_parser_set_callback` the callback will be called for every single node that gets parsed whenever `#parse_source_geometry_data` is used.
     def source_geometry_parser_create() : Int64
       if @@mb_source_geometry_parser_create.null?
         @@mb_source_geometry_parser_create = Bridge.get_method_bind("NavigationServer2D", "source_geometry_parser_create", 529393457_i64)
@@ -35349,10 +31437,6 @@ module Godot
       ret
     end
     @@mb_source_geometry_parser_set_callback : Void* = Pointer(Void).null
-    # Sets the `callback` `Callable` for the specific source geometry `parser`. The `Callable` will receive a call with the following parameters:
-    # - `navigation_mesh` - The `NavigationPolygon` reference used to define the parse settings. Do NOT edit or add directly to the navigation mesh.
-    # - `source_geometry_data` - The `NavigationMeshSourceGeometryData2D` reference. Add custom source geometry for navigation mesh baking to this object.
-    # - `node` - The `Node` that is parsed.
     def source_geometry_parser_set_callback(parser : Int64, callback : Void*) : Void
       if @@mb_source_geometry_parser_set_callback.null?
         @@mb_source_geometry_parser_set_callback = Bridge.get_method_bind("NavigationServer2D", "source_geometry_parser_set_callback", 3379118538_i64)
@@ -35365,8 +31449,6 @@ module Godot
       Bridge.ptrcall(@@mb_source_geometry_parser_set_callback, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_simplify_path : Void* = Pointer(Void).null
-    # Returns a simplified version of `path` with less critical path points removed. The simplification amount is in world units and controlled by `epsilon`. The simplification uses a variant of Ramer-Douglas-Peucker algorithm for curve point decimation.
-    # Path simplification can be helpful to mitigate various path following issues that can arise with certain agent types and script behaviors. E.g. "steering" agents or avoidance in "open fields".
     def simplify_path(path : Void*, epsilon : Float64) : Void*
       if @@mb_simplify_path.null?
         @@mb_simplify_path = Bridge.get_method_bind("NavigationServer2D", "simplify_path", 2457191505_i64)
@@ -35381,7 +31463,6 @@ module Godot
       ret_ptr
     end
     @@mb_free_rid : Void* = Pointer(Void).null
-    # Destroys the given RID.
     def free_rid(rid : Int64) : Void
       if @@mb_free_rid.null?
         @@mb_free_rid = Bridge.get_method_bind("NavigationServer2D", "free_rid", 2722037293_i64)
@@ -35392,7 +31473,6 @@ module Godot
       Bridge.ptrcall(@@mb_free_rid, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_set_active : Void* = Pointer(Void).null
-    # Control activation of this server.
     def set_active(active : Bool) : Void
       if @@mb_set_active.null?
         @@mb_set_active = Bridge.get_method_bind("NavigationServer2D", "set_active", 2586408642_i64)
@@ -35403,7 +31483,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_active, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_set_debug_enabled : Void* = Pointer(Void).null
-    # If `true` enables debug mode on the NavigationServer.
     def set_debug_enabled(enabled : Bool) : Void
       if @@mb_set_debug_enabled.null?
         @@mb_set_debug_enabled = Bridge.get_method_bind("NavigationServer2D", "set_debug_enabled", 2586408642_i64)
@@ -35414,7 +31493,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_debug_enabled, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_debug_enabled : Void* = Pointer(Void).null
-    # Returns `true` when the NavigationServer has debug enabled.
     def get_debug_enabled() : Bool
       if @@mb_get_debug_enabled.null?
         @@mb_get_debug_enabled = Bridge.get_method_bind("NavigationServer2D", "get_debug_enabled", 36873697_i64)
@@ -35424,7 +31502,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_get_process_info : Void* = Pointer(Void).null
-    # Returns information about the current state of the NavigationServer.
     def get_process_info(process_info : Int64) : Int64
       if @@mb_get_process_info.null?
         @@mb_get_process_info = Bridge.get_method_bind("NavigationServer2D", "get_process_info", 1640219858_i64)
@@ -35437,16 +31514,11 @@ module Godot
       ret
     end
   end
-  # A singleton for managing `NavigationServer2D` implementations.
-  #
-  # `NavigationServer2DManager` is the API for registering `NavigationServer2D` implementations and setting the default implementation.
-  # **Note:** It is not possible to switch servers at runtime. This class is only used on startup at the server initialization level.
   class NavigationServer2DManager < Godot::Object
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
     end
     @@mb_register_server : Void* = Pointer(Void).null
-    # Registers a `NavigationServer2D` implementation by passing a `name` and a `Callable` that returns a `NavigationServer2D` object.
     def register_server(name : String, create_callback : Void*) : Void
       if @@mb_register_server.null?
         @@mb_register_server = Bridge.get_method_bind("NavigationServer2DManager", "register_server", 2137474292_i64)
@@ -35461,7 +31533,6 @@ module Godot
       Bridge.free_string(str_0)
     end
     @@mb_set_default_server : Void* = Pointer(Void).null
-    # Sets the default `NavigationServer2D` implementation to the one identified by `name`, if `priority` is greater than the priority of the current default implementation.
     def set_default_server(name : String, priority : Int64) : Void
       if @@mb_set_default_server.null?
         @@mb_set_default_server = Bridge.get_method_bind("NavigationServer2DManager", "set_default_server", 2956805083_i64)
@@ -35476,16 +31547,6 @@ module Godot
       Bridge.free_string(str_0)
     end
   end
-  # A server interface for low-level 3D navigation access.
-  #
-  # NavigationServer3D is the server that handles navigation maps, regions, and agents. It does not handle A* navigation from `AStar3D`.
-  # Maps are divided into regions, which are composed of navigation meshes. Together, they define the navigable areas in the 3D world.
-  # **Note:** Most `NavigationServer3D` changes take effect after the next physics frame and not immediately. This includes all changes made to maps, regions, or agents by navigation-related nodes in the scene tree or made through scripts.
-  # For two regions to be connected to each other, they must share a similar edge. An edge is considered connected to another if both of its two vertices are at a distance less than `edge_connection_margin` to the respective other edge's vertex.
-  # You may assign navigation layers to regions with `#NavigationServer3D.region_set_navigation_layers`, which then can be checked upon when requesting a path with `#NavigationServer3D.map_get_path`. This can be used to allow or deny certain areas for some objects.
-  # To use the collision avoidance system, you may use agents. You can set an agent's target velocity, then the servers will emit a callback with a modified velocity.
-  # **Note:** The collision avoidance system ignores regions. Using the modified velocity directly may move an agent outside of the traversable area. This is a limitation of the collision avoidance system, any more complex situation may require the use of the physics engine.
-  # This server keeps tracks of any call and executes them during the sync phase. This means that you can request any change to the map, using any thread, without worrying.
   class NavigationServer3D < Godot::Object
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -35503,7 +31564,6 @@ module Godot
       InfoObstacleCount = 9_i64
     end
     @@mb_get_maps : Void* = Pointer(Void).null
-    # Returns all created navigation map `RID`s on the NavigationServer. This returns both 2D and 3D created navigation maps as there is technically no distinction between them.
     def get_maps() : Godot::Array
       if @@mb_get_maps.null?
         @@mb_get_maps = Bridge.get_method_bind("NavigationServer3D", "get_maps", 3995934104_i64)
@@ -35513,7 +31573,6 @@ module Godot
       Godot::Array.new(ret_ptr)
     end
     @@mb_map_create : Void* = Pointer(Void).null
-    # Create a new map.
     def map_create() : Int64
       if @@mb_map_create.null?
         @@mb_map_create = Bridge.get_method_bind("NavigationServer3D", "map_create", 529393457_i64)
@@ -35523,7 +31582,6 @@ module Godot
       ret
     end
     @@mb_map_set_active : Void* = Pointer(Void).null
-    # Sets the map active.
     def map_set_active(map : Int64, active : Bool) : Void
       if @@mb_map_set_active.null?
         @@mb_map_set_active = Bridge.get_method_bind("NavigationServer3D", "map_set_active", 1265174801_i64)
@@ -35536,7 +31594,6 @@ module Godot
       Bridge.ptrcall(@@mb_map_set_active, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_map_is_active : Void* = Pointer(Void).null
-    # Returns `true` if the map is active.
     def map_is_active(map : Int64) : Bool
       if @@mb_map_is_active.null?
         @@mb_map_is_active = Bridge.get_method_bind("NavigationServer3D", "map_is_active", 4155700596_i64)
@@ -35549,7 +31606,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_map_set_up : Void* = Pointer(Void).null
-    # Sets the map up direction.
     def map_set_up(map : Int64, up : Vector3) : Void
       if @@mb_map_set_up.null?
         @@mb_map_set_up = Bridge.get_method_bind("NavigationServer3D", "map_set_up", 3227306858_i64)
@@ -35562,7 +31618,6 @@ module Godot
       Bridge.ptrcall(@@mb_map_set_up, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_map_get_up : Void* = Pointer(Void).null
-    # Returns the map's up direction.
     def map_get_up(map : Int64) : Vector3
       if @@mb_map_get_up.null?
         @@mb_map_get_up = Bridge.get_method_bind("NavigationServer3D", "map_get_up", 531438156_i64)
@@ -35575,7 +31630,6 @@ module Godot
       ret
     end
     @@mb_map_set_cell_size : Void* = Pointer(Void).null
-    # Sets the map cell size used to rasterize the navigation mesh vertices on the XZ plane. Must match with the cell size of the used navigation meshes.
     def map_set_cell_size(map : Int64, cell_size : Float64) : Void
       if @@mb_map_set_cell_size.null?
         @@mb_map_set_cell_size = Bridge.get_method_bind("NavigationServer3D", "map_set_cell_size", 1794382983_i64)
@@ -35588,7 +31642,6 @@ module Godot
       Bridge.ptrcall(@@mb_map_set_cell_size, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_map_get_cell_size : Void* = Pointer(Void).null
-    # Returns the map cell size used to rasterize the navigation mesh vertices on the XZ plane.
     def map_get_cell_size(map : Int64) : Float64
       if @@mb_map_get_cell_size.null?
         @@mb_map_get_cell_size = Bridge.get_method_bind("NavigationServer3D", "map_get_cell_size", 866169185_i64)
@@ -35601,7 +31654,6 @@ module Godot
       ret
     end
     @@mb_map_set_cell_height : Void* = Pointer(Void).null
-    # Sets the map cell height used to rasterize the navigation mesh vertices on the Y axis. Must match with the cell height of the used navigation meshes.
     def map_set_cell_height(map : Int64, cell_height : Float64) : Void
       if @@mb_map_set_cell_height.null?
         @@mb_map_set_cell_height = Bridge.get_method_bind("NavigationServer3D", "map_set_cell_height", 1794382983_i64)
@@ -35614,7 +31666,6 @@ module Godot
       Bridge.ptrcall(@@mb_map_set_cell_height, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_map_get_cell_height : Void* = Pointer(Void).null
-    # Returns the map cell height used to rasterize the navigation mesh vertices on the Y axis.
     def map_get_cell_height(map : Int64) : Float64
       if @@mb_map_get_cell_height.null?
         @@mb_map_get_cell_height = Bridge.get_method_bind("NavigationServer3D", "map_get_cell_height", 866169185_i64)
@@ -35627,7 +31678,6 @@ module Godot
       ret
     end
     @@mb_map_set_merge_rasterizer_cell_scale : Void* = Pointer(Void).null
-    # Set the map's internal merge rasterizer cell scale used to control merging sensitivity.
     def map_set_merge_rasterizer_cell_scale(map : Int64, scale : Float64) : Void
       if @@mb_map_set_merge_rasterizer_cell_scale.null?
         @@mb_map_set_merge_rasterizer_cell_scale = Bridge.get_method_bind("NavigationServer3D", "map_set_merge_rasterizer_cell_scale", 1794382983_i64)
@@ -35640,7 +31690,6 @@ module Godot
       Bridge.ptrcall(@@mb_map_set_merge_rasterizer_cell_scale, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_map_get_merge_rasterizer_cell_scale : Void* = Pointer(Void).null
-    # Returns the map's internal merge rasterizer cell scale.
     def map_get_merge_rasterizer_cell_scale(map : Int64) : Float64
       if @@mb_map_get_merge_rasterizer_cell_scale.null?
         @@mb_map_get_merge_rasterizer_cell_scale = Bridge.get_method_bind("NavigationServer3D", "map_get_merge_rasterizer_cell_scale", 866169185_i64)
@@ -35653,7 +31702,6 @@ module Godot
       ret
     end
     @@mb_map_set_use_edge_connections : Void* = Pointer(Void).null
-    # Set the navigation `map` edge connection use. If `enabled` is `true`, the navigation map allows navigation regions to use edge connections to connect with other navigation regions within proximity of the navigation map edge connection margin.
     def map_set_use_edge_connections(map : Int64, enabled : Bool) : Void
       if @@mb_map_set_use_edge_connections.null?
         @@mb_map_set_use_edge_connections = Bridge.get_method_bind("NavigationServer3D", "map_set_use_edge_connections", 1265174801_i64)
@@ -35666,7 +31714,6 @@ module Godot
       Bridge.ptrcall(@@mb_map_set_use_edge_connections, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_map_get_use_edge_connections : Void* = Pointer(Void).null
-    # Returns `true` if the navigation `map` allows navigation regions to use edge connections to connect with other navigation regions within proximity of the navigation map edge connection margin.
     def map_get_use_edge_connections(map : Int64) : Bool
       if @@mb_map_get_use_edge_connections.null?
         @@mb_map_get_use_edge_connections = Bridge.get_method_bind("NavigationServer3D", "map_get_use_edge_connections", 4155700596_i64)
@@ -35679,7 +31726,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_map_set_edge_connection_margin : Void* = Pointer(Void).null
-    # Set the map edge connection margin used to weld the compatible region edges.
     def map_set_edge_connection_margin(map : Int64, margin : Float64) : Void
       if @@mb_map_set_edge_connection_margin.null?
         @@mb_map_set_edge_connection_margin = Bridge.get_method_bind("NavigationServer3D", "map_set_edge_connection_margin", 1794382983_i64)
@@ -35692,7 +31738,6 @@ module Godot
       Bridge.ptrcall(@@mb_map_set_edge_connection_margin, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_map_get_edge_connection_margin : Void* = Pointer(Void).null
-    # Returns the edge connection margin of the map. This distance is the minimum vertex distance needed to connect two edges from different regions.
     def map_get_edge_connection_margin(map : Int64) : Float64
       if @@mb_map_get_edge_connection_margin.null?
         @@mb_map_get_edge_connection_margin = Bridge.get_method_bind("NavigationServer3D", "map_get_edge_connection_margin", 866169185_i64)
@@ -35705,7 +31750,6 @@ module Godot
       ret
     end
     @@mb_map_set_link_connection_radius : Void* = Pointer(Void).null
-    # Set the map's link connection radius used to connect links to navigation polygons.
     def map_set_link_connection_radius(map : Int64, radius : Float64) : Void
       if @@mb_map_set_link_connection_radius.null?
         @@mb_map_set_link_connection_radius = Bridge.get_method_bind("NavigationServer3D", "map_set_link_connection_radius", 1794382983_i64)
@@ -35718,7 +31762,6 @@ module Godot
       Bridge.ptrcall(@@mb_map_set_link_connection_radius, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_map_get_link_connection_radius : Void* = Pointer(Void).null
-    # Returns the link connection radius of the map. This distance is the maximum range any link will search for navigation mesh polygons to connect to.
     def map_get_link_connection_radius(map : Int64) : Float64
       if @@mb_map_get_link_connection_radius.null?
         @@mb_map_get_link_connection_radius = Bridge.get_method_bind("NavigationServer3D", "map_get_link_connection_radius", 866169185_i64)
@@ -35731,7 +31774,6 @@ module Godot
       ret
     end
     @@mb_map_get_path : Void* = Pointer(Void).null
-    # Returns the navigation path to reach the destination from the origin. `navigation_layers` is a bitmask of all region navigation layers that are allowed to be in the path.
     def map_get_path(map : Int64, origin : Vector3, destination : Vector3, optimize : Bool, navigation_layers : Int64) : Void*
       if @@mb_map_get_path.null?
         @@mb_map_get_path = Bridge.get_method_bind("NavigationServer3D", "map_get_path", 276783190_i64)
@@ -35752,8 +31794,6 @@ module Godot
       ret_ptr
     end
     @@mb_map_get_closest_point_to_segment : Void* = Pointer(Void).null
-    # Returns the navigation mesh surface point closest to the provided `start` and `end` segment on the navigation `map`.
-    # If `use_collision` is `true`, a closest point test is only done when the segment intersects with the navigation mesh surface.
     def map_get_closest_point_to_segment(map : Int64, start : Vector3, end_val : Vector3, use_collision : Bool) : Vector3
       if @@mb_map_get_closest_point_to_segment.null?
         @@mb_map_get_closest_point_to_segment = Bridge.get_method_bind("NavigationServer3D", "map_get_closest_point_to_segment", 3830095642_i64)
@@ -35772,7 +31812,6 @@ module Godot
       ret
     end
     @@mb_map_get_closest_point : Void* = Pointer(Void).null
-    # Returns the navigation mesh surface point closest to the provided `to_point` on the navigation `map`.
     def map_get_closest_point(map : Int64, to_point : Vector3) : Vector3
       if @@mb_map_get_closest_point.null?
         @@mb_map_get_closest_point = Bridge.get_method_bind("NavigationServer3D", "map_get_closest_point", 2056183332_i64)
@@ -35787,7 +31826,6 @@ module Godot
       ret
     end
     @@mb_map_get_closest_point_normal : Void* = Pointer(Void).null
-    # Returns the navigation mesh surface normal closest to the provided `to_point` on the navigation `map`.
     def map_get_closest_point_normal(map : Int64, to_point : Vector3) : Vector3
       if @@mb_map_get_closest_point_normal.null?
         @@mb_map_get_closest_point_normal = Bridge.get_method_bind("NavigationServer3D", "map_get_closest_point_normal", 2056183332_i64)
@@ -35802,7 +31840,6 @@ module Godot
       ret
     end
     @@mb_map_get_closest_point_owner : Void* = Pointer(Void).null
-    # Returns the owner region RID for the navigation mesh surface point closest to the provided `to_point` on the navigation `map`.
     def map_get_closest_point_owner(map : Int64, to_point : Vector3) : Int64
       if @@mb_map_get_closest_point_owner.null?
         @@mb_map_get_closest_point_owner = Bridge.get_method_bind("NavigationServer3D", "map_get_closest_point_owner", 553364610_i64)
@@ -35817,7 +31854,6 @@ module Godot
       ret
     end
     @@mb_map_get_links : Void* = Pointer(Void).null
-    # Returns all navigation link `RID`s that are currently assigned to the requested navigation `map`.
     def map_get_links(map : Int64) : Godot::Array
       if @@mb_map_get_links.null?
         @@mb_map_get_links = Bridge.get_method_bind("NavigationServer3D", "map_get_links", 2684255073_i64)
@@ -35830,7 +31866,6 @@ module Godot
       Godot::Array.new(ret_ptr)
     end
     @@mb_map_get_regions : Void* = Pointer(Void).null
-    # Returns all navigation region `RID`s that are currently assigned to the requested navigation `map`.
     def map_get_regions(map : Int64) : Godot::Array
       if @@mb_map_get_regions.null?
         @@mb_map_get_regions = Bridge.get_method_bind("NavigationServer3D", "map_get_regions", 2684255073_i64)
@@ -35843,7 +31878,6 @@ module Godot
       Godot::Array.new(ret_ptr)
     end
     @@mb_map_get_agents : Void* = Pointer(Void).null
-    # Returns all navigation agent `RID`s that are currently assigned to the requested navigation `map`.
     def map_get_agents(map : Int64) : Godot::Array
       if @@mb_map_get_agents.null?
         @@mb_map_get_agents = Bridge.get_method_bind("NavigationServer3D", "map_get_agents", 2684255073_i64)
@@ -35856,7 +31890,6 @@ module Godot
       Godot::Array.new(ret_ptr)
     end
     @@mb_map_get_obstacles : Void* = Pointer(Void).null
-    # Returns all navigation obstacle `RID`s that are currently assigned to the requested navigation `map`.
     def map_get_obstacles(map : Int64) : Godot::Array
       if @@mb_map_get_obstacles.null?
         @@mb_map_get_obstacles = Bridge.get_method_bind("NavigationServer3D", "map_get_obstacles", 2684255073_i64)
@@ -35869,10 +31902,6 @@ module Godot
       Godot::Array.new(ret_ptr)
     end
     @@mb_map_force_update : Void* = Pointer(Void).null
-    # This function immediately forces synchronization of the specified navigation `map` `RID`. By default navigation maps are only synchronized at the end of each physics frame. This function can be used to immediately (re)calculate all the navigation meshes and region connections of the navigation map. This makes it possible to query a navigation path for a changed map immediately and in the same frame (multiple times if needed).
-    # Due to technical restrictions the current NavigationServer command queue will be flushed. This means all already queued update commands for this physics frame will be executed, even those intended for other maps, regions, and agents not part of the specified map. The expensive computation of the navigation meshes and region connections of a map will only be done for the specified map. Other maps will receive the normal synchronization at the end of the physics frame. Should the specified map receive changes after the forced update it will update again as well when the other maps receive their update.
-    # Avoidance processing and dispatch of the `safe_velocity` signals is unaffected by this function and continues to happen for all maps and agents at the end of the physics frame.
-    # **Note:** With great power comes great responsibility. This function should only be used by users that really know what they are doing and have a good reason for it. Forcing an immediate update of a navigation map requires locking the NavigationServer and flushing the entire NavigationServer command queue. Not only can this severely impact the performance of a game but it can also introduce bugs if used inappropriately without much foresight.
     def map_force_update(map : Int64) : Void
       if @@mb_map_force_update.null?
         @@mb_map_force_update = Bridge.get_method_bind("NavigationServer3D", "map_force_update", 2722037293_i64)
@@ -35883,8 +31912,6 @@ module Godot
       Bridge.ptrcall(@@mb_map_force_update, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_map_get_iteration_id : Void* = Pointer(Void).null
-    # Returns the current iteration id of the navigation map. Every time the navigation map changes and synchronizes the iteration id increases. An iteration id of 0 means the navigation map has never synchronized.
-    # **Note:** The iteration id will wrap back to 1 after reaching its range limit.
     def map_get_iteration_id(map : Int64) : Int64
       if @@mb_map_get_iteration_id.null?
         @@mb_map_get_iteration_id = Bridge.get_method_bind("NavigationServer3D", "map_get_iteration_id", 2198884583_i64)
@@ -35897,7 +31924,6 @@ module Godot
       ret
     end
     @@mb_map_set_use_async_iterations : Void* = Pointer(Void).null
-    # If `enabled` is `true` the `map` synchronization uses an async process that runs on a background thread.
     def map_set_use_async_iterations(map : Int64, enabled : Bool) : Void
       if @@mb_map_set_use_async_iterations.null?
         @@mb_map_set_use_async_iterations = Bridge.get_method_bind("NavigationServer3D", "map_set_use_async_iterations", 1265174801_i64)
@@ -35910,7 +31936,6 @@ module Godot
       Bridge.ptrcall(@@mb_map_set_use_async_iterations, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_map_get_use_async_iterations : Void* = Pointer(Void).null
-    # Returns `true` if the `map` synchronization uses an async process that runs on a background thread.
     def map_get_use_async_iterations(map : Int64) : Bool
       if @@mb_map_get_use_async_iterations.null?
         @@mb_map_get_use_async_iterations = Bridge.get_method_bind("NavigationServer3D", "map_get_use_async_iterations", 4155700596_i64)
@@ -35923,9 +31948,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_map_get_random_point : Void* = Pointer(Void).null
-    # Returns a random position picked from all map region polygons with matching `navigation_layers`.
-    # If `uniformly` is `true`, all map regions, polygons, and faces are weighted by their surface area (slower).
-    # If `uniformly` is `false`, just a random region and a random polygon are picked (faster).
     def map_get_random_point(map : Int64, navigation_layers : Int64, uniformly : Bool) : Vector3
       if @@mb_map_get_random_point.null?
         @@mb_map_get_random_point = Bridge.get_method_bind("NavigationServer3D", "map_get_random_point", 722801526_i64)
@@ -35942,7 +31964,6 @@ module Godot
       ret
     end
     @@mb_query_path : Void* = Pointer(Void).null
-    # Queries a path in a given navigation map. Start and target position and other parameters are defined through `NavigationPathQueryParameters3D`. Updates the provided `NavigationPathQueryResult3D` result object with the path among other results requested by the query. After the process is finished the optional `callback` will be called.
     def query_path(parameters : NavigationPathQueryParameters3D, result : NavigationPathQueryResult3D, callback : Void*) : Void
       if @@mb_query_path.null?
         @@mb_query_path = Bridge.get_method_bind("NavigationServer3D", "query_path", 2146930868_i64)
@@ -35957,7 +31978,6 @@ module Godot
       Bridge.ptrcall(@@mb_query_path, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_region_create : Void* = Pointer(Void).null
-    # Creates a new region.
     def region_create() : Int64
       if @@mb_region_create.null?
         @@mb_region_create = Bridge.get_method_bind("NavigationServer3D", "region_create", 529393457_i64)
@@ -35967,8 +31987,6 @@ module Godot
       ret
     end
     @@mb_region_get_iteration_id : Void* = Pointer(Void).null
-    # Returns the current iteration ID of the navigation region. Every time the navigation region changes and synchronizes, the iteration ID increases. An iteration ID of `0` means the navigation region has never synchronized.
-    # **Note:** The iteration ID will wrap around to `1` after reaching its range limit.
     def region_get_iteration_id(region : Int64) : Int64
       if @@mb_region_get_iteration_id.null?
         @@mb_region_get_iteration_id = Bridge.get_method_bind("NavigationServer3D", "region_get_iteration_id", 2198884583_i64)
@@ -35981,7 +31999,6 @@ module Godot
       ret
     end
     @@mb_region_set_use_async_iterations : Void* = Pointer(Void).null
-    # If `enabled` is `true` the `region` uses an async synchronization process that runs on a background thread.
     def region_set_use_async_iterations(region : Int64, enabled : Bool) : Void
       if @@mb_region_set_use_async_iterations.null?
         @@mb_region_set_use_async_iterations = Bridge.get_method_bind("NavigationServer3D", "region_set_use_async_iterations", 1265174801_i64)
@@ -35994,7 +32011,6 @@ module Godot
       Bridge.ptrcall(@@mb_region_set_use_async_iterations, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_region_get_use_async_iterations : Void* = Pointer(Void).null
-    # Returns `true` if the `region` uses an async synchronization process that runs on a background thread.
     def region_get_use_async_iterations(region : Int64) : Bool
       if @@mb_region_get_use_async_iterations.null?
         @@mb_region_get_use_async_iterations = Bridge.get_method_bind("NavigationServer3D", "region_get_use_async_iterations", 4155700596_i64)
@@ -36007,7 +32023,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_region_set_enabled : Void* = Pointer(Void).null
-    # If `enabled` is `true`, the specified `region` will contribute to its current navigation map.
     def region_set_enabled(region : Int64, enabled : Bool) : Void
       if @@mb_region_set_enabled.null?
         @@mb_region_set_enabled = Bridge.get_method_bind("NavigationServer3D", "region_set_enabled", 1265174801_i64)
@@ -36020,7 +32035,6 @@ module Godot
       Bridge.ptrcall(@@mb_region_set_enabled, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_region_get_enabled : Void* = Pointer(Void).null
-    # Returns `true` if the specified `region` is enabled.
     def region_get_enabled(region : Int64) : Bool
       if @@mb_region_get_enabled.null?
         @@mb_region_get_enabled = Bridge.get_method_bind("NavigationServer3D", "region_get_enabled", 4155700596_i64)
@@ -36033,7 +32047,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_region_set_use_edge_connections : Void* = Pointer(Void).null
-    # If `enabled` is `true`, the navigation `region` will use edge connections to connect with other navigation regions within proximity of the navigation map edge connection margin.
     def region_set_use_edge_connections(region : Int64, enabled : Bool) : Void
       if @@mb_region_set_use_edge_connections.null?
         @@mb_region_set_use_edge_connections = Bridge.get_method_bind("NavigationServer3D", "region_set_use_edge_connections", 1265174801_i64)
@@ -36046,7 +32059,6 @@ module Godot
       Bridge.ptrcall(@@mb_region_set_use_edge_connections, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_region_get_use_edge_connections : Void* = Pointer(Void).null
-    # Returns `true` if the navigation `region` is set to use edge connections to connect with other navigation regions within proximity of the navigation map edge connection margin.
     def region_get_use_edge_connections(region : Int64) : Bool
       if @@mb_region_get_use_edge_connections.null?
         @@mb_region_get_use_edge_connections = Bridge.get_method_bind("NavigationServer3D", "region_get_use_edge_connections", 4155700596_i64)
@@ -36059,7 +32071,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_region_set_enter_cost : Void* = Pointer(Void).null
-    # Sets the `enter_cost` for this `region`.
     def region_set_enter_cost(region : Int64, enter_cost : Float64) : Void
       if @@mb_region_set_enter_cost.null?
         @@mb_region_set_enter_cost = Bridge.get_method_bind("NavigationServer3D", "region_set_enter_cost", 1794382983_i64)
@@ -36072,7 +32083,6 @@ module Godot
       Bridge.ptrcall(@@mb_region_set_enter_cost, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_region_get_enter_cost : Void* = Pointer(Void).null
-    # Returns the enter cost of this `region`.
     def region_get_enter_cost(region : Int64) : Float64
       if @@mb_region_get_enter_cost.null?
         @@mb_region_get_enter_cost = Bridge.get_method_bind("NavigationServer3D", "region_get_enter_cost", 866169185_i64)
@@ -36085,7 +32095,6 @@ module Godot
       ret
     end
     @@mb_region_set_travel_cost : Void* = Pointer(Void).null
-    # Sets the `travel_cost` for this `region`.
     def region_set_travel_cost(region : Int64, travel_cost : Float64) : Void
       if @@mb_region_set_travel_cost.null?
         @@mb_region_set_travel_cost = Bridge.get_method_bind("NavigationServer3D", "region_set_travel_cost", 1794382983_i64)
@@ -36098,7 +32107,6 @@ module Godot
       Bridge.ptrcall(@@mb_region_set_travel_cost, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_region_get_travel_cost : Void* = Pointer(Void).null
-    # Returns the travel cost of this `region`.
     def region_get_travel_cost(region : Int64) : Float64
       if @@mb_region_get_travel_cost.null?
         @@mb_region_get_travel_cost = Bridge.get_method_bind("NavigationServer3D", "region_get_travel_cost", 866169185_i64)
@@ -36111,7 +32119,6 @@ module Godot
       ret
     end
     @@mb_region_set_owner_id : Void* = Pointer(Void).null
-    # Set the `ObjectID` of the object which manages this region.
     def region_set_owner_id(region : Int64, owner_id : Int64) : Void
       if @@mb_region_set_owner_id.null?
         @@mb_region_set_owner_id = Bridge.get_method_bind("NavigationServer3D", "region_set_owner_id", 3411492887_i64)
@@ -36124,7 +32131,6 @@ module Godot
       Bridge.ptrcall(@@mb_region_set_owner_id, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_region_get_owner_id : Void* = Pointer(Void).null
-    # Returns the `ObjectID` of the object which manages this region.
     def region_get_owner_id(region : Int64) : Int64
       if @@mb_region_get_owner_id.null?
         @@mb_region_get_owner_id = Bridge.get_method_bind("NavigationServer3D", "region_get_owner_id", 2198884583_i64)
@@ -36137,9 +32143,6 @@ module Godot
       ret
     end
     @@mb_region_owns_point : Void* = Pointer(Void).null
-    # Returns `true` if the provided `point` in world space is currently owned by the provided navigation `region`. Owned in this context means that one of the region's navigation mesh polygon faces has a possible position at the closest distance to this point compared to all other navigation meshes from other navigation regions that are also registered on the navigation map of the provided region.
-    # If multiple navigation meshes have positions at equal distance the navigation region whose polygons are processed first wins the ownership. Polygons are processed in the same order that navigation regions were registered on the NavigationServer.
-    # **Note:** If navigation meshes from different navigation regions overlap (which should be avoided in general) the result might not be what is expected.
     def region_owns_point(region : Int64, point : Vector3) : Bool
       if @@mb_region_owns_point.null?
         @@mb_region_owns_point = Bridge.get_method_bind("NavigationServer3D", "region_owns_point", 2360011153_i64)
@@ -36154,7 +32157,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_region_set_map : Void* = Pointer(Void).null
-    # Sets the map for the region.
     def region_set_map(region : Int64, map : Int64) : Void
       if @@mb_region_set_map.null?
         @@mb_region_set_map = Bridge.get_method_bind("NavigationServer3D", "region_set_map", 395945892_i64)
@@ -36167,7 +32169,6 @@ module Godot
       Bridge.ptrcall(@@mb_region_set_map, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_region_get_map : Void* = Pointer(Void).null
-    # Returns the navigation map `RID` the requested `region` is currently assigned to.
     def region_get_map(region : Int64) : Int64
       if @@mb_region_get_map.null?
         @@mb_region_get_map = Bridge.get_method_bind("NavigationServer3D", "region_get_map", 3814569979_i64)
@@ -36180,7 +32181,6 @@ module Godot
       ret
     end
     @@mb_region_set_navigation_layers : Void* = Pointer(Void).null
-    # Set the region's navigation layers. This allows selecting regions from a path request (when using `#NavigationServer3D.map_get_path`).
     def region_set_navigation_layers(region : Int64, navigation_layers : Int64) : Void
       if @@mb_region_set_navigation_layers.null?
         @@mb_region_set_navigation_layers = Bridge.get_method_bind("NavigationServer3D", "region_set_navigation_layers", 3411492887_i64)
@@ -36193,7 +32193,6 @@ module Godot
       Bridge.ptrcall(@@mb_region_set_navigation_layers, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_region_get_navigation_layers : Void* = Pointer(Void).null
-    # Returns the region's navigation layers.
     def region_get_navigation_layers(region : Int64) : Int64
       if @@mb_region_get_navigation_layers.null?
         @@mb_region_get_navigation_layers = Bridge.get_method_bind("NavigationServer3D", "region_get_navigation_layers", 2198884583_i64)
@@ -36206,7 +32205,6 @@ module Godot
       ret
     end
     @@mb_region_set_transform : Void* = Pointer(Void).null
-    # Sets the global transformation for the region.
     def region_set_transform(region : Int64, transform : Transform3D) : Void
       if @@mb_region_set_transform.null?
         @@mb_region_set_transform = Bridge.get_method_bind("NavigationServer3D", "region_set_transform", 3935195649_i64)
@@ -36219,7 +32217,6 @@ module Godot
       Bridge.ptrcall(@@mb_region_set_transform, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_region_get_transform : Void* = Pointer(Void).null
-    # Returns the global transformation of this `region`.
     def region_get_transform(region : Int64) : Transform3D
       if @@mb_region_get_transform.null?
         @@mb_region_get_transform = Bridge.get_method_bind("NavigationServer3D", "region_get_transform", 1128465797_i64)
@@ -36232,7 +32229,6 @@ module Godot
       ret
     end
     @@mb_region_set_navigation_mesh : Void* = Pointer(Void).null
-    # Sets the navigation mesh for the region.
     def region_set_navigation_mesh(region : Int64, navigation_mesh : NavigationMesh) : Void
       if @@mb_region_set_navigation_mesh.null?
         @@mb_region_set_navigation_mesh = Bridge.get_method_bind("NavigationServer3D", "region_set_navigation_mesh", 2764952978_i64)
@@ -36245,7 +32241,6 @@ module Godot
       Bridge.ptrcall(@@mb_region_set_navigation_mesh, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_region_bake_navigation_mesh : Void* = Pointer(Void).null
-    # Bakes the `navigation_mesh` with bake source geometry collected starting from the `root_node`.
     def region_bake_navigation_mesh(navigation_mesh : NavigationMesh, root_node : Node) : Void
       if @@mb_region_bake_navigation_mesh.null?
         @@mb_region_bake_navigation_mesh = Bridge.get_method_bind("NavigationServer3D", "region_bake_navigation_mesh", 1401173477_i64)
@@ -36258,7 +32253,6 @@ module Godot
       Bridge.ptrcall(@@mb_region_bake_navigation_mesh, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_region_get_connections_count : Void* = Pointer(Void).null
-    # Returns how many connections this `region` has with other regions in the map.
     def region_get_connections_count(region : Int64) : Int64
       if @@mb_region_get_connections_count.null?
         @@mb_region_get_connections_count = Bridge.get_method_bind("NavigationServer3D", "region_get_connections_count", 2198884583_i64)
@@ -36271,7 +32265,6 @@ module Godot
       ret
     end
     @@mb_region_get_connection_pathway_start : Void* = Pointer(Void).null
-    # Returns the starting point of a connection door. `connection` is an index between 0 and the return value of `#region_get_connections_count`.
     def region_get_connection_pathway_start(region : Int64, connection : Int64) : Vector3
       if @@mb_region_get_connection_pathway_start.null?
         @@mb_region_get_connection_pathway_start = Bridge.get_method_bind("NavigationServer3D", "region_get_connection_pathway_start", 3440143363_i64)
@@ -36286,7 +32279,6 @@ module Godot
       ret
     end
     @@mb_region_get_connection_pathway_end : Void* = Pointer(Void).null
-    # Returns the ending point of a connection door. `connection` is an index between 0 and the return value of `#region_get_connections_count`.
     def region_get_connection_pathway_end(region : Int64, connection : Int64) : Vector3
       if @@mb_region_get_connection_pathway_end.null?
         @@mb_region_get_connection_pathway_end = Bridge.get_method_bind("NavigationServer3D", "region_get_connection_pathway_end", 3440143363_i64)
@@ -36301,8 +32293,6 @@ module Godot
       ret
     end
     @@mb_region_get_closest_point_to_segment : Void* = Pointer(Void).null
-    # Returns the navigation mesh surface point closest to the provided `start` and `end` segment on the navigation `region`.
-    # If `use_collision` is `true`, a closest point test is only done when the segment intersects with the navigation mesh surface.
     def region_get_closest_point_to_segment(region : Int64, start : Vector3, end_val : Vector3, use_collision : Bool) : Vector3
       if @@mb_region_get_closest_point_to_segment.null?
         @@mb_region_get_closest_point_to_segment = Bridge.get_method_bind("NavigationServer3D", "region_get_closest_point_to_segment", 3830095642_i64)
@@ -36321,7 +32311,6 @@ module Godot
       ret
     end
     @@mb_region_get_closest_point : Void* = Pointer(Void).null
-    # Returns the navigation mesh surface point closest to the provided `to_point` on the navigation `region`.
     def region_get_closest_point(region : Int64, to_point : Vector3) : Vector3
       if @@mb_region_get_closest_point.null?
         @@mb_region_get_closest_point = Bridge.get_method_bind("NavigationServer3D", "region_get_closest_point", 2056183332_i64)
@@ -36336,7 +32325,6 @@ module Godot
       ret
     end
     @@mb_region_get_closest_point_normal : Void* = Pointer(Void).null
-    # Returns the navigation mesh surface normal closest to the provided `to_point` on the navigation `region`.
     def region_get_closest_point_normal(region : Int64, to_point : Vector3) : Vector3
       if @@mb_region_get_closest_point_normal.null?
         @@mb_region_get_closest_point_normal = Bridge.get_method_bind("NavigationServer3D", "region_get_closest_point_normal", 2056183332_i64)
@@ -36351,9 +32339,6 @@ module Godot
       ret
     end
     @@mb_region_get_random_point : Void* = Pointer(Void).null
-    # Returns a random position picked from all region polygons with matching `navigation_layers`.
-    # If `uniformly` is `true`, all region polygons and faces are weighted by their surface area (slower).
-    # If `uniformly` is `false`, just a random polygon and face is picked (faster).
     def region_get_random_point(region : Int64, navigation_layers : Int64, uniformly : Bool) : Vector3
       if @@mb_region_get_random_point.null?
         @@mb_region_get_random_point = Bridge.get_method_bind("NavigationServer3D", "region_get_random_point", 722801526_i64)
@@ -36370,7 +32355,6 @@ module Godot
       ret
     end
     @@mb_region_get_bounds : Void* = Pointer(Void).null
-    # Returns the axis-aligned bounding box for the `region`'s transformed navigation mesh.
     def region_get_bounds(region : Int64) : AABB
       if @@mb_region_get_bounds.null?
         @@mb_region_get_bounds = Bridge.get_method_bind("NavigationServer3D", "region_get_bounds", 974181306_i64)
@@ -36383,7 +32367,6 @@ module Godot
       AABB.new(ret_ptr)
     end
     @@mb_link_create : Void* = Pointer(Void).null
-    # Create a new link between two positions on a map.
     def link_create() : Int64
       if @@mb_link_create.null?
         @@mb_link_create = Bridge.get_method_bind("NavigationServer3D", "link_create", 529393457_i64)
@@ -36393,8 +32376,6 @@ module Godot
       ret
     end
     @@mb_link_get_iteration_id : Void* = Pointer(Void).null
-    # Returns the current iteration ID of the navigation link. Every time the navigation link changes and synchronizes, the iteration ID increases. An iteration ID of `0` means the navigation link has never synchronized.
-    # **Note:** The iteration ID will wrap around to `1` after reaching its range limit.
     def link_get_iteration_id(link : Int64) : Int64
       if @@mb_link_get_iteration_id.null?
         @@mb_link_get_iteration_id = Bridge.get_method_bind("NavigationServer3D", "link_get_iteration_id", 2198884583_i64)
@@ -36407,7 +32388,6 @@ module Godot
       ret
     end
     @@mb_link_set_map : Void* = Pointer(Void).null
-    # Sets the navigation map `RID` for the link.
     def link_set_map(link : Int64, map : Int64) : Void
       if @@mb_link_set_map.null?
         @@mb_link_set_map = Bridge.get_method_bind("NavigationServer3D", "link_set_map", 395945892_i64)
@@ -36420,7 +32400,6 @@ module Godot
       Bridge.ptrcall(@@mb_link_set_map, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_link_get_map : Void* = Pointer(Void).null
-    # Returns the navigation map `RID` the requested `link` is currently assigned to.
     def link_get_map(link : Int64) : Int64
       if @@mb_link_get_map.null?
         @@mb_link_get_map = Bridge.get_method_bind("NavigationServer3D", "link_get_map", 3814569979_i64)
@@ -36433,7 +32412,6 @@ module Godot
       ret
     end
     @@mb_link_set_enabled : Void* = Pointer(Void).null
-    # If `enabled` is `true`, the specified `link` will contribute to its current navigation map.
     def link_set_enabled(link : Int64, enabled : Bool) : Void
       if @@mb_link_set_enabled.null?
         @@mb_link_set_enabled = Bridge.get_method_bind("NavigationServer3D", "link_set_enabled", 1265174801_i64)
@@ -36446,7 +32424,6 @@ module Godot
       Bridge.ptrcall(@@mb_link_set_enabled, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_link_get_enabled : Void* = Pointer(Void).null
-    # Returns `true` if the specified `link` is enabled.
     def link_get_enabled(link : Int64) : Bool
       if @@mb_link_get_enabled.null?
         @@mb_link_get_enabled = Bridge.get_method_bind("NavigationServer3D", "link_get_enabled", 4155700596_i64)
@@ -36459,7 +32436,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_link_set_bidirectional : Void* = Pointer(Void).null
-    # Sets whether this `link` can be travelled in both directions.
     def link_set_bidirectional(link : Int64, bidirectional : Bool) : Void
       if @@mb_link_set_bidirectional.null?
         @@mb_link_set_bidirectional = Bridge.get_method_bind("NavigationServer3D", "link_set_bidirectional", 1265174801_i64)
@@ -36472,7 +32448,6 @@ module Godot
       Bridge.ptrcall(@@mb_link_set_bidirectional, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_link_is_bidirectional : Void* = Pointer(Void).null
-    # Returns whether this `link` can be travelled in both directions.
     def link_is_bidirectional(link : Int64) : Bool
       if @@mb_link_is_bidirectional.null?
         @@mb_link_is_bidirectional = Bridge.get_method_bind("NavigationServer3D", "link_is_bidirectional", 4155700596_i64)
@@ -36485,7 +32460,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_link_set_navigation_layers : Void* = Pointer(Void).null
-    # Sets the given `link`'s navigation layers to `navigation_layers`. This allows selecting links from a path request (when using `#NavigationServer3D.map_get_path`).
     def link_set_navigation_layers(link : Int64, navigation_layers : Int64) : Void
       if @@mb_link_set_navigation_layers.null?
         @@mb_link_set_navigation_layers = Bridge.get_method_bind("NavigationServer3D", "link_set_navigation_layers", 3411492887_i64)
@@ -36498,7 +32472,6 @@ module Godot
       Bridge.ptrcall(@@mb_link_set_navigation_layers, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_link_get_navigation_layers : Void* = Pointer(Void).null
-    # Returns the navigation layers for this `link`.
     def link_get_navigation_layers(link : Int64) : Int64
       if @@mb_link_get_navigation_layers.null?
         @@mb_link_get_navigation_layers = Bridge.get_method_bind("NavigationServer3D", "link_get_navigation_layers", 2198884583_i64)
@@ -36511,7 +32484,6 @@ module Godot
       ret
     end
     @@mb_link_set_start_position : Void* = Pointer(Void).null
-    # Sets the entry position for this `link`.
     def link_set_start_position(link : Int64, position : Vector3) : Void
       if @@mb_link_set_start_position.null?
         @@mb_link_set_start_position = Bridge.get_method_bind("NavigationServer3D", "link_set_start_position", 3227306858_i64)
@@ -36524,7 +32496,6 @@ module Godot
       Bridge.ptrcall(@@mb_link_set_start_position, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_link_get_start_position : Void* = Pointer(Void).null
-    # Returns the starting position of this `link`.
     def link_get_start_position(link : Int64) : Vector3
       if @@mb_link_get_start_position.null?
         @@mb_link_get_start_position = Bridge.get_method_bind("NavigationServer3D", "link_get_start_position", 531438156_i64)
@@ -36537,7 +32508,6 @@ module Godot
       ret
     end
     @@mb_link_set_end_position : Void* = Pointer(Void).null
-    # Sets the exit position for the `link`.
     def link_set_end_position(link : Int64, position : Vector3) : Void
       if @@mb_link_set_end_position.null?
         @@mb_link_set_end_position = Bridge.get_method_bind("NavigationServer3D", "link_set_end_position", 3227306858_i64)
@@ -36550,7 +32520,6 @@ module Godot
       Bridge.ptrcall(@@mb_link_set_end_position, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_link_get_end_position : Void* = Pointer(Void).null
-    # Returns the ending position of this `link`.
     def link_get_end_position(link : Int64) : Vector3
       if @@mb_link_get_end_position.null?
         @@mb_link_get_end_position = Bridge.get_method_bind("NavigationServer3D", "link_get_end_position", 531438156_i64)
@@ -36563,7 +32532,6 @@ module Godot
       ret
     end
     @@mb_link_set_enter_cost : Void* = Pointer(Void).null
-    # Sets the `enter_cost` for this `link`.
     def link_set_enter_cost(link : Int64, enter_cost : Float64) : Void
       if @@mb_link_set_enter_cost.null?
         @@mb_link_set_enter_cost = Bridge.get_method_bind("NavigationServer3D", "link_set_enter_cost", 1794382983_i64)
@@ -36576,7 +32544,6 @@ module Godot
       Bridge.ptrcall(@@mb_link_set_enter_cost, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_link_get_enter_cost : Void* = Pointer(Void).null
-    # Returns the enter cost of this `link`.
     def link_get_enter_cost(link : Int64) : Float64
       if @@mb_link_get_enter_cost.null?
         @@mb_link_get_enter_cost = Bridge.get_method_bind("NavigationServer3D", "link_get_enter_cost", 866169185_i64)
@@ -36589,7 +32556,6 @@ module Godot
       ret
     end
     @@mb_link_set_travel_cost : Void* = Pointer(Void).null
-    # Sets the `travel_cost` for this `link`.
     def link_set_travel_cost(link : Int64, travel_cost : Float64) : Void
       if @@mb_link_set_travel_cost.null?
         @@mb_link_set_travel_cost = Bridge.get_method_bind("NavigationServer3D", "link_set_travel_cost", 1794382983_i64)
@@ -36602,7 +32568,6 @@ module Godot
       Bridge.ptrcall(@@mb_link_set_travel_cost, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_link_get_travel_cost : Void* = Pointer(Void).null
-    # Returns the travel cost of this `link`.
     def link_get_travel_cost(link : Int64) : Float64
       if @@mb_link_get_travel_cost.null?
         @@mb_link_get_travel_cost = Bridge.get_method_bind("NavigationServer3D", "link_get_travel_cost", 866169185_i64)
@@ -36615,7 +32580,6 @@ module Godot
       ret
     end
     @@mb_link_set_owner_id : Void* = Pointer(Void).null
-    # Set the `ObjectID` of the object which manages this link.
     def link_set_owner_id(link : Int64, owner_id : Int64) : Void
       if @@mb_link_set_owner_id.null?
         @@mb_link_set_owner_id = Bridge.get_method_bind("NavigationServer3D", "link_set_owner_id", 3411492887_i64)
@@ -36628,7 +32592,6 @@ module Godot
       Bridge.ptrcall(@@mb_link_set_owner_id, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_link_get_owner_id : Void* = Pointer(Void).null
-    # Returns the `ObjectID` of the object which manages this link.
     def link_get_owner_id(link : Int64) : Int64
       if @@mb_link_get_owner_id.null?
         @@mb_link_get_owner_id = Bridge.get_method_bind("NavigationServer3D", "link_get_owner_id", 2198884583_i64)
@@ -36641,7 +32604,6 @@ module Godot
       ret
     end
     @@mb_agent_create : Void* = Pointer(Void).null
-    # Creates the agent.
     def agent_create() : Int64
       if @@mb_agent_create.null?
         @@mb_agent_create = Bridge.get_method_bind("NavigationServer3D", "agent_create", 529393457_i64)
@@ -36651,7 +32613,6 @@ module Godot
       ret
     end
     @@mb_agent_set_avoidance_enabled : Void* = Pointer(Void).null
-    # If `enabled` is `true`, the provided `agent` calculates avoidance.
     def agent_set_avoidance_enabled(agent : Int64, enabled : Bool) : Void
       if @@mb_agent_set_avoidance_enabled.null?
         @@mb_agent_set_avoidance_enabled = Bridge.get_method_bind("NavigationServer3D", "agent_set_avoidance_enabled", 1265174801_i64)
@@ -36664,7 +32625,6 @@ module Godot
       Bridge.ptrcall(@@mb_agent_set_avoidance_enabled, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_agent_get_avoidance_enabled : Void* = Pointer(Void).null
-    # Returns `true` if the provided `agent` has avoidance enabled.
     def agent_get_avoidance_enabled(agent : Int64) : Bool
       if @@mb_agent_get_avoidance_enabled.null?
         @@mb_agent_get_avoidance_enabled = Bridge.get_method_bind("NavigationServer3D", "agent_get_avoidance_enabled", 4155700596_i64)
@@ -36677,9 +32637,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_agent_set_use_3d_avoidance : Void* = Pointer(Void).null
-    # Sets if the agent uses the 2D avoidance or the 3D avoidance while avoidance is enabled.
-    # If `true` the agent calculates avoidance velocities in 3D for the XYZ axes, e.g. for games that take place in the air, underwater, or space. The 3D agent only avoids other 3D avoidance agents. The 3D agent only reacts to radius based avoidance obstacles. The 3D agent ignores any vertices based obstacles. The 3D agent only avoids other 3D agents.
-    # If `false` the agent calculates avoidance velocities in 2D along the xz-axes ignoring the y-axis. The 2D agent only avoids other 2D avoidance agents. The 2D agent reacts to radius avoidance obstacles. The 2D agent reacts to vertex based avoidance obstacles. The 2D agent only avoids other 2D agents. 2D agents will ignore other 2D agents or obstacles that are below their current position or above their current position including the agent's height in 2D avoidance.
     def agent_set_use_3d_avoidance(agent : Int64, enabled : Bool) : Void
       if @@mb_agent_set_use_3d_avoidance.null?
         @@mb_agent_set_use_3d_avoidance = Bridge.get_method_bind("NavigationServer3D", "agent_set_use_3d_avoidance", 1265174801_i64)
@@ -36692,7 +32649,6 @@ module Godot
       Bridge.ptrcall(@@mb_agent_set_use_3d_avoidance, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_agent_get_use_3d_avoidance : Void* = Pointer(Void).null
-    # Returns `true` if the provided `agent` uses avoidance in 3D space Vector3(x,y,z) instead of horizontal 2D Vector2(x,y) / Vector3(x,0.0,z).
     def agent_get_use_3d_avoidance(agent : Int64) : Bool
       if @@mb_agent_get_use_3d_avoidance.null?
         @@mb_agent_get_use_3d_avoidance = Bridge.get_method_bind("NavigationServer3D", "agent_get_use_3d_avoidance", 4155700596_i64)
@@ -36705,7 +32661,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_agent_set_map : Void* = Pointer(Void).null
-    # Puts the agent in the map.
     def agent_set_map(agent : Int64, map : Int64) : Void
       if @@mb_agent_set_map.null?
         @@mb_agent_set_map = Bridge.get_method_bind("NavigationServer3D", "agent_set_map", 395945892_i64)
@@ -36718,7 +32673,6 @@ module Godot
       Bridge.ptrcall(@@mb_agent_set_map, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_agent_get_map : Void* = Pointer(Void).null
-    # Returns the navigation map `RID` the requested `agent` is currently assigned to.
     def agent_get_map(agent : Int64) : Int64
       if @@mb_agent_get_map.null?
         @@mb_agent_get_map = Bridge.get_method_bind("NavigationServer3D", "agent_get_map", 3814569979_i64)
@@ -36731,7 +32685,6 @@ module Godot
       ret
     end
     @@mb_agent_set_paused : Void* = Pointer(Void).null
-    # If `paused` is `true` the specified `agent` will not be processed. For example, it will not calculate avoidance velocities or receive avoidance callbacks.
     def agent_set_paused(agent : Int64, paused : Bool) : Void
       if @@mb_agent_set_paused.null?
         @@mb_agent_set_paused = Bridge.get_method_bind("NavigationServer3D", "agent_set_paused", 1265174801_i64)
@@ -36744,7 +32697,6 @@ module Godot
       Bridge.ptrcall(@@mb_agent_set_paused, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_agent_get_paused : Void* = Pointer(Void).null
-    # Returns `true` if the specified `agent` is paused.
     def agent_get_paused(agent : Int64) : Bool
       if @@mb_agent_get_paused.null?
         @@mb_agent_get_paused = Bridge.get_method_bind("NavigationServer3D", "agent_get_paused", 4155700596_i64)
@@ -36757,7 +32709,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_agent_set_neighbor_distance : Void* = Pointer(Void).null
-    # Sets the maximum distance to other agents this agent takes into account in the navigation. The larger this number, the longer the running time of the simulation. If the number is too low, the simulation will not be safe.
     def agent_set_neighbor_distance(agent : Int64, distance : Float64) : Void
       if @@mb_agent_set_neighbor_distance.null?
         @@mb_agent_set_neighbor_distance = Bridge.get_method_bind("NavigationServer3D", "agent_set_neighbor_distance", 1794382983_i64)
@@ -36770,7 +32721,6 @@ module Godot
       Bridge.ptrcall(@@mb_agent_set_neighbor_distance, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_agent_get_neighbor_distance : Void* = Pointer(Void).null
-    # Returns the maximum distance to other agents the specified `agent` takes into account in the navigation.
     def agent_get_neighbor_distance(agent : Int64) : Float64
       if @@mb_agent_get_neighbor_distance.null?
         @@mb_agent_get_neighbor_distance = Bridge.get_method_bind("NavigationServer3D", "agent_get_neighbor_distance", 866169185_i64)
@@ -36783,7 +32733,6 @@ module Godot
       ret
     end
     @@mb_agent_set_max_neighbors : Void* = Pointer(Void).null
-    # Sets the maximum number of other agents the agent takes into account in the navigation. The larger this number, the longer the running time of the simulation. If the number is too low, the simulation will not be safe.
     def agent_set_max_neighbors(agent : Int64, count : Int64) : Void
       if @@mb_agent_set_max_neighbors.null?
         @@mb_agent_set_max_neighbors = Bridge.get_method_bind("NavigationServer3D", "agent_set_max_neighbors", 3411492887_i64)
@@ -36796,7 +32745,6 @@ module Godot
       Bridge.ptrcall(@@mb_agent_set_max_neighbors, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_agent_get_max_neighbors : Void* = Pointer(Void).null
-    # Returns the maximum number of other agents the specified `agent` takes into account in the navigation.
     def agent_get_max_neighbors(agent : Int64) : Int64
       if @@mb_agent_get_max_neighbors.null?
         @@mb_agent_get_max_neighbors = Bridge.get_method_bind("NavigationServer3D", "agent_get_max_neighbors", 2198884583_i64)
@@ -36809,7 +32757,6 @@ module Godot
       ret
     end
     @@mb_agent_set_time_horizon_agents : Void* = Pointer(Void).null
-    # The minimal amount of time for which the agent's velocities that are computed by the simulation are safe with respect to other agents. The larger this number, the sooner this agent will respond to the presence of other agents, but the less freedom this agent has in choosing its velocities. A too high value will slow down agent movement considerably. Must be positive.
     def agent_set_time_horizon_agents(agent : Int64, time_horizon : Float64) : Void
       if @@mb_agent_set_time_horizon_agents.null?
         @@mb_agent_set_time_horizon_agents = Bridge.get_method_bind("NavigationServer3D", "agent_set_time_horizon_agents", 1794382983_i64)
@@ -36822,7 +32769,6 @@ module Godot
       Bridge.ptrcall(@@mb_agent_set_time_horizon_agents, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_agent_get_time_horizon_agents : Void* = Pointer(Void).null
-    # Returns the minimal amount of time for which the specified `agent`'s velocities that are computed by the simulation are safe with respect to other agents.
     def agent_get_time_horizon_agents(agent : Int64) : Float64
       if @@mb_agent_get_time_horizon_agents.null?
         @@mb_agent_get_time_horizon_agents = Bridge.get_method_bind("NavigationServer3D", "agent_get_time_horizon_agents", 866169185_i64)
@@ -36835,7 +32781,6 @@ module Godot
       ret
     end
     @@mb_agent_set_time_horizon_obstacles : Void* = Pointer(Void).null
-    # The minimal amount of time for which the agent's velocities that are computed by the simulation are safe with respect to static avoidance obstacles. The larger this number, the sooner this agent will respond to the presence of static avoidance obstacles, but the less freedom this agent has in choosing its velocities. A too high value will slow down agent movement considerably. Must be positive.
     def agent_set_time_horizon_obstacles(agent : Int64, time_horizon : Float64) : Void
       if @@mb_agent_set_time_horizon_obstacles.null?
         @@mb_agent_set_time_horizon_obstacles = Bridge.get_method_bind("NavigationServer3D", "agent_set_time_horizon_obstacles", 1794382983_i64)
@@ -36848,7 +32793,6 @@ module Godot
       Bridge.ptrcall(@@mb_agent_set_time_horizon_obstacles, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_agent_get_time_horizon_obstacles : Void* = Pointer(Void).null
-    # Returns the minimal amount of time for which the specified `agent`'s velocities that are computed by the simulation are safe with respect to static avoidance obstacles.
     def agent_get_time_horizon_obstacles(agent : Int64) : Float64
       if @@mb_agent_get_time_horizon_obstacles.null?
         @@mb_agent_get_time_horizon_obstacles = Bridge.get_method_bind("NavigationServer3D", "agent_get_time_horizon_obstacles", 866169185_i64)
@@ -36861,7 +32805,6 @@ module Godot
       ret
     end
     @@mb_agent_set_radius : Void* = Pointer(Void).null
-    # Sets the radius of the agent.
     def agent_set_radius(agent : Int64, radius : Float64) : Void
       if @@mb_agent_set_radius.null?
         @@mb_agent_set_radius = Bridge.get_method_bind("NavigationServer3D", "agent_set_radius", 1794382983_i64)
@@ -36874,7 +32817,6 @@ module Godot
       Bridge.ptrcall(@@mb_agent_set_radius, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_agent_get_radius : Void* = Pointer(Void).null
-    # Returns the radius of the specified `agent`.
     def agent_get_radius(agent : Int64) : Float64
       if @@mb_agent_get_radius.null?
         @@mb_agent_get_radius = Bridge.get_method_bind("NavigationServer3D", "agent_get_radius", 866169185_i64)
@@ -36887,7 +32829,6 @@ module Godot
       ret
     end
     @@mb_agent_set_height : Void* = Pointer(Void).null
-    # Updates the provided `agent` `height`.
     def agent_set_height(agent : Int64, height : Float64) : Void
       if @@mb_agent_set_height.null?
         @@mb_agent_set_height = Bridge.get_method_bind("NavigationServer3D", "agent_set_height", 1794382983_i64)
@@ -36900,7 +32841,6 @@ module Godot
       Bridge.ptrcall(@@mb_agent_set_height, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_agent_get_height : Void* = Pointer(Void).null
-    # Returns the `height` of the specified `agent`.
     def agent_get_height(agent : Int64) : Float64
       if @@mb_agent_get_height.null?
         @@mb_agent_get_height = Bridge.get_method_bind("NavigationServer3D", "agent_get_height", 866169185_i64)
@@ -36913,7 +32853,6 @@ module Godot
       ret
     end
     @@mb_agent_set_max_speed : Void* = Pointer(Void).null
-    # Sets the maximum speed of the agent. Must be positive.
     def agent_set_max_speed(agent : Int64, max_speed : Float64) : Void
       if @@mb_agent_set_max_speed.null?
         @@mb_agent_set_max_speed = Bridge.get_method_bind("NavigationServer3D", "agent_set_max_speed", 1794382983_i64)
@@ -36926,7 +32865,6 @@ module Godot
       Bridge.ptrcall(@@mb_agent_set_max_speed, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_agent_get_max_speed : Void* = Pointer(Void).null
-    # Returns the maximum speed of the specified `agent`.
     def agent_get_max_speed(agent : Int64) : Float64
       if @@mb_agent_get_max_speed.null?
         @@mb_agent_get_max_speed = Bridge.get_method_bind("NavigationServer3D", "agent_get_max_speed", 866169185_i64)
@@ -36939,7 +32877,6 @@ module Godot
       ret
     end
     @@mb_agent_set_velocity_forced : Void* = Pointer(Void).null
-    # Replaces the internal velocity in the collision avoidance simulation with `velocity` for the specified `agent`. When an agent is teleported to a new position this function should be used in the same frame. If called frequently this function can get agents stuck.
     def agent_set_velocity_forced(agent : Int64, velocity : Vector3) : Void
       if @@mb_agent_set_velocity_forced.null?
         @@mb_agent_set_velocity_forced = Bridge.get_method_bind("NavigationServer3D", "agent_set_velocity_forced", 3227306858_i64)
@@ -36952,7 +32889,6 @@ module Godot
       Bridge.ptrcall(@@mb_agent_set_velocity_forced, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_agent_set_velocity : Void* = Pointer(Void).null
-    # Sets `velocity` as the new wanted velocity for the specified `agent`. The avoidance simulation will try to achieve this velocity if possible, but will adjust it to avoid colliding with other agents and obstacles. When an agent is teleported to a new position far away, use `#agent_set_velocity_forced` instead to reset the internal velocity state.
     def agent_set_velocity(agent : Int64, velocity : Vector3) : Void
       if @@mb_agent_set_velocity.null?
         @@mb_agent_set_velocity = Bridge.get_method_bind("NavigationServer3D", "agent_set_velocity", 3227306858_i64)
@@ -36965,7 +32901,6 @@ module Godot
       Bridge.ptrcall(@@mb_agent_set_velocity, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_agent_get_velocity : Void* = Pointer(Void).null
-    # Returns the velocity of the specified `agent`.
     def agent_get_velocity(agent : Int64) : Vector3
       if @@mb_agent_get_velocity.null?
         @@mb_agent_get_velocity = Bridge.get_method_bind("NavigationServer3D", "agent_get_velocity", 531438156_i64)
@@ -36978,7 +32913,6 @@ module Godot
       ret
     end
     @@mb_agent_set_position : Void* = Pointer(Void).null
-    # Sets the position of the agent in world space.
     def agent_set_position(agent : Int64, position : Vector3) : Void
       if @@mb_agent_set_position.null?
         @@mb_agent_set_position = Bridge.get_method_bind("NavigationServer3D", "agent_set_position", 3227306858_i64)
@@ -36991,7 +32925,6 @@ module Godot
       Bridge.ptrcall(@@mb_agent_set_position, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_agent_get_position : Void* = Pointer(Void).null
-    # Returns the position of the specified `agent` in world space.
     def agent_get_position(agent : Int64) : Vector3
       if @@mb_agent_get_position.null?
         @@mb_agent_get_position = Bridge.get_method_bind("NavigationServer3D", "agent_get_position", 531438156_i64)
@@ -37004,7 +32937,6 @@ module Godot
       ret
     end
     @@mb_agent_is_map_changed : Void* = Pointer(Void).null
-    # Returns `true` if the map got changed the previous frame.
     def agent_is_map_changed(agent : Int64) : Bool
       if @@mb_agent_is_map_changed.null?
         @@mb_agent_is_map_changed = Bridge.get_method_bind("NavigationServer3D", "agent_is_map_changed", 4155700596_i64)
@@ -37017,8 +32949,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_agent_set_avoidance_callback : Void* = Pointer(Void).null
-    # Sets the callback `Callable` that gets called after each avoidance processing step for the `agent`. The calculated `safe_velocity` will be dispatched with a signal to the object just before the physics calculations.
-    # **Note:** Created callbacks are always processed independently of the SceneTree state as long as the agent is on a navigation map and not freed. To disable the dispatch of a callback from an agent use `#agent_set_avoidance_callback` again with an empty `Callable`.
     def agent_set_avoidance_callback(agent : Int64, callback : Void*) : Void
       if @@mb_agent_set_avoidance_callback.null?
         @@mb_agent_set_avoidance_callback = Bridge.get_method_bind("NavigationServer3D", "agent_set_avoidance_callback", 3379118538_i64)
@@ -37031,7 +32961,6 @@ module Godot
       Bridge.ptrcall(@@mb_agent_set_avoidance_callback, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_agent_has_avoidance_callback : Void* = Pointer(Void).null
-    # Return `true` if the specified `agent` has an avoidance callback.
     def agent_has_avoidance_callback(agent : Int64) : Bool
       if @@mb_agent_has_avoidance_callback.null?
         @@mb_agent_has_avoidance_callback = Bridge.get_method_bind("NavigationServer3D", "agent_has_avoidance_callback", 4155700596_i64)
@@ -37044,7 +32973,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_agent_set_avoidance_layers : Void* = Pointer(Void).null
-    # Set the agent's `avoidance_layers` bitmask.
     def agent_set_avoidance_layers(agent : Int64, layers : Int64) : Void
       if @@mb_agent_set_avoidance_layers.null?
         @@mb_agent_set_avoidance_layers = Bridge.get_method_bind("NavigationServer3D", "agent_set_avoidance_layers", 3411492887_i64)
@@ -37057,7 +32985,6 @@ module Godot
       Bridge.ptrcall(@@mb_agent_set_avoidance_layers, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_agent_get_avoidance_layers : Void* = Pointer(Void).null
-    # Returns the `avoidance_layers` bitmask of the specified `agent`.
     def agent_get_avoidance_layers(agent : Int64) : Int64
       if @@mb_agent_get_avoidance_layers.null?
         @@mb_agent_get_avoidance_layers = Bridge.get_method_bind("NavigationServer3D", "agent_get_avoidance_layers", 2198884583_i64)
@@ -37070,7 +32997,6 @@ module Godot
       ret
     end
     @@mb_agent_set_avoidance_mask : Void* = Pointer(Void).null
-    # Set the agent's `avoidance_mask` bitmask.
     def agent_set_avoidance_mask(agent : Int64, mask : Int64) : Void
       if @@mb_agent_set_avoidance_mask.null?
         @@mb_agent_set_avoidance_mask = Bridge.get_method_bind("NavigationServer3D", "agent_set_avoidance_mask", 3411492887_i64)
@@ -37083,7 +33009,6 @@ module Godot
       Bridge.ptrcall(@@mb_agent_set_avoidance_mask, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_agent_get_avoidance_mask : Void* = Pointer(Void).null
-    # Returns the `avoidance_mask` bitmask of the specified `agent`.
     def agent_get_avoidance_mask(agent : Int64) : Int64
       if @@mb_agent_get_avoidance_mask.null?
         @@mb_agent_get_avoidance_mask = Bridge.get_method_bind("NavigationServer3D", "agent_get_avoidance_mask", 2198884583_i64)
@@ -37096,8 +33021,6 @@ module Godot
       ret
     end
     @@mb_agent_set_avoidance_priority : Void* = Pointer(Void).null
-    # Set the agent's `avoidance_priority` with a `priority` between 0.0 (lowest priority) to 1.0 (highest priority).
-    # The specified `agent` does not adjust the velocity for other agents that would match the `avoidance_mask` but have a lower `avoidance_priority`. This in turn makes the other agents with lower priority adjust their velocities even more to avoid collision with this agent.
     def agent_set_avoidance_priority(agent : Int64, priority : Float64) : Void
       if @@mb_agent_set_avoidance_priority.null?
         @@mb_agent_set_avoidance_priority = Bridge.get_method_bind("NavigationServer3D", "agent_set_avoidance_priority", 1794382983_i64)
@@ -37110,7 +33033,6 @@ module Godot
       Bridge.ptrcall(@@mb_agent_set_avoidance_priority, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_agent_get_avoidance_priority : Void* = Pointer(Void).null
-    # Returns the `avoidance_priority` of the specified `agent`.
     def agent_get_avoidance_priority(agent : Int64) : Float64
       if @@mb_agent_get_avoidance_priority.null?
         @@mb_agent_get_avoidance_priority = Bridge.get_method_bind("NavigationServer3D", "agent_get_avoidance_priority", 866169185_i64)
@@ -37123,7 +33045,6 @@ module Godot
       ret
     end
     @@mb_obstacle_create : Void* = Pointer(Void).null
-    # Creates a new obstacle.
     def obstacle_create() : Int64
       if @@mb_obstacle_create.null?
         @@mb_obstacle_create = Bridge.get_method_bind("NavigationServer3D", "obstacle_create", 529393457_i64)
@@ -37133,7 +33054,6 @@ module Godot
       ret
     end
     @@mb_obstacle_set_avoidance_enabled : Void* = Pointer(Void).null
-    # If `enabled` is `true`, the provided `obstacle` affects avoidance using agents.
     def obstacle_set_avoidance_enabled(obstacle : Int64, enabled : Bool) : Void
       if @@mb_obstacle_set_avoidance_enabled.null?
         @@mb_obstacle_set_avoidance_enabled = Bridge.get_method_bind("NavigationServer3D", "obstacle_set_avoidance_enabled", 1265174801_i64)
@@ -37146,7 +33066,6 @@ module Godot
       Bridge.ptrcall(@@mb_obstacle_set_avoidance_enabled, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_obstacle_get_avoidance_enabled : Void* = Pointer(Void).null
-    # Returns `true` if the provided `obstacle` has avoidance enabled.
     def obstacle_get_avoidance_enabled(obstacle : Int64) : Bool
       if @@mb_obstacle_get_avoidance_enabled.null?
         @@mb_obstacle_get_avoidance_enabled = Bridge.get_method_bind("NavigationServer3D", "obstacle_get_avoidance_enabled", 4155700596_i64)
@@ -37159,7 +33078,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_obstacle_set_use_3d_avoidance : Void* = Pointer(Void).null
-    # Sets if the `obstacle` uses the 2D avoidance or the 3D avoidance while avoidance is enabled.
     def obstacle_set_use_3d_avoidance(obstacle : Int64, enabled : Bool) : Void
       if @@mb_obstacle_set_use_3d_avoidance.null?
         @@mb_obstacle_set_use_3d_avoidance = Bridge.get_method_bind("NavigationServer3D", "obstacle_set_use_3d_avoidance", 1265174801_i64)
@@ -37172,7 +33090,6 @@ module Godot
       Bridge.ptrcall(@@mb_obstacle_set_use_3d_avoidance, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_obstacle_get_use_3d_avoidance : Void* = Pointer(Void).null
-    # Returns `true` if the provided `obstacle` uses avoidance in 3D space Vector3(x,y,z) instead of horizontal 2D Vector2(x,y) / Vector3(x,0.0,z).
     def obstacle_get_use_3d_avoidance(obstacle : Int64) : Bool
       if @@mb_obstacle_get_use_3d_avoidance.null?
         @@mb_obstacle_get_use_3d_avoidance = Bridge.get_method_bind("NavigationServer3D", "obstacle_get_use_3d_avoidance", 4155700596_i64)
@@ -37185,7 +33102,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_obstacle_set_map : Void* = Pointer(Void).null
-    # Assigns the `obstacle` to a navigation map.
     def obstacle_set_map(obstacle : Int64, map : Int64) : Void
       if @@mb_obstacle_set_map.null?
         @@mb_obstacle_set_map = Bridge.get_method_bind("NavigationServer3D", "obstacle_set_map", 395945892_i64)
@@ -37198,7 +33114,6 @@ module Godot
       Bridge.ptrcall(@@mb_obstacle_set_map, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_obstacle_get_map : Void* = Pointer(Void).null
-    # Returns the navigation map `RID` the requested `obstacle` is currently assigned to.
     def obstacle_get_map(obstacle : Int64) : Int64
       if @@mb_obstacle_get_map.null?
         @@mb_obstacle_get_map = Bridge.get_method_bind("NavigationServer3D", "obstacle_get_map", 3814569979_i64)
@@ -37211,7 +33126,6 @@ module Godot
       ret
     end
     @@mb_obstacle_set_paused : Void* = Pointer(Void).null
-    # If `paused` is `true` the specified `obstacle` will not be processed. For example, it will no longer affect avoidance velocities.
     def obstacle_set_paused(obstacle : Int64, paused : Bool) : Void
       if @@mb_obstacle_set_paused.null?
         @@mb_obstacle_set_paused = Bridge.get_method_bind("NavigationServer3D", "obstacle_set_paused", 1265174801_i64)
@@ -37224,7 +33138,6 @@ module Godot
       Bridge.ptrcall(@@mb_obstacle_set_paused, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_obstacle_get_paused : Void* = Pointer(Void).null
-    # Returns `true` if the specified `obstacle` is paused.
     def obstacle_get_paused(obstacle : Int64) : Bool
       if @@mb_obstacle_get_paused.null?
         @@mb_obstacle_get_paused = Bridge.get_method_bind("NavigationServer3D", "obstacle_get_paused", 4155700596_i64)
@@ -37237,7 +33150,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_obstacle_set_radius : Void* = Pointer(Void).null
-    # Sets the radius of the dynamic obstacle.
     def obstacle_set_radius(obstacle : Int64, radius : Float64) : Void
       if @@mb_obstacle_set_radius.null?
         @@mb_obstacle_set_radius = Bridge.get_method_bind("NavigationServer3D", "obstacle_set_radius", 1794382983_i64)
@@ -37250,7 +33162,6 @@ module Godot
       Bridge.ptrcall(@@mb_obstacle_set_radius, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_obstacle_get_radius : Void* = Pointer(Void).null
-    # Returns the radius of the specified dynamic `obstacle`.
     def obstacle_get_radius(obstacle : Int64) : Float64
       if @@mb_obstacle_get_radius.null?
         @@mb_obstacle_get_radius = Bridge.get_method_bind("NavigationServer3D", "obstacle_get_radius", 866169185_i64)
@@ -37263,7 +33174,6 @@ module Godot
       ret
     end
     @@mb_obstacle_set_height : Void* = Pointer(Void).null
-    # Sets the `height` for the `obstacle`. In 3D agents will ignore obstacles that are above or below them while using 2D avoidance.
     def obstacle_set_height(obstacle : Int64, height : Float64) : Void
       if @@mb_obstacle_set_height.null?
         @@mb_obstacle_set_height = Bridge.get_method_bind("NavigationServer3D", "obstacle_set_height", 1794382983_i64)
@@ -37276,7 +33186,6 @@ module Godot
       Bridge.ptrcall(@@mb_obstacle_set_height, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_obstacle_get_height : Void* = Pointer(Void).null
-    # Returns the `height` of the specified `obstacle`.
     def obstacle_get_height(obstacle : Int64) : Float64
       if @@mb_obstacle_get_height.null?
         @@mb_obstacle_get_height = Bridge.get_method_bind("NavigationServer3D", "obstacle_get_height", 866169185_i64)
@@ -37289,7 +33198,6 @@ module Godot
       ret
     end
     @@mb_obstacle_set_velocity : Void* = Pointer(Void).null
-    # Sets `velocity` of the dynamic `obstacle`. Allows other agents to better predict the movement of the dynamic obstacle. Only works in combination with the radius of the obstacle.
     def obstacle_set_velocity(obstacle : Int64, velocity : Vector3) : Void
       if @@mb_obstacle_set_velocity.null?
         @@mb_obstacle_set_velocity = Bridge.get_method_bind("NavigationServer3D", "obstacle_set_velocity", 3227306858_i64)
@@ -37302,7 +33210,6 @@ module Godot
       Bridge.ptrcall(@@mb_obstacle_set_velocity, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_obstacle_get_velocity : Void* = Pointer(Void).null
-    # Returns the velocity of the specified dynamic `obstacle`.
     def obstacle_get_velocity(obstacle : Int64) : Vector3
       if @@mb_obstacle_get_velocity.null?
         @@mb_obstacle_get_velocity = Bridge.get_method_bind("NavigationServer3D", "obstacle_get_velocity", 531438156_i64)
@@ -37315,7 +33222,6 @@ module Godot
       ret
     end
     @@mb_obstacle_set_position : Void* = Pointer(Void).null
-    # Updates the `position` in world space for the `obstacle`.
     def obstacle_set_position(obstacle : Int64, position : Vector3) : Void
       if @@mb_obstacle_set_position.null?
         @@mb_obstacle_set_position = Bridge.get_method_bind("NavigationServer3D", "obstacle_set_position", 3227306858_i64)
@@ -37328,7 +33234,6 @@ module Godot
       Bridge.ptrcall(@@mb_obstacle_set_position, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_obstacle_get_position : Void* = Pointer(Void).null
-    # Returns the position of the specified `obstacle` in world space.
     def obstacle_get_position(obstacle : Int64) : Vector3
       if @@mb_obstacle_get_position.null?
         @@mb_obstacle_get_position = Bridge.get_method_bind("NavigationServer3D", "obstacle_get_position", 531438156_i64)
@@ -37341,7 +33246,6 @@ module Godot
       ret
     end
     @@mb_obstacle_set_vertices : Void* = Pointer(Void).null
-    # Sets the outline vertices for the obstacle. If the vertices are winded in clockwise order agents will be pushed in by the obstacle, else they will be pushed out.
     def obstacle_set_vertices(obstacle : Int64, vertices : Void*) : Void
       if @@mb_obstacle_set_vertices.null?
         @@mb_obstacle_set_vertices = Bridge.get_method_bind("NavigationServer3D", "obstacle_set_vertices", 4030257846_i64)
@@ -37354,7 +33258,6 @@ module Godot
       Bridge.ptrcall(@@mb_obstacle_set_vertices, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_obstacle_get_vertices : Void* = Pointer(Void).null
-    # Returns the outline vertices for the specified `obstacle`.
     def obstacle_get_vertices(obstacle : Int64) : Void*
       if @@mb_obstacle_get_vertices.null?
         @@mb_obstacle_get_vertices = Bridge.get_method_bind("NavigationServer3D", "obstacle_get_vertices", 808965560_i64)
@@ -37367,7 +33270,6 @@ module Godot
       ret_ptr
     end
     @@mb_obstacle_set_avoidance_layers : Void* = Pointer(Void).null
-    # Sets the given `obstacle`'s avoidance layers to `layers`.
     def obstacle_set_avoidance_layers(obstacle : Int64, layers : Int64) : Void
       if @@mb_obstacle_set_avoidance_layers.null?
         @@mb_obstacle_set_avoidance_layers = Bridge.get_method_bind("NavigationServer3D", "obstacle_set_avoidance_layers", 3411492887_i64)
@@ -37380,7 +33282,6 @@ module Godot
       Bridge.ptrcall(@@mb_obstacle_set_avoidance_layers, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_obstacle_get_avoidance_layers : Void* = Pointer(Void).null
-    # Returns the `avoidance_layers` bitmask of the specified `obstacle`.
     def obstacle_get_avoidance_layers(obstacle : Int64) : Int64
       if @@mb_obstacle_get_avoidance_layers.null?
         @@mb_obstacle_get_avoidance_layers = Bridge.get_method_bind("NavigationServer3D", "obstacle_get_avoidance_layers", 2198884583_i64)
@@ -37393,9 +33294,6 @@ module Godot
       ret
     end
     @@mb_parse_source_geometry_data : Void* = Pointer(Void).null
-    # Parses the `SceneTree` for source geometry according to the properties of `navigation_mesh`. Updates the provided `source_geometry_data` resource with the resulting data. The resource can then be used to bake a navigation mesh with `#bake_from_source_geometry_data`. After the process is finished the optional `callback` will be called.
-    # **Note:** This function needs to run on the main thread or with a deferred call as the SceneTree is not thread-safe.
-    # **Performance:** While convenient, reading data arrays from `Mesh` resources can affect the frame rate negatively. The data needs to be received from the GPU, stalling the `RenderingServer` in the process. For performance prefer the use of e.g. collision shapes or creating the data arrays entirely in code.
     def parse_source_geometry_data(navigation_mesh : NavigationMesh, source_geometry_data : NavigationMeshSourceGeometryData3D, root_node : Node, callback : Void*) : Void
       if @@mb_parse_source_geometry_data.null?
         @@mb_parse_source_geometry_data = Bridge.get_method_bind("NavigationServer3D", "parse_source_geometry_data", 3172802542_i64)
@@ -37412,7 +33310,6 @@ module Godot
       Bridge.ptrcall(@@mb_parse_source_geometry_data, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_bake_from_source_geometry_data : Void* = Pointer(Void).null
-    # Bakes the provided `navigation_mesh` with the data from the provided `source_geometry_data`. After the process is finished the optional `callback` will be called.
     def bake_from_source_geometry_data(navigation_mesh : NavigationMesh, source_geometry_data : NavigationMeshSourceGeometryData3D, callback : Void*) : Void
       if @@mb_bake_from_source_geometry_data.null?
         @@mb_bake_from_source_geometry_data = Bridge.get_method_bind("NavigationServer3D", "bake_from_source_geometry_data", 1286748856_i64)
@@ -37427,7 +33324,6 @@ module Godot
       Bridge.ptrcall(@@mb_bake_from_source_geometry_data, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_bake_from_source_geometry_data_async : Void* = Pointer(Void).null
-    # Bakes the provided `navigation_mesh` with the data from the provided `source_geometry_data` as an async task running on a background thread. After the process is finished the optional `callback` will be called.
     def bake_from_source_geometry_data_async(navigation_mesh : NavigationMesh, source_geometry_data : NavigationMeshSourceGeometryData3D, callback : Void*) : Void
       if @@mb_bake_from_source_geometry_data_async.null?
         @@mb_bake_from_source_geometry_data_async = Bridge.get_method_bind("NavigationServer3D", "bake_from_source_geometry_data_async", 1286748856_i64)
@@ -37442,7 +33338,6 @@ module Godot
       Bridge.ptrcall(@@mb_bake_from_source_geometry_data_async, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_is_baking_navigation_mesh : Void* = Pointer(Void).null
-    # Returns `true` when the provided navigation mesh is being baked on a background thread.
     def is_baking_navigation_mesh(navigation_mesh : NavigationMesh) : Bool
       if @@mb_is_baking_navigation_mesh.null?
         @@mb_is_baking_navigation_mesh = Bridge.get_method_bind("NavigationServer3D", "is_baking_navigation_mesh", 3142026141_i64)
@@ -37455,7 +33350,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_source_geometry_parser_create : Void* = Pointer(Void).null
-    # Creates a new source geometry parser. If a `Callable` is set for the parser with `#source_geometry_parser_set_callback` the callback will be called for every single node that gets parsed whenever `#parse_source_geometry_data` is used.
     def source_geometry_parser_create() : Int64
       if @@mb_source_geometry_parser_create.null?
         @@mb_source_geometry_parser_create = Bridge.get_method_bind("NavigationServer3D", "source_geometry_parser_create", 529393457_i64)
@@ -37465,10 +33359,6 @@ module Godot
       ret
     end
     @@mb_source_geometry_parser_set_callback : Void* = Pointer(Void).null
-    # Sets the `callback` `Callable` for the specific source geometry `parser`. The `Callable` will receive a call with the following parameters:
-    # - `navigation_mesh` - The `NavigationMesh` reference used to define the parse settings. Do NOT edit or add directly to the navigation mesh.
-    # - `source_geometry_data` - The `NavigationMeshSourceGeometryData3D` reference. Add custom source geometry for navigation mesh baking to this object.
-    # - `node` - The `Node` that is parsed.
     def source_geometry_parser_set_callback(parser : Int64, callback : Void*) : Void
       if @@mb_source_geometry_parser_set_callback.null?
         @@mb_source_geometry_parser_set_callback = Bridge.get_method_bind("NavigationServer3D", "source_geometry_parser_set_callback", 3379118538_i64)
@@ -37481,8 +33371,6 @@ module Godot
       Bridge.ptrcall(@@mb_source_geometry_parser_set_callback, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_simplify_path : Void* = Pointer(Void).null
-    # Returns a simplified version of `path` with less critical path points removed. The simplification amount is in world units and controlled by `epsilon`. The simplification uses a variant of Ramer-Douglas-Peucker algorithm for curve point decimation.
-    # Path simplification can be helpful to mitigate various path following issues that can arise with certain agent types and script behaviors. E.g. "steering" agents or avoidance in "open fields".
     def simplify_path(path : Void*, epsilon : Float64) : Void*
       if @@mb_simplify_path.null?
         @@mb_simplify_path = Bridge.get_method_bind("NavigationServer3D", "simplify_path", 2344122170_i64)
@@ -37497,7 +33385,6 @@ module Godot
       ret_ptr
     end
     @@mb_free_rid : Void* = Pointer(Void).null
-    # Destroys the given RID.
     def free_rid(rid : Int64) : Void
       if @@mb_free_rid.null?
         @@mb_free_rid = Bridge.get_method_bind("NavigationServer3D", "free_rid", 2722037293_i64)
@@ -37508,7 +33395,6 @@ module Godot
       Bridge.ptrcall(@@mb_free_rid, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_set_active : Void* = Pointer(Void).null
-    # Control activation of this server.
     def set_active(active : Bool) : Void
       if @@mb_set_active.null?
         @@mb_set_active = Bridge.get_method_bind("NavigationServer3D", "set_active", 2586408642_i64)
@@ -37519,7 +33405,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_active, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_set_debug_enabled : Void* = Pointer(Void).null
-    # If `true` enables debug mode on the NavigationServer.
     def set_debug_enabled(enabled : Bool) : Void
       if @@mb_set_debug_enabled.null?
         @@mb_set_debug_enabled = Bridge.get_method_bind("NavigationServer3D", "set_debug_enabled", 2586408642_i64)
@@ -37530,7 +33415,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_debug_enabled, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_debug_enabled : Void* = Pointer(Void).null
-    # Returns `true` when the NavigationServer has debug enabled.
     def get_debug_enabled() : Bool
       if @@mb_get_debug_enabled.null?
         @@mb_get_debug_enabled = Bridge.get_method_bind("NavigationServer3D", "get_debug_enabled", 36873697_i64)
@@ -37540,7 +33424,6 @@ module Godot
       ret != 0_u8
     end
     @@mb_get_process_info : Void* = Pointer(Void).null
-    # Returns information about the current state of the NavigationServer.
     def get_process_info(process_info : Int64) : Int64
       if @@mb_get_process_info.null?
         @@mb_get_process_info = Bridge.get_method_bind("NavigationServer3D", "get_process_info", 1938440894_i64)
@@ -37553,16 +33436,11 @@ module Godot
       ret
     end
   end
-  # A singleton for managing `NavigationServer3D` implementations.
-  #
-  # `NavigationServer3DManager` is the API for registering `NavigationServer3D` implementations and setting the default implementation.
-  # **Note:** It is not possible to switch servers at runtime. This class is only used on startup at the server initialization level.
   class NavigationServer3DManager < Godot::Object
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
     end
     @@mb_register_server : Void* = Pointer(Void).null
-    # Registers a `NavigationServer3D` implementation by passing a `name` and a `Callable` that returns a `NavigationServer3D` object.
     def register_server(name : String, create_callback : Void*) : Void
       if @@mb_register_server.null?
         @@mb_register_server = Bridge.get_method_bind("NavigationServer3DManager", "register_server", 2137474292_i64)
@@ -37577,7 +33455,6 @@ module Godot
       Bridge.free_string(str_0)
     end
     @@mb_set_default_server : Void* = Pointer(Void).null
-    # Sets the default `NavigationServer3D` implementation to the one identified by `name`, if `priority` is greater than the priority of the current default implementation.
     def set_default_server(name : String, priority : Int64) : Void
       if @@mb_set_default_server.null?
         @@mb_set_default_server = Bridge.get_method_bind("NavigationServer3DManager", "set_default_server", 2956805083_i64)
@@ -37592,9 +33469,6 @@ module Godot
       Bridge.free_string(str_0)
     end
   end
-  # A control that displays a texture by keeping its corners intact, but tiling its edges and center.
-  #
-  # Also known as 9-slice panels, `NinePatchRect` produces clean panels of any size based on a small texture. To do so, it splits the texture in a 3×3 grid. When you scale the node, it tiles the texture's edges horizontally or vertically, tiles the center on both axes, and leaves the corners unchanged.
   class NinePatchRect < Godot::Control
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -37624,7 +33498,6 @@ module Godot
       Texture2D.new(ret_ptr)
     end
     @@mb_set_patch_margin : Void* = Pointer(Void).null
-    # Sets the size of the margin on the specified `Side` to `value` pixels.
     def set_patch_margin(margin : Int64, value : Int64) : Void
       if @@mb_set_patch_margin.null?
         @@mb_set_patch_margin = Bridge.get_method_bind("NinePatchRect", "set_patch_margin", 437707142_i64)
@@ -37637,7 +33510,6 @@ module Godot
       Bridge.ptrcall(@@mb_set_patch_margin, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
     end
     @@mb_get_patch_margin : Void* = Pointer(Void).null
-    # Returns the size of the margin on the specified `Side`.
     def get_patch_margin(margin : Int64) : Int64
       if @@mb_get_patch_margin.null?
         @@mb_get_patch_margin = Bridge.get_method_bind("NinePatchRect", "get_patch_margin", 1983885014_i64)
@@ -37726,19 +33598,6 @@ module Godot
       ret
     end
   end
-  # A 2D texture filled with noise generated by a `Noise` object.
-  #
-  # Uses the `FastNoiseLite` library or other noise generators to fill the texture data of your desired size. `NoiseTexture2D` can also generate normal map textures.
-  # The class uses `Thread`s to generate the texture data internally, so `#Texture2D.get_image` may return `null` if the generation process has not completed yet. In that case, you need to wait for the texture to be generated before accessing the image and the generated byte data:
-  # ```gdscript
-  #
-  # var texture = NoiseTexture2D.new()
-  # texture.noise = FastNoiseLite.new()
-  # await texture.changed
-  # var image = texture.get_image()
-  # var data = image.get_data()
-  #
-  # ```
   class NoiseTexture2D < Godot::Texture2D
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -37954,18 +33813,6 @@ module Godot
       ret
     end
   end
-  # A 3D texture filled with noise generated by a `Noise` object.
-  #
-  # Uses the `FastNoiseLite` library or other noise generators to fill the texture data of your desired size.
-  # The class uses `Thread`s to generate the texture data internally, so `#Texture3D.get_data` may return `null` if the generation process has not completed yet. In that case, you need to wait for the texture to be generated before accessing the image:
-  # ```gdscript
-  #
-  # var texture = NoiseTexture3D.new()
-  # texture.noise = FastNoiseLite.new()
-  # await texture.changed
-  # var data = texture.get_data()
-  #
-  # ```
   class NoiseTexture3D < Godot::Texture3D
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
@@ -38115,12 +33962,1075 @@ module Godot
       ret
     end
   end
-  # A PBR (Physically Based Rendering) material to be used on 3D objects. Uses an ORM texture.
-  #
-  # ORMMaterial3D's properties are inherited from `BaseMaterial3D`. Unlike `StandardMaterial3D`, ORMMaterial3D uses a single texture for ambient occlusion, roughness and metallic maps, known as an ORM texture.
   class ORMMaterial3D < Godot::BaseMaterial3D
     def initialize(pointer : Void* = Pointer(Void).null)
       super(pointer)
+    end
+  end
+  class OS < Godot::Object
+    def initialize(pointer : Void* = Pointer(Void).null)
+      super(pointer)
+    end
+    enum RenderingDriver : Int64
+      RenderingDriverVulkan = 0_i64
+      RenderingDriverOpengl3 = 1_i64
+      RenderingDriverD3d12 = 2_i64
+      RenderingDriverMetal = 3_i64
+    end
+    enum SystemDir : Int64
+      SystemDirDesktop = 0_i64
+      SystemDirDcim = 1_i64
+      SystemDirDocuments = 2_i64
+      SystemDirDownloads = 3_i64
+      SystemDirMovies = 4_i64
+      SystemDirMusic = 5_i64
+      SystemDirPictures = 6_i64
+      SystemDirRingtones = 7_i64
+    end
+    enum StdHandleType : Int64
+      StdHandleInvalid = 0_i64
+      StdHandleConsole = 1_i64
+      StdHandleFile = 2_i64
+      StdHandlePipe = 3_i64
+      StdHandleUnknown = 4_i64
+    end
+    @@mb_get_entropy : Void* = Pointer(Void).null
+    def get_entropy(size : Int64) : Void*
+      if @@mb_get_entropy.null?
+        @@mb_get_entropy = Bridge.get_method_bind("OS", "get_entropy", 47165747_i64)
+      end
+      val_0 = size
+      arg_0 = pointerof(val_0).as(Void*)
+      args = [arg_0]
+      ret_ptr = Pointer(Void).null
+      Bridge.ptrcall(@@mb_get_entropy, @pointer, args.to_unsafe.as(Void**), pointerof(ret_ptr).as(Void*))
+      ret_ptr
+    end
+    @@mb_get_system_ca_certificates : Void* = Pointer(Void).null
+    def get_system_ca_certificates() : String
+      if @@mb_get_system_ca_certificates.null?
+        @@mb_get_system_ca_certificates = Bridge.get_method_bind("OS", "get_system_ca_certificates", 2841200299_i64)
+      end
+      ""
+    end
+    @@mb_get_connected_midi_inputs : Void* = Pointer(Void).null
+    def get_connected_midi_inputs() : Void*
+      if @@mb_get_connected_midi_inputs.null?
+        @@mb_get_connected_midi_inputs = Bridge.get_method_bind("OS", "get_connected_midi_inputs", 2981934095_i64)
+      end
+      ret_ptr = Pointer(Void).null
+      Bridge.ptrcall(@@mb_get_connected_midi_inputs, @pointer, Pointer(Pointer(Void)).null, pointerof(ret_ptr).as(Void*))
+      ret_ptr
+    end
+    @@mb_open_midi_inputs : Void* = Pointer(Void).null
+    def open_midi_inputs() : Void
+      if @@mb_open_midi_inputs.null?
+        @@mb_open_midi_inputs = Bridge.get_method_bind("OS", "open_midi_inputs", 3218959716_i64)
+      end
+      Bridge.ptrcall(@@mb_open_midi_inputs, @pointer, Pointer(Pointer(Void)).null, Pointer(Void).null)
+    end
+    @@mb_close_midi_inputs : Void* = Pointer(Void).null
+    def close_midi_inputs() : Void
+      if @@mb_close_midi_inputs.null?
+        @@mb_close_midi_inputs = Bridge.get_method_bind("OS", "close_midi_inputs", 3218959716_i64)
+      end
+      Bridge.ptrcall(@@mb_close_midi_inputs, @pointer, Pointer(Pointer(Void)).null, Pointer(Void).null)
+    end
+    @@mb_alert : Void* = Pointer(Void).null
+    def alert(text : String, title : String) : Void
+      if @@mb_alert.null?
+        @@mb_alert = Bridge.get_method_bind("OS", "alert", 1783970740_i64)
+      end
+      str_0 = Bridge.make_string(text)
+      arg_0 = str_0
+      str_1 = Bridge.make_string(title)
+      arg_1 = str_1
+      args = [arg_0, arg_1]
+      Bridge.ptrcall(@@mb_alert, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_0)
+      Bridge.free_string(str_1)
+    end
+    @@mb_crash : Void* = Pointer(Void).null
+    def crash(message : String) : Void
+      if @@mb_crash.null?
+        @@mb_crash = Bridge.get_method_bind("OS", "crash", 83702148_i64)
+      end
+      str_0 = Bridge.make_string(message)
+      arg_0 = str_0
+      args = [arg_0]
+      Bridge.ptrcall(@@mb_crash, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_0)
+    end
+    @@mb_set_low_processor_usage_mode : Void* = Pointer(Void).null
+    def set_low_processor_usage_mode(enable : Bool) : Void
+      if @@mb_set_low_processor_usage_mode.null?
+        @@mb_set_low_processor_usage_mode = Bridge.get_method_bind("OS", "set_low_processor_usage_mode", 2586408642_i64)
+      end
+      val_0 = enable
+      arg_0 = pointerof(val_0).as(Void*)
+      args = [arg_0]
+      Bridge.ptrcall(@@mb_set_low_processor_usage_mode, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    end
+    @@mb_is_in_low_processor_usage_mode : Void* = Pointer(Void).null
+    def is_in_low_processor_usage_mode() : Bool
+      if @@mb_is_in_low_processor_usage_mode.null?
+        @@mb_is_in_low_processor_usage_mode = Bridge.get_method_bind("OS", "is_in_low_processor_usage_mode", 36873697_i64)
+      end
+      ret = 0_u8
+      Bridge.ptrcall(@@mb_is_in_low_processor_usage_mode, @pointer, Pointer(Pointer(Void)).null, pointerof(ret).as(Void*))
+      ret != 0_u8
+    end
+    @@mb_set_low_processor_usage_mode_sleep_usec : Void* = Pointer(Void).null
+    def set_low_processor_usage_mode_sleep_usec(usec : Int64) : Void
+      if @@mb_set_low_processor_usage_mode_sleep_usec.null?
+        @@mb_set_low_processor_usage_mode_sleep_usec = Bridge.get_method_bind("OS", "set_low_processor_usage_mode_sleep_usec", 1286410249_i64)
+      end
+      val_0 = usec
+      arg_0 = pointerof(val_0).as(Void*)
+      args = [arg_0]
+      Bridge.ptrcall(@@mb_set_low_processor_usage_mode_sleep_usec, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    end
+    @@mb_get_low_processor_usage_mode_sleep_usec : Void* = Pointer(Void).null
+    def get_low_processor_usage_mode_sleep_usec() : Int64
+      if @@mb_get_low_processor_usage_mode_sleep_usec.null?
+        @@mb_get_low_processor_usage_mode_sleep_usec = Bridge.get_method_bind("OS", "get_low_processor_usage_mode_sleep_usec", 3905245786_i64)
+      end
+      ret = 0_i64
+      Bridge.ptrcall(@@mb_get_low_processor_usage_mode_sleep_usec, @pointer, Pointer(Pointer(Void)).null, pointerof(ret).as(Void*))
+      ret
+    end
+    @@mb_set_delta_smoothing : Void* = Pointer(Void).null
+    def set_delta_smoothing(delta_smoothing_enabled : Bool) : Void
+      if @@mb_set_delta_smoothing.null?
+        @@mb_set_delta_smoothing = Bridge.get_method_bind("OS", "set_delta_smoothing", 2586408642_i64)
+      end
+      val_0 = delta_smoothing_enabled
+      arg_0 = pointerof(val_0).as(Void*)
+      args = [arg_0]
+      Bridge.ptrcall(@@mb_set_delta_smoothing, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    end
+    @@mb_is_delta_smoothing_enabled : Void* = Pointer(Void).null
+    def is_delta_smoothing_enabled() : Bool
+      if @@mb_is_delta_smoothing_enabled.null?
+        @@mb_is_delta_smoothing_enabled = Bridge.get_method_bind("OS", "is_delta_smoothing_enabled", 36873697_i64)
+      end
+      ret = 0_u8
+      Bridge.ptrcall(@@mb_is_delta_smoothing_enabled, @pointer, Pointer(Pointer(Void)).null, pointerof(ret).as(Void*))
+      ret != 0_u8
+    end
+    @@mb_get_processor_count : Void* = Pointer(Void).null
+    def get_processor_count() : Int64
+      if @@mb_get_processor_count.null?
+        @@mb_get_processor_count = Bridge.get_method_bind("OS", "get_processor_count", 3905245786_i64)
+      end
+      ret = 0_i64
+      Bridge.ptrcall(@@mb_get_processor_count, @pointer, Pointer(Pointer(Void)).null, pointerof(ret).as(Void*))
+      ret
+    end
+    @@mb_get_processor_name : Void* = Pointer(Void).null
+    def get_processor_name() : String
+      if @@mb_get_processor_name.null?
+        @@mb_get_processor_name = Bridge.get_method_bind("OS", "get_processor_name", 201670096_i64)
+      end
+      ""
+    end
+    @@mb_get_system_fonts : Void* = Pointer(Void).null
+    def get_system_fonts() : Void*
+      if @@mb_get_system_fonts.null?
+        @@mb_get_system_fonts = Bridge.get_method_bind("OS", "get_system_fonts", 1139954409_i64)
+      end
+      ret_ptr = Pointer(Void).null
+      Bridge.ptrcall(@@mb_get_system_fonts, @pointer, Pointer(Pointer(Void)).null, pointerof(ret_ptr).as(Void*))
+      ret_ptr
+    end
+    @@mb_get_system_font_path : Void* = Pointer(Void).null
+    def get_system_font_path(font_name : String, weight : Int64, stretch : Int64, italic : Bool) : String
+      if @@mb_get_system_font_path.null?
+        @@mb_get_system_font_path = Bridge.get_method_bind("OS", "get_system_font_path", 626580860_i64)
+      end
+      str_0 = Bridge.make_string(font_name)
+      arg_0 = str_0
+      val_1 = weight
+      arg_1 = pointerof(val_1).as(Void*)
+      val_2 = stretch
+      arg_2 = pointerof(val_2).as(Void*)
+      val_3 = italic
+      arg_3 = pointerof(val_3).as(Void*)
+      args = [arg_0, arg_1, arg_2, arg_3]
+      ""
+    ensure
+      Bridge.free_string(str_0)
+    end
+    @@mb_get_system_font_path_for_text : Void* = Pointer(Void).null
+    def get_system_font_path_for_text(font_name : String, text : String, locale : String, script : String, weight : Int64, stretch : Int64, italic : Bool) : Void*
+      if @@mb_get_system_font_path_for_text.null?
+        @@mb_get_system_font_path_for_text = Bridge.get_method_bind("OS", "get_system_font_path_for_text", 197317981_i64)
+      end
+      str_0 = Bridge.make_string(font_name)
+      arg_0 = str_0
+      str_1 = Bridge.make_string(text)
+      arg_1 = str_1
+      str_2 = Bridge.make_string(locale)
+      arg_2 = str_2
+      str_3 = Bridge.make_string(script)
+      arg_3 = str_3
+      val_4 = weight
+      arg_4 = pointerof(val_4).as(Void*)
+      val_5 = stretch
+      arg_5 = pointerof(val_5).as(Void*)
+      val_6 = italic
+      arg_6 = pointerof(val_6).as(Void*)
+      args = [arg_0, arg_1, arg_2, arg_3, arg_4, arg_5, arg_6]
+      ret_ptr = Pointer(Void).null
+      Bridge.ptrcall(@@mb_get_system_font_path_for_text, @pointer, args.to_unsafe.as(Void**), pointerof(ret_ptr).as(Void*))
+      ret_ptr
+    ensure
+      Bridge.free_string(str_0)
+      Bridge.free_string(str_1)
+      Bridge.free_string(str_2)
+      Bridge.free_string(str_3)
+    end
+    @@mb_get_executable_path : Void* = Pointer(Void).null
+    def get_executable_path() : String
+      if @@mb_get_executable_path.null?
+        @@mb_get_executable_path = Bridge.get_method_bind("OS", "get_executable_path", 201670096_i64)
+      end
+      ""
+    end
+    @@mb_read_string_from_stdin : Void* = Pointer(Void).null
+    def read_string_from_stdin(buffer_size : Int64) : String
+      if @@mb_read_string_from_stdin.null?
+        @@mb_read_string_from_stdin = Bridge.get_method_bind("OS", "read_string_from_stdin", 723587915_i64)
+      end
+      val_0 = buffer_size
+      arg_0 = pointerof(val_0).as(Void*)
+      args = [arg_0]
+      ""
+    end
+    @@mb_read_buffer_from_stdin : Void* = Pointer(Void).null
+    def read_buffer_from_stdin(buffer_size : Int64) : Void*
+      if @@mb_read_buffer_from_stdin.null?
+        @@mb_read_buffer_from_stdin = Bridge.get_method_bind("OS", "read_buffer_from_stdin", 3249455752_i64)
+      end
+      val_0 = buffer_size
+      arg_0 = pointerof(val_0).as(Void*)
+      args = [arg_0]
+      ret_ptr = Pointer(Void).null
+      Bridge.ptrcall(@@mb_read_buffer_from_stdin, @pointer, args.to_unsafe.as(Void**), pointerof(ret_ptr).as(Void*))
+      ret_ptr
+    end
+    @@mb_get_stdin_type : Void* = Pointer(Void).null
+    def get_stdin_type() : Int64
+      if @@mb_get_stdin_type.null?
+        @@mb_get_stdin_type = Bridge.get_method_bind("OS", "get_stdin_type", 1704816237_i64)
+      end
+      ret = 0_i64
+      Bridge.ptrcall(@@mb_get_stdin_type, @pointer, Pointer(Pointer(Void)).null, pointerof(ret).as(Void*))
+      ret
+    end
+    @@mb_get_stdout_type : Void* = Pointer(Void).null
+    def get_stdout_type() : Int64
+      if @@mb_get_stdout_type.null?
+        @@mb_get_stdout_type = Bridge.get_method_bind("OS", "get_stdout_type", 1704816237_i64)
+      end
+      ret = 0_i64
+      Bridge.ptrcall(@@mb_get_stdout_type, @pointer, Pointer(Pointer(Void)).null, pointerof(ret).as(Void*))
+      ret
+    end
+    @@mb_get_stderr_type : Void* = Pointer(Void).null
+    def get_stderr_type() : Int64
+      if @@mb_get_stderr_type.null?
+        @@mb_get_stderr_type = Bridge.get_method_bind("OS", "get_stderr_type", 1704816237_i64)
+      end
+      ret = 0_i64
+      Bridge.ptrcall(@@mb_get_stderr_type, @pointer, Pointer(Pointer(Void)).null, pointerof(ret).as(Void*))
+      ret
+    end
+    @@mb_execute : Void* = Pointer(Void).null
+    def execute(path : String, arguments : Void*, output : Godot::Array, read_stderr : Bool, open_console : Bool) : Int64
+      if @@mb_execute.null?
+        @@mb_execute = Bridge.get_method_bind("OS", "execute", 1488299882_i64)
+      end
+      str_0 = Bridge.make_string(path)
+      arg_0 = str_0
+      val_1 = arguments
+      arg_1 = pointerof(val_1).as(Void*)
+      arg_ptr_2 = output ? output.pointer : Pointer(Void).null
+      arg_2 = pointerof(arg_ptr_2).as(Void*)
+      val_3 = read_stderr
+      arg_3 = pointerof(val_3).as(Void*)
+      val_4 = open_console
+      arg_4 = pointerof(val_4).as(Void*)
+      args = [arg_0, arg_1, arg_2, arg_3, arg_4]
+      ret = 0_i64
+      Bridge.ptrcall(@@mb_execute, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
+      ret
+    ensure
+      Bridge.free_string(str_0)
+    end
+    @@mb_execute_with_pipe : Void* = Pointer(Void).null
+    def execute_with_pipe(path : String, arguments : Void*, blocking : Bool) : Void*
+      if @@mb_execute_with_pipe.null?
+        @@mb_execute_with_pipe = Bridge.get_method_bind("OS", "execute_with_pipe", 2851312030_i64)
+      end
+      str_0 = Bridge.make_string(path)
+      arg_0 = str_0
+      val_1 = arguments
+      arg_1 = pointerof(val_1).as(Void*)
+      val_2 = blocking
+      arg_2 = pointerof(val_2).as(Void*)
+      args = [arg_0, arg_1, arg_2]
+      ret_ptr = Pointer(Void).null
+      Bridge.ptrcall(@@mb_execute_with_pipe, @pointer, args.to_unsafe.as(Void**), pointerof(ret_ptr).as(Void*))
+      ret_ptr
+    ensure
+      Bridge.free_string(str_0)
+    end
+    @@mb_create_process : Void* = Pointer(Void).null
+    def create_process(path : String, arguments : Void*, open_console : Bool) : Int64
+      if @@mb_create_process.null?
+        @@mb_create_process = Bridge.get_method_bind("OS", "create_process", 2903767230_i64)
+      end
+      str_0 = Bridge.make_string(path)
+      arg_0 = str_0
+      val_1 = arguments
+      arg_1 = pointerof(val_1).as(Void*)
+      val_2 = open_console
+      arg_2 = pointerof(val_2).as(Void*)
+      args = [arg_0, arg_1, arg_2]
+      ret = 0_i64
+      Bridge.ptrcall(@@mb_create_process, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
+      ret
+    ensure
+      Bridge.free_string(str_0)
+    end
+    @@mb_create_instance : Void* = Pointer(Void).null
+    def create_instance(arguments : Void*) : Int64
+      if @@mb_create_instance.null?
+        @@mb_create_instance = Bridge.get_method_bind("OS", "create_instance", 1080601263_i64)
+      end
+      val_0 = arguments
+      arg_0 = pointerof(val_0).as(Void*)
+      args = [arg_0]
+      ret = 0_i64
+      Bridge.ptrcall(@@mb_create_instance, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
+      ret
+    end
+    @@mb_open_with_program : Void* = Pointer(Void).null
+    def open_with_program(program_path : String, paths : Void*) : Int64
+      if @@mb_open_with_program.null?
+        @@mb_open_with_program = Bridge.get_method_bind("OS", "open_with_program", 2848259907_i64)
+      end
+      str_0 = Bridge.make_string(program_path)
+      arg_0 = str_0
+      val_1 = paths
+      arg_1 = pointerof(val_1).as(Void*)
+      args = [arg_0, arg_1]
+      ret = 0_i64
+      Bridge.ptrcall(@@mb_open_with_program, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
+      ret
+    ensure
+      Bridge.free_string(str_0)
+    end
+    @@mb_kill : Void* = Pointer(Void).null
+    def kill(pid : Int64) : Int64
+      if @@mb_kill.null?
+        @@mb_kill = Bridge.get_method_bind("OS", "kill", 844576869_i64)
+      end
+      val_0 = pid
+      arg_0 = pointerof(val_0).as(Void*)
+      args = [arg_0]
+      ret = 0_i64
+      Bridge.ptrcall(@@mb_kill, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
+      ret
+    end
+    @@mb_shell_open : Void* = Pointer(Void).null
+    def shell_open(uri : String) : Int64
+      if @@mb_shell_open.null?
+        @@mb_shell_open = Bridge.get_method_bind("OS", "shell_open", 166001499_i64)
+      end
+      str_0 = Bridge.make_string(uri)
+      arg_0 = str_0
+      args = [arg_0]
+      ret = 0_i64
+      Bridge.ptrcall(@@mb_shell_open, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
+      ret
+    ensure
+      Bridge.free_string(str_0)
+    end
+    @@mb_shell_show_in_file_manager : Void* = Pointer(Void).null
+    def shell_show_in_file_manager(file_or_dir_path : String, open_folder : Bool) : Int64
+      if @@mb_shell_show_in_file_manager.null?
+        @@mb_shell_show_in_file_manager = Bridge.get_method_bind("OS", "shell_show_in_file_manager", 3565188097_i64)
+      end
+      str_0 = Bridge.make_string(file_or_dir_path)
+      arg_0 = str_0
+      val_1 = open_folder
+      arg_1 = pointerof(val_1).as(Void*)
+      args = [arg_0, arg_1]
+      ret = 0_i64
+      Bridge.ptrcall(@@mb_shell_show_in_file_manager, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
+      ret
+    ensure
+      Bridge.free_string(str_0)
+    end
+    @@mb_is_process_running : Void* = Pointer(Void).null
+    def is_process_running(pid : Int64) : Bool
+      if @@mb_is_process_running.null?
+        @@mb_is_process_running = Bridge.get_method_bind("OS", "is_process_running", 1116898809_i64)
+      end
+      val_0 = pid
+      arg_0 = pointerof(val_0).as(Void*)
+      args = [arg_0]
+      ret = 0_u8
+      Bridge.ptrcall(@@mb_is_process_running, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
+      ret != 0_u8
+    end
+    @@mb_get_process_exit_code : Void* = Pointer(Void).null
+    def get_process_exit_code(pid : Int64) : Int64
+      if @@mb_get_process_exit_code.null?
+        @@mb_get_process_exit_code = Bridge.get_method_bind("OS", "get_process_exit_code", 923996154_i64)
+      end
+      val_0 = pid
+      arg_0 = pointerof(val_0).as(Void*)
+      args = [arg_0]
+      ret = 0_i64
+      Bridge.ptrcall(@@mb_get_process_exit_code, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
+      ret
+    end
+    @@mb_get_process_id : Void* = Pointer(Void).null
+    def get_process_id() : Int64
+      if @@mb_get_process_id.null?
+        @@mb_get_process_id = Bridge.get_method_bind("OS", "get_process_id", 3905245786_i64)
+      end
+      ret = 0_i64
+      Bridge.ptrcall(@@mb_get_process_id, @pointer, Pointer(Pointer(Void)).null, pointerof(ret).as(Void*))
+      ret
+    end
+    @@mb_has_environment : Void* = Pointer(Void).null
+    def has_environment(variable : String) : Bool
+      if @@mb_has_environment.null?
+        @@mb_has_environment = Bridge.get_method_bind("OS", "has_environment", 3927539163_i64)
+      end
+      str_0 = Bridge.make_string(variable)
+      arg_0 = str_0
+      args = [arg_0]
+      ret = 0_u8
+      Bridge.ptrcall(@@mb_has_environment, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
+      ret != 0_u8
+    ensure
+      Bridge.free_string(str_0)
+    end
+    @@mb_get_environment : Void* = Pointer(Void).null
+    def get_environment(variable : String) : String
+      if @@mb_get_environment.null?
+        @@mb_get_environment = Bridge.get_method_bind("OS", "get_environment", 3135753539_i64)
+      end
+      str_0 = Bridge.make_string(variable)
+      arg_0 = str_0
+      args = [arg_0]
+      ""
+    ensure
+      Bridge.free_string(str_0)
+    end
+    @@mb_set_environment : Void* = Pointer(Void).null
+    def set_environment(variable : String, value : String) : Void
+      if @@mb_set_environment.null?
+        @@mb_set_environment = Bridge.get_method_bind("OS", "set_environment", 3605043004_i64)
+      end
+      str_0 = Bridge.make_string(variable)
+      arg_0 = str_0
+      str_1 = Bridge.make_string(value)
+      arg_1 = str_1
+      args = [arg_0, arg_1]
+      Bridge.ptrcall(@@mb_set_environment, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_0)
+      Bridge.free_string(str_1)
+    end
+    @@mb_unset_environment : Void* = Pointer(Void).null
+    def unset_environment(variable : String) : Void
+      if @@mb_unset_environment.null?
+        @@mb_unset_environment = Bridge.get_method_bind("OS", "unset_environment", 3089850668_i64)
+      end
+      str_0 = Bridge.make_string(variable)
+      arg_0 = str_0
+      args = [arg_0]
+      Bridge.ptrcall(@@mb_unset_environment, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    ensure
+      Bridge.free_string(str_0)
+    end
+    @@mb_get_name : Void* = Pointer(Void).null
+    def get_name() : String
+      if @@mb_get_name.null?
+        @@mb_get_name = Bridge.get_method_bind("OS", "get_name", 201670096_i64)
+      end
+      ""
+    end
+    @@mb_get_distribution_name : Void* = Pointer(Void).null
+    def get_distribution_name() : String
+      if @@mb_get_distribution_name.null?
+        @@mb_get_distribution_name = Bridge.get_method_bind("OS", "get_distribution_name", 201670096_i64)
+      end
+      ""
+    end
+    @@mb_get_version : Void* = Pointer(Void).null
+    def get_version() : String
+      if @@mb_get_version.null?
+        @@mb_get_version = Bridge.get_method_bind("OS", "get_version", 201670096_i64)
+      end
+      ""
+    end
+    @@mb_get_version_alias : Void* = Pointer(Void).null
+    def get_version_alias() : String
+      if @@mb_get_version_alias.null?
+        @@mb_get_version_alias = Bridge.get_method_bind("OS", "get_version_alias", 201670096_i64)
+      end
+      ""
+    end
+    @@mb_get_cmdline_args : Void* = Pointer(Void).null
+    def get_cmdline_args() : Void*
+      if @@mb_get_cmdline_args.null?
+        @@mb_get_cmdline_args = Bridge.get_method_bind("OS", "get_cmdline_args", 2981934095_i64)
+      end
+      ret_ptr = Pointer(Void).null
+      Bridge.ptrcall(@@mb_get_cmdline_args, @pointer, Pointer(Pointer(Void)).null, pointerof(ret_ptr).as(Void*))
+      ret_ptr
+    end
+    @@mb_get_cmdline_user_args : Void* = Pointer(Void).null
+    def get_cmdline_user_args() : Void*
+      if @@mb_get_cmdline_user_args.null?
+        @@mb_get_cmdline_user_args = Bridge.get_method_bind("OS", "get_cmdline_user_args", 2981934095_i64)
+      end
+      ret_ptr = Pointer(Void).null
+      Bridge.ptrcall(@@mb_get_cmdline_user_args, @pointer, Pointer(Pointer(Void)).null, pointerof(ret_ptr).as(Void*))
+      ret_ptr
+    end
+    @@mb_get_video_adapter_driver_info : Void* = Pointer(Void).null
+    def get_video_adapter_driver_info() : Void*
+      if @@mb_get_video_adapter_driver_info.null?
+        @@mb_get_video_adapter_driver_info = Bridge.get_method_bind("OS", "get_video_adapter_driver_info", 1139954409_i64)
+      end
+      ret_ptr = Pointer(Void).null
+      Bridge.ptrcall(@@mb_get_video_adapter_driver_info, @pointer, Pointer(Pointer(Void)).null, pointerof(ret_ptr).as(Void*))
+      ret_ptr
+    end
+    @@mb_set_restart_on_exit : Void* = Pointer(Void).null
+    def set_restart_on_exit(restart : Bool, arguments : Void*) : Void
+      if @@mb_set_restart_on_exit.null?
+        @@mb_set_restart_on_exit = Bridge.get_method_bind("OS", "set_restart_on_exit", 3331453935_i64)
+      end
+      val_0 = restart
+      arg_0 = pointerof(val_0).as(Void*)
+      val_1 = arguments
+      arg_1 = pointerof(val_1).as(Void*)
+      args = [arg_0, arg_1]
+      Bridge.ptrcall(@@mb_set_restart_on_exit, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    end
+    @@mb_is_restart_on_exit_set : Void* = Pointer(Void).null
+    def is_restart_on_exit_set() : Bool
+      if @@mb_is_restart_on_exit_set.null?
+        @@mb_is_restart_on_exit_set = Bridge.get_method_bind("OS", "is_restart_on_exit_set", 36873697_i64)
+      end
+      ret = 0_u8
+      Bridge.ptrcall(@@mb_is_restart_on_exit_set, @pointer, Pointer(Pointer(Void)).null, pointerof(ret).as(Void*))
+      ret != 0_u8
+    end
+    @@mb_get_restart_on_exit_arguments : Void* = Pointer(Void).null
+    def get_restart_on_exit_arguments() : Void*
+      if @@mb_get_restart_on_exit_arguments.null?
+        @@mb_get_restart_on_exit_arguments = Bridge.get_method_bind("OS", "get_restart_on_exit_arguments", 1139954409_i64)
+      end
+      ret_ptr = Pointer(Void).null
+      Bridge.ptrcall(@@mb_get_restart_on_exit_arguments, @pointer, Pointer(Pointer(Void)).null, pointerof(ret_ptr).as(Void*))
+      ret_ptr
+    end
+    @@mb_delay_usec : Void* = Pointer(Void).null
+    def delay_usec(usec : Int64) : Void
+      if @@mb_delay_usec.null?
+        @@mb_delay_usec = Bridge.get_method_bind("OS", "delay_usec", 998575451_i64)
+      end
+      val_0 = usec
+      arg_0 = pointerof(val_0).as(Void*)
+      args = [arg_0]
+      Bridge.ptrcall(@@mb_delay_usec, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    end
+    @@mb_delay_msec : Void* = Pointer(Void).null
+    def delay_msec(msec : Int64) : Void
+      if @@mb_delay_msec.null?
+        @@mb_delay_msec = Bridge.get_method_bind("OS", "delay_msec", 998575451_i64)
+      end
+      val_0 = msec
+      arg_0 = pointerof(val_0).as(Void*)
+      args = [arg_0]
+      Bridge.ptrcall(@@mb_delay_msec, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    end
+    @@mb_get_locale : Void* = Pointer(Void).null
+    def get_locale() : String
+      if @@mb_get_locale.null?
+        @@mb_get_locale = Bridge.get_method_bind("OS", "get_locale", 201670096_i64)
+      end
+      ""
+    end
+    @@mb_get_preferred_locales : Void* = Pointer(Void).null
+    def get_preferred_locales() : Void*
+      if @@mb_get_preferred_locales.null?
+        @@mb_get_preferred_locales = Bridge.get_method_bind("OS", "get_preferred_locales", 1139954409_i64)
+      end
+      ret_ptr = Pointer(Void).null
+      Bridge.ptrcall(@@mb_get_preferred_locales, @pointer, Pointer(Pointer(Void)).null, pointerof(ret_ptr).as(Void*))
+      ret_ptr
+    end
+    @@mb_get_locale_language : Void* = Pointer(Void).null
+    def get_locale_language() : String
+      if @@mb_get_locale_language.null?
+        @@mb_get_locale_language = Bridge.get_method_bind("OS", "get_locale_language", 201670096_i64)
+      end
+      ""
+    end
+    @@mb_get_model_name : Void* = Pointer(Void).null
+    def get_model_name() : String
+      if @@mb_get_model_name.null?
+        @@mb_get_model_name = Bridge.get_method_bind("OS", "get_model_name", 201670096_i64)
+      end
+      ""
+    end
+    @@mb_is_userfs_persistent : Void* = Pointer(Void).null
+    def is_userfs_persistent() : Bool
+      if @@mb_is_userfs_persistent.null?
+        @@mb_is_userfs_persistent = Bridge.get_method_bind("OS", "is_userfs_persistent", 36873697_i64)
+      end
+      ret = 0_u8
+      Bridge.ptrcall(@@mb_is_userfs_persistent, @pointer, Pointer(Pointer(Void)).null, pointerof(ret).as(Void*))
+      ret != 0_u8
+    end
+    @@mb_is_stdout_verbose : Void* = Pointer(Void).null
+    def is_stdout_verbose() : Bool
+      if @@mb_is_stdout_verbose.null?
+        @@mb_is_stdout_verbose = Bridge.get_method_bind("OS", "is_stdout_verbose", 36873697_i64)
+      end
+      ret = 0_u8
+      Bridge.ptrcall(@@mb_is_stdout_verbose, @pointer, Pointer(Pointer(Void)).null, pointerof(ret).as(Void*))
+      ret != 0_u8
+    end
+    @@mb_is_debug_build : Void* = Pointer(Void).null
+    def is_debug_build() : Bool
+      if @@mb_is_debug_build.null?
+        @@mb_is_debug_build = Bridge.get_method_bind("OS", "is_debug_build", 36873697_i64)
+      end
+      ret = 0_u8
+      Bridge.ptrcall(@@mb_is_debug_build, @pointer, Pointer(Pointer(Void)).null, pointerof(ret).as(Void*))
+      ret != 0_u8
+    end
+    @@mb_get_static_memory_usage : Void* = Pointer(Void).null
+    def get_static_memory_usage() : Int64
+      if @@mb_get_static_memory_usage.null?
+        @@mb_get_static_memory_usage = Bridge.get_method_bind("OS", "get_static_memory_usage", 3905245786_i64)
+      end
+      ret = 0_i64
+      Bridge.ptrcall(@@mb_get_static_memory_usage, @pointer, Pointer(Pointer(Void)).null, pointerof(ret).as(Void*))
+      ret
+    end
+    @@mb_get_static_memory_peak_usage : Void* = Pointer(Void).null
+    def get_static_memory_peak_usage() : Int64
+      if @@mb_get_static_memory_peak_usage.null?
+        @@mb_get_static_memory_peak_usage = Bridge.get_method_bind("OS", "get_static_memory_peak_usage", 3905245786_i64)
+      end
+      ret = 0_i64
+      Bridge.ptrcall(@@mb_get_static_memory_peak_usage, @pointer, Pointer(Pointer(Void)).null, pointerof(ret).as(Void*))
+      ret
+    end
+    @@mb_get_memory_info : Void* = Pointer(Void).null
+    def get_memory_info() : Void*
+      if @@mb_get_memory_info.null?
+        @@mb_get_memory_info = Bridge.get_method_bind("OS", "get_memory_info", 3102165223_i64)
+      end
+      ret_ptr = Pointer(Void).null
+      Bridge.ptrcall(@@mb_get_memory_info, @pointer, Pointer(Pointer(Void)).null, pointerof(ret_ptr).as(Void*))
+      ret_ptr
+    end
+    @@mb_move_to_trash : Void* = Pointer(Void).null
+    def move_to_trash(path : String) : Int64
+      if @@mb_move_to_trash.null?
+        @@mb_move_to_trash = Bridge.get_method_bind("OS", "move_to_trash", 2113323047_i64)
+      end
+      str_0 = Bridge.make_string(path)
+      arg_0 = str_0
+      args = [arg_0]
+      ret = 0_i64
+      Bridge.ptrcall(@@mb_move_to_trash, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
+      ret
+    ensure
+      Bridge.free_string(str_0)
+    end
+    @@mb_get_user_data_dir : Void* = Pointer(Void).null
+    def get_user_data_dir() : String
+      if @@mb_get_user_data_dir.null?
+        @@mb_get_user_data_dir = Bridge.get_method_bind("OS", "get_user_data_dir", 201670096_i64)
+      end
+      ""
+    end
+    @@mb_get_system_dir : Void* = Pointer(Void).null
+    def get_system_dir(dir : Int64, shared_storage : Bool) : String
+      if @@mb_get_system_dir.null?
+        @@mb_get_system_dir = Bridge.get_method_bind("OS", "get_system_dir", 3073895123_i64)
+      end
+      val_0 = dir
+      arg_0 = pointerof(val_0).as(Void*)
+      val_1 = shared_storage
+      arg_1 = pointerof(val_1).as(Void*)
+      args = [arg_0, arg_1]
+      ""
+    end
+    @@mb_get_config_dir : Void* = Pointer(Void).null
+    def get_config_dir() : String
+      if @@mb_get_config_dir.null?
+        @@mb_get_config_dir = Bridge.get_method_bind("OS", "get_config_dir", 201670096_i64)
+      end
+      ""
+    end
+    @@mb_get_data_dir : Void* = Pointer(Void).null
+    def get_data_dir() : String
+      if @@mb_get_data_dir.null?
+        @@mb_get_data_dir = Bridge.get_method_bind("OS", "get_data_dir", 201670096_i64)
+      end
+      ""
+    end
+    @@mb_get_cache_dir : Void* = Pointer(Void).null
+    def get_cache_dir() : String
+      if @@mb_get_cache_dir.null?
+        @@mb_get_cache_dir = Bridge.get_method_bind("OS", "get_cache_dir", 201670096_i64)
+      end
+      ""
+    end
+    @@mb_get_temp_dir : Void* = Pointer(Void).null
+    def get_temp_dir() : String
+      if @@mb_get_temp_dir.null?
+        @@mb_get_temp_dir = Bridge.get_method_bind("OS", "get_temp_dir", 201670096_i64)
+      end
+      ""
+    end
+    @@mb_get_unique_id : Void* = Pointer(Void).null
+    def get_unique_id() : String
+      if @@mb_get_unique_id.null?
+        @@mb_get_unique_id = Bridge.get_method_bind("OS", "get_unique_id", 201670096_i64)
+      end
+      ""
+    end
+    @@mb_get_keycode_string : Void* = Pointer(Void).null
+    def get_keycode_string(code : Int64) : String
+      if @@mb_get_keycode_string.null?
+        @@mb_get_keycode_string = Bridge.get_method_bind("OS", "get_keycode_string", 2261993717_i64)
+      end
+      val_0 = code
+      arg_0 = pointerof(val_0).as(Void*)
+      args = [arg_0]
+      ""
+    end
+    @@mb_is_keycode_unicode : Void* = Pointer(Void).null
+    def is_keycode_unicode(code : Int64) : Bool
+      if @@mb_is_keycode_unicode.null?
+        @@mb_is_keycode_unicode = Bridge.get_method_bind("OS", "is_keycode_unicode", 1116898809_i64)
+      end
+      val_0 = code
+      arg_0 = pointerof(val_0).as(Void*)
+      args = [arg_0]
+      ret = 0_u8
+      Bridge.ptrcall(@@mb_is_keycode_unicode, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
+      ret != 0_u8
+    end
+    @@mb_find_keycode_from_string : Void* = Pointer(Void).null
+    def find_keycode_from_string(string : String) : Int64
+      if @@mb_find_keycode_from_string.null?
+        @@mb_find_keycode_from_string = Bridge.get_method_bind("OS", "find_keycode_from_string", 1084858572_i64)
+      end
+      str_0 = Bridge.make_string(string)
+      arg_0 = str_0
+      args = [arg_0]
+      ret = 0_i64
+      Bridge.ptrcall(@@mb_find_keycode_from_string, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
+      ret
+    ensure
+      Bridge.free_string(str_0)
+    end
+    @@mb_set_use_file_access_save_and_swap : Void* = Pointer(Void).null
+    def set_use_file_access_save_and_swap(enabled : Bool) : Void
+      if @@mb_set_use_file_access_save_and_swap.null?
+        @@mb_set_use_file_access_save_and_swap = Bridge.get_method_bind("OS", "set_use_file_access_save_and_swap", 2586408642_i64)
+      end
+      val_0 = enabled
+      arg_0 = pointerof(val_0).as(Void*)
+      args = [arg_0]
+      Bridge.ptrcall(@@mb_set_use_file_access_save_and_swap, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    end
+    @@mb_set_thread_name : Void* = Pointer(Void).null
+    def set_thread_name(name : String) : Int64
+      if @@mb_set_thread_name.null?
+        @@mb_set_thread_name = Bridge.get_method_bind("OS", "set_thread_name", 166001499_i64)
+      end
+      str_0 = Bridge.make_string(name)
+      arg_0 = str_0
+      args = [arg_0]
+      ret = 0_i64
+      Bridge.ptrcall(@@mb_set_thread_name, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
+      ret
+    ensure
+      Bridge.free_string(str_0)
+    end
+    @@mb_get_thread_caller_id : Void* = Pointer(Void).null
+    def get_thread_caller_id() : Int64
+      if @@mb_get_thread_caller_id.null?
+        @@mb_get_thread_caller_id = Bridge.get_method_bind("OS", "get_thread_caller_id", 3905245786_i64)
+      end
+      ret = 0_i64
+      Bridge.ptrcall(@@mb_get_thread_caller_id, @pointer, Pointer(Pointer(Void)).null, pointerof(ret).as(Void*))
+      ret
+    end
+    @@mb_get_main_thread_id : Void* = Pointer(Void).null
+    def get_main_thread_id() : Int64
+      if @@mb_get_main_thread_id.null?
+        @@mb_get_main_thread_id = Bridge.get_method_bind("OS", "get_main_thread_id", 3905245786_i64)
+      end
+      ret = 0_i64
+      Bridge.ptrcall(@@mb_get_main_thread_id, @pointer, Pointer(Pointer(Void)).null, pointerof(ret).as(Void*))
+      ret
+    end
+    @@mb_has_feature : Void* = Pointer(Void).null
+    def has_feature(tag_name : String) : Bool
+      if @@mb_has_feature.null?
+        @@mb_has_feature = Bridge.get_method_bind("OS", "has_feature", 3927539163_i64)
+      end
+      str_0 = Bridge.make_string(tag_name)
+      arg_0 = str_0
+      args = [arg_0]
+      ret = 0_u8
+      Bridge.ptrcall(@@mb_has_feature, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
+      ret != 0_u8
+    ensure
+      Bridge.free_string(str_0)
+    end
+    @@mb_is_sandboxed : Void* = Pointer(Void).null
+    def is_sandboxed() : Bool
+      if @@mb_is_sandboxed.null?
+        @@mb_is_sandboxed = Bridge.get_method_bind("OS", "is_sandboxed", 36873697_i64)
+      end
+      ret = 0_u8
+      Bridge.ptrcall(@@mb_is_sandboxed, @pointer, Pointer(Pointer(Void)).null, pointerof(ret).as(Void*))
+      ret != 0_u8
+    end
+    @@mb_request_permission : Void* = Pointer(Void).null
+    def request_permission(name : String) : Bool
+      if @@mb_request_permission.null?
+        @@mb_request_permission = Bridge.get_method_bind("OS", "request_permission", 2323990056_i64)
+      end
+      str_0 = Bridge.make_string(name)
+      arg_0 = str_0
+      args = [arg_0]
+      ret = 0_u8
+      Bridge.ptrcall(@@mb_request_permission, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
+      ret != 0_u8
+    ensure
+      Bridge.free_string(str_0)
+    end
+    @@mb_request_permissions : Void* = Pointer(Void).null
+    def request_permissions() : Bool
+      if @@mb_request_permissions.null?
+        @@mb_request_permissions = Bridge.get_method_bind("OS", "request_permissions", 2240911060_i64)
+      end
+      ret = 0_u8
+      Bridge.ptrcall(@@mb_request_permissions, @pointer, Pointer(Pointer(Void)).null, pointerof(ret).as(Void*))
+      ret != 0_u8
+    end
+    @@mb_get_granted_permissions : Void* = Pointer(Void).null
+    def get_granted_permissions() : Void*
+      if @@mb_get_granted_permissions.null?
+        @@mb_get_granted_permissions = Bridge.get_method_bind("OS", "get_granted_permissions", 1139954409_i64)
+      end
+      ret_ptr = Pointer(Void).null
+      Bridge.ptrcall(@@mb_get_granted_permissions, @pointer, Pointer(Pointer(Void)).null, pointerof(ret_ptr).as(Void*))
+      ret_ptr
+    end
+    @@mb_revoke_granted_permissions : Void* = Pointer(Void).null
+    def revoke_granted_permissions() : Void
+      if @@mb_revoke_granted_permissions.null?
+        @@mb_revoke_granted_permissions = Bridge.get_method_bind("OS", "revoke_granted_permissions", 3218959716_i64)
+      end
+      Bridge.ptrcall(@@mb_revoke_granted_permissions, @pointer, Pointer(Pointer(Void)).null, Pointer(Void).null)
+    end
+    @@mb_add_logger : Void* = Pointer(Void).null
+    def add_logger(logger : Logger) : Void
+      if @@mb_add_logger.null?
+        @@mb_add_logger = Bridge.get_method_bind("OS", "add_logger", 4261188958_i64)
+      end
+      arg_ptr_0 = logger ? logger.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
+      args = [arg_0]
+      Bridge.ptrcall(@@mb_add_logger, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    end
+    @@mb_remove_logger : Void* = Pointer(Void).null
+    def remove_logger(logger : Logger) : Void
+      if @@mb_remove_logger.null?
+        @@mb_remove_logger = Bridge.get_method_bind("OS", "remove_logger", 4261188958_i64)
+      end
+      arg_ptr_0 = logger ? logger.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
+      args = [arg_0]
+      Bridge.ptrcall(@@mb_remove_logger, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    end
+  end
+  class OccluderInstance3D < Godot::VisualInstance3D
+    def initialize(pointer : Void* = Pointer(Void).null)
+      super(pointer)
+    end
+    @@mb_set_bake_mask : Void* = Pointer(Void).null
+    def set_bake_mask(mask : Int64) : Void
+      if @@mb_set_bake_mask.null?
+        @@mb_set_bake_mask = Bridge.get_method_bind("OccluderInstance3D", "set_bake_mask", 1286410249_i64)
+      end
+      val_0 = mask
+      arg_0 = pointerof(val_0).as(Void*)
+      args = [arg_0]
+      Bridge.ptrcall(@@mb_set_bake_mask, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    end
+    @@mb_get_bake_mask : Void* = Pointer(Void).null
+    def get_bake_mask() : Int64
+      if @@mb_get_bake_mask.null?
+        @@mb_get_bake_mask = Bridge.get_method_bind("OccluderInstance3D", "get_bake_mask", 3905245786_i64)
+      end
+      ret = 0_i64
+      Bridge.ptrcall(@@mb_get_bake_mask, @pointer, Pointer(Pointer(Void)).null, pointerof(ret).as(Void*))
+      ret
+    end
+    @@mb_set_bake_mask_value : Void* = Pointer(Void).null
+    def set_bake_mask_value(layer_number : Int64, value : Bool) : Void
+      if @@mb_set_bake_mask_value.null?
+        @@mb_set_bake_mask_value = Bridge.get_method_bind("OccluderInstance3D", "set_bake_mask_value", 300928843_i64)
+      end
+      val_0 = layer_number
+      arg_0 = pointerof(val_0).as(Void*)
+      val_1 = value
+      arg_1 = pointerof(val_1).as(Void*)
+      args = [arg_0, arg_1]
+      Bridge.ptrcall(@@mb_set_bake_mask_value, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    end
+    @@mb_get_bake_mask_value : Void* = Pointer(Void).null
+    def get_bake_mask_value(layer_number : Int64) : Bool
+      if @@mb_get_bake_mask_value.null?
+        @@mb_get_bake_mask_value = Bridge.get_method_bind("OccluderInstance3D", "get_bake_mask_value", 1116898809_i64)
+      end
+      val_0 = layer_number
+      arg_0 = pointerof(val_0).as(Void*)
+      args = [arg_0]
+      ret = 0_u8
+      Bridge.ptrcall(@@mb_get_bake_mask_value, @pointer, args.to_unsafe.as(Void**), pointerof(ret).as(Void*))
+      ret != 0_u8
+    end
+    @@mb_set_bake_simplification_distance : Void* = Pointer(Void).null
+    def set_bake_simplification_distance(simplification_distance : Float64) : Void
+      if @@mb_set_bake_simplification_distance.null?
+        @@mb_set_bake_simplification_distance = Bridge.get_method_bind("OccluderInstance3D", "set_bake_simplification_distance", 373806689_i64)
+      end
+      val_0 = simplification_distance
+      arg_0 = pointerof(val_0).as(Void*)
+      args = [arg_0]
+      Bridge.ptrcall(@@mb_set_bake_simplification_distance, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    end
+    @@mb_get_bake_simplification_distance : Void* = Pointer(Void).null
+    def get_bake_simplification_distance() : Float64
+      if @@mb_get_bake_simplification_distance.null?
+        @@mb_get_bake_simplification_distance = Bridge.get_method_bind("OccluderInstance3D", "get_bake_simplification_distance", 1740695150_i64)
+      end
+      ret = 0.0_f64
+      Bridge.ptrcall(@@mb_get_bake_simplification_distance, @pointer, Pointer(Pointer(Void)).null, pointerof(ret).as(Void*))
+      ret
+    end
+    @@mb_set_occluder : Void* = Pointer(Void).null
+    def set_occluder(occluder : Occluder3D) : Void
+      if @@mb_set_occluder.null?
+        @@mb_set_occluder = Bridge.get_method_bind("OccluderInstance3D", "set_occluder", 1664878165_i64)
+      end
+      arg_ptr_0 = occluder ? occluder.pointer : Pointer(Void).null
+      arg_0 = pointerof(arg_ptr_0).as(Void*)
+      args = [arg_0]
+      Bridge.ptrcall(@@mb_set_occluder, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    end
+    @@mb_get_occluder : Void* = Pointer(Void).null
+    def get_occluder() : Occluder3D
+      if @@mb_get_occluder.null?
+        @@mb_get_occluder = Bridge.get_method_bind("OccluderInstance3D", "get_occluder", 1696836198_i64)
+      end
+      ret_ptr = Pointer(Void).null
+      Bridge.ptrcall(@@mb_get_occluder, @pointer, Pointer(Pointer(Void)).null, pointerof(ret_ptr).as(Void*))
+      Occluder3D.new(ret_ptr)
+    end
+  end
+  class OccluderPolygon2D < Godot::Resource
+    def initialize(pointer : Void* = Pointer(Void).null)
+      super(pointer)
+    end
+    enum CullMode : Int64
+      CullDisabled = 0_i64
+      CullClockwise = 1_i64
+      CullCounterClockwise = 2_i64
+    end
+    @@mb_set_closed : Void* = Pointer(Void).null
+    def set_closed(closed : Bool) : Void
+      if @@mb_set_closed.null?
+        @@mb_set_closed = Bridge.get_method_bind("OccluderPolygon2D", "set_closed", 2586408642_i64)
+      end
+      val_0 = closed
+      arg_0 = pointerof(val_0).as(Void*)
+      args = [arg_0]
+      Bridge.ptrcall(@@mb_set_closed, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    end
+    @@mb_is_closed : Void* = Pointer(Void).null
+    def is_closed() : Bool
+      if @@mb_is_closed.null?
+        @@mb_is_closed = Bridge.get_method_bind("OccluderPolygon2D", "is_closed", 36873697_i64)
+      end
+      ret = 0_u8
+      Bridge.ptrcall(@@mb_is_closed, @pointer, Pointer(Pointer(Void)).null, pointerof(ret).as(Void*))
+      ret != 0_u8
+    end
+    @@mb_set_cull_mode : Void* = Pointer(Void).null
+    def set_cull_mode(cull_mode : Int64) : Void
+      if @@mb_set_cull_mode.null?
+        @@mb_set_cull_mode = Bridge.get_method_bind("OccluderPolygon2D", "set_cull_mode", 3500863002_i64)
+      end
+      val_0 = cull_mode
+      arg_0 = pointerof(val_0).as(Void*)
+      args = [arg_0]
+      Bridge.ptrcall(@@mb_set_cull_mode, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    end
+    @@mb_get_cull_mode : Void* = Pointer(Void).null
+    def get_cull_mode() : Int64
+      if @@mb_get_cull_mode.null?
+        @@mb_get_cull_mode = Bridge.get_method_bind("OccluderPolygon2D", "get_cull_mode", 33931036_i64)
+      end
+      ret = 0_i64
+      Bridge.ptrcall(@@mb_get_cull_mode, @pointer, Pointer(Pointer(Void)).null, pointerof(ret).as(Void*))
+      ret
+    end
+    @@mb_set_polygon : Void* = Pointer(Void).null
+    def set_polygon(polygon : Void*) : Void
+      if @@mb_set_polygon.null?
+        @@mb_set_polygon = Bridge.get_method_bind("OccluderPolygon2D", "set_polygon", 1509147220_i64)
+      end
+      val_0 = polygon
+      arg_0 = pointerof(val_0).as(Void*)
+      args = [arg_0]
+      Bridge.ptrcall(@@mb_set_polygon, @pointer, args.to_unsafe.as(Void**), Pointer(Void).null)
+    end
+    @@mb_get_polygon : Void* = Pointer(Void).null
+    def get_polygon() : Void*
+      if @@mb_get_polygon.null?
+        @@mb_get_polygon = Bridge.get_method_bind("OccluderPolygon2D", "get_polygon", 2961356807_i64)
+      end
+      ret_ptr = Pointer(Void).null
+      Bridge.ptrcall(@@mb_get_polygon, @pointer, Pointer(Pointer(Void)).null, pointerof(ret_ptr).as(Void*))
+      ret_ptr
     end
   end
 end

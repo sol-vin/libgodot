@@ -260,6 +260,16 @@ module Godot
       @@instance
     end
   end
+  # Godot `TextureStreaming` singleton (TextureStreaming).
+  class TextureStreaming < Godot::Object
+    @@instance : Void* = Pointer(Void).null
+    def self.singleton_ptr : Void*
+      if @@instance.null?
+        @@instance = Bridge.get_singleton("TextureStreaming")
+      end
+      @@instance
+    end
+  end
   # Godot `EditorInterface` singleton (EditorInterface).
   class EditorInterface < Godot::Object
     @@instance : Void* = Pointer(Void).null

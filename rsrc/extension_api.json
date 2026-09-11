@@ -3,9 +3,9 @@
 		"version_major": 4,
 		"version_minor": 8,
 		"version_patch": 0,
-		"version_status": "dev4",
+		"version_status": "dev5",
 		"version_build": "official",
-		"version_full_name": "Godot Engine v4.8.dev4.official",
+		"version_full_name": "Godot Engine v4.8.dev5.official",
 		"precision": "single"
 	},
 	"builtin_class_sizes": [
@@ -3733,8 +3733,12 @@
 					"value": 44
 				},
 				{
-					"name": "PROPERTY_HINT_MAX",
+					"name": "PROPERTY_HINT_AUDIO_BUS",
 					"value": 45
+				},
+				{
+					"name": "PROPERTY_HINT_MAX",
+					"value": 46
 				}
 			]
 		},
@@ -52912,8 +52916,12 @@
 							"value": 12
 						},
 						{
-							"name": "FEATURE_MAX",
+							"name": "FEATURE_PARTICLES_ANIMATION",
 							"value": 13
+						},
+						{
+							"name": "FEATURE_MAX",
+							"value": 14
 						}
 					]
 				},
@@ -56037,6 +56045,13 @@
 					"index": 5
 				},
 				{
+					"type": "bool",
+					"name": "particles_anim_enabled",
+					"setter": "set_feature",
+					"getter": "get_feature",
+					"index": 13
+				},
+				{
 					"type": "int",
 					"name": "particles_anim_h_frames",
 					"setter": "set_particles_anim_h_frames",
@@ -57287,7 +57302,7 @@
 			]
 		},
 		{
-			"name": "BoneSpreader3D",
+			"name": "BoneSpaceAdjuster3D",
 			"is_refcounted": false,
 			"is_instantiable": true,
 			"inherits": "SkeletonModifier3D",
@@ -88974,28 +88989,28 @@
 					"getter": "get_size"
 				},
 				{
-					"type": "Texture2D,-AnimatedTexture,-AtlasTexture,-CameraTexture,-CanvasTexture,-MeshTexture,-Texture2DRD,-ViewportTexture",
+					"type": "Texture2D,-AnimatedTexture,-AtlasTexture,-CameraTexture,-CanvasTexture,-MeshTexture,-Texture2DRD,-ViewportTexture,-StreamedTexture2D",
 					"name": "texture_albedo",
 					"setter": "set_texture",
 					"getter": "get_texture",
 					"index": 0
 				},
 				{
-					"type": "Texture2D,-AnimatedTexture,-AtlasTexture,-CameraTexture,-CanvasTexture,-MeshTexture,-Texture2DRD,-ViewportTexture",
+					"type": "Texture2D,-AnimatedTexture,-AtlasTexture,-CameraTexture,-CanvasTexture,-MeshTexture,-Texture2DRD,-ViewportTexture,-StreamedTexture2D",
 					"name": "texture_normal",
 					"setter": "set_texture",
 					"getter": "get_texture",
 					"index": 1
 				},
 				{
-					"type": "Texture2D,-AnimatedTexture,-AtlasTexture,-CameraTexture,-CanvasTexture,-MeshTexture,-Texture2DRD,-ViewportTexture",
+					"type": "Texture2D,-AnimatedTexture,-AtlasTexture,-CameraTexture,-CanvasTexture,-MeshTexture,-Texture2DRD,-ViewportTexture,-StreamedTexture2D",
 					"name": "texture_orm",
 					"setter": "set_texture",
 					"getter": "get_texture",
 					"index": 2
 				},
 				{
-					"type": "Texture2D,-AnimatedTexture,-AtlasTexture,-CameraTexture,-CanvasTexture,-MeshTexture,-Texture2DRD,-ViewportTexture",
+					"type": "Texture2D,-AnimatedTexture,-AtlasTexture,-CameraTexture,-CanvasTexture,-MeshTexture,-Texture2DRD,-ViewportTexture,-StreamedTexture2D",
 					"name": "texture_emission",
 					"setter": "set_texture",
 					"getter": "get_texture",
@@ -90687,6 +90702,24 @@
 						{
 							"name": "SCREEN_SENSOR",
 							"value": 6
+						}
+					]
+				},
+				{
+					"name": "SensorOrientation",
+					"is_bitfield": false,
+					"values": [
+						{
+							"name": "SENSOR_ORIENTATION_UNDEFINED",
+							"value": 0
+						},
+						{
+							"name": "SENSOR_ORIENTATION_PORTRAIT",
+							"value": 1
+						},
+						{
+							"name": "SENSOR_ORIENTATION_LANDSCAPE",
+							"value": 2
 						}
 					]
 				},
@@ -96844,7 +96877,7 @@
 					"arguments": [
 						{
 							"name": "orientation",
-							"type": "int"
+							"type": "enum::DisplayServer.SensorOrientation"
 						}
 					]
 				}
@@ -98842,6 +98875,31 @@
 					}
 				},
 				{
+					"name": "set_allow_switch_screen",
+					"is_const": false,
+					"is_vararg": false,
+					"is_static": false,
+					"is_virtual": false,
+					"hash": 2586408642,
+					"arguments": [
+						{
+							"name": "allow",
+							"type": "bool"
+						}
+					]
+				},
+				{
+					"name": "is_allow_switch_screen",
+					"is_const": true,
+					"is_vararg": false,
+					"is_static": false,
+					"is_virtual": false,
+					"hash": 36873697,
+					"return_value": {
+						"type": "bool"
+					}
+				},
+				{
 					"name": "set_icon_name",
 					"is_const": false,
 					"is_vararg": false,
@@ -99130,6 +99188,12 @@
 					"name": "closable",
 					"setter": "set_closable",
 					"getter": "is_closable"
+				},
+				{
+					"type": "bool",
+					"name": "allow_switch_screen",
+					"setter": "set_allow_switch_screen",
+					"getter": "is_allow_switch_screen"
 				},
 				{
 					"type": "StringName",
@@ -143432,7 +143496,10 @@
 					"is_vararg": false,
 					"is_static": false,
 					"is_virtual": false,
-					"hash": 1633102583,
+					"hash": 991832544,
+					"hash_compatibility": [
+						1633102583
+					],
 					"return_value": {
 						"type": "enum::Error"
 					},
@@ -143441,6 +143508,17 @@
 							"name": "renormalize",
 							"type": "bool",
 							"default_value": "false"
+						},
+						{
+							"name": "preserve_alpha_test_coverage",
+							"type": "bool",
+							"default_value": "false"
+						},
+						{
+							"name": "alpha_test_threshold",
+							"type": "float",
+							"meta": "float",
+							"default_value": "0.5"
 						}
 					]
 				},
@@ -146624,6 +146702,17 @@
 					}
 				},
 				{
+					"name": "get_device_orientation",
+					"is_const": true,
+					"is_vararg": false,
+					"is_static": false,
+					"is_virtual": false,
+					"hash": 1222331677,
+					"return_value": {
+						"type": "Quaternion"
+					}
+				},
+				{
 					"name": "get_joy_accelerometer",
 					"is_const": true,
 					"is_vararg": false,
@@ -147061,6 +147150,20 @@
 						{
 							"name": "value",
 							"type": "Vector3"
+						}
+					]
+				},
+				{
+					"name": "set_device_orientation",
+					"is_const": false,
+					"is_vararg": false,
+					"is_static": false,
+					"is_virtual": false,
+					"hash": 1727505552,
+					"arguments": [
+						{
+							"name": "value",
+							"type": "Quaternion"
 						}
 					]
 				},
@@ -197108,6 +197211,29 @@
 					]
 				},
 				{
+					"name": "_set_spatial_container_views_locate_info_and_get_next_pointer",
+					"is_const": false,
+					"is_static": false,
+					"is_required": false,
+					"is_vararg": false,
+					"is_virtual": true,
+					"hash": 2722015314,
+					"return_value": {
+						"type": "int",
+						"meta": "uint64"
+					},
+					"arguments": [
+						{
+							"name": "spatial_container",
+							"type": "RID"
+						},
+						{
+							"name": "next_pointer",
+							"type": "void*"
+						}
+					]
+				},
+				{
 					"name": "_set_reference_space_create_info_and_get_next_pointer",
 					"is_const": false,
 					"is_static": false,
@@ -197124,6 +197250,29 @@
 							"name": "reference_space_type",
 							"type": "int",
 							"meta": "int32"
+						},
+						{
+							"name": "next_pointer",
+							"type": "void*"
+						}
+					]
+				},
+				{
+					"name": "_set_spatial_container_create_info_and_get_next_pointer",
+					"is_const": false,
+					"is_static": false,
+					"is_required": false,
+					"is_vararg": false,
+					"is_virtual": true,
+					"hash": 2722015314,
+					"return_value": {
+						"type": "int",
+						"meta": "uint64"
+					},
+					"arguments": [
+						{
+							"name": "spatial_container",
+							"type": "RID"
 						},
 						{
 							"name": "next_pointer",
@@ -201787,6 +201936,258 @@
 							"meta": "int64"
 						}
 					]
+				}
+			]
+		},
+		{
+			"name": "OpenXRSpatialContainerExtension",
+			"is_refcounted": false,
+			"is_instantiable": true,
+			"inherits": "OpenXRExtensionWrapper",
+			"api_type": "core",
+			"methods": [
+				{
+					"name": "is_enabled",
+					"is_const": true,
+					"is_vararg": false,
+					"is_static": false,
+					"is_virtual": false,
+					"hash": 36873697,
+					"return_value": {
+						"type": "bool"
+					}
+				},
+				{
+					"name": "is_spatial_container_active",
+					"is_const": true,
+					"is_vararg": false,
+					"is_static": false,
+					"is_virtual": false,
+					"hash": 36873697,
+					"return_value": {
+						"type": "bool"
+					}
+				},
+				{
+					"name": "get_supported_bounds_modes",
+					"is_const": false,
+					"is_vararg": false,
+					"is_static": false,
+					"is_virtual": false,
+					"hash": 2915620761,
+					"return_value": {
+						"type": "Array"
+					}
+				},
+				{
+					"name": "get_spatial_container_state",
+					"is_const": false,
+					"is_vararg": false,
+					"is_static": false,
+					"is_virtual": false,
+					"hash": 212870561,
+					"return_value": {
+						"type": "OpenXRSpatialContainerState"
+					}
+				},
+				{
+					"name": "get_spatial_container_bounds",
+					"is_const": false,
+					"is_vararg": false,
+					"is_static": false,
+					"is_virtual": false,
+					"hash": 3783033775,
+					"return_value": {
+						"type": "Vector3"
+					}
+				},
+				{
+					"name": "request_spatial_container_bounds_mode",
+					"is_const": false,
+					"is_vararg": false,
+					"is_static": false,
+					"is_virtual": false,
+					"hash": 1261129373,
+					"return_value": {
+						"type": "bool"
+					},
+					"arguments": [
+						{
+							"name": "bounds_mode",
+							"type": "enum::OpenXRSpatialContainerState.BoundsMode"
+						}
+					]
+				},
+				{
+					"name": "request_spatial_container_visible",
+					"is_const": false,
+					"is_vararg": false,
+					"is_static": false,
+					"is_virtual": false,
+					"hash": 2703660260,
+					"return_value": {
+						"type": "bool"
+					},
+					"arguments": [
+						{
+							"name": "visible",
+							"type": "bool"
+						}
+					]
+				}
+			],
+			"signals": [
+				{
+					"name": "spatial_container_bounds_changed",
+					"arguments": [
+						{
+							"name": "spatial_container_rid",
+							"type": "RID"
+						},
+						{
+							"name": "spatial_container_infinite_bounds",
+							"type": "bool"
+						},
+						{
+							"name": "spatial_container_bounds_mode",
+							"type": "int"
+						},
+						{
+							"name": "spatial_container_bounds",
+							"type": "Vector3"
+						}
+					]
+				},
+				{
+					"name": "spatial_container_bounds_mode_request_denied",
+					"arguments": [
+						{
+							"name": "spatial_container_rid",
+							"type": "RID"
+						}
+					]
+				},
+				{
+					"name": "spatial_container_closed",
+					"arguments": [
+						{
+							"name": "spatial_container_rid",
+							"type": "RID"
+						}
+					]
+				},
+				{
+					"name": "spatial_container_interactable_changed",
+					"arguments": [
+						{
+							"name": "spatial_container_rid",
+							"type": "RID"
+						},
+						{
+							"name": "spatial_container_interactable",
+							"type": "bool"
+						}
+					]
+				},
+				{
+					"name": "spatial_container_visible_changed",
+					"arguments": [
+						{
+							"name": "spatial_container_rid",
+							"type": "RID"
+						},
+						{
+							"name": "spatial_container_visible",
+							"type": "bool"
+						}
+					]
+				},
+				{
+					"name": "spatial_container_visible_request_denied",
+					"arguments": [
+						{
+							"name": "spatial_container_rid",
+							"type": "RID"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "OpenXRSpatialContainerSelfRenderingExtension",
+			"is_refcounted": false,
+			"is_instantiable": true,
+			"inherits": "OpenXRExtensionWrapper",
+			"api_type": "core",
+			"methods": [
+				{
+					"name": "is_enabled",
+					"is_const": true,
+					"is_vararg": false,
+					"is_static": false,
+					"is_virtual": false,
+					"hash": 36873697,
+					"return_value": {
+						"type": "bool"
+					}
+				}
+			]
+		},
+		{
+			"name": "OpenXRSpatialContainerState",
+			"is_refcounted": true,
+			"is_instantiable": true,
+			"inherits": "RefCounted",
+			"api_type": "core",
+			"enums": [
+				{
+					"name": "BoundsMode",
+					"is_bitfield": false,
+					"values": [
+						{
+							"name": "BOUNDS_MODE_BOUNDED",
+							"value": 0
+						},
+						{
+							"name": "BOUNDS_MODE_IMMERSIVE",
+							"value": 1
+						}
+					]
+				}
+			],
+			"methods": [
+				{
+					"name": "get_bounds_mode",
+					"is_const": true,
+					"is_vararg": false,
+					"is_static": false,
+					"is_virtual": false,
+					"hash": 1708123309,
+					"return_value": {
+						"type": "enum::OpenXRSpatialContainerState.BoundsMode"
+					}
+				},
+				{
+					"name": "is_interactable",
+					"is_const": true,
+					"is_vararg": false,
+					"is_static": false,
+					"is_virtual": false,
+					"hash": 36873697,
+					"return_value": {
+						"type": "bool"
+					}
+				},
+				{
+					"name": "is_visible",
+					"is_const": true,
+					"is_vararg": false,
+					"is_static": false,
+					"is_virtual": false,
+					"hash": 36873697,
+					"return_value": {
+						"type": "bool"
+					}
 				}
 			]
 		},
@@ -209123,8 +209524,12 @@
 							"value": 58
 						},
 						{
-							"name": "MONITOR_MAX",
+							"name": "RENDER_STREAMING_TEXTURE_MEM_USED",
 							"value": 59
+						},
+						{
+							"name": "MONITOR_MAX",
+							"value": 60
 						}
 					]
 				},
@@ -246864,6 +247269,10 @@
 						{
 							"name": "TEXTURE_SLICE_3D",
 							"value": 2
+						},
+						{
+							"name": "TEXTURE_SLICE_2D_ARRAY",
+							"value": 3
 						}
 					]
 				},
@@ -248157,8 +248566,9 @@
 					"is_vararg": false,
 					"is_static": false,
 					"is_virtual": false,
-					"hash": 1808971279,
+					"hash": 1274035419,
 					"hash_compatibility": [
+						1808971279,
 						864132525
 					],
 					"return_value": {
@@ -248192,6 +248602,12 @@
 						{
 							"name": "slice_type",
 							"type": "enum::RenderingDevice.TextureSliceType",
+							"default_value": "0"
+						},
+						{
+							"name": "layers",
+							"type": "int",
+							"meta": "uint32",
 							"default_value": "0"
 						}
 					]
@@ -254184,6 +254600,24 @@
 				},
 				{
 					"name": "texture_replace",
+					"is_const": false,
+					"is_vararg": false,
+					"is_static": false,
+					"is_virtual": false,
+					"hash": 395945892,
+					"arguments": [
+						{
+							"name": "texture",
+							"type": "RID"
+						},
+						{
+							"name": "by_texture",
+							"type": "RID"
+						}
+					]
+				},
+				{
+					"name": "texture_replace_compatible",
 					"is_const": false,
 					"is_vararg": false,
 					"is_static": false,
@@ -265593,6 +266027,13 @@
 			"api_type": "editor"
 		},
 		{
+			"name": "ResourceImporterStreamedTexture",
+			"is_refcounted": true,
+			"is_instantiable": true,
+			"inherits": "ResourceImporter",
+			"api_type": "editor"
+		},
+		{
 			"name": "ResourceImporterTexture",
 			"is_refcounted": true,
 			"is_instantiable": true,
@@ -266541,6 +266982,31 @@
 					}
 				},
 				{
+					"name": "set_copy_bone_skin_scale",
+					"is_const": false,
+					"is_vararg": false,
+					"is_static": false,
+					"is_virtual": false,
+					"hash": 2586408642,
+					"arguments": [
+						{
+							"name": "enabled",
+							"type": "bool"
+						}
+					]
+				},
+				{
+					"name": "is_copying_bone_skin_scale",
+					"is_const": true,
+					"is_vararg": false,
+					"is_static": false,
+					"is_virtual": false,
+					"hash": 36873697,
+					"return_value": {
+						"type": "bool"
+					}
+				},
+				{
 					"name": "set_use_global_pose",
 					"is_const": false,
 					"is_vararg": false,
@@ -266672,6 +267138,12 @@
 					"name": "profile",
 					"setter": "set_profile",
 					"getter": "get_profile"
+				},
+				{
+					"type": "bool",
+					"name": "copy_bone_skin_scale",
+					"setter": "set_copy_bone_skin_scale",
+					"getter": "is_copying_bone_skin_scale"
 				},
 				{
 					"type": "bool",
@@ -272314,6 +272786,17 @@
 						"type": "Node2D"
 					}
 				}
+			],
+			"signals": [
+				{
+					"name": "scene_painted",
+					"arguments": [
+						{
+							"name": "node",
+							"type": "Node2D"
+						}
+					]
+				}
 			]
 		},
 		{
@@ -277562,6 +278045,20 @@
 							"name": "get_groups",
 							"type": "bool",
 							"default_value": "false"
+						}
+					]
+				},
+				{
+					"name": "set_include_path",
+					"is_const": false,
+					"is_vararg": false,
+					"is_static": false,
+					"is_virtual": false,
+					"hash": 83702148,
+					"arguments": [
+						{
+							"name": "path",
+							"type": "String"
 						}
 					]
 				},
@@ -285735,6 +286232,81 @@
 					}
 				},
 				{
+					"name": "set_format",
+					"is_const": false,
+					"is_vararg": false,
+					"is_static": false,
+					"is_virtual": false,
+					"hash": 83702148,
+					"arguments": [
+						{
+							"name": "format",
+							"type": "String"
+						}
+					]
+				},
+				{
+					"name": "get_format",
+					"is_const": true,
+					"is_vararg": false,
+					"is_static": false,
+					"is_virtual": false,
+					"hash": 201670096,
+					"return_value": {
+						"type": "String"
+					}
+				},
+				{
+					"name": "set_plural_format",
+					"is_const": false,
+					"is_vararg": false,
+					"is_static": false,
+					"is_virtual": false,
+					"hash": 83702148,
+					"arguments": [
+						{
+							"name": "format",
+							"type": "String"
+						}
+					]
+				},
+				{
+					"name": "get_plural_format",
+					"is_const": true,
+					"is_vararg": false,
+					"is_static": false,
+					"is_virtual": false,
+					"hash": 201670096,
+					"return_value": {
+						"type": "String"
+					}
+				},
+				{
+					"name": "set_format_auto_translate_mode",
+					"is_const": false,
+					"is_vararg": false,
+					"is_static": false,
+					"is_virtual": false,
+					"hash": 776149714,
+					"arguments": [
+						{
+							"name": "mode",
+							"type": "enum::Node.AutoTranslateMode"
+						}
+					]
+				},
+				{
+					"name": "get_format_auto_translate_mode",
+					"is_const": true,
+					"is_vararg": false,
+					"is_static": false,
+					"is_virtual": false,
+					"hash": 2498906432,
+					"return_value": {
+						"type": "enum::Node.AutoTranslateMode"
+					}
+				},
+				{
 					"name": "set_suffix",
 					"is_const": false,
 					"is_vararg": false,
@@ -285951,18 +286523,6 @@
 					"getter": "get_update_on_text_changed"
 				},
 				{
-					"type": "String",
-					"name": "prefix",
-					"setter": "set_prefix",
-					"getter": "get_prefix"
-				},
-				{
-					"type": "String",
-					"name": "suffix",
-					"setter": "set_suffix",
-					"getter": "get_suffix"
-				},
-				{
 					"type": "float",
 					"name": "custom_arrow_step",
 					"setter": "set_custom_arrow_step",
@@ -285979,6 +286539,36 @@
 					"name": "select_all_on_focus",
 					"setter": "set_select_all_on_focus",
 					"getter": "is_select_all_on_focus"
+				},
+				{
+					"type": "String",
+					"name": "format",
+					"setter": "set_format",
+					"getter": "get_format"
+				},
+				{
+					"type": "String",
+					"name": "plural_format",
+					"setter": "set_plural_format",
+					"getter": "get_plural_format"
+				},
+				{
+					"type": "int",
+					"name": "format_auto_translate_mode",
+					"setter": "set_format_auto_translate_mode",
+					"getter": "get_format_auto_translate_mode"
+				},
+				{
+					"type": "String",
+					"name": "prefix",
+					"setter": "set_prefix",
+					"getter": "get_prefix"
+				},
+				{
+					"type": "String",
+					"name": "suffix",
+					"setter": "set_suffix",
+					"getter": "get_suffix"
 				}
 			]
 		},
@@ -292164,6 +292754,117 @@
 					"return_value": {
 						"type": "String"
 					}
+				}
+			]
+		},
+		{
+			"name": "StreamedTexture2D",
+			"is_refcounted": true,
+			"is_instantiable": true,
+			"inherits": "Texture2D",
+			"api_type": "core",
+			"methods": [
+				{
+					"name": "load",
+					"is_const": false,
+					"is_vararg": false,
+					"is_static": false,
+					"is_virtual": false,
+					"hash": 166001499,
+					"return_value": {
+						"type": "enum::Error"
+					},
+					"arguments": [
+						{
+							"name": "path",
+							"type": "String"
+						}
+					]
+				},
+				{
+					"name": "get_load_path",
+					"is_const": true,
+					"is_vararg": false,
+					"is_static": false,
+					"is_virtual": false,
+					"hash": 201670096,
+					"return_value": {
+						"type": "String"
+					}
+				},
+				{
+					"name": "set_max_lod_override",
+					"is_const": false,
+					"is_vararg": false,
+					"is_static": false,
+					"is_virtual": false,
+					"hash": 1286410249,
+					"arguments": [
+						{
+							"name": "max_lod",
+							"type": "int",
+							"meta": "int32"
+						}
+					]
+				},
+				{
+					"name": "get_max_lod_override",
+					"is_const": true,
+					"is_vararg": false,
+					"is_static": false,
+					"is_virtual": false,
+					"hash": 3905245786,
+					"return_value": {
+						"type": "int",
+						"meta": "int32"
+					}
+				},
+				{
+					"name": "set_min_lod_override",
+					"is_const": false,
+					"is_vararg": false,
+					"is_static": false,
+					"is_virtual": false,
+					"hash": 1286410249,
+					"arguments": [
+						{
+							"name": "min_lod",
+							"type": "int",
+							"meta": "int32"
+						}
+					]
+				},
+				{
+					"name": "get_min_lod_override",
+					"is_const": true,
+					"is_vararg": false,
+					"is_static": false,
+					"is_virtual": false,
+					"hash": 3905245786,
+					"return_value": {
+						"type": "int",
+						"meta": "int32"
+					}
+				}
+			],
+			"properties": [
+				{
+					"type": "String",
+					"name": "load_path",
+					"setter": "load",
+					"getter": "get_load_path"
+				},
+				{
+					"type": "int",
+					"name": "max_lod_override",
+					"setter": "set_max_lod_override",
+					"getter": "get_max_lod_override"
+				},
+				{
+					"type": "int",
+					"name": "min_lod_override",
+					"setter": "set_min_lod_override",
+					"getter": "get_min_lod_override"
 				}
 			]
 		},
@@ -317964,6 +318665,141 @@
 					"name": "flip_v",
 					"setter": "set_flip_v",
 					"getter": "is_flipped_v"
+				}
+			]
+		},
+		{
+			"name": "TextureStreaming",
+			"is_refcounted": false,
+			"is_instantiable": true,
+			"inherits": "Object",
+			"api_type": "core",
+			"methods": [
+				{
+					"name": "get_min_lod_override",
+					"is_const": true,
+					"is_vararg": false,
+					"is_static": false,
+					"is_virtual": false,
+					"hash": 3905245786,
+					"return_value": {
+						"type": "int",
+						"meta": "int32"
+					}
+				},
+				{
+					"name": "set_min_lod_override",
+					"is_const": false,
+					"is_vararg": false,
+					"is_static": false,
+					"is_virtual": false,
+					"hash": 1286410249,
+					"arguments": [
+						{
+							"name": "min_lod",
+							"type": "int",
+							"meta": "int32"
+						}
+					]
+				},
+				{
+					"name": "get_max_lod_override",
+					"is_const": true,
+					"is_vararg": false,
+					"is_static": false,
+					"is_virtual": false,
+					"hash": 3905245786,
+					"return_value": {
+						"type": "int",
+						"meta": "int32"
+					}
+				},
+				{
+					"name": "set_max_lod_override",
+					"is_const": false,
+					"is_vararg": false,
+					"is_static": false,
+					"is_virtual": false,
+					"hash": 1286410249,
+					"arguments": [
+						{
+							"name": "max_lod",
+							"type": "int",
+							"meta": "int32"
+						}
+					]
+				},
+				{
+					"name": "get_memory_budget_mb_override",
+					"is_const": true,
+					"is_vararg": false,
+					"is_static": false,
+					"is_virtual": false,
+					"hash": 3905245786,
+					"return_value": {
+						"type": "int",
+						"meta": "uint32"
+					}
+				},
+				{
+					"name": "set_memory_budget_mb_override",
+					"is_const": false,
+					"is_vararg": false,
+					"is_static": false,
+					"is_virtual": false,
+					"hash": 1286410249,
+					"arguments": [
+						{
+							"name": "mb",
+							"type": "int",
+							"meta": "uint32"
+						}
+					]
+				},
+				{
+					"name": "get_memory_budget_bytes_used",
+					"is_const": false,
+					"is_vararg": false,
+					"is_static": false,
+					"is_virtual": false,
+					"hash": 2455072627,
+					"return_value": {
+						"type": "int",
+						"meta": "uint64"
+					}
+				},
+				{
+					"name": "flush_texture_streaming",
+					"is_const": false,
+					"is_vararg": false,
+					"is_static": false,
+					"is_virtual": false,
+					"hash": 3218959716
+				}
+			],
+			"signals": [
+				{
+					"name": "flush_completed"
+				}
+			],
+			"properties": [
+				{
+					"type": "int",
+					"name": "min_lod_override",
+					"setter": "set_min_lod_override",
+					"getter": "get_min_lod_override"
+				},
+				{
+					"type": "int",
+					"name": "max_lod_override",
+					"setter": "set_max_lod_override",
+					"getter": "get_max_lod_override"
+				},
+				{
+					"type": "int",
+					"name": "memory_budget_mb_override",
+					"setter": "set_memory_budget_mb_override",
+					"getter": "get_memory_budget_mb_override"
 				}
 			]
 		},
@@ -360759,6 +361595,10 @@
 		{
 			"name": "ThemeDB",
 			"type": "ThemeDB"
+		},
+		{
+			"name": "TextureStreaming",
+			"type": "TextureStreaming"
 		},
 		{
 			"name": "EditorInterface",

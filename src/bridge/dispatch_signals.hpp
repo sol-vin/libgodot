@@ -981,13 +981,41 @@ inline void bridge_ret_object(void *r_ret, void *obj) {
     *(GDExtensionObjectPtr*)r_ret = (GDExtensionObjectPtr)obj;
 }
 
+static GDExtensionMethodBindPtr mb_ref_reference = nullptr;
+inline void refcounted_reference(void *obj) {
+    if (!obj) return;
+    if (!mb_ref_reference && gd_classdb_get_method_bind) {
+        void *class_sn = make_string_name("RefCounted");
+        void *method_sn = make_string_name("reference");
+        mb_ref_reference = gd_classdb_get_method_bind(class_sn, method_sn, 2240911060LL);
+        free_string_name(class_sn);
+        free_string_name(method_sn);
+    }
+    if (mb_ref_reference && gd_object_method_bind_ptrcall) {
+        uint8_t ret = 0;
+        gd_object_method_bind_ptrcall(mb_ref_reference, obj, nullptr, &ret);
+    }
+}
+
 inline void bridge_ret_ref(void *r_ret, void *obj) {
     if (!r_ret) return;
+    if (!obj) {
+        *(void**)r_ret = nullptr;
+        char msg[128];
+        snprintf(msg, sizeof(msg), "[DEBUG_RET_REF] r_ret=%p obj=null", r_ret);
+        godot_log_print(msg);
+        return;
+    }
     if (gd_ref_set_object) {
         gd_ref_set_object((GDExtensionRefPtr)r_ret, (GDExtensionObjectPtr)obj);
-    } else {
-        *(GDExtensionObjectPtr*)r_ret = (GDExtensionObjectPtr)obj;
     }
+    if (*(void**)r_ret == nullptr) {
+        refcounted_reference(obj);
+        *(void**)r_ret = obj;
+    }
+    char msg[256];
+    snprintf(msg, sizeof(msg), "[DEBUG_RET_REF] r_ret=%p obj=%p *r_ret=%p", r_ret, obj, *(void**)r_ret);
+    godot_log_print(msg);
 }
 
 inline void bridge_ret_variant_object(void *r_ret, void *obj) {

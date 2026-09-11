@@ -56,7 +56,7 @@ end
 test_classdb "ClassDB coverage: all 110 core 3D Node classes create, parent, unparent, and destroy" do
   classes_3d = [
 	"AimModifier3D", "AnimatableBody3D", "AnimatedSprite3D", "Area3D", "AreaLight3D",
-	"AudioListener3D", "AudioStreamPlayer3D", "BoneAttachment3D", "BoneConstraint3D", "BoneSpreader3D",
+	"AudioListener3D", "AudioStreamPlayer3D", "BoneAttachment3D", "BoneConstraint3D", "BoneSpaceAdjuster3D",
 	"BoneTwistDisperser3D", "CCDIK3D", "CPUParticles3D", "CSGBox3D", "CSGCombiner3D",
 	"CSGCylinder3D", "CSGMesh3D", "CSGPolygon3D", "CSGSphere3D", "CSGTorus3D",
 	"Camera3D", "CharacterBody3D", "CollisionPolygon3D", "CollisionShape3D", "ConeTwistJoint3D",

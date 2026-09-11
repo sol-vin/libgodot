@@ -308,6 +308,7 @@ inline void* generic_class_get_virtual_call_data(void *p_class_userdata, GDExten
 
     char method_buf[128];
     if (!string_name_to_cstr(p_name, method_buf, sizeof(method_buf))) {
+        godot_log_print("[CrystalBridge] generic_class_get_virtual_call_data: string_name_to_cstr FAILED");
         return nullptr;
     }
 
@@ -551,7 +552,12 @@ inline void generic_class_call_virtual_with_data(
     }
 
     if (inst->desc->call_virtual_with_data) {
+        char msg[256];
+        snprintf(msg, sizeof(msg), "[DEBUG_CALL] class=%s method=%s r_ret=%p", inst->desc->name ? inst->desc->name : "null", method_name, r_ret);
+        godot_log_print(msg);
         inst->desc->call_virtual_with_data(inst->crystal_instance, method_name, (const void**)p_args, (void*)r_ret);
+        snprintf(msg, sizeof(msg), "[DEBUG_DONE] class=%s method=%s", inst->desc->name ? inst->desc->name : "null", method_name);
+        godot_log_print(msg);
     }
 }
 

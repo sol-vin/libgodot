@@ -6,7 +6,6 @@ module Godot
     @@registered : Bool = false
 
     def self.ensure_registered : Void
-      Godot.print("[ResourceFormatLoaderCrystal.ensure_registered] Called. registered=#{@@registered}, bridge_registered=#{Bridge.is_loader_registered?}")
       return if @@registered
       rl_ptr = Bridge.get_singleton("ResourceLoader")
       if rl_ptr.null?
@@ -15,19 +14,16 @@ module Godot
       end
       r_loader = Godot::ResourceLoader.new(rl_ptr)
       current_type = r_loader.call_str("get_resource_type", "test.cr")
-      Godot.print("[ResourceFormatLoaderCrystal.ensure_registered] Current test.cr type='#{current_type}'")
       if current_type == "CrystalScript"
         Bridge.set_loader_registered(true)
         @@registered = true
         return
       end
       if loader = Godot.create(Godot::ResourceFormatLoaderCrystal)
-        Godot.print("[ResourceFormatLoaderCrystal.ensure_registered] Created loader instance #{loader.pointer}")
         @@instance = loader
         r_loader.call("add_resource_format_loader", loader, true)
         Bridge.set_loader_registered(true)
         @@registered = true
-        Godot.print("[ResourceFormatLoaderCrystal.ensure_registered] Registered! After check: '#{r_loader.call_str("get_resource_type", "test.cr")}'")
       else
         Godot.printerr("[ResourceFormatLoaderCrystal.ensure_registered] Failed to create loader instance!")
       end

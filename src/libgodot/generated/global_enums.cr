@@ -462,7 +462,8 @@ module Godot
     GroupEnable = 42_i64
     InputName = 43_i64
     FilePath = 44_i64
-    Max = 45_i64
+    AudioBus = 45_i64
+    Max = 46_i64
   end
   # Godot `PropertyUsageFlags` global enum.
   enum PropertyUsageFlags : Int64
