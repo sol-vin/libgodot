@@ -274,7 +274,7 @@ module Godot
     def self._godot_has_virtual_method(method_name : String) : Bool
       norm = method_name.starts_with?('_') ? method_name : "_#{method_name}"
       case norm
-      when "_recognize", "_get_recognized_extensions", "_save"
+      when "_recognize", "_recognize_path", "_get_recognized_extensions", "_save", "_set_uid"
         true
       else
         false
@@ -296,8 +296,23 @@ module Godot
           end
         end
         ret.as(UInt8*).value = recognize ? 1_u8 : 0_u8
+      when "_recognize_path"
+        res_ptr = args[0].as(Void**).value
+        path = Bridge.arg_to_string(args[1])
+        recognize = path.downcase.ends_with?(".cr")
+        if !recognize && !res_ptr.null?
+          if inst = Bridge.find_alive_instance(res_ptr)
+            recognize = inst.is_a?(CrystalScript)
+          else
+            c_name = Bridge.object_call_ret_string(res_ptr, "get_class")
+            recognize = (c_name == "CrystalScript")
+          end
+        end
+        ret.as(UInt8*).value = recognize ? 1_u8 : 0_u8
       when "_get_recognized_extensions"
         Bridge.ret_packed_string_array(ret, ["cr"])
+      when "_set_uid"
+        ret.as(Int32*).value = 0_i32 # OK
       when "_save"
         res_ptr = args[0].as(Void**).value
         path = Bridge.arg_to_string(args[1])

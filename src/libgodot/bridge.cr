@@ -140,6 +140,8 @@ module Godot
       set_saver_registered : (Int32 -> Void)
       is_language_registered : (-> Int32)
       set_language_registered : (Int32 -> Void)
+      get_language_object : (-> Void*)
+      set_language_object : (Void* -> Void)
       set_reloading : (Int32 -> Void)
       set_debugger_cleanup : ((-> Void) -> Void)
       trigger_debugger_cleanup : (-> Void)
@@ -1117,6 +1119,16 @@ module Godot
     def self.set_language_registered(registered : Bool) : Void
       return if @@api.null? || @@api.value.set_language_registered.pointer.null?
       @@api.value.set_language_registered.call(registered ? 1 : 0)
+    end
+
+    def self.get_language_object : Void*
+      return Pointer(Void).null if @@api.null? || @@api.value.get_language_object.pointer.null?
+      @@api.value.get_language_object.call
+    end
+
+    def self.set_language_object(obj : Void*) : Void
+      return if @@api.null? || @@api.value.set_language_object.pointer.null?
+      @@api.value.set_language_object.call(obj)
     end
 
     def self.set_reloading(reloading : Bool) : Void

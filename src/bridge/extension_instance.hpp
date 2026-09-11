@@ -344,8 +344,10 @@ inline void* generic_class_get_virtual_call_data(void *p_class_userdata, GDExten
 
         if (strcmp(desc->name, "CrystalLanguage") == 0) {
             if (strcmp(norm_name, "_get_name") == 0 ||
+                strcmp(norm_name, "_init") == 0 ||
                 strcmp(norm_name, "_get_type") == 0 ||
                 strcmp(norm_name, "_get_extension") == 0 ||
+                strcmp(norm_name, "_finish") == 0 ||
                 strcmp(norm_name, "_get_recognized_extensions") == 0 ||
                 strcmp(norm_name, "_get_reserved_words") == 0 ||
                 strcmp(norm_name, "_is_control_flow_keyword") == 0 ||
@@ -365,10 +367,29 @@ inline void* generic_class_get_virtual_call_data(void *p_class_userdata, GDExten
                 strcmp(norm_name, "_find_function") == 0 ||
                 strcmp(norm_name, "_make_function") == 0 ||
                 strcmp(norm_name, "_can_make_function") == 0 ||
+                strcmp(norm_name, "_open_in_external_editor") == 0 ||
+                strcmp(norm_name, "_overrides_external_editor") == 0 ||
                 strcmp(norm_name, "_preferred_file_name_casing") == 0 ||
                 strcmp(norm_name, "_complete_code") == 0 ||
                 strcmp(norm_name, "_lookup_code") == 0 ||
                 strcmp(norm_name, "_auto_indent_code") == 0 ||
+                strcmp(norm_name, "_add_global_constant") == 0 ||
+                strcmp(norm_name, "_add_named_global_constant") == 0 ||
+                strcmp(norm_name, "_remove_named_global_constant") == 0 ||
+                strcmp(norm_name, "_thread_enter") == 0 ||
+                strcmp(norm_name, "_thread_exit") == 0 ||
+                strcmp(norm_name, "_frame") == 0 ||
+                strcmp(norm_name, "_reload_all_scripts") == 0 ||
+                strcmp(norm_name, "_reload_scripts") == 0 ||
+                strcmp(norm_name, "_reload_tool_script") == 0 ||
+                strcmp(norm_name, "_get_public_functions") == 0 ||
+                strcmp(norm_name, "_get_public_constants") == 0 ||
+                strcmp(norm_name, "_get_public_annotations") == 0 ||
+                strcmp(norm_name, "_profiling_start") == 0 ||
+                strcmp(norm_name, "_profiling_stop") == 0 ||
+                strcmp(norm_name, "_profiling_set_save_native_calls") == 0 ||
+                strcmp(norm_name, "_profiling_get_accumulated_data") == 0 ||
+                strcmp(norm_name, "_profiling_get_frame_data") == 0 ||
                 strcmp(norm_name, "_handles_global_class_type") == 0 ||
                 strcmp(norm_name, "_get_global_class_name") == 0) {
                 return (void*)intern_virtual_method(norm_name);
@@ -409,6 +430,7 @@ inline void* generic_class_get_virtual_call_data(void *p_class_userdata, GDExten
                 strcmp(norm_name, "_get_instance_base_type") == 0 ||
                 strcmp(norm_name, "_instance_create") == 0 ||
                 strcmp(norm_name, "_placeholder_instance_create") == 0 ||
+                strcmp(norm_name, "_placeholder_erased") == 0 ||
                 strcmp(norm_name, "_instance_has") == 0 ||
                 strcmp(norm_name, "_has_source_code") == 0 ||
                 strcmp(norm_name, "_get_source_code") == 0 ||

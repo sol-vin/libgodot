@@ -8,7 +8,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$RootDir = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
+$RootDir = if ($PSScriptRoot) { Split-Path -Parent $PSScriptRoot } else { (Get-Location).Path }
 $GodotExe = Join-Path $RootDir "godot.exe"
 
 if (-not (Test-Path $GodotExe)) {
@@ -59,6 +59,12 @@ if ($logContent -match "BUG: Unreferenced static string to 0") {
 # 4. Check for ERR_CANT_OPEN on scripts
 if ($logContent -match 'Condition "res\.is_null\(\)" is true\. Returning: ERR_CANT_OPEN') {
     Write-Host "[FAILED] Godot Editor failed to open resource (ERR_CANT_OPEN)!" -ForegroundColor Red
+    $failed = $true
+}
+
+# 5. Check for missing required virtual methods
+if ($logContent -match "Required virtual method .* must be overridden") {
+    Write-Host "[FAILED] Godot Editor reported missing required virtual method!" -ForegroundColor Red
     $failed = $true
 }
 

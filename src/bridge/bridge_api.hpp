@@ -78,6 +78,8 @@ static BridgeAPI g_bridge_api = {
     bridge_set_saver_registered,
     bridge_is_language_registered,
     bridge_set_language_registered,
+    bridge_get_language_object,
+    bridge_set_language_object,
     bridge_set_reloading,
     bridge_set_debugger_cleanup,
     bridge_trigger_debugger_cleanup

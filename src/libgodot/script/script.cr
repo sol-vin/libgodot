@@ -27,6 +27,7 @@ module Godot
   # Represents a standalone .cr file as a first-class Godot Script resource.
   # Bridges source text, AST reflection, and Inspector property presentation.
   @[Tool]
+  @[Icon("res://addons/crystal_integration/crystal_icon.svg")]
   node CrystalScript < ScriptExtension do
     @script_path : String = ""
     @source_code : String = ""
@@ -96,12 +97,13 @@ module Godot
       norm = method_name.starts_with?('_') ? method_name : "_#{method_name}"
       case norm
       when "_can_instantiate", "_has_source_code", "_get_source_code", "_set_source_code",
-           "_get_instance_base_type", "_get_global_name", "_is_tool", "_is_valid",
+           "_get_instance_base_type", "_get_global_name", "_is_tool", "_is_valid", "_is_abstract",
            "_get_language", "_has_method", "_has_static_method",
            "_get_script_method_argument_count", "_get_method_info", "_get_base_script",
            "_inherits_script", "_has_script_signal", "_has_property_default_value",
            "_get_property_default_value", "_update_exports", "_editor_can_reload_from_file",
-           "_reload", "_instance_create", "_placeholder_instance_create", "_instance_has",
+           "_reload", "_instance_create", "_placeholder_instance_create", "_placeholder_erased",
+           "_instance_has",
            "_get_documentation", "_get_doc_class_name", "_get_class_icon_path",
            "_get_script_signal_list", "_get_script_method_list", "_get_script_property_list",
            "_get_member_line", "_get_constants", "_get_members",
@@ -133,6 +135,8 @@ module Godot
         ret.as(UInt8*).value = @is_tool_script ? 1_u8 : 0_u8
       when "_is_valid"
         ret.as(UInt8*).value = 1_u8
+      when "_is_abstract"
+        ret.as(UInt8*).value = 0_u8
       when "_get_language"
         lang = CrystalLanguage.singleton_instance
         Bridge.ret_object(ret, lang.pointer)
@@ -182,8 +186,10 @@ module Godot
         Bridge.ret_array_empty(ret)
       when "_get_doc_class_name"
         Bridge.ret_string_name(ret, @script_class_name)
+      when "_placeholder_erased"
+        return
       when "_get_class_icon_path"
-        Bridge.ret_string(ret, "")
+        Bridge.ret_string(ret, "res://addons/crystal_integration/crystal_icon.svg")
       when "_get_script_signal_list", "_get_script_method_list", "_get_script_property_list"
         Bridge.ret_array_empty(ret)
       when "_get_member_line"

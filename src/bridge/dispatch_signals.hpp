@@ -1071,11 +1071,10 @@ inline int bridge_arg_to_string_name(const void *arg, char *out, int max_len) {
     return 0;
 }
 
+static GDExtensionPtrBuiltInMethod gd_dict_builtin_set = nullptr;
+
 inline void dict_set_variant(void *dict, const char *key_str, int var_type, const void *val_ptr) {
-    if (!gd_dict_keyed_setter && gd_variant_get_ptr_keyed_setter) {
-        gd_dict_keyed_setter = gd_variant_get_ptr_keyed_setter(GDEXTENSION_VARIANT_TYPE_DICTIONARY);
-    }
-    if (!gd_dict_keyed_setter) return;
+    if (!dict || !key_str) return;
 
     alignas(void*) char var_key[24] = {};
     const char *k = key_str;
@@ -1084,7 +1083,24 @@ inline void dict_set_variant(void *dict, const char *key_str, int var_type, cons
     alignas(void*) char var_val[24] = {};
     bridge_variant_from_type(var_type, var_val, val_ptr);
 
-    gd_dict_keyed_setter(dict, var_key, var_val);
+    if (!gd_dict_builtin_set && gd_variant_get_ptr_builtin_method) {
+        void *sn_set = make_string_name("set");
+        gd_dict_builtin_set = gd_variant_get_ptr_builtin_method(GDEXTENSION_VARIANT_TYPE_DICTIONARY, sn_set, 2175348267LL);
+        free_string_name(sn_set);
+    }
+
+    if (gd_dict_builtin_set) {
+        const GDExtensionConstTypePtr args[2] = { var_key, var_val };
+        uint8_t ret_bool = 0;
+        gd_dict_builtin_set(dict, args, &ret_bool, 2);
+    } else {
+        if (!gd_dict_keyed_setter && gd_variant_get_ptr_keyed_setter) {
+            gd_dict_keyed_setter = gd_variant_get_ptr_keyed_setter(GDEXTENSION_VARIANT_TYPE_DICTIONARY);
+        }
+        if (gd_dict_keyed_setter) {
+            gd_dict_keyed_setter(dict, var_key, var_val);
+        }
+    }
 
     if (gd_variant_destroy) {
         gd_variant_destroy(var_key);
@@ -1093,13 +1109,13 @@ inline void dict_set_variant(void *dict, const char *key_str, int var_type, cons
 }
 
 inline void bridge_ret_dictionary_validate(void *r_ret, uint8_t valid) {
-    bridge_ret_dictionary_empty(r_ret);
+    if (!r_ret) return;
     uint8_t v_bool = valid;
     dict_set_variant(r_ret, "valid", GDEXTENSION_VARIANT_TYPE_BOOL, &v_bool);
 }
 
 inline void bridge_ret_dictionary_complete_code(void *r_ret) {
-    bridge_ret_dictionary_empty(r_ret);
+    if (!r_ret) return;
     int64_t v_res = 0;
     dict_set_variant(r_ret, "result", GDEXTENSION_VARIANT_TYPE_INT, &v_res);
     uint8_t v_force = 0;
@@ -1109,7 +1125,7 @@ inline void bridge_ret_dictionary_complete_code(void *r_ret) {
 }
 
 inline void bridge_ret_dictionary_lookup_code(void *r_ret) {
-    bridge_ret_dictionary_empty(r_ret);
+    if (!r_ret) return;
     int64_t v_res = 2; // ERR_UNAVAILABLE
     dict_set_variant(r_ret, "result", GDEXTENSION_VARIANT_TYPE_INT, &v_res);
     int64_t v_type = 0;
@@ -1117,7 +1133,7 @@ inline void bridge_ret_dictionary_lookup_code(void *r_ret) {
 }
 
 inline void bridge_ret_dictionary_global_class(void *r_ret, const char *class_name, const char *base_type, const char *icon_path) {
-    bridge_ret_dictionary_empty(r_ret);
+    if (!r_ret) return;
     if (!class_name || class_name[0] == '\0') return;
     dict_set_variant(r_ret, "name", GDEXTENSION_VARIANT_TYPE_STRING, &class_name);
     const char *b_type = (base_type && base_type[0] != '\0') ? base_type : "Node";
@@ -1185,6 +1201,7 @@ static CrystalCleanupCallbackFn s_debugger_cleanup_fn = nullptr;
 static int g_loader_registered = 0;
 static int g_saver_registered = 0;
 static int g_language_registered = 0;
+static GDExtensionObjectPtr g_language_object = nullptr;
 static int s_is_reloading = 0;
 
 inline void custom_callable_call(void *callable_userdata, const GDExtensionConstVariantPtr *p_args, GDExtensionInt p_argument_count, GDExtensionVariantPtr r_return, GDExtensionCallError *r_error) {
@@ -1417,6 +1434,8 @@ inline int bridge_is_saver_registered() { return g_saver_registered; }
 inline void bridge_set_saver_registered(int r) { g_saver_registered = r; }
 inline int bridge_is_language_registered() { return g_language_registered; }
 inline void bridge_set_language_registered(int r) { g_language_registered = r; }
+inline void* bridge_get_language_object() { return g_language_object; }
+inline void bridge_set_language_object(void *obj) { g_language_object = (GDExtensionObjectPtr)obj; }
 
 inline void bridge_set_reloading(int reloading) { s_is_reloading = reloading; }
 

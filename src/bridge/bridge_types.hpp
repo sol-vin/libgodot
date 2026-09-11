@@ -277,6 +277,8 @@ struct BridgeAPI {
     void (*set_saver_registered)(int r);
     int (*is_language_registered)();
     void (*set_language_registered)(int r);
+    void* (*get_language_object)();
+    void (*set_language_object)(void *obj);
     void (*set_reloading)(int r);
     void (*set_debugger_cleanup)(void (*fn)());
     void (*trigger_debugger_cleanup)();

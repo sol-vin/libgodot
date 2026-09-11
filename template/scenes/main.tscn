@@ -1,8 +1,11 @@
-[gd_scene format=3 uid="uid://dt7lnd8pp1jxi"]
+[gd_scene format=3 uid="uid://a"]
+
+[ext_resource type="Script" uid="uid://d1p0h0jxsvcs8" path="res://src/main.cr" id="1_o5qli"]
 
 [sub_resource type="BoxMesh" id="BoxMesh_1"]
 
 [node name="MainNode" type="MainNode" unique_id=1913652511]
+script = ExtResource("1_o5qli")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1664467660]
 mesh = SubResource("BoxMesh_1")

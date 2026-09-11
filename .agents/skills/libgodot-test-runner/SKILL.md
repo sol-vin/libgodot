@@ -51,23 +51,19 @@ Executes tool script tests and validates script resource loading inside the Godo
      ```powershell
      cmd /c "godot.exe --verbose --editor --path template --quit-after 50 2>&1"
      ```
-  2. **Verify Script Resource Loader**:
+  2. **Verify Script Resource Loader & Language**:
      - Ensure `ResourceFormatLoaderCrystal` correctly handles `.cr` files as `Script` / `CrystalScript` resources (not plain text files).
      - Check logs for absence of loader failures:
        - No `ERROR: No loader found for resource: res://src/main.cr (expected type: Script)`
        - No `ERROR: Condition "res.is_null()" is true. Returning: ERR_CANT_OPEN`
+       - No `ERROR: Required virtual method CrystalLanguage::_... must be overridden before calling.`
   3. **Verify Clean Editor Shutdown**:
      - Check console logs upon closing the editor: must contain **ZERO** `ERROR: BUG: Unreferenced static string to 0: ...` errors.
      - Never call `.destroy` or manually unparent editor-owned UI nodes (e.g. `EditorDock` or editor titlebar buttons).
      - Never call `gd_classdb_unregister_extension_class` during process shutdown (`is_engine_shutting_down()`); Godot's engine cleanup handles ClassDB destruction automatically.
   4. **Automated Verification Command**:
      ```powershell
-     $log = cmd /c "godot.exe --verbose --editor --path template --quit-after 50 2>&1"
-     if ($log -match "BUG: Unreferenced static string" -or $log -match "No loader found for resource.*\.cr") {
-         Write-Error "Editor verification failed!"
-     } else {
-         Write-Host "Editor verification passed: clean shutdown and valid script loaders." -ForegroundColor Green
-     }
+     powershell -File scripts/verify_editor.ps1 -Path template -QuitAfter 50
      ```
 
 ### 3. Standalone Runtime Project Tests (`test/`)

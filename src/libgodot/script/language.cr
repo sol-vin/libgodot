@@ -13,6 +13,7 @@ module Godot
   # Crystal scripting language implementation.
   # Provides language metadata, templates, and code completion to Godot's ScriptServer.
   @[Tool]
+  @[Icon("res://addons/crystal_integration/crystal_icon.svg")]
   node CrystalLanguage < ScriptLanguageExtension do
     @@instance : CrystalLanguage? = nil
     @@registered : Bool = false
@@ -20,6 +21,11 @@ module Godot
     def self.ensure_registered : Void
       return if @@registered
       if Bridge.is_language_registered?
+        ptr = Bridge.get_language_object
+        if !ptr.null?
+          @@instance = Godot::CrystalLanguage.new(ptr)
+        end
+        @@registered = true
         return
       end
       eng_ptr = Bridge.get_singleton("Engine")
@@ -47,6 +53,7 @@ module Godot
         @@instance = lang
         engine.register_script_language(lang)
         Bridge.set_language_registered(true)
+        Bridge.set_language_object(lang.pointer)
         @@registered = true
       end
     end
@@ -72,6 +79,7 @@ module Godot
         end
       end
       Bridge.set_language_registered(false)
+      Bridge.set_language_object(Pointer(Void).null)
       @@instance = nil
       @@registered = false
       Godot.print("[CrystalLanguage.unregister] Done successfully.")
@@ -83,6 +91,12 @@ module Godot
       end
       ensure_registered
       if inst = @@instance
+        return inst
+      end
+      ptr = Bridge.get_language_object
+      if !ptr.null?
+        inst = Godot::CrystalLanguage.new(ptr)
+        @@instance = inst
         return inst
       end
       eng_ptr = Bridge.get_singleton("Engine")
@@ -203,6 +217,7 @@ module Godot
            "_create_script", "_has_named_classes", "_supports_builtin_mode",
            "_supports_documentation", "_can_inherit_from_file", "_find_function",
            "_make_function", "_can_make_function",
+           "_open_in_external_editor", "_overrides_external_editor",
            "_preferred_file_name_casing", "_complete_code",
            "_lookup_code", "_auto_indent_code", "_handles_global_class_type",
            "_get_global_class_name", "_debug_get_error", "_debug_get_stack_level_count",
@@ -214,7 +229,8 @@ module Godot
            "_reload_tool_script", "_get_public_functions", "_get_public_constants",
            "_get_public_annotations", "_profiling_start", "_profiling_stop",
            "_profiling_set_save_native_calls", "_profiling_get_accumulated_data",
-           "_profiling_get_frame_data"
+           "_profiling_get_frame_data",
+           "_add_global_constant", "_add_named_global_constant", "_remove_named_global_constant"
         true
       else
         false
@@ -369,7 +385,8 @@ module Godot
       when "_debug_get_current_stack_info"
         Bridge.ret_array_empty(ret)
       when "_reload_all_scripts", "_reload_scripts", "_reload_tool_script",
-           "_profiling_start", "_profiling_stop", "_profiling_set_save_native_calls"
+           "_profiling_start", "_profiling_stop", "_profiling_set_save_native_calls",
+           "_add_global_constant", "_add_named_global_constant", "_remove_named_global_constant"
         return
       when "_get_public_functions", "_get_public_annotations"
         Bridge.ret_array_empty(ret)
