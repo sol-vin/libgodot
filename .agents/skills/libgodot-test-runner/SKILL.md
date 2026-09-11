@@ -37,14 +37,38 @@ To run specs directly:
 crystal spec spec/features_spec.cr spec/safety_and_bindings_spec.cr spec/libgodot_spec.cr spec/boot_spec.cr
 ```
 
-### 2. Headless In-Editor `@tool` Tests
-Executes tool script tests inside the headless Godot Editor:
+### 2. In-Editor `@tool` and Script Loading Verification
+Executes tool script tests and validates script resource loading inside the Godot Editor:
 - Tests `ToolTester2D` and `ToolTester3D` in `test/scenes/main.tscn`.
 - Verifies editor-only callbacks, tool buttons, and live inspector updates.
 - Command executed internally:
   ```bash
   godot.exe --headless --editor --path test --quit-after 100
   ```
+- **In-Editor Script Loading & Clean Shutdown Verification Protocol**:
+  Whenever modifying editor integration, bridge deinitialization, or resource loaders/savers, you MUST run this verification check:
+  1. **Launch the Godot Editor**:
+     ```powershell
+     cmd /c "godot.exe --verbose --editor --path template --quit-after 50 2>&1"
+     ```
+  2. **Verify Script Resource Loader**:
+     - Ensure `ResourceFormatLoaderCrystal` correctly handles `.cr` files as `Script` / `CrystalScript` resources (not plain text files).
+     - Check logs for absence of loader failures:
+       - No `ERROR: No loader found for resource: res://src/main.cr (expected type: Script)`
+       - No `ERROR: Condition "res.is_null()" is true. Returning: ERR_CANT_OPEN`
+  3. **Verify Clean Editor Shutdown**:
+     - Check console logs upon closing the editor: must contain **ZERO** `ERROR: BUG: Unreferenced static string to 0: ...` errors.
+     - Never call `.destroy` or manually unparent editor-owned UI nodes (e.g. `EditorDock` or editor titlebar buttons).
+     - Never call `gd_classdb_unregister_extension_class` during process shutdown (`is_engine_shutting_down()`); Godot's engine cleanup handles ClassDB destruction automatically.
+  4. **Automated Verification Command**:
+     ```powershell
+     $log = cmd /c "godot.exe --verbose --editor --path template --quit-after 50 2>&1"
+     if ($log -match "BUG: Unreferenced static string" -or $log -match "No loader found for resource.*\.cr") {
+         Write-Error "Editor verification failed!"
+     } else {
+         Write-Host "Editor verification passed: clean shutdown and valid script loaders." -ForegroundColor Green
+     }
+     ```
 
 ### 3. Standalone Runtime Project Tests (`test/`)
 Runs the full interactive test project in Godot:
@@ -67,6 +91,14 @@ Runs the full interactive test project in Godot:
 
 ### 4. Template and Example Smoke Tests
 Verifies that `template/` and all projects under `examples/` boot cleanly without crashing.
+- Test template runtime:
+  ```bash
+  godot.exe --headless --path template --quit-after 50
+  ```
+- Test template editor launch and script loader:
+  ```bash
+  godot.exe --headless --editor --path template --quit-after 50
+  ```
 
 ---
 

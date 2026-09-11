@@ -86,6 +86,11 @@ module Godot
     Godot.print("==================================================================")
 
     if Godot.editor_hint?
+      # Ensure first-class language, loader, and saver are active in editor
+      Godot::CrystalLanguage.ensure_registered
+      Godot::ResourceFormatLoaderCrystal.ensure_registered
+      Godot::ResourceFormatSaverCrystal.ensure_registered
+
       # Disable 'Highlight Type Safe Lines' to prevent engine bug in TextEdit (p_gutter = -1 out of bounds)
       if !Godot::EditorInterface.singleton_ptr.null?
         ed_interface = Godot::EditorInterface.new(Godot::EditorInterface.singleton_ptr)
@@ -95,16 +100,15 @@ module Godot
           ed_settings.call("set_initial_value", "text_editor/appearance/gutters/highlight_type_safe_lines", false, false)
           ed_settings.call("set_setting", "text_editor/appearance/guidelines/highlight_type_safe_lines", false)
 
+          # Ensure 'cr' is not marked as a plain textfile so Godot treats .cr as a typed Script resource
           val = ed_settings.call_str("get_setting", "docks/filesystem/textfile_extensions")
           exts = (val.empty? ? "txt,md,cfg,ini,log,json,yml,yaml,toml,xml" : val).split(',').map(&.strip).reject(&.empty?)
-          unless exts.includes?("cr")
-            exts << "cr"
+          if exts.includes?("cr")
+            exts.delete("cr")
             new_val = exts.join(",")
             ed_settings.call("set_setting", "docks/filesystem/textfile_extensions", new_val)
             ed_settings.call("set_initial_value", "docks/filesystem/textfile_extensions", new_val, false)
-            Godot.print("[CrystalIntegrationPlugin] Added 'cr' to EditorSettings docks/filesystem/textfile_extensions: #{new_val}")
           end
-          ed_settings.unreference rescue nil
         end
       end
 
@@ -128,6 +132,7 @@ module Godot
       connect("scene_changed") do |_args|
         self.class.link_scripts_in_edited_scene
       end
+      self.call("set_process", true) rescue nil
 
       Godot.print("[CrystalIntegrationPlugin] First-class .cr script support, language, and syntax highlighter registered in 100% pure Crystal.")
     end
@@ -308,7 +313,6 @@ module Godot
     if !ed_settings.pointer.null?
       custom_lldb = ed_settings.call_str("get_setting", "crystal/debugger/lldb_path")
       lldb_path = custom_lldb unless custom_lldb.empty?
-      ed_settings.unreference rescue nil
     end
 
     if Debugger::LldbDriver.available?(lldb_path)
@@ -1085,9 +1089,19 @@ module Godot
     self.class.execute_crystal_build_with_options(is_release)
   end
 
+  @@link_check_accum : Float64 = 0.0_f64
+
   def _process(delta : Float64) : Void
     if dbg = @@debugger_plugin
       dbg.call("poll") rescue nil
+    end
+
+    if Godot.editor_hint?
+      @@link_check_accum += delta
+      if @@link_check_accum >= 1.0_f64
+        @@link_check_accum = 0.0_f64
+        self.class.link_scripts_in_edited_scene
+      end
     end
   end
 

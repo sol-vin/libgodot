@@ -1035,7 +1035,9 @@ macro node(decl, &block)
         link_class_script if ::Godot.editor_hint?
         {% end %}
         {% if has_enter_tree %}
-        _enter_tree if responds_to?(:_enter_tree)
+        if !::Godot.editor_hint? || {{is_tool_class}}
+          _enter_tree if responds_to?(:_enter_tree)
+        end
         {% end %}
       {% if has_exit_tree %}
       when "_exit_tree"

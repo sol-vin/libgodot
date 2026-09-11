@@ -6,22 +6,30 @@ module Godot
     @@registered : Bool = false
 
     def self.ensure_registered : Void
+      Godot.print("[ResourceFormatLoaderCrystal.ensure_registered] Called. registered=#{@@registered}, bridge_registered=#{Bridge.is_loader_registered?}")
       return if @@registered
-      if Bridge.is_loader_registered?
+      rl_ptr = Bridge.get_singleton("ResourceLoader")
+      if rl_ptr.null?
+        Godot.printerr("[ResourceFormatLoaderCrystal.ensure_registered] ResourceLoader singleton is NULL!")
         return
       end
-      rl_ptr = Bridge.get_singleton("ResourceLoader")
-      return if rl_ptr.null?
       r_loader = Godot::ResourceLoader.new(rl_ptr)
-      if r_loader.call_str("get_resource_type", "test.cr") == "CrystalScript"
+      current_type = r_loader.call_str("get_resource_type", "test.cr")
+      Godot.print("[ResourceFormatLoaderCrystal.ensure_registered] Current test.cr type='#{current_type}'")
+      if current_type == "CrystalScript"
         Bridge.set_loader_registered(true)
+        @@registered = true
         return
       end
       if loader = Godot.create(Godot::ResourceFormatLoaderCrystal)
+        Godot.print("[ResourceFormatLoaderCrystal.ensure_registered] Created loader instance #{loader.pointer}")
         @@instance = loader
         r_loader.call("add_resource_format_loader", loader, true)
         Bridge.set_loader_registered(true)
         @@registered = true
+        Godot.print("[ResourceFormatLoaderCrystal.ensure_registered] Registered! After check: '#{r_loader.call_str("get_resource_type", "test.cr")}'")
+      else
+        Godot.printerr("[ResourceFormatLoaderCrystal.ensure_registered] Failed to create loader instance!")
       end
     end
 
@@ -37,10 +45,6 @@ module Godot
         end
       end
       Bridge.set_loader_registered(false)
-      ref_count = loader.get_reference_count rescue 0_i64
-      if ref_count > 0
-        loader.unreference rescue nil
-      end
       @@instance = nil
       @@registered = false
     end
@@ -109,7 +113,7 @@ module Godot
     def self._godot_has_virtual_method(method_name : String) : Bool
       norm = method_name.starts_with?('_') ? method_name : "_#{method_name}"
       case norm
-      when "_get_recognized_extensions", "_recognize_path", "_handles_type", "_get_resource_type", "_load"
+      when "_get_recognized_extensions", "_recognize_path", "_handles_type", "_get_resource_type", "_get_resource_script_class", "_load"
         true
       else
         false
@@ -123,14 +127,32 @@ module Godot
         Bridge.ret_packed_string_array(ret, ["cr"])
       when "_recognize_path"
         path = Bridge.arg_to_string(args[0])
-        ret.as(UInt8*).value = path.ends_with?(".cr") ? 1_u8 : 0_u8
+        tname = ""
+        if args && args[1]
+          tname = Bridge.arg_to_string_name(args[1]) rescue ""
+          tname = Bridge.arg_to_string(args[1]) rescue "" if tname.empty?
+        end
+        type_ok = tname.empty? || tname == "Script" || tname == "CrystalScript" || tname == "Resource"
+        ret.as(UInt8*).value = (type_ok && path.downcase.ends_with?(".cr")) ? 1_u8 : 0_u8
       when "_handles_type"
-        typename = Bridge.arg_to_string_name(args[0])
+        typename = Bridge.arg_to_string_name(args[0]) rescue ""
+        typename = Bridge.arg_to_string(args[0]) rescue "" if typename.empty?
         handles = (typename == "Script" || typename == "CrystalScript" || typename == "Resource" || typename.empty?)
         ret.as(UInt8*).value = handles ? 1_u8 : 0_u8
       when "_get_resource_type"
         path = Bridge.arg_to_string(args[0])
-        Bridge.ret_string(ret, path.ends_with?(".cr") ? "CrystalScript" : "")
+        Bridge.ret_string(ret, path.downcase.ends_with?(".cr") ? "CrystalScript" : "")
+      when "_get_resource_script_class"
+        path = Bridge.arg_to_string(args[0])
+        cls_name = ""
+        normalized_path = path.starts_with?("res://") ? path : "res://#{path.lstrip('/')}"
+        if entry = ClassRegistry.entries.find { |e| e.script_path == path || e.script_path == normalized_path || (!e.script_path.empty? && (path.ends_with?(e.script_path.sub("res://", "")) || e.script_path.ends_with?(path.sub("res://", "")))) }
+          cls_name = entry.class_name
+        else
+          c_name, _, _ = CrystalLanguage.inspect_file_global_class(path)
+          cls_name = c_name
+        end
+        Bridge.ret_string(ret, cls_name)
       when "_load"
         path = Bridge.arg_to_string(args[0])
         orig_path = Bridge.arg_to_string(args[1])
@@ -143,6 +165,7 @@ module Godot
         if script
           script.set_script_path(target_path)
           script.set_source_code(code)
+          script.call("set_path", target_path) rescue nil
           Bridge.ret_variant_object(ret, script.pointer)
           script.unreference
         else
@@ -196,10 +219,6 @@ module Godot
         end
       end
       Bridge.set_saver_registered(false)
-      ref_count = saver.get_reference_count rescue 0_i64
-      if ref_count > 0
-        saver.unreference rescue nil
-      end
       @@instance = nil
       @@registered = false
     end

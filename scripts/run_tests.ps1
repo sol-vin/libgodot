@@ -295,6 +295,22 @@ if (-not $SkipToolTests) {
 }
 
 # -----------------------------------------------------------------------------
+# Editor Launch & Script Loader Clean Shutdown Verification
+# -----------------------------------------------------------------------------
+$verifyEditorScript = Join-Path $RootDir "scripts/verify_editor.ps1"
+if (Test-Path $verifyEditorScript) {
+    try {
+        & $verifyEditorScript -Path "template" -QuitAfter 50
+        if ($LASTEXITCODE -ne 0) {
+            $FailedSteps.Add("Editor Launch & Clean Shutdown Verification")
+        }
+    } catch {
+        Write-Host "::error::Editor Launch Verification failed: $_" -ForegroundColor Red
+        $FailedSteps.Add("Editor Launch & Clean Shutdown Verification")
+    }
+}
+
+# -----------------------------------------------------------------------------
 # Phase 3: Standalone Compiled Test Runner (./tests --autorun)
 # -----------------------------------------------------------------------------
 # Ensure dummy addons are compiled and synced for multi-addon isolation tests

@@ -599,7 +599,12 @@ module Godot
 
       c_name = self.class.name.split("::").last
       entry = ClassRegistry.find(c_name)
+      if !entry
+        godot_cls = self.call_str("get_class") rescue ""
+        entry = ClassRegistry.find(godot_cls) unless godot_cls.empty?
+      end
       return unless entry
+      return if entry.class_name.includes?("Script") || entry.class_name.includes?("Plugin")
       path = entry.script_path
       return if path.empty? || path == "res://" || path == "res:///"
 
