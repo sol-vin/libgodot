@@ -1001,9 +1001,6 @@ inline void bridge_ret_ref(void *r_ret, void *obj) {
     if (!r_ret) return;
     if (!obj) {
         *(void**)r_ret = nullptr;
-        char msg[128];
-        snprintf(msg, sizeof(msg), "[DEBUG_RET_REF] r_ret=%p obj=null", r_ret);
-        godot_log_print(msg);
         return;
     }
     if (gd_ref_set_object) {
@@ -1013,9 +1010,6 @@ inline void bridge_ret_ref(void *r_ret, void *obj) {
         refcounted_reference(obj);
         *(void**)r_ret = obj;
     }
-    char msg[256];
-    snprintf(msg, sizeof(msg), "[DEBUG_RET_REF] r_ret=%p obj=%p *r_ret=%p", r_ret, obj, *(void**)r_ret);
-    godot_log_print(msg);
 }
 
 inline void bridge_ret_variant_object(void *r_ret, void *obj) {

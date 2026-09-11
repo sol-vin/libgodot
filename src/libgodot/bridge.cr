@@ -318,7 +318,11 @@ module Godot
         if !crystal_inst.null?
           inst = Box(Godot::Object).unbox(crystal_inst)
           m_name = String.new(method_name)
-          inst._godot_call_virtual_with_data(m_name, args, ret)
+          begin
+            inst._godot_call_virtual_with_data(m_name, args, ret)
+          rescue ex
+            Godot.printerr("[CrystalBridge] Unhandled exception in virtual method '#{m_name}': #{ex.message}")
+          end
         end
       }
 

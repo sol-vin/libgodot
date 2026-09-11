@@ -267,22 +267,22 @@ module Godot
       when "_get_string_delimiters"
         Bridge.ret_packed_string_array(ret, ["\" \"", "' '"])
       when "_make_template"
-        template = Bridge.arg_to_string(args[0])
-        c_name = Bridge.arg_to_string(args[1])
-        b_name = Bridge.arg_to_string(args[2])
-        c_name = "NewNode" if c_name.empty?
-        b_name = "Node" if b_name.empty?
-
-        code = if !template.empty?
-          template.gsub("_CLASS_", c_name).gsub("_BASE_", b_name)
-        else
-          "require \"libgodot\"\n\nnode #{c_name} < #{b_name} do\n  def _ready : Void\n  end\n\n  def _process(delta : Float64) : Void\n  end\nend\n"
-        end
-
         begin
+          template = (!args.null? && !args[0].null?) ? (Bridge.arg_to_string(args[0]) rescue "") : ""
+          c_name = (!args.null? && !args[1].null?) ? (Bridge.arg_to_string(args[1]) rescue "") : ""
+          b_name = (!args.null? && !args[2].null?) ? (Bridge.arg_to_string(args[2]) rescue "") : ""
+          c_name = "NewNode" if c_name.empty?
+          b_name = "Node" if b_name.empty?
+
+          code = if !template.empty?
+            template.gsub("_CLASS_", c_name).gsub("_BASE_", b_name)
+          else
+            "require \"libgodot\"\n\n# #{c_name} node\nnode #{c_name} < #{b_name} do\n  def _ready : Void\n    Godot.print(\"#{c_name} initialized\")\n  end\n\n  def _process(delta : Float64) : Void\n  end\nend\n"
+          end
+
           script = Godot.create(Godot::CrystalScript)
           if script && !script.pointer.null?
-            script.set_source_code(code)
+            script.source_code = code
             Bridge.ret_ref(ret, script.pointer)
           else
             Godot.printerr("[CrystalLanguage._make_template] Error: Failed to create CrystalScript resource!")

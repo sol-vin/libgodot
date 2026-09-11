@@ -124,8 +124,9 @@ module Godot
       when "_get_source_code"
         Bridge.ret_string(ret, @source_code)
       when "_set_source_code"
-        new_code = Bridge.arg_to_string(args[0])
-        set_source_code(new_code)
+        new_code = (!args.null? && !args[0].null?) ? Bridge.arg_to_string(args[0]) : ""
+        @source_code = new_code
+        parse_source_metadata
       when "_get_instance_base_type"
         b_type = @script_base_type.empty? ? "Node" : @script_base_type
         Bridge.ret_string_name(ret, b_type)
