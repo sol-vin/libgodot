@@ -163,17 +163,14 @@ module Godot
     return if theme.nil? || theme.pointer.null?
 
     if icon_tex = get_crystal_icon_texture
-      registered_any = false
+      b_theme = (base_ctrl.get_theme rescue nil)
       ["CrystalScript", "CrystalLanguage", "Crystal"].each do |type_name|
-        has = theme.has_icon(type_name, "EditorIcons") rescue false
-        unless has
-          theme.set_icon(type_name, "EditorIcons", icon_tex) rescue nil
-          registered_any = true
+        theme.set_icon(type_name, "EditorIcons", icon_tex) rescue nil
+        if b_theme && !b_theme.pointer.null?
+          b_theme.set_icon(type_name, "EditorIcons", icon_tex) rescue nil
         end
       end
-      if registered_any
-        Godot.print("[CrystalIntegrationPlugin] Registered Crystal theme icons into EditorIcons theme.")
-      end
+      Godot.print("[CrystalIntegrationPlugin] Registered Crystal theme icons into EditorIcons theme.")
     end
   rescue ex
     Godot.printerr("[CrystalIntegrationPlugin] Notice: theme icons registration: #{ex.message}")
@@ -208,20 +205,24 @@ module Godot
             ed_interface = Godot::EditorInterface.new(Godot::EditorInterface.singleton_ptr)
             script_editor = ed_interface.get_script_editor
             if !script_editor.pointer.null?
-              script_editor.unregister_syntax_highlighter(highlighter) rescue nil
+              script_editor.disconnect("editor_script_changed") rescue nil
+              if highlighter.alive?
+                script_editor.unregister_syntax_highlighter(highlighter) rescue nil
+              end
             end
           rescue
           end
         end
-        highlighter.unreference rescue nil
         @@crystal_highlighter = nil
       end
 
       if btn = @@compile_button
-        if !btn.pointer.null?
-          btn.set_button_icon(Godot::Texture2D.new(Pointer(Void).null)) rescue nil
+        if !btn.pointer.null? && btn.alive?
+          btn.call("set_button_icon", nil) rescue nil
           if inst = @@instance
-            inst.remove_control_from_container(Godot::EditorPlugin::CustomControlContainer::ContainerToolbar.value, btn) rescue nil
+            if inst.alive?
+              inst.remove_control_from_container(Godot::EditorPlugin::CustomControlContainer::ContainerToolbar.value, btn) rescue nil
+            end
           end
           btn.queue_free rescue nil
         end
@@ -239,10 +240,9 @@ module Godot
             if on_cl = @@on_cleanup
               on_cl.call rescue nil
             end
-            if inst = @@instance
+            if (inst = @@instance) && inst.alive?
               inst.remove_debugger_plugin(dbg_plug) rescue nil
             end
-            dbg_plug.unreference rescue nil
           rescue ex
             Godot.print("[CrystalIntegrationPlugin] Error in debugger cleanup: #{ex.message}")
           end
@@ -251,12 +251,12 @@ module Godot
       end
 
       if panel = @@crystal_panel
-        if !panel.pointer.null?
-          parent = panel.call_obj("get_parent")
-          if parent && !parent.pointer.null?
+        if !panel.pointer.null? && panel.alive?
+          parent = panel.call_obj("get_parent") rescue nil
+          if parent && !parent.pointer.null? && parent.alive?
             parent.call("remove_child", panel) rescue nil
           end
-          panel.queue_free rescue nil
+          panel.destroy rescue (panel.queue_free rescue nil)
         end
         @@crystal_panel = nil
       end
@@ -264,8 +264,12 @@ module Godot
       clear_theme_icons
 
       if dlg = @@error_dialog
-        if !dlg.pointer.null?
-          dlg.queue_free rescue nil
+        if !dlg.pointer.null? && dlg.alive?
+          parent = dlg.call_obj("get_parent") rescue nil
+          if parent && !parent.pointer.null? && parent.alive?
+            parent.call("remove_child", dlg) rescue nil
+          end
+          dlg.destroy rescue nil
         end
         @@error_dialog = nil
       end
@@ -872,16 +876,21 @@ module Godot
       else
         Godot.printerr("[CrystalIntegrationPlugin] Build failed! Check the error dialog and Debugger -> Errors tab.")
         @@building = false
+        @@reload_pending = false
         if btn = @@compile_button
           btn.call("set_disabled", false) rescue nil
-          btn.call("set_text", "Build") rescue nil
+          btn.call("set_text", "Build Failed") rescue nil
+        end
+        if ::ENV["LIBGODOT_TEST_ERROR_RECOVERY"]? == "1"
+          Godot.print("[TestErrorRecovery] SUCCESS: Compilation failure captured gracefully and button recovered to 'Build Failed'!")
         end
       end
     rescue ex
       @@building = false
+      @@reload_pending = false
       if btn = @@compile_button
         btn.call("set_disabled", false) rescue nil
-        btn.call("set_text", "Build") rescue nil
+        btn.call("set_text", "Build Failed") rescue nil
       end
       Godot.printerr("[CrystalIntegrationPlugin] Error during build: #{ex.message}")
     end
@@ -893,29 +902,47 @@ module Godot
 
   # Automated verification workflow for the Build Crystal toolbar button and GDExtension reload
   def self.check_test_build_button_flow : Void
+    target_cycles = ::ENV["LIBGODOT_TEST_RELOAD_CYCLES"]?.try(&.to_i?) || 2
+
     if !Godot::Engine.singleton_ptr.null?
       engine = Godot::Engine.new(Godot::Engine.singleton_ptr)
       if engine.call_bool("has_meta", "crystal_test_reloaded")
         engine.call("remove_meta", "crystal_test_reloaded") rescue nil
-        Godot.print("[TestBuildButton] SUCCESS: Build Crystal button pressed, compilation succeeded, and GDExtension reloaded cleanly!")
-        return
+        current_cycle = (engine.call_i64("get_meta", "crystal_test_cycle") rescue 1_i64) + 1_i64
+        engine.call("set_meta", "crystal_test_cycle", current_cycle) rescue nil
+        Godot.print("[TestBuildButton] Reload cycle #{current_cycle - 1}/#{target_cycles} completed cleanly!")
+
+        if current_cycle <= target_cycles
+          # Schedule next reload cycle
+          schedule_test_button_press(1.5, current_cycle, target_cycles.to_i64)
+          return
+        else
+          engine.call("remove_meta", "crystal_test_cycle") rescue nil
+          Godot.print("[TestBuildButton] SUCCESS: Build Crystal button pressed, compilation succeeded, and GDExtension reloaded cleanly!")
+          Godot.print("[TestBuildButton] SUCCESS: Completed all #{target_cycles} reload cycles!")
+          return
+        end
       end
     end
 
+    # Initial launch: schedule cycle 1
+    schedule_test_button_press(1.5, 1_i64, target_cycles.to_i64)
+  end
+
+  def self.schedule_test_button_press(delay_sec : Float64, cycle : Int64, total_cycles : Int64) : Void
     return unless has_editor_interface?
     return if Godot::EditorInterface.singleton_ptr.null?
     ed_iface = Godot::EditorInterface.new(Godot::EditorInterface.singleton_ptr)
     base_ctrl = ed_iface.get_base_control
     return if base_ctrl.pointer.null? || !base_ctrl.is_inside_tree
 
-    # Initial launch: schedule pressing the Build button
     begin
       tree = base_ctrl.get_tree
       if tree && !tree.pointer.null?
-        timer = tree.create_timer(1.5)
+        timer = tree.create_timer(delay_sec)
         if timer && !timer.pointer.null?
           timer.connect("timeout") do |_args|
-            Godot.print("[TestBuildButton] Triggering Build Crystal button pressed via automated test...")
+            Godot.print("[TestBuildButton] Triggering Build Crystal button pressed (cycle #{cycle}/#{total_cycles}) via automated test...")
             if btn = @@compile_button
               btn.emit_signal("pressed") rescue on_compile_button_pressed
             else
@@ -1165,6 +1192,7 @@ module Godot
   end
 
   @@link_check_accum : Float64 = 0.0_f64
+  @@reload_watchdog : Float64 = 0.0_f64
 
   def _process(delta : Float64) : Void
     if dbg = @@debugger_plugin
@@ -1172,6 +1200,26 @@ module Godot
     end
 
     if Godot.editor_hint?
+      # Ensure toolbar button is active and restored after reload
+      btn_inst = @@compile_button
+      if btn_inst.nil? || btn_inst.pointer.null? || !btn_inst.alive?
+        self.class.setup_toolbar_button
+      elsif btn = @@compile_button
+        if @@reload_pending || (btn.call_str("get_text") rescue "") == "Reloading..."
+          @@reload_watchdog += delta
+          if @@reload_watchdog > 1.5_f64
+            @@reload_pending = false
+            @@building = false
+            @@reload_watchdog = 0.0_f64
+            btn.call("set_disabled", false) rescue nil
+            btn.call("set_text", "Build") rescue nil
+            Godot.print("[CrystalIntegrationPlugin] Watchdog: Reload completed. Reset Build button to 'Build'.")
+          end
+        else
+          @@reload_watchdog = 0.0_f64
+        end
+      end
+
       @@link_check_accum += delta
       if @@link_check_accum >= 1.0_f64
         @@link_check_accum = 0.0_f64
@@ -1214,6 +1262,7 @@ module Godot
 
   def self.link_scripts_recursive(node : Godot::Node) : Void
     return if node.pointer.null?
+    return unless (node.call_bool("is_inside_tree") rescue false)
     node.link_class_script
     child_count = node.call_i64("get_child_count")
     child_count.times do |i|

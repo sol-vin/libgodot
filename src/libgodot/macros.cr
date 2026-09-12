@@ -406,11 +406,6 @@ module Godot
     end
 
     def self.cleanup : Void
-      @@script_cache.each_value do |script|
-        if !script.pointer.null?
-          script.unreference rescue nil
-        end
-      end
       @@script_cache.clear
     end
   end

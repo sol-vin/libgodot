@@ -568,6 +568,7 @@ module Godot
 
     # Destroys this Object in the Godot engine and invalidates the Crystal pointer.
     def destroy : Void
+      return if @destroyed
       @destroyed = true
       Godot.clear_signal_subscriptions(signal_target_id)
       if !@pointer.null?
@@ -593,6 +594,12 @@ module Godot
       return unless Godot.editor_hint?
       return if @pointer.null?
       return if self.is_a?(Godot::Script) || self.class.name.includes?("Script") || self.class.name.includes?("Plugin")
+
+      # Guard against linking script to nodes that are not inside the active scene tree (prevents 'Cannot get path of node' error)
+      is_node = self.call_bool("is_class", "Node") rescue false
+      if is_node
+        return unless (self.call_bool("is_inside_tree") rescue false)
+      end
 
       curr_script = self.get_script
       return if !curr_script.null?
@@ -852,10 +859,13 @@ module Godot
       Bridge.ptrcall(@@mb_ref_unreference, target_ptr, Pointer(Pointer(Void)).null, pointerof(ret).as(Void*))
       should_free = (ret != 0_u8)
       if should_free
+        inst_id = @instance_id
         @destroyed = true
         @pointer = Pointer(Void).null
         Godot.clear_signal_subscriptions(target_id)
-        Bridge.object_destroy(target_ptr)
+        if Bridge.is_instance_valid(inst_id)
+          Bridge.object_destroy(target_ptr)
+        end
       end
       should_free
     end
@@ -880,36 +890,43 @@ module Godot
       @pointer = Pointer(Void).null
       Godot.clear_signal_subscriptions(target_id)
       if !target_ptr.null?
+        Bridge.unregister_alive_instance_by_ptr(target_ptr)
         is_alive = inst_id > 0 ? Bridge.is_instance_valid(inst_id) : true
         if is_alive
-          if @@mb_ref_get_reference_count.null?
-            @@mb_ref_get_reference_count = Bridge.get_method_bind("RefCounted", "get_reference_count", 3905245786_i64)
+          if @@mb_ref_unreference.null?
+            @@mb_ref_unreference = Bridge.get_method_bind("RefCounted", "unreference", 2240911060_i64)
           end
-          ref_count = 0_i64
-          if !@@mb_ref_get_reference_count.null?
-            Bridge.ptrcall(@@mb_ref_get_reference_count, target_ptr, Pointer(Pointer(Void)).null, pointerof(ref_count).as(Void*))
-          end
-          if ref_count <= 0
-            Bridge.object_destroy(target_ptr)
-          else
-            if @@mb_ref_unreference.null?
-              @@mb_ref_unreference = Bridge.get_method_bind("RefCounted", "unreference", 2240911060_i64)
-            end
-            if !@@mb_ref_unreference.null?
+          if !@@mb_ref_unreference.null?
+            # Unreference repeatedly until Godot frees the object or refcount reaches 0
+            10.times do |iter|
               should_free = 0_u8
               Bridge.ptrcall(@@mb_ref_unreference, target_ptr, Pointer(Pointer(Void)).null, pointerof(should_free).as(Void*))
+              valid = inst_id > 0 ? Bridge.is_instance_valid(inst_id) : false
               if should_free != 0_u8
-                Bridge.object_destroy(target_ptr)
-              else
-                # If an extra reference was held by bridge loader, check remaining count
-                rc = 0_i64
-                Bridge.ptrcall(@@mb_ref_get_reference_count, target_ptr, Pointer(Pointer(Void)).null, pointerof(rc).as(Void*))
-                if rc <= 1
-                  Bridge.ptrcall(@@mb_ref_unreference, target_ptr, Pointer(Pointer(Void)).null, pointerof(should_free).as(Void*))
+                if valid
                   Bridge.object_destroy(target_ptr)
                 end
+                break
               end
-            else
+              if !valid
+                break
+              end
+              if @@mb_ref_get_reference_count.null?
+                @@mb_ref_get_reference_count = Bridge.get_method_bind("RefCounted", "get_reference_count", 3905245786_i64)
+              end
+              rc = 0_i64
+              if !@@mb_ref_get_reference_count.null?
+                Bridge.ptrcall(@@mb_ref_get_reference_count, target_ptr, Pointer(Pointer(Void)).null, pointerof(rc).as(Void*))
+              end
+              if rc <= 0
+                if inst_id == 0 || Bridge.is_instance_valid(inst_id)
+                  Bridge.object_destroy(target_ptr)
+                end
+                break
+              end
+            end
+          else
+            if inst_id == 0 || Bridge.is_instance_valid(inst_id)
               Bridge.object_destroy(target_ptr)
             end
           end

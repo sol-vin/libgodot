@@ -98,7 +98,11 @@ foreach ($dir in $targetDirs) {
         Get-ChildItem -Path $dir -Filter $pattern -File -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue
     }
     # Purge stale temporary shadow copies from prior aborted Godot runs
-    Get-ChildItem -Path $dir -Filter "~*" -Force -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue
+    if ($onWindows) {
+        cmd.exe /c "del /s /q /f /a:h `"$dir\~*`" 2>nul & del /s /q /f `"$dir\~*`" 2>nul" | Out-Null
+    } else {
+        Get-ChildItem -Path $dir -Filter "~*" -Force -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue
+    }
     # Remove android folder from desktop bin directories if present
     $desktopAndroid = Join-Path $dir "android"
     if (Test-Path $desktopAndroid) {
@@ -233,6 +237,8 @@ if (Test-Path $examplesDir) {
 $projects = [System.Collections.Generic.List[string]]::new()
 $projects.Add((Join-Path $RootDir "test"))
 $projects.Add((Join-Path $RootDir "template"))
+$projects.Add((Join-Path $RootDir "template-addon"))
+$projects.Add((Join-Path $RootDir "performance"))
 if (Test-Path $examplesDir) {
     foreach ($ex in Get-ChildItem -Path $examplesDir -Directory) {
         $projects.Add($ex.FullName)
@@ -262,6 +268,14 @@ foreach ($p in $projects) {
         $pGdignore = Join-Path $pBin ".gdignore"
         if (-not (Test-Path $pGdignore)) {
             New-Item -ItemType File -Force -Path $pGdignore | Out-Null
+        }
+    }
+
+    $pLib = Join-Path $p "lib"
+    if (Test-Path $pLib) {
+        $pLibGdignore = Join-Path $pLib ".gdignore"
+        if (-not (Test-Path $pLibGdignore)) {
+            New-Item -ItemType File -Force -Path $pLibGdignore | Out-Null
         }
     }
 }

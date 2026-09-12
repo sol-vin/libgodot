@@ -69,6 +69,8 @@ test_script_first_class "CrystalLanguage metadata, templates, and completions" d
   TestFramework.assert_true completions.any? { |c| c.display_text.includes?("_ready") }, "Completions should offer '_ready' callback"
 end
 
+
+
 test_script_first_class "CrystalScript AST reflection and Inspector property extraction" do
   source = <<-CRYSTAL
 	require "libgodot"

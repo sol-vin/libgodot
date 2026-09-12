@@ -1,4 +1,5 @@
 require "libgodot"
+require "./**"
 
 # Main root node for the template project
 node MainNode < Node3D do

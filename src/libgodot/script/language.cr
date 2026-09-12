@@ -17,6 +17,7 @@ module Godot
   node CrystalLanguage < ScriptLanguageExtension do
     @@instance : CrystalLanguage? = nil
     @@registered : Bool = false
+    @@created_by_us : Bool = false
 
     def self.ensure_registered : Void
       return if @@registered
@@ -26,6 +27,7 @@ module Godot
           @@instance = Godot::CrystalLanguage.new(ptr)
         end
         @@registered = true
+        @@created_by_us = false
         return
       end
       eng_ptr = Bridge.get_singleton("Engine")
@@ -46,6 +48,7 @@ module Godot
             if cls == "CrystalLanguage" || lname == "Crystal" || lext == "cr"
               @@instance = Godot::CrystalLanguage.new(existing.pointer)
               @@registered = true
+              @@created_by_us = false
               Bridge.set_language_registered(true)
               Bridge.set_language_object(existing.pointer)
               return
@@ -57,6 +60,7 @@ module Godot
 
       if lang = Godot.create(Godot::CrystalLanguage)
         @@instance = lang
+        @@created_by_us = true
         err = engine.register_script_language(lang)
         Bridge.set_language_registered(true)
         Bridge.set_language_object(lang.pointer)
@@ -68,22 +72,30 @@ module Godot
 
     def self.unregister : Void
       return unless @@registered
-      return unless (lang = @@instance) && !lang.pointer.null?
+      was_creator = @@created_by_us
+      lang = @@instance
+      @@instance = nil
+      @@registered = false
+      @@created_by_us = false
+
+      return unless was_creator
+      Bridge.set_language_registered(false)
+      Bridge.set_language_object(Pointer(Void).null)
+
+      return unless lang && !lang.pointer.null? && lang.alive?
       eng_ptr = Bridge.get_singleton("Engine")
       unless eng_ptr.null?
         engine = Godot::Engine.new(eng_ptr)
         begin
-          err = engine.unregister_script_language(lang)
-          if err == 0
-            lang.destroy rescue nil
+          if lang.alive?
+            engine.unregister_script_language(lang) rescue nil
           end
         rescue
         end
       end
-      Bridge.set_language_registered(false)
-      Bridge.set_language_object(Pointer(Void).null)
-      @@instance = nil
-      @@registered = false
+      if lang.alive?
+        lang.destroy rescue nil
+      end
     end
 
     def self.singleton_instance : CrystalLanguage

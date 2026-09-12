@@ -450,6 +450,8 @@ module Godot
     end
 
     def self.deinit : Void
+      Godot.print("[Bridge.deinit] Cleaning up script cache...")
+      ClassRegistry.cleanup rescue nil
       Godot.print("[Bridge.deinit] Unregistering loader...")
       Godot::ResourceFormatLoaderCrystal.unregister rescue nil
       Godot.print("[Bridge.deinit] Unregistering saver...")

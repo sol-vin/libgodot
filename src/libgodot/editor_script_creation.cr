@@ -373,40 +373,42 @@ module Godot
     end
 
     # Repairs a Godot native ScriptCreateDialog's language menu:
-    # - Adds "Crystal" option with the Crystal icon if missing
+    # - Updates index 1 (CrystalLanguage) text to "Crystal" and sets official Crystal icon
+    # - Prunes any out-of-bounds surplus items (count must never exceed ScriptServer language count)
     # - Ensures valid selection index so it never shows broken red icon or empty fields
     # - Sets up live path adaptation when language is switched
     def self.fix_script_create_dialog(scd : Node) : Void
       return if scd.pointer.null?
+      CrystalIntegrationPlugin.ensure_theme_icons
       opt_buttons = find_all_children(scd, "OptionButton")
       opt_buttons.each do |opt_node|
         opt = Godot::OptionButton.new(opt_node.pointer)
         item_count = opt.call_i64("get_item_count") rescue 0_i64
         has_gdscript = false
-        has_crystal = false
-        crystal_idx = -1_i64
-
         item_count.times do |i|
           txt = opt.call_str("get_item_text", i) rescue ""
           has_gdscript = true if txt == "GDScript"
-          if txt == "Crystal"
-            has_crystal = true
-            crystal_idx = i
-          end
         end
 
         if has_gdscript
+          # In Godot's ScriptCreateDialog, the language OptionButton items map 1-to-1 to
+          # ScriptServer::get_language(p_idx). Index 0 is GDScript, index 1 is CrystalLanguage.
+          # We must NEVER add extra items here, because any index >= ScriptServer::get_language_count()
+          # causes an immediate Access Violation crash in ScriptCreateDialog::_lang_changed.
           tex = CrystalIntegrationPlugin.get_crystal_icon_texture
-          unless has_crystal
+
+          # Remove any invalid surplus items (e.g. if previously duplicated by add_item)
+          cur_count = opt.call_i64("get_item_count") rescue 0_i64
+          while cur_count > 2_i64
+            opt.call("remove_item", cur_count - 1_i64) rescue nil
+            cur_count = opt.call_i64("get_item_count") rescue 0_i64
+          end
+
+          # If index 1 exists, ensure its label is "Crystal" and its icon is our Crystal logo
+          if cur_count >= 2_i64
+            opt.call("set_item_text", 1_i64, "Crystal") rescue nil
             if tex && !tex.pointer.null?
-              opt.call("add_icon_item", tex, "Crystal") rescue nil
-            else
-              opt.call("add_item", "Crystal") rescue nil
-            end
-            crystal_idx = (opt.call_i64("get_item_count") - 1) rescue -1_i64
-          else
-            if tex && !tex.pointer.null?
-              opt.call("set_item_icon", crystal_idx, tex) rescue nil
+              opt.call("set_item_icon", 1_i64, tex) rescue nil
             end
           end
 
@@ -419,7 +421,7 @@ module Godot
 
           # If Crystal is currently selected, adapt path to end with .cr
           sel_txt = opt.call_str("get_item_text", sel) rescue ""
-          if sel_txt == "Crystal"
+          if sel == 1_i64 || sel_txt == "Crystal"
             adapt_script_create_dialog_path(scd)
           end
 
@@ -428,7 +430,7 @@ module Godot
             @@hooked_popups << opt.signal_target_id
             opt.connect("item_selected") do |args|
               c_idx = (args && args.size > 0 ? args[0].as_i64 : opt.call_i64("get_selected")) rescue -1_i64
-              if c_idx >= 0 && (opt.call_str("get_item_text", c_idx) rescue "") == "Crystal"
+              if c_idx == 1_i64 || (opt.call_str("get_item_text", c_idx) rescue "") == "Crystal"
                 adapt_script_create_dialog_path(scd)
               end
             end
@@ -651,6 +653,21 @@ module Godot
         File.write(disk_path, code)
         Godot.print("[CrystalIntegration] Created new Crystal script: #{target_path}")
 
+        # Ensure project entry point includes newly created scripts
+        main_cr_path = "src/main.cr"
+        if File.exists?(main_cr_path)
+          main_content = File.read(main_cr_path)
+          unless main_content.includes?(%(require "./**"))
+            updated_content = if main_content.includes?(%(require "libgodot"))
+              main_content.sub(%(require "libgodot"), %(require "libgodot"\nrequire "./**"))
+            else
+              %(require "./**"\n) + main_content
+            end
+            File.write(main_cr_path, updated_content)
+            Godot.print("[CrystalIntegration] Updated src/main.cr to automatically include all project scripts via require \"./**\"")
+          end
+        end
+
         if !Godot::EditorInterface.singleton_ptr.null?
           ei = Godot::EditorInterface.new(Godot::EditorInterface.singleton_ptr)
           r_fs = ei.get_resource_filesystem
@@ -737,17 +754,30 @@ module Godot
 
     def self.cleanup : Void
       if dlg = @@dialog
-        if !dlg.pointer.null?
+        if !dlg.pointer.null? && dlg.alive?
+          parent = dlg.call_obj("get_parent") rescue nil
+          if parent && !parent.pointer.null? && parent.alive?
+            parent.call("remove_child", dlg) rescue nil
+          end
           dlg.queue_free rescue nil
         end
         @@dialog = nil
       end
       if btn = @@toolbar_button
-        if !btn.pointer.null?
+        if !btn.pointer.null? && btn.alive?
+          parent = btn.call_obj("get_parent") rescue nil
+          if parent && !parent.pointer.null? && parent.alive?
+            parent.call("remove_child", btn) rescue nil
+          end
           btn.queue_free rescue nil
         end
         @@toolbar_button = nil
       end
+      @@class_edit = nil
+      @@base_opt = nil
+      @@tmpl_opt = nil
+      @@path_edit = nil
+      @@file_dialog = nil
       @@hooked_popups.clear
       @@hooked_script_dialogs.clear
       @@hooked_create_dialogs.clear

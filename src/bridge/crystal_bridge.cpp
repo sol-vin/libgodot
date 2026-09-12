@@ -63,12 +63,7 @@ static bool s_handler_installed = false;
 static PVOID g_veh_handler = NULL;
 #endif
 
-/**
- * Checks whether the Godot engine process is currently shutting down.
- * Standalone runners always shut down on deinit.
- * In editor mode, deinitialization only occurs during engine shutdown or an
- * explicit GDExtension reload (triggered via bridge_set_reloading(1)).
- */
+
 static bool is_engine_shutting_down() {
     return (s_is_reloading == 0);
 }
@@ -99,7 +94,7 @@ static void deinitialize_crystal_module(void *p_userdata, GDExtensionInitializat
 
         // Only unregister from ClassDB during hot-reload. During normal engine shutdown,
         // Godot's ClassDB::cleanup() automatically cleans up all classes.
-        // Calling unregister_extension_class during shutdown corrupts Godot's static StringName pool.
+        // Calling unregister_extension_class during shutdown causes stack overflow recursion in Godot 4.
         if (lib && !is_engine_shutting_down() && gd_classdb_unregister_extension_class) {
             auto it_ed = g_library_editor_classes.find(lib);
             if (it_ed != g_library_editor_classes.end()) {

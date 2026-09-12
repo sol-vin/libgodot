@@ -6,6 +6,9 @@ param(
     [int]$QuitAfter = 50,
     [string]$GodotExe = "",
     [switch]$TestBuildButton = $false,
+    [int]$ReloadCycles = 2,
+    [switch]$PurgeCache = $false,
+    [switch]$TestErrorRecovery = $false,
     [switch]$Verbose = $true
 )
 
@@ -28,37 +31,69 @@ if (-not (Test-Path $TargetDir)) {
 $projName = (Split-Path -Leaf $TargetDir)
 
 if ($TestBuildButton -and $QuitAfter -eq 50) {
-    $QuitAfter = 600
+    $QuitAfter = 450 + ($ReloadCycles * 150)
+}
+if ($TestErrorRecovery -and $QuitAfter -eq 50) {
+    $QuitAfter = 350
 }
 
 Write-Host "=================================================================" -ForegroundColor Cyan
-if ($TestBuildButton) {
+if ($TestErrorRecovery) {
+Write-Host "  Verifying Editor Crystal Compilation Error Recovery             " -ForegroundColor Cyan
+} elseif ($TestBuildButton) {
 Write-Host "  Verifying Editor Crystal Rebuild & Live GDExtension Reloading   " -ForegroundColor Cyan
 } else {
 Write-Host "  Verifying Godot Editor Launch, Script Loader & Clean Shutdown  " -ForegroundColor Cyan
 }
 Write-Host "=================================================================" -ForegroundColor Cyan
-Write-Host "Target Path:       $TargetDir"
-Write-Host "Quit After:        $QuitAfter frames"
-Write-Host "Test Build Button: $TestBuildButton`n"
+Write-Host "Target Path:         $TargetDir"
+Write-Host "Quit After:          $QuitAfter frames"
+Write-Host "Test Build Button:   $TestBuildButton"
+Write-Host "Reload Cycles:       $ReloadCycles"
+Write-Host "Test Error Recovery: $TestErrorRecovery`n"
 
 $scratchDir = Join-Path $RootDir "scratch"
 if (-not (Test-Path $scratchDir)) { New-Item -ItemType Directory -Force -Path $scratchDir | Out-Null }
-$prefix = if ($TestBuildButton) { "editor_rebuild_${projName}" } else { "editor_verify_${projName}" }
+$prefix = if ($TestErrorRecovery) { "editor_err_recov_${projName}" } elseif ($TestBuildButton) { "editor_rebuild_${projName}" } else { "editor_verify_${projName}" }
 $logFile = Join-Path $scratchDir "${prefix}_out.log"
 $errLogFile = Join-Path $scratchDir "${prefix}_err.log"
+
+# Purge .godot cache folder if requested or during reload verification to prevent leakage
+if ($PurgeCache -or $TestBuildButton) {
+    $godotCacheDir = Join-Path $TargetDir ".godot"
+    if (Test-Path $godotCacheDir) {
+        Write-Host "Purging .godot cache folder at '$godotCacheDir' to prevent leakage..." -ForegroundColor Cyan
+        Remove-Item $godotCacheDir -Recurse -Force -ErrorAction SilentlyContinue
+    }
+    # Re-synchronize extension_list.cfg and binaries so Godot loads GDExtension cleanly
+    $syncScript = Join-Path $RootDir "scripts/sync_bins.ps1"
+    if (Test-Path $syncScript) {
+        & powershell -NoProfile -ExecutionPolicy Bypass -File $syncScript | Out-Null
+    }
+}
+
 # Clean up any stale temporary shadow copies or error logs from prior runs
-Get-ChildItem -Path $TargetDir -Filter "~*" -Recurse -Force -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue
+if ($env:OS -eq "Windows_NT" -or [System.IO.Path]::PathSeparator -eq ';') {
+    cmd.exe /c "del /s /q /f /a:h `"$TargetDir\~*`" 2>nul & del /s /q /f `"$TargetDir\~*`" 2>nul" | Out-Null
+} else {
+    Get-ChildItem -Path $TargetDir -Filter "~*" -Recurse -Force -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue
+}
 if (Test-Path $logFile) { Remove-Item $logFile -Force }
 if (Test-Path $errLogFile) { Remove-Item $errLogFile -Force }
 
-if ($TestBuildButton) {
+$scratchErrFile = Join-Path $TargetDir "src/scratch_syntax_error.cr"
+if ($TestErrorRecovery) {
+    $env:LIBGODOT_TEST_ERROR_RECOVERY = "1"
     $env:LIBGODOT_TEST_BUILD_BUTTON = "1"
+    Set-Content -Path $scratchErrFile -Value "node BrokenSyntaxNode < Node2D do`n  def broken(`nend" -Force
+} elseif ($TestBuildButton) {
+    $env:LIBGODOT_TEST_BUILD_BUTTON = "1"
+    $env:LIBGODOT_TEST_RELOAD_CYCLES = "$ReloadCycles"
 }
 
 try {
     $process = Start-Process -FilePath $GodotExe -ArgumentList @("--verbose", "--editor", "--path", $TargetDir, "--quit-after", "$QuitAfter") -RedirectStandardOutput $logFile -RedirectStandardError $errLogFile -PassThru
-    $timeoutSec = if ($TestBuildButton) { 90 } else { 45 }
+    $timeoutSec = if ($TestBuildButton) { 45 + ($ReloadCycles * 35) } else { 45 }
     $sw = [System.Diagnostics.Stopwatch]::StartNew()
     while (-not $process.HasExited -and $sw.Elapsed.TotalSeconds -lt $timeoutSec) {
         Start-Sleep -Milliseconds 500
@@ -73,6 +108,13 @@ try {
 } finally {
     if ($TestBuildButton) {
         Remove-Item Env:\LIBGODOT_TEST_BUILD_BUTTON -ErrorAction SilentlyContinue
+        Remove-Item Env:\LIBGODOT_TEST_RELOAD_CYCLES -ErrorAction SilentlyContinue
+    }
+    if ($TestErrorRecovery) {
+        Remove-Item Env:\LIBGODOT_TEST_ERROR_RECOVERY -ErrorAction SilentlyContinue
+        if (Test-Path $scratchErrFile) {
+            Remove-Item $scratchErrFile -Force -ErrorAction SilentlyContinue
+        }
     }
 }
 
@@ -154,7 +196,17 @@ if ($TestBuildButton) {
         Write-Host "[FAILED] Automated Build Crystal button test did not complete reload verification!" -ForegroundColor Red
         $failed = $true
     } else {
-        Write-Host "[PASSED] Automated Build Crystal button press, compilation, and live GDExtension reload verified successfully!" -ForegroundColor Green
+        Write-Host "[PASSED] Automated Build Crystal button press, compilation, and live GDExtension reload verified successfully ($ReloadCycles reload cycles)!" -ForegroundColor Green
+    }
+}
+
+# 12. Check TestErrorRecovery completion
+if ($TestErrorRecovery) {
+    if ($logContent -notmatch [regex]::Escape("[TestErrorRecovery] SUCCESS: Compilation failure captured gracefully and button recovered to 'Build Failed'!")) {
+        Write-Host "[FAILED] Automated error recovery test did not capture compiler failure or recover button state!" -ForegroundColor Red
+        $failed = $true
+    } else {
+        Write-Host "[PASSED] In-Editor Crystal compilation error recovery verified successfully!" -ForegroundColor Green
     }
 }
 

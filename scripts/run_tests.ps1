@@ -214,6 +214,13 @@ if (-not $SkipSpecs) {
     if (-not $specResult3["Success"]) {
         $FailedSteps.Add("Crystal Spec (api_coverage_spec.cr)")
     }
+
+    $specResult4 = Invoke-TestCommand -Name "Crystal Spec: Project Scaffolding & Directory Integrity" `
+        -Executable "crystal" `
+        -Arguments @("run", "spec/project_scaffolding_spec.cr")
+    if (-not $specResult4["Success"]) {
+        $FailedSteps.Add("Crystal Spec (project_scaffolding_spec.cr)")
+    }
 }
 
 # -----------------------------------------------------------------------------
@@ -330,15 +337,42 @@ if (-not $SkipEditorTests) {
         }
 
         # 3. Verify editor live Crystal recompilation & GDExtension reload (template project)
-        $editorRebuildResult = Invoke-TestCommand -Name "Editor Live Crystal Rebuild & Reload (template)" `
+        $editorRebuildResult = Invoke-TestCommand -Name "Editor Live Crystal Rebuild & Reload (template, 2 cycles)" `
             -Executable $pwshExe `
-            -Arguments @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", $verifyEditorScript, "-Path", "template", "-TestBuildButton", "-GodotExe", $GodotExe) `
+            -Arguments @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", $verifyEditorScript, "-Path", "template", "-TestBuildButton", "-ReloadCycles", "2", "-PurgeCache", "-GodotExe", $GodotExe) `
             -CustomVerification
         if (-not $editorRebuildResult["Success"]) {
             $FailedSteps.Add("Editor Live Rebuild & Reload (template)")
             Write-Host "[FAILED] In-Editor Crystal Rebuild & Reload on template project`n" -ForegroundColor Red
         } else {
             Write-Host "[PASSED] In-Editor Crystal Rebuild & Reload on template project verified.`n" -ForegroundColor Green
+        }
+
+        # 3b. Verify editor live Crystal compilation error recovery (template project)
+        $editorErrRecoveryResult = Invoke-TestCommand -Name "Editor Live Crystal Error Recovery (template)" `
+            -Executable $pwshExe `
+            -Arguments @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", $verifyEditorScript, "-Path", "template", "-TestErrorRecovery", "-PurgeCache", "-GodotExe", $GodotExe) `
+            -CustomVerification
+        if (-not $editorErrRecoveryResult["Success"]) {
+            $FailedSteps.Add("Editor Live Error Recovery (template)")
+            Write-Host "[FAILED] In-Editor Crystal Error Recovery on template project`n" -ForegroundColor Red
+        } else {
+            Write-Host "[PASSED] In-Editor Crystal Error Recovery on template project verified.`n" -ForegroundColor Green
+        }
+
+        # 4. Verify run-editor.ps1 CLI & Output Shadowing
+        $testRunEditorScript = Join-Path $RootDir "scripts/test_run_editor.ps1"
+        if (Test-Path $testRunEditorScript) {
+            $runnerTestResult = Invoke-TestCommand -Name "Unified Editor Launcher & Log Shadowing (run-editor.ps1)" `
+                -Executable $pwshExe `
+                -Arguments @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", $testRunEditorScript) `
+                -CustomVerification
+            if (-not $runnerTestResult["Success"]) {
+                $FailedSteps.Add("Editor Launcher CLI Test (run-editor.ps1)")
+                Write-Host "[FAILED] Unified Editor Launcher & Log Shadowing verification`n" -ForegroundColor Red
+            } else {
+                Write-Host "[PASSED] Unified Editor Launcher & Log Shadowing verified.`n" -ForegroundColor Green
+            }
         }
     }
 }

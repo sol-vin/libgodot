@@ -201,19 +201,12 @@ module Godot
 
     # Cleans up active tab and detaches debugger on session end or plugin unload
     def cleanup : Void
-      Godot.print("[DebuggerSessionController] cleanup called, session_id=#{@session_id}, session_refcount=#{@session.get_reference_count}")
       detach rescue nil
       if t = @tab
-        if !t.pointer.null?
-          Godot.print("[DebuggerSessionController] Removing tab and destroying")
+        if !t.pointer.null? && t.alive?
           @session.remove_session_tab(t) rescue nil
-          t.destroy rescue nil
         end
         @tab = nil
-      end
-      if !@session.pointer.null?
-        Godot.print("[DebuggerSessionController] Unreferencing session, before unref=#{@session.get_reference_count}")
-        @session.unreference rescue nil
       end
     end
   end
