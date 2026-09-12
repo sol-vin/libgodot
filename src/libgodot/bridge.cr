@@ -76,6 +76,17 @@ module Godot
       vec_val : StaticArray(Float32, 4)
     end
 
+    struct BridgeGCModule
+      module_handle : Void*
+      register_my_thread : (Void* -> LibC::Int)
+      get_stack_base : (Void* -> LibC::Int)
+      thread_is_registered : (-> LibC::Int)
+      allow_register_threads : (-> Void)
+      is_init_called : (-> LibC::Int)
+      get_suspend_signal : (-> LibC::Int)
+      get_thr_restart_signal : (-> LibC::Int)
+    end
+
     struct BridgeAPI
       register_class : (CrystalClassDesc* -> Int32)
       get_method_bind : (LibC::Char*, LibC::Char*, Int64 -> Void*)
@@ -145,6 +156,7 @@ module Godot
       set_reloading : (Int32 -> Void)
       set_debugger_cleanup : ((-> Void) -> Void)
       trigger_debugger_cleanup : (-> Void)
+      register_gc_module : (BridgeGCModule* -> Void)
     end
   end
 
@@ -1156,6 +1168,16 @@ lib LibCrystalMain
   fun __crystal_main(argc : Int32, argv : UInt8**) : Void
 end
 
+lib LibGCBridge
+  fun register_my_thread = GC_register_my_thread(sb : Void*) : LibC::Int
+  fun get_stack_base = GC_get_stack_base(sb : Void*) : LibC::Int
+  fun thread_is_registered = GC_thread_is_registered : LibC::Int
+  fun allow_register_threads = GC_allow_register_threads : Void
+  fun is_init_called = GC_is_init_called : LibC::Int
+  fun get_suspend_signal = GC_get_suspend_signal : LibC::Int
+  fun get_thr_restart_signal = GC_get_thr_restart_signal : LibC::Int
+end
+
 # C ABI Entry point called by crystal_bridge when game library is loaded
 fun crystal_godot_init(api : Godot::LibBridge::BridgeAPI*) : Void
   GC.init
@@ -1164,6 +1186,19 @@ fun crystal_godot_init(api : Godot::LibBridge::BridgeAPI*) : Void
   dummy_argv = pointerof(dummy_arg)
   LibCrystalMain.__crystal_main(1, dummy_argv)
   Godot::Bridge.init(api)
+  if api.value.register_gc_module
+    gc_mod = Godot::LibBridge::BridgeGCModule.new(
+      module_handle: Pointer(Void).null,
+      register_my_thread: ->(sb : Void*) { LibGCBridge.register_my_thread(sb) },
+      get_stack_base: ->(sb : Void*) { LibGCBridge.get_stack_base(sb) },
+      thread_is_registered: ->{ LibGCBridge.thread_is_registered },
+      allow_register_threads: ->{ LibGCBridge.allow_register_threads },
+      is_init_called: ->{ LibGCBridge.is_init_called },
+      get_suspend_signal: ->{ LibGCBridge.get_suspend_signal },
+      get_thr_restart_signal: ->{ LibGCBridge.get_thr_restart_signal }
+    )
+    api.value.register_gc_module.call(pointerof(gc_mod))
+  end
   if ::ENV["LIBGODOT_TEST_BUILD_BUTTON"]? == "1"
     Godot::CrystalIntegrationPlugin.check_test_build_button_flow rescue nil
   end

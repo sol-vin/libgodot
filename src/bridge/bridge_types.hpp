@@ -282,4 +282,16 @@ struct BridgeAPI {
     void (*set_reloading)(int r);
     void (*set_debugger_cleanup)(void (*fn)());
     void (*trigger_debugger_cleanup)();
+    void (*register_gc_module)(const struct BridgeGCModule *mod);
+};
+
+struct BridgeGCModule {
+    void *module_handle;
+    int (*register_my_thread)(const void *sb);
+    int (*get_stack_base)(void *sb);
+    int (*thread_is_registered)();
+    void (*allow_register_threads)();
+    int (*is_init_called)();
+    int (*get_suspend_signal)();
+    int (*get_thr_restart_signal)();
 };

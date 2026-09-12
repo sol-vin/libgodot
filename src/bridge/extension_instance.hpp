@@ -302,7 +302,6 @@ inline const char* intern_virtual_method(const char *name) {
  */
 inline void* generic_class_get_virtual_call_data(void *p_class_userdata, GDExtensionConstStringNamePtr p_name, uint32_t p_hash) {
     (void)p_hash;
-    ensure_gc_thread_registered();
     const CrystalClassDesc *desc = (const CrystalClassDesc*)p_class_userdata;
     if (!desc) return nullptr;
 

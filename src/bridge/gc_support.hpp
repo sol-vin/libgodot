@@ -39,6 +39,27 @@ static std::recursive_mutex g_gc_modules_mutex;
 static thread_local size_t t_gc_registered_module_count = 0;
 static void *s_cached_game_module = nullptr;
 
+inline void bridge_register_gc_module(const BridgeGCModule *mod) {
+    if (!mod || !mod->register_my_thread) return;
+    std::lock_guard<std::recursive_mutex> lock(g_gc_modules_mutex);
+    GCRegisterMyThreadFn reg_fn = reinterpret_cast<GCRegisterMyThreadFn>(mod->register_my_thread);
+    for (const auto &m : g_gc_modules) {
+        if (m.register_my_thread == reg_fn) {
+            return;
+        }
+    }
+    GCModuleEntry entry;
+    entry.handle = mod->module_handle;
+    entry.register_my_thread = reg_fn;
+    entry.get_stack_base = reinterpret_cast<GCGetStackBaseFn>(mod->get_stack_base);
+    entry.thread_is_registered = mod->thread_is_registered;
+    entry.allow_register_threads = mod->allow_register_threads;
+    entry.get_suspend_signal = mod->get_suspend_signal;
+    entry.get_thr_restart_signal = mod->get_thr_restart_signal;
+    if (entry.allow_register_threads) entry.allow_register_threads();
+    g_gc_modules.push_back(entry);
+}
+
 inline void init_gc_library(void *game_module_handle = nullptr) {
     std::lock_guard<std::recursive_mutex> lock(g_gc_modules_mutex);
 

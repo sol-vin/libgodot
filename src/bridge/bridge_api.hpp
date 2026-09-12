@@ -82,7 +82,8 @@ static BridgeAPI g_bridge_api = {
     bridge_set_language_object,
     bridge_set_reloading,
     bridge_set_debugger_cleanup,
-    bridge_trigger_debugger_cleanup
+    bridge_trigger_debugger_cleanup,
+    bridge_register_gc_module
 };
 
 // ==============================================================================
