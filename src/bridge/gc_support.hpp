@@ -2,6 +2,11 @@
 
 #include "common.hpp"
 
+#ifndef _WIN32
+#include <signal.h>
+#include <pthread.h>
+#endif
+
 /**
  * ==============================================================================
  * LibGodot - Boehm GC Multi-Threading & Foreign Engine Thread Registration
