@@ -227,7 +227,7 @@ inline void cleanup_old_shadow_dlls(const char *dir) {
  * (`game_loaded_<PID>_<timestamp>.dll/so`) before loading the Crystal library.
  */
 inline bool bridge_should_use_shadow_copy() {
-#if defined(LIBGODOT_RELEASE) || defined(NDEBUG) || defined(__ANDROID__) || defined(ANDROID)
+#if defined(__ANDROID__) || defined(ANDROID)
     return false;
 #else
     if (!is_editor_active()) {
@@ -235,10 +235,6 @@ inline bool bridge_should_use_shadow_copy() {
     }
     const char *no_shadow = getenv("LIBGODOT_NO_SHADOW");
     if (no_shadow && (strcmp(no_shadow, "1") == 0 || strcmp(no_shadow, "true") == 0)) {
-        return false;
-    }
-    const char *release_env = getenv("LIBGODOT_RELEASE");
-    if (release_env && (strcmp(release_env, "1") == 0 || strcmp(release_env, "true") == 0)) {
         return false;
     }
     const char *hot_reload = getenv("LIBGODOT_HOT_RELOAD");
@@ -277,7 +273,7 @@ inline void load_crystal_game_library() {
 
         // On macOS/Linux, if multiple GDExtensions share the same loaded bridge dylib in memory,
         // use gd_get_library_path to identify the specific addon directory for this extension instance.
-        if (gd_get_library_path && g_library && gd_string_to_utf8_chars && gd_string_destroy) {
+        if (gd_get_library_path && g_library && gd_string_to_utf8_chars) {
             uint8_t gd_str_storage[64] = {0};
             GDExtensionUninitializedStringPtr gd_str = (GDExtensionUninitializedStringPtr)&gd_str_storage[0];
             gd_get_library_path(g_library, gd_str);
@@ -286,7 +282,9 @@ inline void load_crystal_game_library() {
             if (len >= 0 && len < (int64_t)sizeof(lib_path)) {
                 lib_path[len] = '\0';
             }
-            gd_string_destroy((GDExtensionStringPtr)gd_str);
+            if (gd_string_destroy) {
+                gd_string_destroy((GDExtensionStringPtr)gd_str);
+            }
 
             if (lib_path[0] != '\0') {
                 const char *p = lib_path;
@@ -299,8 +297,9 @@ inline void load_crystal_game_library() {
                 } else {
                     // Find the project root prefix from the dlinfo path
                     char *addons_pos = strstr(bridge_dir, "/addons/");
+                    if (!addons_pos) addons_pos = strstr(bridge_dir, "\\addons\\");
                     if (addons_pos) {
-                        size_t prefix_len = (size_t)(addons_pos - bridge_dir + 1); // includes trailing '/'
+                        size_t prefix_len = (size_t)(addons_pos - bridge_dir + 1); // includes trailing '/' or '\\'
                         snprintf(resolved_addon_dir, sizeof(resolved_addon_dir), "%.*s%s", (int)prefix_len, bridge_dir, p);
                     } else {
                         strncpy(resolved_addon_dir, p, sizeof(resolved_addon_dir) - 1);
@@ -310,13 +309,22 @@ inline void load_crystal_game_library() {
                 if (!slash) slash = strrchr(resolved_addon_dir, '\\');
                 if (slash) *slash = '\0';
 
-                // Check if resolved_addon_dir has a bin subdirectory (e.g. addons/<name>/bin)
-                char bin_subfolder[MAX_PATH] = {0};
-                snprintf(bin_subfolder, sizeof(bin_subfolder), "%s/bin", resolved_addon_dir);
-                if (bridge_file_exists(bin_subfolder)) {
-                    strncpy(bridge_dir, bin_subfolder, sizeof(bridge_dir) - 1);
-                } else if (resolved_addon_dir[0] != '\0' && bridge_file_exists(resolved_addon_dir)) {
-                    strncpy(bridge_dir, resolved_addon_dir, sizeof(bridge_dir) - 1);
+                // Check if resolved_addon_dir already ends with /bin or \bin
+                size_t rlen = strlen(resolved_addon_dir);
+                bool already_has_bin = (rlen >= 4 && (strcmp(resolved_addon_dir + rlen - 4, "/bin") == 0 || strcmp(resolved_addon_dir + rlen - 4, "\\bin") == 0));
+
+                if (already_has_bin) {
+                    if (bridge_file_exists(resolved_addon_dir)) {
+                        strncpy(bridge_dir, resolved_addon_dir, sizeof(bridge_dir) - 1);
+                    }
+                } else {
+                    char bin_subfolder[MAX_PATH] = {0};
+                    snprintf(bin_subfolder, sizeof(bin_subfolder), "%s/bin", resolved_addon_dir);
+                    if (bridge_file_exists(bin_subfolder)) {
+                        strncpy(bridge_dir, bin_subfolder, sizeof(bridge_dir) - 1);
+                    } else if (resolved_addon_dir[0] != '\0' && bridge_file_exists(resolved_addon_dir)) {
+                        strncpy(bridge_dir, resolved_addon_dir, sizeof(bridge_dir) - 1);
+                    }
                 }
             }
         }
