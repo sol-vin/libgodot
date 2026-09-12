@@ -14,6 +14,7 @@ param(
     [string]$GodotPath,
     [switch]$SkipSpecs,
     [switch]$SkipToolTests,
+    [switch]$SkipEditorTests,
     [switch]$SkipRuntimeTests,
     [switch]$SkipStandaloneTests,
     [switch]$SkipSmokeTests,
@@ -295,18 +296,50 @@ if (-not $SkipToolTests) {
 }
 
 # -----------------------------------------------------------------------------
-# Editor Launch & Script Loader Clean Shutdown Verification
+# Phase 2b: Godot Editor Launch & Clean Shutdown Verification
 # -----------------------------------------------------------------------------
-$verifyEditorScript = Join-Path $RootDir "scripts/verify_editor.ps1"
-if (Test-Path $verifyEditorScript) {
-    try {
-        & $verifyEditorScript -Path "template" -QuitAfter 50
-        if ($LASTEXITCODE -ne 0) {
-            $FailedSteps.Add("Editor Launch & Clean Shutdown Verification")
+if (-not $SkipEditorTests) {
+    Write-Host "--- Phase 2b: Godot Editor Launch & Clean Shutdown Verification ---" -ForegroundColor Magenta
+    $verifyEditorScript = Join-Path $RootDir "scripts/verify_editor.ps1"
+    if (Test-Path $verifyEditorScript) {
+        $pwshExe = (Get-Process -Id $PID).Path
+        if (-not $pwshExe -or -not (Test-Path $pwshExe)) { $pwshExe = "powershell" }
+
+        # 1. Verify template project editor launch
+        $editorTemplateResult = Invoke-TestCommand -Name "Editor Launch & Clean Shutdown (template)" `
+            -Executable $pwshExe `
+            -Arguments @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", $verifyEditorScript, "-Path", "template", "-QuitAfter", "60", "-GodotExe", $GodotExe) `
+            -CustomVerification
+        if (-not $editorTemplateResult["Success"]) {
+            $FailedSteps.Add("Editor Launch (template project)")
+            Write-Host "[FAILED] Godot Editor Launch on template project`n" -ForegroundColor Red
+        } else {
+            Write-Host "[PASSED] Godot Editor Launch on template project verified.`n" -ForegroundColor Green
         }
-    } catch {
-        Write-Host "::error::Editor Launch Verification failed: $_" -ForegroundColor Red
-        $FailedSteps.Add("Editor Launch & Clean Shutdown Verification")
+
+        # 2. Verify test project editor launch
+        $editorTestResult = Invoke-TestCommand -Name "Editor Launch & Clean Shutdown (test)" `
+            -Executable $pwshExe `
+            -Arguments @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", $verifyEditorScript, "-Path", "test", "-QuitAfter", "60", "-GodotExe", $GodotExe) `
+            -CustomVerification
+        if (-not $editorTestResult["Success"]) {
+            $FailedSteps.Add("Editor Launch (test project)")
+            Write-Host "[FAILED] Godot Editor Launch on test project`n" -ForegroundColor Red
+        } else {
+            Write-Host "[PASSED] Godot Editor Launch on test project verified.`n" -ForegroundColor Green
+        }
+
+        # 3. Verify editor live Crystal recompilation & GDExtension reload (template project)
+        $editorRebuildResult = Invoke-TestCommand -Name "Editor Live Crystal Rebuild & Reload (template)" `
+            -Executable $pwshExe `
+            -Arguments @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", $verifyEditorScript, "-Path", "template", "-TestBuildButton", "-GodotExe", $GodotExe) `
+            -CustomVerification
+        if (-not $editorRebuildResult["Success"]) {
+            $FailedSteps.Add("Editor Live Rebuild & Reload (template)")
+            Write-Host "[FAILED] In-Editor Crystal Rebuild & Reload on template project`n" -ForegroundColor Red
+        } else {
+            Write-Host "[PASSED] In-Editor Crystal Rebuild & Reload on template project verified.`n" -ForegroundColor Green
+        }
     }
 }
 

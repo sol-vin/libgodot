@@ -1093,10 +1093,13 @@ inline int bridge_arg_to_string_name(const void *arg, char *out, int max_len) {
     return 0;
 }
 
-static GDExtensionPtrBuiltInMethod gd_dict_builtin_set = nullptr;
-
 inline void dict_set_variant(void *dict, const char *key_str, int var_type, const void *val_ptr) {
     if (!dict || !key_str) return;
+
+    if (!gd_dict_keyed_setter && gd_variant_get_ptr_keyed_setter) {
+        gd_dict_keyed_setter = gd_variant_get_ptr_keyed_setter(GDEXTENSION_VARIANT_TYPE_DICTIONARY);
+    }
+    if (!gd_dict_keyed_setter) return;
 
     alignas(void*) char var_key[24] = {};
     const char *k = key_str;
@@ -1105,24 +1108,7 @@ inline void dict_set_variant(void *dict, const char *key_str, int var_type, cons
     alignas(void*) char var_val[24] = {};
     bridge_variant_from_type(var_type, var_val, val_ptr);
 
-    if (!gd_dict_builtin_set && gd_variant_get_ptr_builtin_method) {
-        void *sn_set = make_string_name("set");
-        gd_dict_builtin_set = gd_variant_get_ptr_builtin_method(GDEXTENSION_VARIANT_TYPE_DICTIONARY, sn_set, 2175348267LL);
-        free_string_name(sn_set);
-    }
-
-    if (gd_dict_builtin_set) {
-        const GDExtensionConstTypePtr args[2] = { var_key, var_val };
-        uint8_t ret_bool = 0;
-        gd_dict_builtin_set(dict, args, &ret_bool, 2);
-    } else {
-        if (!gd_dict_keyed_setter && gd_variant_get_ptr_keyed_setter) {
-            gd_dict_keyed_setter = gd_variant_get_ptr_keyed_setter(GDEXTENSION_VARIANT_TYPE_DICTIONARY);
-        }
-        if (gd_dict_keyed_setter) {
-            gd_dict_keyed_setter(dict, var_key, var_val);
-        }
-    }
+    gd_dict_keyed_setter(dict, var_key, var_val);
 
     if (gd_variant_destroy) {
         gd_variant_destroy(var_key);

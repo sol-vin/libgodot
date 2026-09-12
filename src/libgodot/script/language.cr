@@ -32,15 +32,23 @@ module Godot
       return if eng_ptr.null?
       engine = Godot::Engine.new(eng_ptr)
 
-      # Clean up any leftover defunct language instances from previous loads
+      # Check if CrystalLanguage is already registered in Engine from another addon/host
       begin
         count = engine.get_script_language_count
-        (count - 1).downto(0) do |i|
+        count.times do |i|
           existing = engine.get_script_language(i)
           if existing && !existing.pointer.null?
-            lname = existing.call_str("get_name") rescue ""
-            if lname == "Crystal"
-              engine.unregister_script_language(existing)
+            cls = existing.call_str("get_class") rescue ""
+            lname = (existing.call_str("get_name") rescue "")
+            lname = (existing.call_str("_get_name") rescue "") if lname.empty?
+            lext = (existing.call_str("get_extension") rescue "")
+            lext = (existing.call_str("_get_extension") rescue "") if lext.empty?
+            if cls == "CrystalLanguage" || lname == "Crystal" || lext == "cr"
+              @@instance = Godot::CrystalLanguage.new(existing.pointer)
+              @@registered = true
+              Bridge.set_language_registered(true)
+              Bridge.set_language_object(existing.pointer)
+              return
             end
           end
         end
@@ -358,18 +366,26 @@ module Godot
         ret.as(UInt8*).value = (t == "CrystalScript" || t == "Crystal") ? 1_u8 : 0_u8
       when "_get_global_class_name"
         path = Bridge.arg_to_string(args[0])
-        normalized_path = path.starts_with?("res://") ? path : "res://#{path.lstrip('/')}"
-        entry = ClassRegistry.entries.find do |e|
-          e.script_path == path || e.script_path == normalized_path ||
-            (!e.script_path.empty? && (path.ends_with?(e.script_path.sub("res://", "")) || e.script_path.ends_with?(path.sub("res://", ""))))
-        end
-        if entry
-          Bridge.ret_dictionary_global_class(ret, entry.class_name, entry.parent_name, entry.icon_path)
+        if !path.downcase.ends_with?(".cr")
+          Bridge.ret_dictionary_empty(ret)
         else
-          c_name, b_type, icon_path = CrystalLanguage.inspect_file_global_class(path)
-          if !c_name.empty?
-            Bridge.ret_dictionary_global_class(ret, c_name, b_type, icon_path)
-          else
+          begin
+            normalized_path = path.starts_with?("res://") ? path : "res://#{path.lstrip('/')}"
+            entry = ClassRegistry.entries.find do |e|
+              e.script_path == path || e.script_path == normalized_path ||
+                (!e.script_path.empty? && (path.ends_with?(e.script_path.sub("res://", "")) || e.script_path.ends_with?(path.sub("res://", ""))))
+            end
+            if entry
+              Bridge.ret_dictionary_global_class(ret, entry.class_name, entry.parent_name, entry.icon_path)
+            else
+              c_name, b_type, icon_path = CrystalLanguage.inspect_file_global_class(path)
+              if !c_name.empty?
+                Bridge.ret_dictionary_global_class(ret, c_name, b_type, icon_path)
+              else
+                Bridge.ret_dictionary_empty(ret)
+              end
+            end
+          rescue
             Bridge.ret_dictionary_empty(ret)
           end
         end
@@ -439,27 +455,33 @@ module Godot
     end
 
     def self.inspect_file_global_class(path : String) : Tuple(String, String, String)
+      return {"", "", ""} unless path.downcase.ends_with?(".cr")
       fs_path = ResourceFormatSaverCrystal.resolve_save_path(path)
       if fs_path.empty? || !File.exists?(fs_path)
         fs_path = path.starts_with?("res://") ? path.sub("res://", "") : path
       end
       return {"", "", ""} unless File.exists?(fs_path)
-      content = File.read(fs_path) rescue ""
-      class_name = ""
-      base_type = "Node"
-      icon_path = ""
-      content.each_line do |line|
-        trimmed = line.strip
-        if trimmed =~ /@\[Icon\("([^"]+)"\)\]/
-          icon_path = $1
+      begin
+        content = File.read(fs_path)
+        return {"", "", ""} unless content.valid_encoding?
+        class_name = ""
+        base_type = "Node"
+        icon_path = ""
+        content.each_line do |line|
+          trimmed = line.strip
+          if trimmed =~ /@\[Icon\("([^"]+)"\)\]/
+            icon_path = $1
+          end
+          if trimmed =~ /(?:^|\s)node\s+([A-Za-z0-9_]+)(?:\s*<\s*([A-Za-z0-9_:]+))?(?:\s+do|\s*$)/
+            class_name = $1
+            base_type = $2 ? $2.split("::").last : "Node"
+            break
+          end
         end
-        if trimmed =~ /(?:^|\s)node\s+([A-Za-z0-9_]+)(?:\s*<\s*([A-Za-z0-9_:]+))?(?:\s+do|\s*$)/
-          class_name = $1
-          base_type = $2 ? $2.split("::").last : "Node"
-          break
-        end
+        {class_name, base_type, icon_path}
+      rescue
+        {"", "", ""}
       end
-      {class_name, base_type, icon_path}
     end
   end
 end

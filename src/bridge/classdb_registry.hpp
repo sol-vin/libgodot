@@ -26,6 +26,19 @@ inline bool is_editor_class(const CrystalClassDesc *desc) {
     return false;
 }
 
+inline bool is_editor_system_class(const char *name) {
+    if (!name) return false;
+    return (strcmp(name, "CrystalIntegrationPlugin") == 0 ||
+            strcmp(name, "CrystalHighlighter") == 0 ||
+            strcmp(name, "CrystalDebuggerPlugin") == 0 ||
+            strcmp(name, "CrystalPanel") == 0 ||
+            strcmp(name, "CrystalLldbSessionTab") == 0 ||
+            strcmp(name, "CrystalLanguage") == 0 ||
+            strcmp(name, "CrystalScript") == 0 ||
+            strcmp(name, "ResourceFormatLoaderCrystal") == 0 ||
+            strcmp(name, "ResourceFormatSaverCrystal") == 0);
+}
+
 /**
  * Checks if a class is already registered in Godot's ClassDB (either engine native or another GDExtension module).
  */
@@ -262,46 +275,28 @@ inline int bridge_register_class(const CrystalClassDesc *p_desc) {
 
     std::string cname = p_desc->name;
     auto it = g_persistent_class_descs.find(cname);
+    PersistentClassDesc *pcd = nullptr;
     if (it != g_persistent_class_descs.end()) {
-        // Class was already registered with Godot ClassDB in a previous load or earlier module.
-        // Update the persistent descriptor in-place so runtime callbacks and properties invoke the new DLL.
-        PersistentClassDesc *pcd = it->second;
+        // Class was registered previously. Update persistent descriptor in-place
+        // so runtime dispatches invoke the newly compiled Crystal DLL.
+        pcd = it->second;
         pcd->update_from(p_desc);
-
-        // Re-link parent_desc if parent is in the persistent map
-        if (!pcd->parent_name.empty()) {
-            auto pit = g_persistent_class_descs.find(pcd->parent_name);
-            if (pit != g_persistent_class_descs.end()) {
-                pcd->desc.parent_desc = &pit->second->desc;
-            }
-        }
-        // Re-link any children that inherit from this class
-        for (auto &pair : g_persistent_class_descs) {
-            if (pair.second != pcd && pair.second->parent_name == pcd->name) {
-                pair.second->desc.parent_desc = &pcd->desc;
-            }
-        }
-
-        char log_buf[256];
-        snprintf(log_buf, sizeof(log_buf), "[CrystalBridge] Notice: Class '%s' already registered with ClassDB. Skipping duplicate registration safely.", p_desc->name);
-        godot_log_print(log_buf);
-        return 1;
+    } else {
+        // Allocate persistent descriptor whose address will remain invariant for Godot ClassDB
+        pcd = new PersistentClassDesc();
+        pcd->update_from(p_desc);
+        g_persistent_class_descs[cname] = pcd;
+        g_all_registered_class_names.insert(cname);
     }
 
-    // Allocate persistent descriptor whose address will remain invariant for Godot ClassDB
-    PersistentClassDesc *pcd = new PersistentClassDesc();
-    pcd->update_from(p_desc);
-    g_persistent_class_descs[cname] = pcd;
-    g_all_registered_class_names.insert(cname);
-
-    // Link parent_desc if parent is already known
+    // Link / Re-link parent_desc if parent is in the persistent map
     if (!pcd->parent_name.empty()) {
         auto pit = g_persistent_class_descs.find(pcd->parent_name);
         if (pit != g_persistent_class_descs.end()) {
             pcd->desc.parent_desc = &pit->second->desc;
         }
     }
-    // Link any children that were registered before this parent
+    // Link / Re-link any children that inherit from this class
     for (auto &pair : g_persistent_class_descs) {
         if (pair.second != pcd && pair.second->parent_name == pcd->name) {
             pair.second->desc.parent_desc = &pcd->desc;

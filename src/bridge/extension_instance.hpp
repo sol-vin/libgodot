@@ -400,11 +400,6 @@ inline void* generic_class_get_virtual_call_data(void *p_class_userdata, GDExten
                 strcmp(norm_name, "_handles_type") == 0 ||
                 strcmp(norm_name, "_get_resource_type") == 0 ||
                 strcmp(norm_name, "_get_resource_script_class") == 0 ||
-                strcmp(norm_name, "_get_resource_uid") == 0 ||
-                strcmp(norm_name, "_get_dependencies") == 0 ||
-                strcmp(norm_name, "_rename_dependencies") == 0 ||
-                strcmp(norm_name, "_exists") == 0 ||
-                strcmp(norm_name, "_get_classes_used") == 0 ||
                 strcmp(norm_name, "_load") == 0 ||
                 strcmp(norm_name, "_recognize_path") == 0) {
                 return (void*)intern_virtual_method(norm_name);
@@ -413,8 +408,7 @@ inline void* generic_class_get_virtual_call_data(void *p_class_userdata, GDExten
             if (strcmp(norm_name, "_get_recognized_extensions") == 0 ||
                 strcmp(norm_name, "_recognize") == 0 ||
                 strcmp(norm_name, "_recognize_path") == 0 ||
-                strcmp(norm_name, "_save") == 0 ||
-                strcmp(norm_name, "_set_uid") == 0) {
+                strcmp(norm_name, "_save") == 0) {
                 return (void*)intern_virtual_method(norm_name);
             }
         } else if (strcmp(desc->name, "CrystalHighlighter") == 0) {
@@ -548,6 +542,14 @@ inline void generic_class_call_virtual_with_data(
     if (strcmp(method_name, "_build") == 0 || strcmp(method_name, "build") == 0) {
         if (r_ret) *(uint8_t*)r_ret = 1;
         if (inst->desc->call_virtual) inst->desc->call_virtual(inst->crystal_instance, "_build", 0.0);
+        return;
+    }
+    if (strcmp(method_name, "_lookup_code") == 0 || strcmp(method_name, "lookup_code") == 0) {
+        bridge_ret_dictionary_lookup_code(r_ret);
+        return;
+    }
+    if (strcmp(method_name, "_complete_code") == 0 || strcmp(method_name, "complete_code") == 0) {
+        bridge_ret_dictionary_complete_code(r_ret);
         return;
     }
 

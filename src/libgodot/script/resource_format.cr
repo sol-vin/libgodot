@@ -138,15 +138,23 @@ module Godot
       when "_get_resource_type"
         path = Bridge.arg_to_string(args[0])
         Bridge.ret_string(ret, path.downcase.ends_with?(".cr") ? "CrystalScript" : "")
+      when "_get_resource_uid"
+        ret.as(Int64*).value = -1_i64
       when "_get_resource_script_class"
         path = Bridge.arg_to_string(args[0])
         cls_name = ""
-        normalized_path = path.starts_with?("res://") ? path : "res://#{path.lstrip('/')}"
-        if entry = ClassRegistry.entries.find { |e| e.script_path == path || e.script_path == normalized_path || (!e.script_path.empty? && (path.ends_with?(e.script_path.sub("res://", "")) || e.script_path.ends_with?(path.sub("res://", "")))) }
-          cls_name = entry.class_name
-        else
-          c_name, _, _ = CrystalLanguage.inspect_file_global_class(path)
-          cls_name = c_name
+        if path.downcase.ends_with?(".cr")
+          begin
+            normalized_path = path.starts_with?("res://") ? path : "res://#{path.lstrip('/')}"
+            if entry = ClassRegistry.entries.find { |e| e.script_path == path || e.script_path == normalized_path || (!e.script_path.empty? && (path.ends_with?(e.script_path.sub("res://", "")) || e.script_path.ends_with?(path.sub("res://", "")))) }
+              cls_name = entry.class_name
+            else
+              c_name, _, _ = CrystalLanguage.inspect_file_global_class(path)
+              cls_name = c_name
+            end
+          rescue
+            cls_name = ""
+          end
         end
         Bridge.ret_string(ret, cls_name)
       when "_load"
@@ -184,22 +192,19 @@ module Godot
       if Bridge.is_saver_registered?
         return
       end
-      rl_ptr = Bridge.get_singleton("ResourceLoader")
-      if !rl_ptr.null?
-        r_loader = Godot::ResourceLoader.new(rl_ptr)
-        if r_loader.call_str("get_resource_type", "test.cr") == "CrystalScript"
-          Bridge.set_saver_registered(true)
-          return
-        end
-      end
       rs_ptr = Bridge.get_singleton("ResourceSaver")
-      return if rs_ptr.null?
+      if rs_ptr.null?
+        Godot.printerr("[ResourceFormatSaverCrystal.ensure_registered] ResourceSaver singleton is NULL!")
+        return
+      end
       if saver = Godot.create(Godot::ResourceFormatSaverCrystal)
         @@instance = saver
         r_saver = Godot::ResourceSaver.new(rs_ptr)
         r_saver.call("add_resource_format_saver", saver, true)
         Bridge.set_saver_registered(true)
         @@registered = true
+      else
+        Godot.printerr("[ResourceFormatSaverCrystal.ensure_registered] Failed to create saver instance!")
       end
     end
 
@@ -260,7 +265,21 @@ module Godot
 
     def save(script : CrystalScript, path : String) : Int32
       fs_path = ResourceFormatSaverCrystal.resolve_save_path(path)
-      if Godot::SystemIO.write_file(fs_path, script.source_code)
+      code = script.source_code
+
+      # Safety guard against catastrophic file truncation
+      if code.empty? && !fs_path.empty? && Godot::SystemIO.file_exists?(fs_path)
+        existing_len = Godot::SystemIO.file_size(fs_path)
+        if existing_len > 0
+          Godot.printerr("[ResourceFormatSaverCrystal] Refusing to overwrite #{path} with empty content (source code unresolved)")
+          return 1_i32 # ERR_FILE_CANT_WRITE
+        end
+      end
+
+      dir_path = File.dirname(fs_path)
+      Dir.mkdir_p(dir_path) unless dir_path.empty? || dir_path == "."
+
+      if Godot::SystemIO.write_file(fs_path, code)
         0_i32
       else
         1_i32
@@ -270,7 +289,7 @@ module Godot
     def self._godot_has_virtual_method(method_name : String) : Bool
       norm = method_name.starts_with?('_') ? method_name : "_#{method_name}"
       case norm
-      when "_recognize", "_recognize_path", "_get_recognized_extensions", "_save", "_set_uid"
+      when "_recognize", "_recognize_path", "_get_recognized_extensions", "_save"
         true
       else
         false
@@ -286,9 +305,21 @@ module Godot
         if !res_ptr.null?
           if inst = Bridge.find_alive_instance(res_ptr)
             recognize = inst.is_a?(CrystalScript)
-          else
+          end
+          unless recognize
             c_name = Bridge.object_call_ret_string(res_ptr, "get_class")
             recognize = (c_name == "CrystalScript")
+          end
+          unless recognize
+            path = Bridge.object_call_ret_string(res_ptr, "get_path")
+            recognize = path.downcase.ends_with?(".cr")
+          end
+          unless recognize
+            lang_ptr = Bridge.object_call_ret_object(res_ptr, "get_language")
+            if !lang_ptr.null?
+              l_name = Bridge.object_call_ret_string(lang_ptr, "get_name")
+              recognize = (l_name == "Crystal")
+            end
           end
         end
         ret.as(UInt8*).value = recognize ? 1_u8 : 0_u8
@@ -299,9 +330,14 @@ module Godot
         if !recognize && !res_ptr.null?
           if inst = Bridge.find_alive_instance(res_ptr)
             recognize = inst.is_a?(CrystalScript)
-          else
+          end
+          unless recognize
             c_name = Bridge.object_call_ret_string(res_ptr, "get_class")
             recognize = (c_name == "CrystalScript")
+          end
+          unless recognize
+            r_path = Bridge.object_call_ret_string(res_ptr, "get_path")
+            recognize = r_path.downcase.ends_with?(".cr")
           end
         end
         ret.as(UInt8*).value = recognize ? 1_u8 : 0_u8
@@ -339,6 +375,9 @@ module Godot
             return
           end
         end
+
+        dir_path = File.dirname(fs_path)
+        Dir.mkdir_p(dir_path) unless dir_path.empty? || dir_path == "."
 
         if !fs_path.empty? && Godot::SystemIO.write_file(fs_path, code)
           ret.as(Int32*).value = 0_i32 # OK

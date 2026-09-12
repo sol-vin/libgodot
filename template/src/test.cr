@@ -1,9 +1,9 @@
 require "libgodot"
 
-# MyNode node
-node MyNode < Node do
+# NewNode node
+node MyNewCrystalNode < Node do
   def _ready : Void
-    Godot.print("MyNode initialized")
+	Godot.print("NewNode initialized")
   end
 
   def _process(delta : Float64) : Void

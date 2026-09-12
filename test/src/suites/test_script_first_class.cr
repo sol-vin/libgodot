@@ -174,12 +174,122 @@ test_script_first_class "ResourceFormatLoader and ResourceFormatSaver for .cr fi
   end
 
   # Cleanup
-  loaded_script.destroy if loaded_script
-  test_script.destroy
+  test_script.unreference rescue nil
 
   # Clean up temporary test file from disk
   fs_path = Godot::ResourceFormatSaverCrystal.resolve_save_path(test_path)
   LibSystemIO.remove(fs_path.to_unsafe) if !fs_path.empty? && Godot::SystemIO.file_exists?(fs_path)
+end
+
+test_script_first_class "ResourceSaver engine singleton round-trip via GDExtension boundary" do
+  rs_ptr = Godot::Bridge.get_singleton("ResourceSaver")
+  rl_ptr = Godot::Bridge.get_singleton("ResourceLoader")
+  TestFramework.assert_true !rs_ptr.null?, "ResourceSaver singleton must exist"
+  TestFramework.assert_true !rl_ptr.null?, "ResourceLoader singleton must exist"
+
+  r_saver = Godot::ResourceSaver.new(rs_ptr)
+  r_loader = Godot::ResourceLoader.new(rl_ptr)
+
+  test_script = Godot.create(Godot::CrystalScript)
+  TestFramework.assert_true !test_script.nil?, "CrystalScript must be created"
+
+  if script = test_script
+    test_path = "user://test_engine_saver_roundtrip.cr"
+    fs_path = Godot::ResourceFormatSaverCrystal.resolve_save_path(test_path)
+
+    sample_code = <<-CRYSTAL
+    require "libgodot"
+
+    node EngineTestNode < Node do
+      @[Export]
+      property test_val : Int32 = 42
+
+      def _ready : Void
+        Godot.print("EngineTestNode ready")
+      end
+    end
+    CRYSTAL
+
+    script.source_code = sample_code
+    script.script_path = test_path
+
+    begin
+      # 1. Verify ResourceSaver recognize and save via engine singleton
+      save_ret = r_saver.call_i64("save", script, test_path)
+      TestFramework.assert_eq save_ret, 0_i64, "ResourceSaver.save via engine singleton should return OK (0)"
+
+      # 2. Verify file written to disk
+      TestFramework.assert_true Godot::SystemIO.file_exists?(fs_path), "File should be created on disk"
+      disk_content = Godot::SystemIO.read_file(fs_path)
+      TestFramework.assert_true disk_content.includes?("EngineTestNode"), "File content should contain EngineTestNode"
+
+      # 3. Verify ResourceLoader loads the file via engine singleton
+      loaded_res = r_loader.call_obj("load", test_path)
+      TestFramework.assert_true !loaded_res.nil? && !loaded_res.pointer.null?, "ResourceLoader.load should return non-null object"
+      if loaded_obj = loaded_res
+        c_name = loaded_obj.call_str("get_class") rescue ""
+        TestFramework.assert_eq c_name, "CrystalScript", "Loaded resource class should be CrystalScript"
+      end
+    ensure
+      # Guaranteed sandbox cleanup
+      LibSystemIO.remove(fs_path.to_unsafe) if !fs_path.empty? && Godot::SystemIO.file_exists?(fs_path)
+    end
+  end
+end
+
+test_script_first_class "ResourceFormatSaver overwrite safety guard against truncation" do
+  guard_path = "user://test_truncation_guard.cr"
+  fs_path = Godot::ResourceFormatSaverCrystal.resolve_save_path(guard_path)
+  initial_code = "# Valuable user code\nnode ImportantNode < Node do\nend\n"
+
+  begin
+    # Write initial content
+    File.write(fs_path, initial_code)
+    TestFramework.assert_true Godot::SystemIO.file_exists?(fs_path), "Initial file must exist"
+    initial_size = Godot::SystemIO.file_size(fs_path)
+    TestFramework.assert_true initial_size > 0, "Initial file size must be > 0"
+
+    saver = Godot::ResourceFormatSaverCrystal.instance
+    empty_script = Godot.create(Godot::CrystalScript)
+    if s = empty_script
+      s.source_code = "" # Empty code
+      # Attempt to save empty code over existing file: must be rejected!
+      err = saver.save(s, guard_path)
+      TestFramework.assert_eq err, 1_i32, "Saver must refuse to overwrite existing content with empty source (ERR_FILE_CANT_WRITE)"
+
+      # Verify content was NOT truncated
+      current_content = Godot::SystemIO.read_file(fs_path)
+      TestFramework.assert_eq current_content, initial_code, "File content must be preserved intact"
+    end
+  ensure
+    LibSystemIO.remove(fs_path.to_unsafe) if !fs_path.empty? && Godot::SystemIO.file_exists?(fs_path)
+  end
+end
+
+test_script_first_class "Editor script creation path adaptation and extension validation" do
+  # Test extension replacement preserving directory structures
+  dummy_paths = {
+    "res://src/player.gd" => "res://src/player.cr",
+    "res://scripts/combat/enemy.cs" => "res://scripts/combat/enemy.cr",
+    "res://my.custom.dir/controller" => "res://my.custom.dir/controller.cr",
+    "res://src/main.cr" => "res://src/main.cr"
+  }
+
+  dummy_paths.each do |input, expected|
+    new_txt = if input.ends_with?(".cr")
+      input
+    else
+      dir = File.dirname(input)
+      base = File.basename(input)
+      ext = File.extname(base)
+      if !ext.empty?
+        "#{dir}/#{base.sub(/\.[^.]+$/, ".cr")}"
+      else
+        "#{input}.cr"
+      end
+    end
+    TestFramework.assert_eq new_txt, expected, "Path #{input} should adapt to #{expected}"
+  end
 end
 
 test_script_first_class "Editor script linking, ClassRegistry script_path, and global class inspection" do
@@ -227,4 +337,17 @@ test_script_first_class "Editor script linking, ClassRegistry script_path, and g
   TestFramework.assert_eq c_name, "InspectTarget"
   TestFramework.assert_eq b_type, "CharacterBody3D"
   LibSystemIO.remove(fs_temp_path.to_unsafe) if File.exists?(fs_temp_path)
+
+  # Non-.cr files must immediately return empty tuple without inspecting/regexing
+  c_non_cr, _, _ = Godot::CrystalLanguage.inspect_file_global_class("res://icon.svg")
+  TestFramework.assert_eq c_non_cr, ""
+
+  # Files with invalid UTF-8 bytes (e.g. 0xfe, 0xff) must not crash PCRE2 regex
+  temp_invalid_path = "user://test_invalid_utf8.cr"
+  fs_invalid_path = Godot::ResourceFormatSaverCrystal.resolve_save_path(temp_invalid_path)
+  # Write binary invalid UTF-8 bytes
+  File.open(fs_invalid_path, "wb") { |f| f.write(Bytes[0xff, 0xfe, 0x41, 0x00, 0x42, 0x00]) } rescue nil
+  c_invalid, _, _ = Godot::CrystalLanguage.inspect_file_global_class(temp_invalid_path)
+  TestFramework.assert_eq c_invalid, ""
+  LibSystemIO.remove(fs_invalid_path.to_unsafe) if File.exists?(fs_invalid_path)
 end

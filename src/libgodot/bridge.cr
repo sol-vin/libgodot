@@ -447,11 +447,6 @@ module Godot
       Godot::CrystalLanguage.ensure_registered
       Godot::ResourceFormatLoaderCrystal.ensure_registered
       Godot::ResourceFormatSaverCrystal.ensure_registered
-
-      # Ensure editor integration (toolbar button, panel, debugger) is active if running in editor
-      if Godot.editor_hint?
-        Godot::CrystalIntegrationPlugin.ensure_editor_setup rescue nil
-      end
     end
 
     def self.deinit : Void
@@ -1165,4 +1160,7 @@ fun crystal_godot_init(api : Godot::LibBridge::BridgeAPI*) : Void
   dummy_argv = pointerof(dummy_arg)
   LibCrystalMain.__crystal_main(1, dummy_argv)
   Godot::Bridge.init(api)
+  if ::ENV["LIBGODOT_TEST_BUILD_BUTTON"]? == "1"
+    Godot::CrystalIntegrationPlugin.check_test_build_button_flow rescue nil
+  end
 end

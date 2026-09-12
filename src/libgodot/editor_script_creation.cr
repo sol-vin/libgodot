@@ -252,6 +252,51 @@ module Godot
       end
     end
 
+    # Retrieves the selected type from a Godot CreateDialog by inspecting its Tree control
+    def self.get_create_dialog_selected_type(cd : Node) : String
+      trees = find_all_children(cd, "Tree")
+      trees.each do |tree_node|
+        tree = Godot::Tree.new(tree_node.pointer)
+        if sel_item = tree.call_obj("get_selected")
+          if !sel_item.pointer.null?
+            txt = sel_item.call_str("get_text", 0) rescue ""
+            return txt unless txt.empty?
+          end
+        end
+      end
+      cd.call_str("get_selected_type") rescue ""
+    end
+
+    # Adapts the file path inside a native ScriptCreateDialog to ensure a .cr extension when Crystal is selected
+    def self.adapt_script_create_dialog_path(scd : Node) : Void
+      line_edits = find_all_children(scd, "LineEdit")
+      line_edits.each do |le_node|
+        le = Godot::LineEdit.new(le_node.pointer)
+        txt = le.call_str("get_text") rescue ""
+        if txt.starts_with?("res://") || txt.includes?("/")
+          new_txt = if txt.ends_with?(".cr")
+            txt
+          else
+            dir = File.dirname(txt)
+            base = File.basename(txt)
+            ext = File.extname(base)
+            if !ext.empty?
+              "#{dir}/#{base.sub(/\.[^.]+$/, ".cr")}"
+            else
+              "#{txt}.cr"
+            end
+          end
+          if new_txt != txt
+            le.call("set_text", new_txt)
+            le.call("emit_signal", "text_changed", new_txt) rescue nil
+            scd.call("_path_changed", new_txt) rescue nil
+          end
+        end
+      end
+    rescue ex
+      Godot.print("[EditorScriptCreation] Notice adapt_script_create_dialog_path: #{ex.message}")
+    end
+
     # Intercepts Godot's built-in ScriptCreateDialog whenever CrystalScript is selected
     # in "Create New Resource" (FileSystem Dock -> Create New -> Resource -> CrystalScript)
     # and repairs native ScriptCreateDialog instances so they never show broken red icons.
@@ -264,14 +309,14 @@ module Godot
         @@hooked_create_dialogs << cd.signal_target_id
 
         cd.connect("confirmed") do |_args|
-          sel = cd.call_str("get_selected_type") rescue ""
+          sel = get_create_dialog_selected_type(cd)
           if sel == "CrystalScript"
             @@intercept_crystal_resource = true
           end
         end
 
         cd.connect("create") do |_args|
-          sel = cd.call_str("get_selected_type") rescue ""
+          sel = get_create_dialog_selected_type(cd)
           if sel == "CrystalScript"
             @@intercept_crystal_resource = true
           end
@@ -291,7 +336,7 @@ module Godot
             # Check if any CreateDialog has CrystalScript selected
             cd_list = find_all_children(base_ctrl, "CreateDialog")
             cd_list.each do |cd|
-              if (cd.call_str("get_selected_type") rescue "") == "CrystalScript"
+              if get_create_dialog_selected_type(cd) == "CrystalScript"
                 triggered_by_crystal = true
                 break
               end
@@ -330,6 +375,7 @@ module Godot
     # Repairs a Godot native ScriptCreateDialog's language menu:
     # - Adds "Crystal" option with the Crystal icon if missing
     # - Ensures valid selection index so it never shows broken red icon or empty fields
+    # - Sets up live path adaptation when language is switched
     def self.fix_script_create_dialog(scd : Node) : Void
       return if scd.pointer.null?
       opt_buttons = find_all_children(scd, "OptionButton")
@@ -349,21 +395,43 @@ module Godot
           end
         end
 
-        if has_gdscript || item_count > 0
+        if has_gdscript
+          tex = CrystalIntegrationPlugin.get_crystal_icon_texture
           unless has_crystal
-            tex = CrystalIntegrationPlugin.get_crystal_icon_texture
             if tex && !tex.pointer.null?
               opt.call("add_icon_item", tex, "Crystal") rescue nil
             else
               opt.call("add_item", "Crystal") rescue nil
             end
             crystal_idx = (opt.call_i64("get_item_count") - 1) rescue -1_i64
+          else
+            if tex && !tex.pointer.null?
+              opt.call("set_item_icon", crystal_idx, tex) rescue nil
+            end
           end
 
           # Avoid negative/unselected index which leads to broken red icon in Godot
           sel = opt.call_i64("get_selected") rescue -1_i64
           if sel < 0
             opt.call("select", 0) rescue nil
+            sel = 0_i64
+          end
+
+          # If Crystal is currently selected, adapt path to end with .cr
+          sel_txt = opt.call_str("get_item_text", sel) rescue ""
+          if sel_txt == "Crystal"
+            adapt_script_create_dialog_path(scd)
+          end
+
+          # Hook item_selected to auto-adapt path when language switches
+          unless @@hooked_popups.includes?(opt.signal_target_id)
+            @@hooked_popups << opt.signal_target_id
+            opt.connect("item_selected") do |args|
+              c_idx = (args && args.size > 0 ? args[0].as_i64 : opt.call_i64("get_selected")) rescue -1_i64
+              if c_idx >= 0 && (opt.call_str("get_item_text", c_idx) rescue "") == "Crystal"
+                adapt_script_create_dialog_path(scd)
+              end
+            end
           end
         end
       end
@@ -445,7 +513,12 @@ module Godot
 
       final_name = "NewNode" if final_name.empty?
       final_base = "Node" if final_base.empty?
-      final_dir = initial_path.strip.empty? ? "res://src" : initial_path.strip.rstrip('/')
+      final_dir = if initial_path.strip.empty? || initial_path.strip == "." || initial_path.strip == "./" || initial_path.strip == "res://" || initial_path.strip == "res://."
+        "res://src"
+      else
+        p = initial_path.strip.rstrip('/')
+        p.starts_with?("res://") ? p : "res://#{p.sub(/^\.\//, "")}"
+      end
       final_file = "#{final_dir}/#{to_snake_case(final_name)}.cr"
 
       if dlg = @@dialog
@@ -552,24 +625,26 @@ module Godot
         end
       end
 
-      # On Confirm: write file, scan filesystem, open in script editor
+      # On Confirm: hide dialog, write file, scan filesystem, open in script editor
       dlg.connect("confirmed") do |_args|
+        dlg.call("hide") rescue nil
+
         raw_class = class_edit.call_str("get_text").strip
         raw_class = "NewNode" if raw_class.empty?
         b_idx = base_opt.call_i64("get_selected") rescue 0_i64
         b_type = COMMON_BASE_TYPES[b_idx]? || "Node"
         t_idx = tmpl_opt.call_i64("get_selected") rescue 0_i64
         target_path = path_edit.call_str("get_text").strip
-        target_path = "res://src/#{to_snake_case(raw_class)}.cr" if target_path.empty?
+        if target_path.empty? || target_path == "." || target_path == "./"
+          target_path = "res://src/#{to_snake_case(raw_class)}.cr"
+        end
+        target_path = target_path.sub(/^\.\//, "")
+        target_path = "res://#{target_path}" unless target_path.starts_with?("res://")
         target_path = "#{target_path}.cr" unless target_path.ends_with?(".cr")
 
         code = generate_template_code(raw_class, b_type, t_idx)
 
-        disk_path = if target_path.starts_with?("res://")
-          target_path.sub("res://", "")
-        else
-          target_path
-        end
+        disk_path = target_path.sub(/^res:\/\//, "")
 
         dir_name = File.dirname(disk_path)
         Dir.mkdir_p(dir_name) unless dir_name.empty? || dir_name == "."
@@ -585,7 +660,7 @@ module Godot
           ei.call("select_file", target_path) rescue nil
           r_loader = Godot::ResourceLoader.instance rescue nil
           if r_loader && !r_loader.pointer.null?
-            scr_obj = r_loader.load(target_path, "Script", 1_i64) rescue nil
+            scr_obj = r_loader.load(target_path, "Script", 2_i64) rescue nil
             if scr_obj && !scr_obj.pointer.null?
               ei.call("edit_script", scr_obj) rescue nil
             end
@@ -669,7 +744,7 @@ module Godot
       end
       if btn = @@toolbar_button
         if !btn.pointer.null?
-          btn.destroy rescue nil
+          btn.queue_free rescue nil
         end
         @@toolbar_button = nil
       end
