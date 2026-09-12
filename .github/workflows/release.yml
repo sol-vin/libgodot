@@ -246,7 +246,7 @@ jobs:
       - name: Install Linux Build Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y lld libgc-dev
+          sudo apt-get install -y lld libgc-dev xvfb
 
       - name: Verify Crystal & Toolchain
         run: |
@@ -290,7 +290,7 @@ jobs:
       - name: Compile Release Binaries & Run Test Suite
         shell: bash
         run: |
-          make all RELEASE=1
+          xvfb-run -a make all RELEASE=1
 
       - name: Upload Test Status Report & Artifacts
         if: always()

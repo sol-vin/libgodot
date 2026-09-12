@@ -249,6 +249,7 @@ extern "C" GDE_EXPORT GDExtensionBool crystal_library_init(
     gd_ref_get_object = (GDExtensionInterfaceRefGetObject)p_get_proc_address("ref_get_object");
     gd_variant_stringify = (GDExtensionInterfaceVariantStringify)p_get_proc_address("variant_stringify");
     gd_string_to_utf8_chars = (GDExtensionInterfaceStringToUtf8Chars)p_get_proc_address("string_to_utf8_chars");
+    gd_get_library_path = (GDExtensionInterfaceGetLibraryPath)p_get_proc_address("get_library_path");
 
     GDExtensionInterfaceVariantGetPtrInternalGetter get_internal = (GDExtensionInterfaceVariantGetPtrInternalGetter)p_get_proc_address("variant_get_ptr_internal_getter");
     if (get_internal) {

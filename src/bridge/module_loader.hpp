@@ -253,6 +253,7 @@ inline bool bridge_should_use_shadow_copy() {
  */
 inline void load_crystal_game_library() {
     char bridge_dir[MAX_PATH] = {0};
+
 #ifdef _WIN32
     HMODULE hBridge = NULL;
     if (GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, (LPCSTR)&load_crystal_game_library, &hBridge)) {
@@ -271,6 +272,33 @@ inline void load_crystal_game_library() {
         char *last_slash = strrchr(bridge_dir, '/');
         if (last_slash) {
             *last_slash = '\0';
+        }
+
+        // On macOS/Linux, if multiple GDExtensions share the same loaded bridge dylib in memory,
+        // use gd_get_library_path to identify the specific addon directory for this extension instance.
+        if (gd_get_library_path && g_library && gd_string_to_utf8_chars && gd_string_destroy) {
+            uint8_t gd_str_storage[64] = {0};
+            GDExtensionUninitializedStringPtr gd_str = (GDExtensionUninitializedStringPtr)&gd_str_storage[0];
+            gd_get_library_path(g_library, gd_str);
+            char lib_path[MAX_PATH] = {0};
+            gd_string_to_utf8_chars((GDExtensionConstStringPtr)gd_str, lib_path, sizeof(lib_path) - 1);
+            gd_string_destroy((GDExtensionStringPtr)gd_str);
+
+            if (lib_path[0] != '\0') {
+                const char *p = lib_path;
+                if (strncmp(p, "res://", 6) == 0) p += 6;
+
+                // Find the project root prefix from the dlinfo path
+                char *addons_pos = strstr(bridge_dir, "/addons/");
+                if (addons_pos) {
+                    char resolved_addon_dir[MAX_PATH] = {0};
+                    size_t prefix_len = (size_t)(addons_pos - bridge_dir + 1); // includes trailing '/'
+                    snprintf(resolved_addon_dir, sizeof(resolved_addon_dir), "%.*s%s", (int)prefix_len, bridge_dir, p);
+                    char *slash = strrchr(resolved_addon_dir, '/');
+                    if (slash) *slash = '\0';
+                    strncpy(bridge_dir, resolved_addon_dir, sizeof(bridge_dir) - 1);
+                }
+            }
         }
     }
 #endif
@@ -352,6 +380,7 @@ inline void load_crystal_game_library() {
                         char full_path[MAX_PATH];
                         snprintf(full_path, sizeof(full_path), "%s\\%s", bridge_dir, fd.cFileName);
                         to_load.push_back(std::string(full_path));
+                        loaded_game_or_addon = true;
                     }
                 } while (FindNextFileA(hFind, &fd));
                 FindClose(hFind);
@@ -375,11 +404,23 @@ inline void load_crystal_game_library() {
                         char full_path[MAX_PATH];
                         snprintf(full_path, sizeof(full_path), "%s/%s", bridge_dir, name);
                         to_load.push_back(std::string(full_path));
+                        loaded_game_or_addon = true;
                     }
                 }
                 closedir(d);
             }
 #endif
+        }
+
+        // Check relative project bin directory if bridge sits in addons/<name>/bin and no game/addon was found in bridge_dir
+        if (to_load.empty() && !loaded_game_or_addon) {
+            char rel_game_path[MAX_PATH] = {0};
+            snprintf(rel_game_path, sizeof(rel_game_path), "%s%s..%s..%s..%sbin%sgame.%s",
+                     bridge_dir, path_sep, path_sep, path_sep, path_sep, path_sep, shadow_ext);
+            if (bridge_file_exists(rel_game_path)) {
+                to_load.push_back(std::string(rel_game_path));
+                loaded_game_or_addon = true;
+            }
         }
     }
 
@@ -399,13 +440,45 @@ inline void load_crystal_game_library() {
     // Fallback search paths if none found in bridge_dir
     if (to_load.empty()) {
 #ifdef _WIN32
-        const char *fallbacks[] = { "addons/crystal_integration/bin/plugin.dll", "addons/crystal_integration/bin/game.dll", "addons/crystal_addon/bin/game.dll", "bin/game.dll", "game.dll" };
+        const char *fallbacks[] = {
+            "addons/crystal_integration/bin/plugin.dll",
+            "addons/crystal_integration/bin/game.dll",
+            "addons/crystal_addon/bin/game.dll",
+            "bin/game.dll",
+            "game.dll",
+            "test/bin/game.dll",
+            "template/bin/game.dll"
+        };
 #elif defined(__ANDROID__) || defined(ANDROID)
-        const char *fallbacks[] = { "libplugin.so", "libgame.so", "addons/crystal_integration/bin/android/arm64-v8a/libgame.so", "bin/android/arm64-v8a/libgame.so", "game.so" };
+        const char *fallbacks[] = {
+            "libplugin.so",
+            "libgame.so",
+            "addons/crystal_integration/bin/android/arm64-v8a/libgame.so",
+            "bin/android/arm64-v8a/libgame.so",
+            "game.so"
+        };
 #elif defined(__APPLE__)
-        const char *fallbacks[] = { "addons/crystal_integration/bin/plugin.dylib", "addons/crystal_integration/bin/game.dylib", "addons/crystal_addon/bin/game.dylib", "bin/game.dylib", "game.dylib", "bin/libgame.dylib", "libgame.dylib" };
+        const char *fallbacks[] = {
+            "addons/crystal_integration/bin/plugin.dylib",
+            "addons/crystal_integration/bin/game.dylib",
+            "addons/crystal_addon/bin/game.dylib",
+            "bin/game.dylib",
+            "game.dylib",
+            "bin/libgame.dylib",
+            "libgame.dylib",
+            "test/bin/game.dylib",
+            "template/bin/game.dylib"
+        };
 #else
-        const char *fallbacks[] = { "addons/crystal_integration/bin/plugin.so", "addons/crystal_integration/bin/game.so", "addons/crystal_addon/bin/game.so", "bin/game.so", "game.so" };
+        const char *fallbacks[] = {
+            "addons/crystal_integration/bin/plugin.so",
+            "addons/crystal_integration/bin/game.so",
+            "addons/crystal_addon/bin/game.so",
+            "bin/game.so",
+            "game.so",
+            "test/bin/game.so",
+            "template/bin/game.so"
+        };
 #endif
         bool fallback_loaded_game = false;
         for (size_t i = 0; i < sizeof(fallbacks) / sizeof(fallbacks[0]); i++) {

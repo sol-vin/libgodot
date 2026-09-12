@@ -265,11 +265,7 @@ module Godot
 
       if dlg = @@error_dialog
         if !dlg.pointer.null? && dlg.alive?
-          parent = dlg.call_obj("get_parent") rescue nil
-          if parent && !parent.pointer.null? && parent.alive?
-            parent.call("remove_child", dlg) rescue nil
-          end
-          dlg.destroy rescue nil
+          dlg.queue_free rescue nil
         end
         @@error_dialog = nil
       end
@@ -920,6 +916,14 @@ module Godot
           engine.call("remove_meta", "crystal_test_cycle") rescue nil
           Godot.print("[TestBuildButton] SUCCESS: Build Crystal button pressed, compilation succeeded, and GDExtension reloaded cleanly!")
           Godot.print("[TestBuildButton] SUCCESS: Completed all #{target_cycles} reload cycles!")
+          if has_editor_interface? && !Godot::EditorInterface.singleton_ptr.null?
+            ed_iface = Godot::EditorInterface.new(Godot::EditorInterface.singleton_ptr)
+            if base_ctrl = ed_iface.get_base_control
+              if tree = base_ctrl.get_tree
+                tree.call_deferred("quit", 0_i64) rescue nil
+              end
+            end
+          end
           return
         end
       end

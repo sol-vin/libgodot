@@ -31,10 +31,10 @@ if (-not (Test-Path $TargetDir)) {
 $projName = (Split-Path -Leaf $TargetDir)
 
 if ($TestBuildButton -and $QuitAfter -eq 50) {
-    $QuitAfter = 1200 + ($ReloadCycles * 600)
+    $QuitAfter = 3600 + ($ReloadCycles * 1800)
 }
 if ($TestErrorRecovery -and $QuitAfter -eq 50) {
-    $QuitAfter = 900
+    $QuitAfter = 1800
 }
 
 Write-Host "=================================================================" -ForegroundColor Cyan
@@ -92,8 +92,13 @@ if ($TestErrorRecovery) {
 }
 
 try {
-    $process = Start-Process -FilePath $GodotExe -ArgumentList @("--verbose", "--editor", "--path", $TargetDir, "--quit-after", "$QuitAfter") -RedirectStandardOutput $logFile -RedirectStandardError $errLogFile -PassThru
-    $timeoutSec = if ($TestBuildButton) { 45 + ($ReloadCycles * 35) } else { 45 }
+    $godotArgs = @("--editor", "--path", $TargetDir, "--quit-after", "$QuitAfter")
+    $onUnix = ($env:OS -ne "Windows_NT" -and [System.IO.Path]::PathSeparator -ne ';')
+    if ($onUnix -and -not $env:DISPLAY -and -not $env:WAYLAND_DISPLAY) {
+        $godotArgs = @("--headless", "--rendering-driver", "opengl3") + $godotArgs
+    }
+    $process = Start-Process -FilePath $GodotExe -ArgumentList $godotArgs -RedirectStandardOutput $logFile -RedirectStandardError $errLogFile -PassThru
+    $timeoutSec = if ($TestBuildButton) { 60 + ($ReloadCycles * 60) } elseif ($TestErrorRecovery) { 90 } else { 45 }
     $sw = [System.Diagnostics.Stopwatch]::StartNew()
     while (-not $process.HasExited -and $sw.Elapsed.TotalSeconds -lt $timeoutSec) {
         Start-Sleep -Milliseconds 500

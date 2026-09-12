@@ -65,6 +65,7 @@ static GDExtensionInterfaceVariantGetObjectInstanceId gd_variant_get_object_inst
 static GDExtensionInterfaceObjectGetInstanceFromId gd_object_get_instance_from_id = nullptr;
 static GDExtensionInterfaceVariantStringify gd_variant_stringify = nullptr;
 static GDExtensionInterfaceStringToUtf8Chars gd_string_to_utf8_chars = nullptr;
+static GDExtensionInterfaceGetLibraryPath gd_get_library_path = nullptr;
 
 typedef GDExtensionVariantGetInternalPtrFunc (*GDExtensionInterfaceVariantGetPtrInternalGetter)(GDExtensionVariantType p_type);
 static GDExtensionVariantGetInternalPtrFunc gd_variant_get_internal_ptr_object = nullptr;
