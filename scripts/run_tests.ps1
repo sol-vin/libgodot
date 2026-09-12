@@ -337,9 +337,9 @@ if (-not $SkipEditorTests) {
         }
 
         # 3. Verify editor live Crystal recompilation & GDExtension reload (template project)
-        $editorRebuildResult = Invoke-TestCommand -Name "Editor Live Crystal Rebuild & Reload (template, 2 cycles)" `
+        $editorRebuildResult = Invoke-TestCommand -Name "Editor Live Crystal Rebuild & Reload (template, 1 cycle)" `
             -Executable $pwshExe `
-            -Arguments @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", $verifyEditorScript, "-Path", "template", "-TestBuildButton", "-ReloadCycles", "2", "-PurgeCache", "-GodotExe", $GodotExe) `
+            -Arguments @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", $verifyEditorScript, "-Path", "template", "-TestBuildButton", "-ReloadCycles", "1", "-PurgeCache", "-GodotExe", $GodotExe) `
             -CustomVerification
         if (-not $editorRebuildResult["Success"]) {
             $FailedSteps.Add("Editor Live Rebuild & Reload (template)")

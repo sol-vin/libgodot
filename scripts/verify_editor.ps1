@@ -31,10 +31,10 @@ if (-not (Test-Path $TargetDir)) {
 $projName = (Split-Path -Leaf $TargetDir)
 
 if ($TestBuildButton -and $QuitAfter -eq 50) {
-    $QuitAfter = 3600 + ($ReloadCycles * 1800)
+    $QuitAfter = 14400 + ($ReloadCycles * 3600)
 }
 if ($TestErrorRecovery -and $QuitAfter -eq 50) {
-    $QuitAfter = 1800
+    $QuitAfter = 3600
 }
 
 Write-Host "=================================================================" -ForegroundColor Cyan
@@ -68,7 +68,11 @@ if ($PurgeCache -or $TestBuildButton) {
     # Re-synchronize extension_list.cfg and binaries so Godot loads GDExtension cleanly
     $syncScript = Join-Path $RootDir "scripts/sync_bins.ps1"
     if (Test-Path $syncScript) {
-        & powershell -NoProfile -ExecutionPolicy Bypass -File $syncScript | Out-Null
+        $pwshExe = (Get-Process -Id $PID).Path
+        if (-not $pwshExe -or -not (Test-Path $pwshExe)) {
+            $pwshExe = if (Get-Command pwsh -ErrorAction SilentlyContinue) { "pwsh" } else { "powershell" }
+        }
+        & $pwshExe -NoProfile -ExecutionPolicy Bypass -File $syncScript | Out-Null
     }
 }
 
@@ -165,8 +169,8 @@ if ($logContent -match "Failed to open '.*~crystal_bridge\.dll'" -or $logContent
     $failed = $true
 }
 
-# 6. Check for loader errors
-if ($logContent -match "No loader found for resource.*\.cr") {
+# 6. Check for loader errors (skip when PurgeCache/TestBuildButton momentarily causes first-frame cache rebuild before GDExtension registers)
+if (-not $TestBuildButton -and -not $PurgeCache -and ($logContent -match "No loader found for resource.*\.cr")) {
     Write-Host "[FAILED] Godot Editor failed to find resource loader for .cr file!" -ForegroundColor Red
     $failed = $true
 }

@@ -30,12 +30,15 @@ static GCThreadIsRegisteredFn gd_gc_thread_is_registered = nullptr;
 static GCAllowRegisterThreadsFn gd_gc_allow_register_threads = nullptr;
 static GCInitFn gd_gc_init = nullptr;
 static GCGetSuspendSignalFn gd_gc_get_suspend_signal = nullptr;
+using GCGetThrRestartSignalFn = int (*)(void);
+static GCGetThrRestartSignalFn gd_gc_get_thr_restart_signal = nullptr;
 
 static thread_local bool t_gc_thread_registered = false;
+static void *s_cached_game_module = nullptr;
 
 #ifndef _WIN32
 // Hook pthread_sigmask on POSIX so whenever Godot worker threads (WorkerThreadPool)
-// mask signals, Boehm GC's thread suspension signals (SIGPWR, SIGXCPU, etc.) remain unblocked.
+// mask signals, Boehm GC's thread suspension/restart signals remain unblocked.
 // This prevents Boehm GC from aborting with "Signals delivery fails constantly".
 extern "C" GDE_EXPORT int pthread_sigmask(int how, const sigset_t *set, sigset_t *oldset) {
     static int (*real_sigmask)(int, const sigset_t *, sigset_t *) = nullptr;
@@ -51,16 +54,15 @@ extern "C" GDE_EXPORT int pthread_sigmask(int how, const sigset_t *set, sigset_t
             int sig = gd_gc_get_suspend_signal();
             if (sig > 0) sigdelset(&mod_set, sig);
         }
+        if (gd_gc_get_thr_restart_signal) {
+            int sig = gd_gc_get_thr_restart_signal();
+            if (sig > 0) sigdelset(&mod_set, sig);
+        }
 #ifdef SIGPWR
         sigdelset(&mod_set, SIGPWR);
 #endif
 #ifdef SIGXCPU
         sigdelset(&mod_set, SIGXCPU);
-#endif
-#if defined(SIGRTMIN) && defined(SIGRTMAX)
-        for (int s = SIGRTMIN; s <= SIGRTMAX; ++s) {
-            sigdelset(&mod_set, s);
-        }
 #endif
         return real_sigmask(how, &mod_set, oldset);
     }
@@ -69,6 +71,11 @@ extern "C" GDE_EXPORT int pthread_sigmask(int how, const sigset_t *set, sigset_t
 #endif
 
 inline void init_gc_library(void *game_module_handle = nullptr) {
+    if (game_module_handle) {
+        s_cached_game_module = game_module_handle;
+    } else {
+        game_module_handle = s_cached_game_module;
+    }
     if (!gd_gc_register_my_thread) {
 #ifdef _WIN32
         HMODULE hGc = GetModuleHandleA("gc.dll");
@@ -111,6 +118,7 @@ inline void init_gc_library(void *game_module_handle = nullptr) {
             gd_gc_get_stack_base = reinterpret_cast<GCGetStackBaseFn>(dlsym(hGc, "GC_get_stack_base"));
             gd_gc_thread_is_registered = reinterpret_cast<GCThreadIsRegisteredFn>(dlsym(hGc, "GC_thread_is_registered"));
             gd_gc_get_suspend_signal = reinterpret_cast<GCGetSuspendSignalFn>(dlsym(hGc, "GC_get_suspend_signal"));
+            gd_gc_get_thr_restart_signal = reinterpret_cast<GCGetThrRestartSignalFn>(dlsym(hGc, "GC_get_thr_restart_signal"));
             static bool s_gc_initialized = false;
             if (!s_gc_initialized) {
                 if (gd_gc_init) gd_gc_init();
@@ -126,14 +134,15 @@ inline void ensure_gc_thread_registered() {
     if (t_gc_thread_registered) return;
     init_gc_library();
 #ifndef _WIN32
-    // Unmask Boehm GC thread suspend signals on foreign threads before registering.
-    // Godot worker threads (WorkerThreadPool, ResourceLoader, etc.) mask signals by default,
-    // which prevents Boehm GC from stopping the thread during collection and causes
-    // "Signals delivery fails constantly" abort crashes on Linux.
+    // Unmask Boehm GC thread suspend/restart signals on foreign threads before registering.
     sigset_t set;
     sigemptyset(&set);
     if (gd_gc_get_suspend_signal) {
         int sig = gd_gc_get_suspend_signal();
+        if (sig > 0) sigaddset(&set, sig);
+    }
+    if (gd_gc_get_thr_restart_signal) {
+        int sig = gd_gc_get_thr_restart_signal();
         if (sig > 0) sigaddset(&set, sig);
     }
 #ifdef SIGPWR
@@ -142,21 +151,40 @@ inline void ensure_gc_thread_registered() {
 #ifdef SIGXCPU
     sigaddset(&set, SIGXCPU);
 #endif
-#if defined(SIGRTMIN) && defined(SIGRTMAX)
-    for (int s = SIGRTMIN; s <= SIGRTMAX; ++s) {
-        sigaddset(&set, s);
-    }
-#endif
     pthread_sigmask(SIG_UNBLOCK, &set, nullptr);
 #endif
-    if (gd_gc_register_my_thread && gd_gc_get_stack_base) {
+    if (gd_gc_register_my_thread) {
         if (gd_gc_thread_is_registered && gd_gc_thread_is_registered()) {
             t_gc_thread_registered = true;
             return;
         }
         struct GC_stack_base sb;
         sb.mem_base = nullptr;
-        if (gd_gc_get_stack_base(&sb) == 0) {
+        int rc = -1;
+        if (gd_gc_get_stack_base) {
+            rc = gd_gc_get_stack_base(&sb);
+        }
+#if defined(__APPLE__)
+        if (rc != 0 || sb.mem_base == nullptr) {
+            sb.mem_base = pthread_get_stackaddr_np(pthread_self());
+            rc = 0;
+        }
+#elif defined(__linux__)
+        if (rc != 0 || sb.mem_base == nullptr) {
+            pthread_attr_t attr;
+            if (pthread_getattr_np(pthread_self(), &attr) == 0) {
+                void *stack_addr = nullptr;
+                size_t stack_size = 0;
+                pthread_attr_getstack(&attr, &stack_addr, &stack_size);
+                pthread_attr_destroy(&attr);
+                if (stack_addr) {
+                    sb.mem_base = (void*)((uintptr_t)stack_addr + stack_size);
+                    rc = 0;
+                }
+            }
+        }
+#endif
+        if (rc == 0 && sb.mem_base != nullptr) {
             gd_gc_register_my_thread(&sb);
             t_gc_thread_registered = true;
         }

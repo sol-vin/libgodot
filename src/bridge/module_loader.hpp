@@ -282,7 +282,10 @@ inline void load_crystal_game_library() {
             GDExtensionUninitializedStringPtr gd_str = (GDExtensionUninitializedStringPtr)&gd_str_storage[0];
             gd_get_library_path(g_library, gd_str);
             char lib_path[MAX_PATH] = {0};
-            gd_string_to_utf8_chars((GDExtensionConstStringPtr)gd_str, lib_path, sizeof(lib_path) - 1);
+            int64_t len = gd_string_to_utf8_chars((GDExtensionConstStringPtr)gd_str, lib_path, sizeof(lib_path) - 1);
+            if (len >= 0 && len < (int64_t)sizeof(lib_path)) {
+                lib_path[len] = '\0';
+            }
             gd_string_destroy((GDExtensionStringPtr)gd_str);
 
             if (lib_path[0] != '\0') {
@@ -306,7 +309,13 @@ inline void load_crystal_game_library() {
                 char *slash = strrchr(resolved_addon_dir, '/');
                 if (!slash) slash = strrchr(resolved_addon_dir, '\\');
                 if (slash) *slash = '\0';
-                if (resolved_addon_dir[0] != '\0' && bridge_file_exists(resolved_addon_dir)) {
+
+                // Check if resolved_addon_dir has a bin subdirectory (e.g. addons/<name>/bin)
+                char bin_subfolder[MAX_PATH] = {0};
+                snprintf(bin_subfolder, sizeof(bin_subfolder), "%s/bin", resolved_addon_dir);
+                if (bridge_file_exists(bin_subfolder)) {
+                    strncpy(bridge_dir, bin_subfolder, sizeof(bridge_dir) - 1);
+                } else if (resolved_addon_dir[0] != '\0' && bridge_file_exists(resolved_addon_dir)) {
                     strncpy(bridge_dir, resolved_addon_dir, sizeof(bridge_dir) - 1);
                 }
             }
@@ -626,7 +635,7 @@ inline void load_crystal_game_library() {
             g_loaded_module_paths.insert(canonical_path);
             g_hGame = hModule;
             g_loaded_modules.push_back(hModule);
-            init_gc_library();
+            init_gc_library(hModule);
             ensure_gc_thread_registered();
             CrystalInitFn init_fn = (CrystalInitFn)bridge_get_proc(hModule, "crystal_godot_init");
             if (init_fn) {
