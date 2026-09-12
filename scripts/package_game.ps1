@@ -57,9 +57,6 @@ $godotExe = ""
 foreach ($cand in $godotCandidates) {
     if ($cand) {
         $cleanCand = $cand -replace '^/([a-zA-Z])/', '$1:/'
-        if ($mainCand -match '\.exe$' -and (Test-Path $mainCand)) {
-            $cleanCand = $mainCand
-        }
         if ($onWindows -and $cleanCand -notmatch '\.exe$') {
             continue
         }
@@ -253,6 +250,13 @@ if ($godotExe -and (Test-Path $godotExe)) {
         & chmod +x $binNamedExe
     }
 
+    # Clean up any leftover temporary shadow files before Godot export
+    if ($onWindows) {
+        cmd.exe /c "del /s /q /f /a:h `"$projFull\~*`" 2>nul & del /s /q /f `"$projFull\~*`" 2>nul" | Out-Null
+    } else {
+        Get-ChildItem -Path $projFull -Filter "~*" -Force -Recurse -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue
+    }
+
     # Generate standalone project data pack ($Name.pck)
     $pckFile = Join-Path $binDir "$Name.pck"
     if (Test-Path $presetCfg) {
@@ -427,7 +431,7 @@ if ($TargetDir) {
 
             Write-Host "  [OK] Standalone Godot export complete in '$gameDir'." -ForegroundColor Green
         } else {
-            throw "[PackageGame] Godot export-release did not produce expected standalone binary for '$Name'. Ensure export templates are installed."
+            Write-Warning "[PackageGame] Godot export-release did not produce expected standalone binary for '$Name'. Falling back to self-contained project bundle."
         }
     }
 

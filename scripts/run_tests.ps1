@@ -235,10 +235,16 @@ if (-not $SkipToolTests) {
     if (Test-Path $passMarker) { Remove-Item $passMarker -Force }
     if (Test-Path $failMarker) { Remove-Item $failMarker -Force }
 
+    # Ensure test project extension_list.cfg is pre-populated before headless tool tests
+    $ensureExtScript = Join-Path $RootDir "scripts/ensure_extension_list.ps1"
+    if (Test-Path $ensureExtScript) {
+        & $ensureExtScript -ProjectPath $TestDir
+    }
+
     $toolResult = Invoke-TestCommand -Name "Headless Editor Tool Tests (ToolTester2D & ToolTester3D)" `
         -Executable $GodotExe `
         -Arguments @("--headless", "--rendering-driver", "opengl3", "--editor", "--path", "test", "--quit-after", "25") `
-        -EnvironmentVars @{ "GODOT_RUN_TOOL_TESTS" = "1" } `
+        -EnvironmentVars @{ "GODOT_RUN_TOOL_TESTS" = "1"; "LIBGL_ALWAYS_SOFTWARE" = "1" } `
         -CustomVerification
 
     if (Test-Path $failMarker) {

@@ -19,6 +19,7 @@ using GCRegisterMyThreadFn = int (*)(const struct GC_stack_base *sb);
 using GCThreadIsRegisteredFn = int (*)(void);
 using GCAllowRegisterThreadsFn = void (*)(void);
 using GCInitFn = void (*)(void);
+using GCIsInitCalledFn = int (*)(void);
 using GCGetSuspendSignalFn = int (*)(void);
 using GCGetThrRestartSignalFn = int (*)(void);
 
@@ -66,7 +67,9 @@ inline void init_gc_library(void *game_module_handle = nullptr) {
             entry.get_stack_base = reinterpret_cast<GCGetStackBaseFn>(GetProcAddress(hGc, "GC_get_stack_base"));
             entry.register_my_thread = reinterpret_cast<GCRegisterMyThreadFn>(GetProcAddress(hGc, "GC_register_my_thread"));
             entry.thread_is_registered = reinterpret_cast<GCThreadIsRegisteredFn>(GetProcAddress(hGc, "GC_thread_is_registered"));
-            if (entry.init) entry.init();
+            GCIsInitCalledFn is_init_called = reinterpret_cast<GCIsInitCalledFn>(GetProcAddress(hGc, "GC_is_init_called"));
+            bool already_inited = (is_init_called && is_init_called() != 0);
+            if (entry.init && !already_inited) entry.init();
             if (entry.allow_register_threads) entry.allow_register_threads();
             g_gc_modules.push_back(entry);
         }
@@ -114,7 +117,9 @@ inline void init_gc_library(void *game_module_handle = nullptr) {
         entry.get_suspend_signal = reinterpret_cast<GCGetSuspendSignalFn>(dlsym(hCand, "GC_get_suspend_signal"));
         entry.get_thr_restart_signal = reinterpret_cast<GCGetThrRestartSignalFn>(dlsym(hCand, "GC_get_thr_restart_signal"));
 
-        if (entry.init) entry.init();
+        GCIsInitCalledFn is_init_called = reinterpret_cast<GCIsInitCalledFn>(dlsym(hCand, "GC_is_init_called"));
+        bool already_inited = (is_init_called && is_init_called() != 0);
+        if (entry.init && hCand != game_module_handle && !already_inited) entry.init();
         if (entry.allow_register_threads) entry.allow_register_threads();
         g_gc_modules.push_back(entry);
 
