@@ -31,10 +31,10 @@ if (-not (Test-Path $TargetDir)) {
 $projName = (Split-Path -Leaf $TargetDir)
 
 if ($TestBuildButton -and $QuitAfter -eq 50) {
-    $QuitAfter = 450 + ($ReloadCycles * 150)
+    $QuitAfter = 1200 + ($ReloadCycles * 600)
 }
 if ($TestErrorRecovery -and $QuitAfter -eq 50) {
-    $QuitAfter = 350
+    $QuitAfter = 900
 }
 
 Write-Host "=================================================================" -ForegroundColor Cyan

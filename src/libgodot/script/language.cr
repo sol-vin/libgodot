@@ -315,7 +315,7 @@ module Godot
       when "_get_built_in_templates"
         Bridge.ret_array_empty(ret)
       when "_is_using_templates"
-        ret.as(UInt8*).value = 0_u8
+        ret.as(UInt8*).value = 1_u8
       when "_validate"
         Bridge.ret_dictionary_validate(ret, true)
       when "_validate_path"
@@ -324,13 +324,13 @@ module Godot
         begin
           script = Godot.create(Godot::CrystalScript)
           if script && !script.pointer.null?
-            Bridge.ret_ref(ret, script.pointer)
+            Bridge.ret_object(ret, script.pointer)
           else
-            Bridge.ret_ref(ret, Pointer(Void).null)
+            Bridge.ret_object(ret, Pointer(Void).null)
           end
         rescue ex
           Godot.printerr("[CrystalLanguage._create_script] Exception: #{ex.message}")
-          Bridge.ret_ref(ret, Pointer(Void).null)
+          Bridge.ret_object(ret, Pointer(Void).null)
         end
       when "_has_named_classes"
         ret.as(UInt8*).value = 0_u8

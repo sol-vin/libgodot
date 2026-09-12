@@ -501,38 +501,42 @@ inline void generic_class_call_virtual_with_data(
     const GDExtensionConstTypePtr *p_args,
     GDExtensionTypePtr r_ret
 ) {
-    (void)p_name;
     ensure_gc_thread_registered();
     GenericExtensionInstance *inst = (GenericExtensionInstance*)p_instance;
-    if (!inst || !inst->desc || !inst->crystal_instance) return;
+    if (!inst || !inst->desc) return;
 
     const char *method_name = (const char*)p_virtual_call_userdata;
+    char name_buf[128] = {0};
+    if (!method_name && p_name) {
+        string_name_to_cstr(p_name, name_buf, sizeof(name_buf));
+        method_name = name_buf;
+    }
     if (!method_name) return;
 
     if (strcmp(method_name, "_ready") == 0 || strcmp(method_name, "ready") == 0) {
         if (is_editor_active() && !is_tool_desc(inst->desc)) return;
-        if (inst->desc->call_virtual) inst->desc->call_virtual(inst->crystal_instance, "_ready", 0.0);
+        if (inst->crystal_instance && inst->desc->call_virtual) inst->desc->call_virtual(inst->crystal_instance, "_ready", 0.0);
         return;
     }
     if (strcmp(method_name, "_process") == 0 || strcmp(method_name, "process") == 0) {
         if (is_editor_active() && !is_tool_desc(inst->desc)) return;
         double delta = (p_args && p_args[0]) ? *(const double*)p_args[0] : 0.016666666666666666;
-        if (inst->desc->call_virtual) inst->desc->call_virtual(inst->crystal_instance, "_process", delta);
+        if (inst->crystal_instance && inst->desc->call_virtual) inst->desc->call_virtual(inst->crystal_instance, "_process", delta);
         return;
     }
     if (strcmp(method_name, "_physics_process") == 0 || strcmp(method_name, "physics_process") == 0) {
         if (is_editor_active() && !is_tool_desc(inst->desc)) return;
         double delta = (p_args && p_args[0]) ? *(const double*)p_args[0] : 0.016666666666666666;
-        if (inst->desc->call_virtual) inst->desc->call_virtual(inst->crystal_instance, "_physics_process", delta);
+        if (inst->crystal_instance && inst->desc->call_virtual) inst->desc->call_virtual(inst->crystal_instance, "_physics_process", delta);
         return;
     }
     if (strcmp(method_name, "_enter_tree") == 0 || strcmp(method_name, "enter_tree") == 0) {
-        if (inst->desc->call_virtual) inst->desc->call_virtual(inst->crystal_instance, "_enter_tree", 0.0);
+        if (inst->crystal_instance && inst->desc->call_virtual) inst->desc->call_virtual(inst->crystal_instance, "_enter_tree", 0.0);
         return;
     }
     if (strcmp(method_name, "_exit_tree") == 0 || strcmp(method_name, "exit_tree") == 0) {
         if (is_editor_active() && !is_tool_desc(inst->desc)) return;
-        if (inst->desc->call_virtual) inst->desc->call_virtual(inst->crystal_instance, "_exit_tree", 0.0);
+        if (inst->crystal_instance && inst->desc->call_virtual) inst->desc->call_virtual(inst->crystal_instance, "_exit_tree", 0.0);
         return;
     }
     if (strcmp(method_name, "_overrides_external_editor") == 0 || strcmp(method_name, "overrides_external_editor") == 0) {
@@ -541,7 +545,7 @@ inline void generic_class_call_virtual_with_data(
     }
     if (strcmp(method_name, "_build") == 0 || strcmp(method_name, "build") == 0) {
         if (r_ret) *(uint8_t*)r_ret = 1;
-        if (inst->desc->call_virtual) inst->desc->call_virtual(inst->crystal_instance, "_build", 0.0);
+        if (inst->crystal_instance && inst->desc->call_virtual) inst->desc->call_virtual(inst->crystal_instance, "_build", 0.0);
         return;
     }
     if (strcmp(method_name, "_lookup_code") == 0 || strcmp(method_name, "lookup_code") == 0) {
@@ -553,7 +557,124 @@ inline void generic_class_call_virtual_with_data(
         return;
     }
 
-    if (inst->desc->call_virtual_with_data) {
+    // Fast-path virtual dispatches for Crystal script integration classes
+    if (inst->desc && inst->desc->name) {
+        if (strcmp(inst->desc->name, "CrystalLanguage") == 0) {
+            if (strcmp(method_name, "_get_extension") == 0 || strcmp(method_name, "get_extension") == 0) {
+                bridge_ret_string(r_ret, "cr");
+                return;
+            }
+            if (strcmp(method_name, "_get_name") == 0 || strcmp(method_name, "get_name") == 0) {
+                bridge_ret_string(r_ret, "Crystal");
+                return;
+            }
+            if (strcmp(method_name, "_get_type") == 0 || strcmp(method_name, "get_type") == 0) {
+                bridge_ret_string(r_ret, "CrystalScript");
+                return;
+            }
+            if (strcmp(method_name, "_get_recognized_extensions") == 0 || strcmp(method_name, "get_recognized_extensions") == 0) {
+                const char *exts[] = { "cr" };
+                bridge_ret_packed_string_array(r_ret, exts, 1);
+                return;
+            }
+            if (strcmp(method_name, "_validate_path") == 0 || strcmp(method_name, "validate_path") == 0) {
+                bridge_ret_string(r_ret, "");
+                return;
+            }
+            if (strcmp(method_name, "_preferred_file_name_casing") == 0 || strcmp(method_name, "preferred_file_name_casing") == 0) {
+                if (r_ret) *(int64_t*)r_ret = 2; // SCRIPT_NAME_CASING_SNAKE_CASE
+                return;
+            }
+            if (strcmp(method_name, "_supports_builtin_mode") == 0 || strcmp(method_name, "supports_builtin_mode") == 0) {
+                if (r_ret) *(uint8_t*)r_ret = 0;
+                return;
+            }
+            if (strcmp(method_name, "_can_inherit_from_file") == 0 || strcmp(method_name, "can_inherit_from_file") == 0) {
+                if (r_ret) *(uint8_t*)r_ret = 0;
+                return;
+            }
+            if (strcmp(method_name, "_has_named_classes") == 0 || strcmp(method_name, "has_named_classes") == 0) {
+                if (r_ret) *(uint8_t*)r_ret = 0;
+                return;
+            }
+            if (strcmp(method_name, "_supports_documentation") == 0 || strcmp(method_name, "supports_documentation") == 0) {
+                if (r_ret) *(uint8_t*)r_ret = 0;
+                return;
+            }
+            if (strcmp(method_name, "_is_using_templates") == 0 || strcmp(method_name, "is_using_templates") == 0) {
+                if (r_ret) *(uint8_t*)r_ret = 1;
+                return;
+            }
+            if (strcmp(method_name, "_make_template") == 0 || strcmp(method_name, "make_template") == 0) {
+                char class_name_buf[128] = "NewNode";
+                char base_name_buf[128] = "Node";
+                if (p_args && p_args[1] && gd_string_to_utf8_chars) {
+                    gd_string_to_utf8_chars((GDExtensionConstStringPtr)p_args[1], class_name_buf, sizeof(class_name_buf) - 1);
+                }
+                if (p_args && p_args[2] && gd_string_to_utf8_chars) {
+                    gd_string_to_utf8_chars((GDExtensionConstStringPtr)p_args[2], base_name_buf, sizeof(base_name_buf) - 1);
+                }
+                if (class_name_buf[0] == '\0') strcpy(class_name_buf, "NewNode");
+                if (base_name_buf[0] == '\0') strcpy(base_name_buf, "Node");
+
+                void *cs_sn = make_string_name("CrystalScript");
+                GDExtensionObjectPtr script_obj = gd_classdb_construct_object(cs_sn);
+                free_string_name(cs_sn);
+
+                if (script_obj) {
+                    char script_source[1024];
+                    snprintf(script_source, sizeof(script_source),
+                        "require \"libgodot\"\n\n# %s node\nnode %s < %s do\n  def _ready : Void\n    Godot.print(\"%s initialized\")\n  end\n\n  def _process(delta : Float64) : Void\n  end\nend\n",
+                        class_name_buf, class_name_buf, base_name_buf, class_name_buf);
+
+                    static GDExtensionMethodBindPtr mb_set_source_code = nullptr;
+                    if (!mb_set_source_code) {
+                        void *sn_script = make_string_name("Script");
+                        void *sn_set_src = make_string_name("set_source_code");
+                        mb_set_source_code = gd_classdb_get_method_bind(sn_script, sn_set_src, 83702148ULL);
+                        free_string_name(sn_script); free_string_name(sn_set_src);
+                    }
+                    if (mb_set_source_code) {
+                        void *src_str = make_string(script_source);
+                        const void *sc_args[1] = { src_str };
+                        gd_object_method_bind_ptrcall(mb_set_source_code, script_obj, sc_args, nullptr);
+                        free_string(src_str);
+                    }
+                    bridge_ret_ref(r_ret, script_obj);
+                    return;
+                }
+            }
+            if (strcmp(method_name, "_create_script") == 0 || strcmp(method_name, "create_script") == 0) {
+                void *cs_sn = make_string_name("CrystalScript");
+                GDExtensionObjectPtr script_obj = gd_classdb_construct_object(cs_sn);
+                free_string_name(cs_sn);
+                bridge_ret_ref(r_ret, script_obj);
+                return;
+            }
+        } else if (strcmp(inst->desc->name, "ResourceFormatLoaderCrystal") == 0) {
+            if (strcmp(method_name, "_get_recognized_extensions") == 0 || strcmp(method_name, "get_recognized_extensions") == 0) {
+                const char *exts[] = { "cr" };
+                bridge_ret_packed_string_array(r_ret, exts, 1);
+                return;
+            }
+            if (strcmp(method_name, "_handles_type") == 0 || strcmp(method_name, "handles_type") == 0) {
+                if (r_ret) *(uint8_t*)r_ret = 1;
+                return;
+            }
+        } else if (strcmp(inst->desc->name, "ResourceFormatSaverCrystal") == 0) {
+            if (strcmp(method_name, "_get_recognized_extensions") == 0 || strcmp(method_name, "get_recognized_extensions") == 0) {
+                const char *exts[] = { "cr" };
+                bridge_ret_packed_string_array(r_ret, exts, 1);
+                return;
+            }
+            if (strcmp(method_name, "_recognize") == 0 || strcmp(method_name, "recognize") == 0) {
+                if (r_ret) *(uint8_t*)r_ret = 1;
+                return;
+            }
+        }
+    }
+
+    if (inst->crystal_instance && inst->desc->call_virtual_with_data) {
         inst->desc->call_virtual_with_data(inst->crystal_instance, method_name, (const void**)p_args, (void*)r_ret);
     }
 }

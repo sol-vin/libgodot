@@ -941,10 +941,15 @@ inline void bridge_ret_packed_string_array(void *r_ret, const char **strings, in
         void *sn_append = make_string_name("append");
         gd_packed_string_array_append = gd_variant_get_ptr_builtin_method(GDEXTENSION_VARIANT_TYPE_PACKED_STRING_ARRAY, sn_append, 816187996ULL);
         free_string_name(sn_append);
+        if (!gd_packed_string_array_append) {
+            void *sn_push_back = make_string_name("push_back");
+            gd_packed_string_array_append = gd_variant_get_ptr_builtin_method(GDEXTENSION_VARIANT_TYPE_PACKED_STRING_ARRAY, sn_push_back, 816187996ULL);
+            free_string_name(sn_push_back);
+        }
     }
     if (gd_packed_string_array_append && strings) {
         for (int i = 0; i < count; i++) {
-            alignas(void*) char gd_str[8] = {};
+            alignas(void*) char gd_str[32] = {};
             if (gd_string_new_with_utf8_chars) {
                 gd_string_new_with_utf8_chars(gd_str, strings[i] ? strings[i] : "");
             }

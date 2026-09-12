@@ -267,30 +267,29 @@ module Godot
       cd.call_str("get_selected_type") rescue ""
     end
 
-    # Adapts the file path inside a native ScriptCreateDialog to ensure a .cr extension when Crystal is selected
+    # Normalizes a path to end with exactly one .cr extension, stripping duplicate dots or other extensions
+    def self.ensure_cr_extension(path : String) : String
+      return path if path.ends_with?(".cr") && !path.ends_with?("..cr")
+      if path.includes?('.')
+        path.sub(/\.+[^.\/]*$/, ".cr")
+      else
+        "#{path}.cr"
+      end
+    end
+
+    # Adapts the file path inside a native ScriptCreateDialog to ensure a clean .cr extension when Crystal is selected
     def self.adapt_script_create_dialog_path(scd : Node) : Void
       line_edits = find_all_children(scd, "LineEdit")
       line_edits.each do |le_node|
         le = Godot::LineEdit.new(le_node.pointer)
         txt = le.call_str("get_text") rescue ""
         if txt.starts_with?("res://") || txt.includes?("/")
-          new_txt = if txt.ends_with?(".cr")
-            txt
-          else
-            dir = File.dirname(txt)
-            base = File.basename(txt)
-            ext = File.extname(base)
-            if !ext.empty?
-              "#{dir}/#{base.sub(/\.[^.]+$/, ".cr")}"
-            else
-              "#{txt}.cr"
-            end
-          end
+          new_txt = ensure_cr_extension(txt)
           if new_txt != txt
             le.call("set_text", new_txt)
-            le.call("emit_signal", "text_changed", new_txt) rescue nil
-            scd.call("_path_changed", new_txt) rescue nil
           end
+          # Always emit text_changed so ScriptCreateDialog runs _path_changed and validates the .cr extension
+          le.emit_signal("text_changed", new_txt) rescue nil
         end
       end
     rescue ex
@@ -398,8 +397,17 @@ module Godot
           tex = CrystalIntegrationPlugin.get_crystal_icon_texture
 
           # Remove any invalid surplus items (e.g. if previously duplicated by add_item)
+          # Prune any out-of-bounds surplus items beyond actual registered script languages
+          engine_ptr = Bridge.get_singleton("Engine")
+          max_lang_count = if !engine_ptr.null?
+            Godot::Engine.new(engine_ptr).get_script_language_count rescue 2_i64
+          else
+            2_i64
+          end
+          max_lang_count = 2_i64 if max_lang_count < 2_i64
+
           cur_count = opt.call_i64("get_item_count") rescue 0_i64
-          while cur_count > 2_i64
+          while cur_count > max_lang_count
             opt.call("remove_item", cur_count - 1_i64) rescue nil
             cur_count = opt.call_i64("get_item_count") rescue 0_i64
           end
