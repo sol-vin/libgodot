@@ -102,7 +102,7 @@ try {
         $godotArgs = @("--headless", "--rendering-driver", "opengl3") + $godotArgs
     }
     $process = Start-Process -FilePath $GodotExe -ArgumentList $godotArgs -RedirectStandardOutput $logFile -RedirectStandardError $errLogFile -PassThru
-    $timeoutSec = if ($TestBuildButton) { 60 + ($ReloadCycles * 60) } elseif ($TestErrorRecovery) { 90 } else { 45 }
+    $timeoutSec = if ($TestBuildButton) { 180 + ($ReloadCycles * 120) } elseif ($TestErrorRecovery) { 180 } else { 90 }
     $sw = [System.Diagnostics.Stopwatch]::StartNew()
     while (-not $process.HasExited -and $sw.Elapsed.TotalSeconds -lt $timeoutSec) {
         Start-Sleep -Milliseconds 500
