@@ -346,22 +346,27 @@ module Godot
       when "_set_uid"
         ret.as(Int32*).value = 0_i32 # OK
       when "_save"
-        res_ptr = args[0].as(Void**).value
+        res_ptr = (!args.null? && !args[0].null?) ? args[0].as(Void**).value : Pointer(Void).null
+        inst = Bridge.find_alive_instance(res_ptr)
+        if inst.nil? && !args.null? && !args[0].null?
+          inst = Bridge.find_alive_instance(args[0])
+          res_ptr = args[0] if inst
+        end
+
         path = Bridge.arg_to_string(args[1])
         fs_path = ResourceFormatSaverCrystal.resolve_save_path(path)
 
         code = ""
-        if !res_ptr.null?
-          if inst = Bridge.find_alive_instance(res_ptr)
-            if script = inst.as?(CrystalScript)
-              code = script.source_code
-            end
-          end
+        if script = inst.as?(CrystalScript)
+          code = script.source_code
+        end
 
-          # Fallback: attempt direct engine reflection call to get_source_code
-          if code.empty?
-            code = Bridge.object_call_ret_string(res_ptr, "get_source_code")
-          end
+        # Fallback: attempt direct engine reflection call to get_source_code
+        if code.empty? && !res_ptr.null?
+          code = Bridge.object_call_ret_string(res_ptr, "get_source_code")
+        end
+        if code.empty? && !args.null? && !args[0].null?
+          code = Bridge.object_call_ret_string(args[0], "get_source_code")
         end
 
         # Safety guard against catastrophic file truncation:

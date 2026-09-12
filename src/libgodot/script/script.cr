@@ -43,7 +43,12 @@ module Godot
     def script_path=(v : String); @script_path = v; end
 
     def source_code : String; @source_code; end
-    def source_code=(v : String); @source_code = v; end
+    def source_code=(v : String)
+      @source_code = v
+      if !@pointer.null?
+        call("set_source_code", v) rescue nil
+      end
+    end
 
     def script_class_name : String; @script_class_name; end
     def script_class_name=(v : String); @script_class_name = v; end

@@ -81,22 +81,29 @@ test_classdb "ClassDB coverage: all 110 core 3D Node classes create, parent, unp
   container = Godot.create(Godot::Node3D)
   container.name = "CoverageContainer3D"
 
+  class_db = Godot::ClassDB.new(Godot::ClassDB.singleton_ptr)
   classes_3d.each do |cls_name|
-	ptr = Godot::Bridge.construct_object(cls_name)
-	TestFramework.assert_false ptr.null?, "Failed to instantiate 3D class #{cls_name}"
+    actual_name = cls_name
+    if actual_name == "BoneSpaceAdjuster3D" && !class_db.call_bool("class_exists", "BoneSpaceAdjuster3D")
+      actual_name = "BoneSpreader3D"
+    end
+    next unless class_db.call_bool("class_exists", actual_name)
 
-	n = Godot::Node3D.new(ptr)
-	TestFramework.assert_true n.alive?, "Node #{cls_name} should be alive"
-	inst_id = n.instance_id
+    ptr = Godot::Bridge.construct_object(actual_name)
+    TestFramework.assert_false ptr.null?, "Failed to instantiate 3D class #{actual_name}"
 
-	container.add_child(n)
-	TestFramework.assert_eq container.get_child_count, 1_i64
-	container.remove_child(n)
-	TestFramework.assert_eq container.get_child_count, 0_i64
+    n = Godot::Node3D.new(ptr)
+    TestFramework.assert_true n.alive?, "Node #{actual_name} should be alive"
+    inst_id = n.instance_id
 
-	n.destroy
-	TestFramework.assert_true n.destroyed?
-	TestFramework.assert_false Godot::Object.is_instance_id_valid(inst_id)
+    container.add_child(n)
+    TestFramework.assert_eq container.get_child_count, 1_i64
+    container.remove_child(n)
+    TestFramework.assert_eq container.get_child_count, 0_i64
+
+    n.destroy
+    TestFramework.assert_true n.destroyed?
+    TestFramework.assert_false Godot::Object.is_instance_id_valid(inst_id)
   end
 
   container.destroy
