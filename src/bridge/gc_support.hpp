@@ -33,6 +33,41 @@ static GCGetSuspendSignalFn gd_gc_get_suspend_signal = nullptr;
 
 static thread_local bool t_gc_thread_registered = false;
 
+#ifndef _WIN32
+// Hook pthread_sigmask on POSIX so whenever Godot worker threads (WorkerThreadPool)
+// mask signals, Boehm GC's thread suspension signals (SIGPWR, SIGXCPU, etc.) remain unblocked.
+// This prevents Boehm GC from aborting with "Signals delivery fails constantly".
+extern "C" GDE_EXPORT int pthread_sigmask(int how, const sigset_t *set, sigset_t *oldset) {
+    static int (*real_sigmask)(int, const sigset_t *, sigset_t *) = nullptr;
+    if (!real_sigmask) {
+        real_sigmask = (int (*)(int, const sigset_t *, sigset_t *))dlsym(RTLD_NEXT, "pthread_sigmask");
+    }
+    if (!set || !real_sigmask) {
+        return real_sigmask ? real_sigmask(how, set, oldset) : 0;
+    }
+    if (how == SIG_BLOCK || how == SIG_SETMASK) {
+        sigset_t mod_set = *set;
+        if (gd_gc_get_suspend_signal) {
+            int sig = gd_gc_get_suspend_signal();
+            if (sig > 0) sigdelset(&mod_set, sig);
+        }
+#ifdef SIGPWR
+        sigdelset(&mod_set, SIGPWR);
+#endif
+#ifdef SIGXCPU
+        sigdelset(&mod_set, SIGXCPU);
+#endif
+#if defined(SIGRTMIN) && defined(SIGRTMAX)
+        for (int s = SIGRTMIN; s <= SIGRTMAX; ++s) {
+            sigdelset(&mod_set, s);
+        }
+#endif
+        return real_sigmask(how, &mod_set, oldset);
+    }
+    return real_sigmask(how, set, oldset);
+}
+#endif
+
 inline void init_gc_library(void *game_module_handle = nullptr) {
     if (!gd_gc_register_my_thread) {
 #ifdef _WIN32

@@ -182,6 +182,7 @@ inline void unload_crystal_game_library() {
     g_hGame = NULL;
     g_loaded_modules.clear();
     g_loaded_module_paths.clear();
+    g_loaded_modules_map.clear();
     g_crystal_signal_callbacks.clear();
     g_initialized_init_fns.clear();
 }
@@ -288,14 +289,24 @@ inline void load_crystal_game_library() {
                 const char *p = lib_path;
                 if (strncmp(p, "res://", 6) == 0) p += 6;
 
-                // Find the project root prefix from the dlinfo path
-                char *addons_pos = strstr(bridge_dir, "/addons/");
-                if (addons_pos) {
-                    char resolved_addon_dir[MAX_PATH] = {0};
-                    size_t prefix_len = (size_t)(addons_pos - bridge_dir + 1); // includes trailing '/'
-                    snprintf(resolved_addon_dir, sizeof(resolved_addon_dir), "%.*s%s", (int)prefix_len, bridge_dir, p);
-                    char *slash = strrchr(resolved_addon_dir, '/');
-                    if (slash) *slash = '\0';
+                char resolved_addon_dir[MAX_PATH] = {0};
+                if (p[0] == '/' || (p[0] != '\0' && p[1] == ':')) {
+                    // p is already an absolute path
+                    strncpy(resolved_addon_dir, p, sizeof(resolved_addon_dir) - 1);
+                } else {
+                    // Find the project root prefix from the dlinfo path
+                    char *addons_pos = strstr(bridge_dir, "/addons/");
+                    if (addons_pos) {
+                        size_t prefix_len = (size_t)(addons_pos - bridge_dir + 1); // includes trailing '/'
+                        snprintf(resolved_addon_dir, sizeof(resolved_addon_dir), "%.*s%s", (int)prefix_len, bridge_dir, p);
+                    } else {
+                        strncpy(resolved_addon_dir, p, sizeof(resolved_addon_dir) - 1);
+                    }
+                }
+                char *slash = strrchr(resolved_addon_dir, '/');
+                if (!slash) slash = strrchr(resolved_addon_dir, '\\');
+                if (slash) *slash = '\0';
+                if (resolved_addon_dir[0] != '\0' && bridge_file_exists(resolved_addon_dir)) {
                     strncpy(bridge_dir, resolved_addon_dir, sizeof(bridge_dir) - 1);
                 }
             }
@@ -335,13 +346,13 @@ inline void load_crystal_game_library() {
 #endif
 
     std::vector<std::string> to_load;
+    bool loaded_game_or_addon = false;
 
     // 1. Primary candidates sitting directly next to crystal_bridge
     if (bridge_dir[0] != '\0') {
 #ifdef _WIN32
         SetDllDirectoryA(bridge_dir);
 #endif
-        bool loaded_game_or_addon = false;
         for (size_t c = 0; c < sizeof(candidate_names) / sizeof(candidate_names[0]); c++) {
             bool is_plugin = (strstr(candidate_names[c], "plugin") != nullptr);
             if (!is_editor_active() && is_plugin) {
@@ -413,7 +424,7 @@ inline void load_crystal_game_library() {
         }
 
         // Check relative project bin directory if bridge sits in addons/<name>/bin and no game/addon was found in bridge_dir
-        if (to_load.empty() && !loaded_game_or_addon) {
+        if (!loaded_game_or_addon) {
             char rel_game_path[MAX_PATH] = {0};
             snprintf(rel_game_path, sizeof(rel_game_path), "%s%s..%s..%s..%sbin%sgame.%s",
                      bridge_dir, path_sep, path_sep, path_sep, path_sep, path_sep, shadow_ext);
@@ -437,8 +448,8 @@ inline void load_crystal_game_library() {
     }
 #endif
 
-    // Fallback search paths if none found in bridge_dir
-    if (to_load.empty()) {
+    // Fallback search paths if no game or addon was found yet
+    if (!loaded_game_or_addon) {
 #ifdef _WIN32
         const char *fallbacks[] = {
             "addons/crystal_integration/bin/plugin.dll",
@@ -539,44 +550,11 @@ inline void load_crystal_game_library() {
         }
 #endif
         uint64_t current_mtime = bridge_get_file_mtime(candidate_path.c_str());
-        auto it_loaded = g_loaded_modules_map.find(canonical_path);
-        if (it_loaded != g_loaded_modules_map.end() && it_loaded->second.mtime == current_mtime && current_mtime != 0) {
-            // Module is already loaded and has not been recompiled on disk
-            continue;
-        }
 
         if (g_loaded_module_paths.find(canonical_path) != g_loaded_module_paths.end()) {
             continue;
         }
 
-#ifdef _WIN32
-        HMODULE hExisting = GetModuleHandleA(candidate_path.c_str());
-        if (!hExisting) {
-            hExisting = GetModuleHandleA(canonical_path);
-        }
-        if (!hExisting) {
-            const char *leaf = strrchr(canonical_path, '\\');
-            if (leaf) hExisting = GetModuleHandleA(leaf + 1);
-        }
-        if (hExisting) {
-            g_loaded_module_paths.insert(canonical_path);
-            continue;
-        }
-#else
-        void *hExisting = dlopen(canonical_path, RTLD_NOLOAD | RTLD_NOW);
-        if (!hExisting) {
-            hExisting = dlopen(candidate_path.c_str(), RTLD_NOLOAD | RTLD_NOW);
-        }
-        if (!hExisting) {
-            const char *leaf = strrchr(canonical_path, '/');
-            if (leaf) hExisting = dlopen(leaf + 1, RTLD_NOLOAD | RTLD_NOW);
-        }
-        if (hExisting) {
-            dlclose(hExisting);
-            g_loaded_module_paths.insert(canonical_path);
-            continue;
-        }
-#endif
         HMODULE hModule = NULL;
 
         if (use_shadow) {
@@ -606,17 +584,40 @@ inline void load_crystal_game_library() {
                 godot_log_warning(log_buf, nullptr, "load_crystal_game_library", __FILE__, __LINE__);
             }
         } else {
-            hModule = bridge_load_library(candidate_path.c_str());
-            if (hModule) {
-                char buf[512];
-                snprintf(buf, sizeof(buf), "[CrystalBridge] Loaded library directly from %s", candidate_path.c_str());
-                godot_log_print(buf);
-            } else {
-                char err_buf[256];
-                bridge_get_last_error(err_buf, sizeof(err_buf));
-                char log_buf[512];
-                snprintf(log_buf, sizeof(log_buf), "[CrystalBridge] Failed to load library %s (%s)", candidate_path.c_str(), err_buf);
-                godot_log_warning(log_buf, nullptr, "load_crystal_game_library", __FILE__, __LINE__);
+#ifdef _WIN32
+            HMODULE hExisting = GetModuleHandleA(candidate_path.c_str());
+            if (!hExisting) hExisting = GetModuleHandleA(canonical_path);
+            if (!hExisting) {
+                const char *leaf = strrchr(canonical_path, '\\');
+                if (leaf) hExisting = GetModuleHandleA(leaf + 1);
+            }
+            if (hExisting) {
+                hModule = hExisting;
+            }
+#else
+            void *hExisting = dlopen(canonical_path, RTLD_NOLOAD | RTLD_NOW);
+            if (!hExisting) hExisting = dlopen(candidate_path.c_str(), RTLD_NOLOAD | RTLD_NOW);
+            if (!hExisting) {
+                const char *leaf = strrchr(canonical_path, '/');
+                if (leaf) hExisting = dlopen(leaf + 1, RTLD_NOLOAD | RTLD_NOW);
+            }
+            if (hExisting) {
+                hModule = (HMODULE)hExisting;
+            }
+#endif
+            if (!hModule) {
+                hModule = bridge_load_library(candidate_path.c_str());
+                if (hModule) {
+                    char buf[512];
+                    snprintf(buf, sizeof(buf), "[CrystalBridge] Loaded library directly from %s", candidate_path.c_str());
+                    godot_log_print(buf);
+                } else {
+                    char err_buf[256];
+                    bridge_get_last_error(err_buf, sizeof(err_buf));
+                    char log_buf[512];
+                    snprintf(log_buf, sizeof(log_buf), "[CrystalBridge] Failed to load library %s (%s)", candidate_path.c_str(), err_buf);
+                    godot_log_warning(log_buf, nullptr, "load_crystal_game_library", __FILE__, __LINE__);
+                }
             }
         }
 

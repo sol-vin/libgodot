@@ -11,6 +11,9 @@
 #include <windows.h>
 #define GDE_EXPORT __declspec(dllexport)
 #else
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
 #include <dlfcn.h>
 #include <unistd.h>
 #include <sys/stat.h>
@@ -22,6 +25,9 @@
 #define HMODULE void*
 #ifndef MAX_PATH
 #define MAX_PATH 4096
+#endif
+#ifndef RTLD_NEXT
+#define RTLD_NEXT ((void *) -1l)
 #endif
 #endif
 

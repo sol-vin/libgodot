@@ -233,6 +233,8 @@ jobs:
     name: Build & Release Linux (x86_64)
     needs: [init-release]
     runs-on: ubuntu-latest
+    env:
+      GC_MARKERS: 1
 
     steps:
       - name: Checkout Repository
