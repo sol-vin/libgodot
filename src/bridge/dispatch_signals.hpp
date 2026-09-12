@@ -1074,19 +1074,21 @@ inline void bridge_highlighter_add_span(void *r_color_map, int64_t col, float r,
 }
 
 inline int bridge_arg_to_string(const void *arg, char *out, int max_len) {
-    if (!arg || !out || max_len <= 0) return 0;
-    out[0] = '\0';
-    if (gd_string_to_utf8_chars) {
-        int64_t len = gd_string_to_utf8_chars((GDExtensionConstStringPtr)arg, out, max_len - 1);
-        if (len >= 0 && len < (int64_t)max_len) {
-            out[len] = '\0';
-            return (int)len;
-        } else {
-            out[max_len - 1] = '\0';
-            return max_len - 1;
-        }
+    if (!arg || !gd_string_to_utf8_chars) return 0;
+    int64_t total_len = gd_string_to_utf8_chars((GDExtensionConstStringPtr)arg, nullptr, 0);
+    if (!out || max_len <= 0) {
+        return (int)total_len;
     }
-    return 0;
+    out[0] = '\0';
+    if (total_len <= 0) return 0;
+    int64_t len = gd_string_to_utf8_chars((GDExtensionConstStringPtr)arg, out, max_len - 1);
+    if (len >= 0 && len < (int64_t)max_len) {
+        out[len] = '\0';
+        return (int)len;
+    } else {
+        out[max_len - 1] = '\0';
+        return max_len - 1;
+    }
 }
 
 inline int bridge_arg_to_string_name(const void *arg, char *out, int max_len) {

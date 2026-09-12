@@ -1060,9 +1060,11 @@ module Godot
 
     def self.arg_to_string(arg_ptr : Void*) : String
       return "" if arg_ptr.null? || @@api.null? || @@api.value.arg_to_string.pointer.null?
-      buf = Bytes.new(2048)
-      len = @@api.value.arg_to_string.call(arg_ptr, buf.to_unsafe.as(LibC::Char*), 2048)
-      len > 0 ? String.new(buf[0, len]) : ""
+      total_len = @@api.value.arg_to_string.call(arg_ptr, Pointer(LibC::Char).null, 0)
+      return "" if total_len <= 0
+      buf = Bytes.new(total_len + 1)
+      written = @@api.value.arg_to_string.call(arg_ptr, buf.to_unsafe.as(LibC::Char*), total_len + 1)
+      written > 0 ? String.new(buf[0, written]) : ""
     end
 
     def self.arg_to_string_name(arg_ptr : Void*) : String

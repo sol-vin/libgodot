@@ -64,4 +64,59 @@ module Godot
 	  call_i64("compute_scaled_sum", a, b, multiplier)
 	end
 	# Method `calculate_hypotenuse` -> Float64
-	def calculate_hypotenuse(a : Float64, b : Float64) : Flo
+	def calculate_hypotenuse(a : Float64, b : Float64) : Float64
+	  call_f64("calculate_hypotenuse", a, b)
+	end
+	# Method `format_complex_message` -> String
+	def format_complex_message(prefix : String, id : Int64, status : String) : String
+	  call_str("format_complex_message", prefix, id, status)
+	end
+	# Method `validate_conditions` -> Bool
+	def validate_conditions(flag_a : Bool, flag_b : Bool) : Bool
+	  call_bool("validate_conditions", flag_a, flag_b)
+	end
+	# Method `distance_to_point` -> Float64
+	def distance_to_point(point : Godot::Vector2) : Float64
+	  call_f64("distance_to_point", point)
+	end
+	# Method `compute_dot3` -> Float64
+	def compute_dot3(v1 : Godot::Vector3, v2 : Godot::Vector3) : Float64
+	  call_f64("compute_dot3", v1, v2)
+	end
+	# Method `color_brightness` -> Float64
+	def color_brightness(c : Godot::Color) : Float64
+	  call_f64("color_brightness", c)
+	end
+	# Method `duplicate_child_node` -> Godot::Node?
+	def duplicate_child_node(node_name : String) : Godot::Node?
+	  call_obj_as(Godot::Node, "duplicate_child_node", node_name)
+	end
+	# Method `inspect_incoming_node` -> String
+	def inspect_incoming_node(target : Godot::Node) : String
+	  call_str("inspect_incoming_node", target)
+	end
+	# Method `perform_state_reset` -> Void
+	def perform_state_reset() : Void
+	  call("perform_state_reset")
+	  nil
+	end
+	# Method `trigger_data_processed` -> Void
+	def trigger_data_processed(record_id : Int64, label : String, score : Float64) : Void
+	  call("trigger_data_processed", record_id, label, score)
+	  nil
+	end
+	# Method `trigger_state_transitioned` -> Void
+	def trigger_state_transitioned(old_state : String, new_state : String) : Void
+	  call("trigger_state_transitioned", old_state, new_state)
+	  nil
+	end
+	# Bound Signal `data_processed`
+	def data_processed : Godot::BoundSignal
+	  signal("data_processed")
+	end
+	# Bound Signal `state_transitioned`
+	def state_transitioned : Godot::BoundSignal
+	  signal("state_transitioned")
+	end
+  end
+end
