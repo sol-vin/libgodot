@@ -239,6 +239,116 @@ test_script_first_class "ResourceSaver engine singleton round-trip via GDExtensi
   end
 end
 
+test_script_first_class "Editor ScriptEditor lifecycle: set_source_code, save, reload and AST round-trip" do
+  rs_ptr = Godot::Bridge.get_singleton("ResourceSaver")
+  rl_ptr = Godot::Bridge.get_singleton("ResourceLoader")
+  TestFramework.assert_true !rs_ptr.null?, "ResourceSaver singleton must exist"
+  TestFramework.assert_true !rl_ptr.null?, "ResourceLoader singleton must exist"
+
+  r_saver = Godot::ResourceSaver.new(rs_ptr)
+  r_loader = Godot::ResourceLoader.new(rl_ptr)
+
+  test_path = "user://test_editor_save_workflow.cr"
+  fs_path = Godot::ResourceFormatSaverCrystal.resolve_save_path(test_path)
+
+  initial_code = <<-CRYSTAL
+  require "libgodot"
+
+  # Initial version of player script
+  @[Tool]
+  node EditorPlayer < CharacterBody2D do
+    @[Export]
+    property speed : Float32 = 200.0_f32
+
+    @[Export]
+    property max_hp : Int32 = 50
+
+    signal health_changed(current : Int32)
+
+    def _ready : Void
+      Godot.print("EditorPlayer initial ready")
+    end
+  end
+  CRYSTAL
+
+  script = Godot.create(Godot::CrystalScript)
+  TestFramework.assert_true !script.nil?, "CrystalScript instance should be created"
+
+  if sc = script
+    begin
+      # 1. Simulate ScriptEditor initial creation: set source code and save
+      sc.call("set_source_code", initial_code)
+      sc.call("set_path", test_path) rescue nil
+      sc.script_path = test_path
+
+      save_ret = r_saver.call_i64("save", sc, test_path)
+      TestFramework.assert_eq save_ret, 0_i64, "Initial save via ResourceSaver should succeed with 0"
+      TestFramework.assert_true Godot::SystemIO.file_exists?(fs_path), "File should be created on disk"
+
+      # 2. Verify ResourceLoader loads the script back with exact content
+      loaded_res = r_loader.call_obj("load", test_path)
+      TestFramework.assert_true !loaded_res.nil? && !loaded_res.pointer.null?, "ResourceLoader should load script"
+      if l_obj = loaded_res
+        code_on_disk = l_obj.call_str("get_source_code")
+        TestFramework.assert_true code_on_disk.includes?("EditorPlayer initial ready"), "Loaded source should contain initial code"
+        TestFramework.assert_true code_on_disk.includes?("speed : Float32 = 200.0_f32"), "Loaded source should contain speed property"
+      end
+
+      # 3. Simulate Editor modification: user edits code in script editor and presses Ctrl+S
+      updated_code = <<-CRYSTAL
+      require "libgodot"
+
+      # Updated version of player script with new properties
+      @[Tool]
+      node EditorPlayer < CharacterBody2D do
+        @[Export]
+        property speed : Float32 = 350.0_f32
+
+        @[Export]
+        property max_hp : Int32 = 100
+
+        @[Export]
+        property player_title : String = "Legendary Hero"
+
+        signal health_changed(current : Int32)
+        signal hero_level_up(new_level : Int32)
+
+        def _ready : Void
+          Godot.print("EditorPlayer updated ready")
+        end
+      end
+      CRYSTAL
+
+      sc.call("set_source_code", updated_code)
+      save_ret2 = r_saver.call_i64("save", sc, test_path)
+      TestFramework.assert_eq save_ret2, 0_i64, "Saving updated script over existing file should succeed with 0"
+
+      # Verify updated content on disk
+      disk_text = Godot::SystemIO.read_file(fs_path)
+      TestFramework.assert_true disk_text.includes?("EditorPlayer updated ready"), "Disk file should contain updated code"
+      TestFramework.assert_true disk_text.includes?(%(player_title : String = "Legendary Hero")), "Disk file should contain new property"
+      TestFramework.assert_true disk_text.includes?("speed : Float32 = 350.0_f32"), "Disk file should contain updated speed"
+
+      # 4. Direct load via ResourceFormatLoaderCrystal and verify AST metadata parsing
+      loader = Godot::ResourceFormatLoaderCrystal.instance
+      direct_loaded = loader.load(test_path, test_path)
+      TestFramework.assert_true !direct_loaded.nil?, "Direct ResourceFormatLoaderCrystal.load should succeed"
+      if d_sc = direct_loaded
+        TestFramework.assert_eq d_sc.class_name, "EditorPlayer"
+        TestFramework.assert_eq d_sc.base_type, "CharacterBody2D"
+        TestFramework.assert_true d_sc.is_tool_script, "EditorPlayer should be recognized as tool script"
+        TestFramework.assert_true d_sc.properties.any? { |p| p.name == "player_title" }, "Parsed metadata should include player_title"
+        TestFramework.assert_true d_sc.signals.includes?("hero_level_up"), "Parsed metadata should include hero_level_up signal"
+        d_sc.unreference rescue nil
+      end
+
+    ensure
+      # Cleanup
+      LibSystemIO.remove(fs_path.to_unsafe) if !fs_path.empty? && Godot::SystemIO.file_exists?(fs_path)
+    end
+  end
+end
+
 test_script_first_class "ResourceFormatSaver overwrite safety guard against truncation" do
   guard_path = "user://test_truncation_guard.cr"
   fs_path = Godot::ResourceFormatSaverCrystal.resolve_save_path(guard_path)

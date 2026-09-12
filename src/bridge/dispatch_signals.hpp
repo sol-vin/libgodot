@@ -595,7 +595,7 @@ inline double bridge_object_call_ret_float(GDExtensionObjectPtr instance, const 
     return ret_val;
 }
 
-inline bool bridge_object_call_ret_bool(GDExtensionObjectPtr instance, const char *method_name, const BridgeSignalArg *args, int arg_count) {
+inline bool bridge_object_call_ret_bool(GDExtensionObjectPtr instance, const char *method_name, const BridgeSignalArg *args = nullptr, int arg_count = 0) {
     if (!instance || !method_name || !gd_classdb_get_method_bind || !gd_object_method_bind_call) return false;
     if (!mb_object_call) {
         void *sn_obj = make_string_name("Object");
@@ -614,7 +614,7 @@ inline bool bridge_object_call_ret_bool(GDExtensionObjectPtr instance, const cha
     return ret_val != 0;
 }
 
-inline const char* bridge_object_call_ret_string(GDExtensionObjectPtr instance, const char *method_name, const BridgeSignalArg *args, int arg_count) {
+inline const char* bridge_object_call_ret_string(GDExtensionObjectPtr instance, const char *method_name, const BridgeSignalArg *args = nullptr, int arg_count = 0) {
     static thread_local std::string s_call_str_storage;
     s_call_str_storage.clear();
     if (!instance || !method_name || !gd_classdb_get_method_bind || !gd_object_method_bind_call) return "";
@@ -910,10 +910,6 @@ inline const char* bridge_node_get_name(GDExtensionObjectPtr node) {
         if (gd_variant_destroy) gd_variant_destroy(var_sn);
     }
 
-    if (gd_string_name_destroy) {
-        gd_string_name_destroy(sn_buf);
-    }
-
     return s_name_buf;
 }
 
@@ -1025,6 +1021,51 @@ inline void bridge_ret_variant_object(void *r_ret, void *obj) {
 inline void bridge_ret_variant_nil(void *r_ret) {
     if (!r_ret) return;
     memset(r_ret, 0, 24);
+}
+
+inline void* bridge_ref_get_object(const void *ref_ptr) {
+    if (!ref_ptr) return nullptr;
+    if (gd_ref_get_object) {
+        return gd_ref_get_object((GDExtensionConstRefPtr)ref_ptr);
+    }
+    return *(void**)ref_ptr;
+}
+
+inline const char* bridge_script_get_source_code(GDExtensionObjectPtr script_obj) {
+    static thread_local std::string s_src_storage;
+    s_src_storage.clear();
+    if (!script_obj) return "";
+
+    GDExtensionObjectPtr target = script_obj;
+    if (gd_ref_get_object) {
+        void *deref = gd_ref_get_object((GDExtensionConstRefPtr)script_obj);
+        if (deref) target = (GDExtensionObjectPtr)deref;
+    }
+
+    const char *cls = bridge_object_call_ret_string(target, "get_class");
+    if (!cls || (strcmp(cls, "CrystalScript") != 0 && strcmp(cls, "Script") != 0 && strcmp(cls, "GDScript") != 0)) {
+        return "";
+    }
+
+    static GDExtensionMethodBindPtr mb_get_source_code = nullptr;
+    if (!mb_get_source_code) {
+        void *sn_script = make_string_name("Script");
+        void *sn_get_src = make_string_name("get_source_code");
+        mb_get_source_code = gd_classdb_get_method_bind(sn_script, sn_get_src, 201670096ULL);
+        free_string_name(sn_script); free_string_name(sn_get_src);
+    }
+    if (mb_get_source_code && gd_object_method_bind_ptrcall && gd_string_to_utf8_chars) {
+        alignas(void*) char gd_str[8] = {0};
+        gd_object_method_bind_ptrcall(mb_get_source_code, target, nullptr, gd_str);
+        int64_t len = gd_string_to_utf8_chars(gd_str, nullptr, 0);
+        if (len > 0) {
+            s_src_storage.resize((size_t)len);
+            gd_string_to_utf8_chars(gd_str, &s_src_storage[0], len);
+        }
+        if (gd_string_destroy) gd_string_destroy(gd_str);
+        return s_src_storage.c_str();
+    }
+    return "";
 }
 
 inline void bridge_highlighter_add_span(void *r_color_map, int64_t col, float r, float g, float b, float a) {

@@ -656,18 +656,10 @@ inline void generic_class_call_virtual_with_data(
                 bridge_ret_packed_string_array(r_ret, exts, 1);
                 return;
             }
-            if (strcmp(method_name, "_handles_type") == 0 || strcmp(method_name, "handles_type") == 0) {
-                if (r_ret) *(uint8_t*)r_ret = 1;
-                return;
-            }
         } else if (strcmp(inst->desc->name, "ResourceFormatSaverCrystal") == 0) {
             if (strcmp(method_name, "_get_recognized_extensions") == 0 || strcmp(method_name, "get_recognized_extensions") == 0) {
                 const char *exts[] = { "cr" };
                 bridge_ret_packed_string_array(r_ret, exts, 1);
-                return;
-            }
-            if (strcmp(method_name, "_recognize") == 0 || strcmp(method_name, "recognize") == 0) {
-                if (r_ret) *(uint8_t*)r_ret = 1;
                 return;
             }
         }

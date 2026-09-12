@@ -157,6 +157,8 @@ module Godot
       set_debugger_cleanup : ((-> Void) -> Void)
       trigger_debugger_cleanup : (-> Void)
       register_gc_module : (BridgeGCModule* -> Void)
+      ref_get_object : (Void* -> Void*)
+      script_get_source_code : (Void* -> LibC::Char*)
     end
   end
 
@@ -1159,6 +1161,17 @@ module Godot
     def self.trigger_debugger_cleanup : Void
       return if @@api.null? || @@api.value.trigger_debugger_cleanup.pointer.null?
       @@api.value.trigger_debugger_cleanup.call
+    end
+
+    def self.ref_get_object(ref_ptr : Void*) : Void*
+      return Pointer(Void).null if ref_ptr.null? || @@api.null? || @@api.value.ref_get_object.pointer.null?
+      @@api.value.ref_get_object.call(ref_ptr)
+    end
+
+    def self.script_get_source_code(script_obj : Void*) : String
+      return "" if script_obj.null? || @@api.null? || @@api.value.script_get_source_code.pointer.null?
+      ptr = @@api.value.script_get_source_code.call(script_obj)
+      ptr.null? ? "" : String.new(ptr)
     end
   end
 end

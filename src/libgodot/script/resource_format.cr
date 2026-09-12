@@ -300,7 +300,13 @@ module Godot
       norm = method_name.starts_with?('_') ? method_name : "_#{method_name}"
       case norm
       when "_recognize"
-        res_ptr = args[0].as(Void**).value
+        res_ptr = Pointer(Void).null
+        if !args.null? && !args[0].null?
+          res_ptr = Bridge.ref_get_object(args[0])
+          if res_ptr.null?
+            res_ptr = args[0].as(Void**).value rescue Pointer(Void).null
+          end
+        end
         recognize = false
         if !res_ptr.null?
           if inst = Bridge.find_alive_instance(res_ptr)
@@ -324,8 +330,14 @@ module Godot
         end
         ret.as(UInt8*).value = recognize ? 1_u8 : 0_u8
       when "_recognize_path"
-        res_ptr = args[0].as(Void**).value
-        path = Bridge.arg_to_string(args[1])
+        res_ptr = Pointer(Void).null
+        if !args.null? && !args[0].null?
+          res_ptr = Bridge.ref_get_object(args[0])
+          if res_ptr.null?
+            res_ptr = args[0].as(Void**).value rescue Pointer(Void).null
+          end
+        end
+        path = (!args.null? && !args[1].null?) ? Bridge.arg_to_string(args[1]) : ""
         recognize = path.downcase.ends_with?(".cr")
         if !recognize && !res_ptr.null?
           if inst = Bridge.find_alive_instance(res_ptr)
@@ -346,33 +358,52 @@ module Godot
       when "_set_uid"
         ret.as(Int32*).value = 0_i32 # OK
       when "_save"
-        res_ptr = (!args.null? && !args[0].null?) ? args[0].as(Void**).value : Pointer(Void).null
+        res_ptr = Pointer(Void).null
+        if !args.null? && !args[0].null?
+          res_ptr = Bridge.ref_get_object(args[0])
+          if res_ptr.null?
+            res_ptr = args[0].as(Void**).value rescue Pointer(Void).null
+          end
+        end
+
         inst = Bridge.find_alive_instance(res_ptr)
         if inst.nil? && !args.null? && !args[0].null?
           inst = Bridge.find_alive_instance(args[0])
           res_ptr = args[0] if inst
         end
 
-        path = Bridge.arg_to_string(args[1])
+        path = (!args.null? && !args[1].null?) ? Bridge.arg_to_string(args[1]) : ""
         fs_path = ResourceFormatSaverCrystal.resolve_save_path(path)
 
         code = ""
+        resolved_script = false
         if script = inst.as?(CrystalScript)
           code = script.source_code
+          resolved_script = true
         end
 
-        # Fallback: attempt direct engine reflection call to get_source_code
+        # Fast direct Script.get_source_code ptrcall
+        if code.empty? && !res_ptr.null?
+          code = Bridge.script_get_source_code(res_ptr)
+          resolved_script = true unless code.empty?
+        end
         if code.empty? && !res_ptr.null?
           code = Bridge.object_call_ret_string(res_ptr, "get_source_code")
+          resolved_script = true unless code.empty?
+        end
+        if code.empty? && !args.null? && !args[0].null?
+          code = Bridge.script_get_source_code(args[0])
+          resolved_script = true unless code.empty?
         end
         if code.empty? && !args.null? && !args[0].null?
           code = Bridge.object_call_ret_string(args[0], "get_source_code")
+          resolved_script = true unless code.empty?
         end
 
         # Safety guard against catastrophic file truncation:
-        # If code could not be resolved or is empty, but the target file already exists and has content,
+        # If code could not be resolved, and target file already exists with content,
         # refuse to overwrite with an empty string!
-        if code.empty? && !fs_path.empty? && Godot::SystemIO.file_exists?(fs_path)
+        if !resolved_script && code.empty? && !fs_path.empty? && Godot::SystemIO.file_exists?(fs_path)
           existing_len = Godot::SystemIO.file_size(fs_path)
           if existing_len > 0
             Godot.printerr("[ResourceFormatSaverCrystal] Refusing to overwrite #{path} with empty content (source code unresolved)")
@@ -385,6 +416,7 @@ module Godot
         Dir.mkdir_p(dir_path) unless dir_path.empty? || dir_path == "."
 
         if !fs_path.empty? && Godot::SystemIO.write_file(fs_path, code)
+          Godot.print("[ResourceFormatSaverCrystal] Successfully saved #{path} (#{code.bytesize} bytes) -> #{fs_path}")
           ret.as(Int32*).value = 0_i32 # OK
         else
           Godot.printerr("[ResourceFormatSaverCrystal] Failed to save #{path}")
