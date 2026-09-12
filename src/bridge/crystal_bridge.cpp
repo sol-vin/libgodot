@@ -51,7 +51,7 @@ static void initialize_crystal_module(void *p_userdata, GDExtensionInitializatio
     if (p_level == GDEXTENSION_INITIALIZATION_SCENE) {
         init_common_method_binds();
         godot_log_print("[CrystalBridge] Initializing generic Crystal GDExtension host...");
-        load_crystal_game_library();
+        load_crystal_game_library((GDExtensionClassLibraryPtr)p_userdata);
     } else if (p_level == GDEXTENSION_INITIALIZATION_EDITOR) {
         register_deferred_editor_classes();
         bridge_flush_editor_help();

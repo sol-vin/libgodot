@@ -106,8 +106,11 @@ $extListFile = Join-Path $godotConfigDir "extension_list.cfg"
 $allExts = [System.Collections.Generic.List[string]]::new()
 $projAddons = Join-Path $projFull "addons"
 if (Test-Path $projAddons) {
-    Get-ChildItem -Path $projAddons -Filter "*.gdextension" -Recurse | ForEach-Object {
-        $relPath = $_.FullName.Substring($projFull.Length).TrimStart('\', '/').Replace('\', '/')
+    $items = Get-ChildItem -Path $projAddons -Filter "*.gdextension" -Recurse | Sort-Object {
+        if ($_.FullName -like "*crystal_integration*") { 0 } else { 1 }
+    }, FullName
+    foreach ($item in $items) {
+        $relPath = $item.FullName.Substring($projFull.Length).TrimStart('\', '/').Replace('\', '/')
         $allExts.Add("res://$relPath")
     }
 }

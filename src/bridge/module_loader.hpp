@@ -248,7 +248,10 @@ inline bool bridge_should_use_shadow_copy() {
 /**
  * Locates, loads, and initializes the Crystal game library (game.dll / game.so / libgame.so).
  */
-inline void load_crystal_game_library() {
+inline void load_crystal_game_library(GDExtensionClassLibraryPtr p_library = nullptr) {
+    if (p_library) {
+        g_library = p_library;
+    }
     char bridge_dir[MAX_PATH] = {0};
 
 #ifdef _WIN32
@@ -273,10 +276,11 @@ inline void load_crystal_game_library() {
 
         // On macOS/Linux, if multiple GDExtensions share the same loaded bridge dylib in memory,
         // use gd_get_library_path to identify the specific addon directory for this extension instance.
-        if (gd_get_library_path && g_library && gd_string_to_utf8_chars) {
+        GDExtensionClassLibraryPtr lib_target = p_library ? p_library : g_library;
+        if (gd_get_library_path && lib_target && gd_string_to_utf8_chars) {
             uint8_t gd_str_storage[64] = {0};
             GDExtensionUninitializedStringPtr gd_str = (GDExtensionUninitializedStringPtr)&gd_str_storage[0];
-            gd_get_library_path(g_library, gd_str);
+            gd_get_library_path(lib_target, gd_str);
             char lib_path[MAX_PATH] = {0};
             int64_t len = gd_string_to_utf8_chars((GDExtensionConstStringPtr)gd_str, lib_path, sizeof(lib_path) - 1);
             if (len >= 0 && len < (int64_t)sizeof(lib_path)) {
@@ -643,14 +647,14 @@ inline void load_crystal_game_library() {
             g_loaded_module_paths.insert(canonical_path);
             g_hGame = hModule;
             g_loaded_modules.push_back(hModule);
-            init_gc_library(hModule);
-            ensure_gc_thread_registered();
             CrystalInitFn init_fn = (CrystalInitFn)bridge_get_proc(hModule, "crystal_godot_init");
             if (init_fn) {
                 init_fn(&g_bridge_api);
             } else {
                 godot_log_error("Failed to find 'crystal_godot_init' in loaded library", nullptr, "load_crystal_game_library", __FILE__, __LINE__);
             }
+            init_gc_library(hModule);
+            ensure_gc_thread_registered();
         }
     }
 }

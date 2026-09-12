@@ -13,8 +13,11 @@ if (-not (Test-Path $cfgDir)) {
 $extLines = [System.Collections.Generic.List[string]]::new()
 $addonsDir = Join-Path $fullPath "addons"
 if (Test-Path $addonsDir) {
-    Get-ChildItem -Path $addonsDir -Filter "*.gdextension" -Recurse | ForEach-Object {
-        $rel = $_.FullName.Substring($fullPath.Length).TrimStart('\', '/').Replace('\', '/')
+    $items = Get-ChildItem -Path $addonsDir -Filter "*.gdextension" -Recurse | Sort-Object {
+        if ($_.FullName -like "*crystal_integration*") { 0 } else { 1 }
+    }, FullName
+    foreach ($item in $items) {
+        $rel = $item.FullName.Substring($fullPath.Length).TrimStart('\', '/').Replace('\', '/')
         $extLines.Add("res://$rel")
     }
 }

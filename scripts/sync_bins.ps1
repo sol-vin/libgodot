@@ -253,8 +253,11 @@ foreach ($p in $projects) {
     $extLines = [System.Collections.Generic.List[string]]::new()
     $pAddons = Join-Path $p "addons"
     if (Test-Path $pAddons) {
-        Get-ChildItem -Path $pAddons -Filter "*.gdextension" -Recurse | ForEach-Object {
-            $rel = $_.FullName.Substring($p.Length).TrimStart('\', '/').Replace('\', '/')
+        $items = Get-ChildItem -Path $pAddons -Filter "*.gdextension" -Recurse | Sort-Object {
+            if ($_.FullName -like "*crystal_integration*") { 0 } else { 1 }
+        }, FullName
+        foreach ($item in $items) {
+            $rel = $item.FullName.Substring($p.Length).TrimStart('\', '/').Replace('\', '/')
             $extLines.Add("res://$rel")
         }
     }

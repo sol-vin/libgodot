@@ -78,14 +78,15 @@ inline void init_gc_library(void *game_module_handle = nullptr) {
     std::vector<void*> candidates;
     if (game_module_handle) {
         candidates.push_back(game_module_handle);
-    }
-    candidates.push_back(RTLD_DEFAULT);
+    } else {
+        candidates.push_back(RTLD_DEFAULT);
 
-    const char *gc_libs[] = { "libgc.so.1", "libgc.so", "libgc.dylib" };
-    for (size_t i = 0; i < sizeof(gc_libs) / sizeof(gc_libs[0]); i++) {
-        void *hLib = dlopen(gc_libs[i], RTLD_LAZY | RTLD_GLOBAL);
-        if (hLib) {
-            candidates.push_back(hLib);
+        const char *gc_libs[] = { "libgc.so.1", "libgc.so", "libgc.dylib" };
+        for (size_t i = 0; i < sizeof(gc_libs) / sizeof(gc_libs[0]); i++) {
+            void *hLib = dlopen(gc_libs[i], RTLD_LAZY | RTLD_GLOBAL);
+            if (hLib) {
+                candidates.push_back(hLib);
+            }
         }
     }
 
